@@ -133,7 +133,7 @@ aap_version_short: "27"   # used in naming: aap27-test-N
 installer_extract_dir: "/opt/sources"
 
 # Golden image
-golden_image_path: "/opt/vms/goldimg-vm-1.disk.qcow2"
+golden_image_path: "/opt/images/goldimg-vm-1.disk.qcow2"
 
 # Network
 vm_network: "internal"
