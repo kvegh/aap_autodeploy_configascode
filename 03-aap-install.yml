@@ -1,0 +1,119 @@
+---
+- name: "Add target VM to inventory"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - vm_ip is defined
+          - vm_name is defined
+        fail_msg: "Required extra_vars: vm_ip, vm_name"
+
+    - name: Add target VM to inventory
+      ansible.builtin.add_host:
+        name: target_vm
+        ansible_host: "{{ vm_ip }}"
+        ansible_user: ANSIBLE_USER
+        ansible_password: ANSIBLE_PW
+        ansible_become: true
+
+
+- name: "Prepare host for AAP installation"
+  hosts: target_vm
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../myvars
+    - vars/main.yml
+
+  tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Grow root filesystem
+      block:
+        - name: Grow partition
+          ansible.builtin.command:
+            cmd: growpart /dev/sda 4
+          failed_when: false
+
+        - name: Grow XFS filesystem
+          ansible.builtin.command:
+            cmd: xfs_growfs /
+          failed_when: false
+
+    - name: Subscribe to RHEL and enable AAP repository
+      ansible.builtin.include_role:
+        name: redhat.rhel_system_roles.rhc
+      vars:
+        rhc_state: present
+        rhc_auth:
+          activation_keys:
+            keys:
+              - "{{ vault_rhsm_activation_key }}"
+        rhc_organization: "{{ vault_rhsm_org_id }}"
+        rhc_repositories:
+          - name: ansible-automation-platform-2.7-for-rhel-9-x86_64-rpms
+            state: enabled
+
+    - name: Add FQDN to /etc/hosts so installer resolves locally
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ vm_ip }}  {{ vm_name }}  {{ vm_name }}.{{ vault_domain }}"
+        regexp: "{{ vm_name }}"
+
+    - name: Install ansible-core
+      ansible.builtin.dnf:
+        name: ansible-core
+        state: present
+
+
+- name: "Configure and install AAP"
+  hosts: target_vm
+  become: true
+  become_user: YOUR_AAP_USER
+  gather_facts: false
+  vars_files:
+    - ../myvars
+    - vars/main.yml
+  vars:
+    installer_dir_name: "ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64"
+    aap_hostname: "{{ vm_name }}.{{ vault_domain }}"
+    source_aap_fqdn: "aap.{{ vault_domain }}"
+
+  tasks:
+    - name: Replace hostname in inventory
+      ansible.builtin.replace:
+        path: "{{ installer_extract_dir }}/{{ installer_dir_name }}/inventory"
+        regexp: "{{ source_aap_fqdn }}"
+        replace: "{{ aap_hostname }}"
+
+    - name: Set bundle install in inventory
+      ansible.builtin.lineinfile:
+        path: "{{ installer_extract_dir }}/{{ installer_dir_name }}/inventory"
+        line: "{{ item }}"
+        insertafter: '\[all:vars\]'
+      loop:
+        - "bundle_install=true"
+        - "bundle_dir={{ installer_extract_dir }}/{{ installer_dir_name }}/bundle"
+
+    - name: Run AAP installer
+      ansible.builtin.command:
+        cmd: ansible-playbook -i inventory ansible.containerized_installer.install
+        chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"
+      async: 3600
+      poll: 30
+
+    - name: Verify AAP is accessible
+      ansible.builtin.uri:
+        url: "https://localhost/api/controller/v2/ping/"
+        validate_certs: false
+      register: aap_ping
+      retries: 12
+      delay: 10
+      until: aap_ping.status == 200

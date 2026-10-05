@@ -1,0 +1,91 @@
+---
+- name: Apply labels to job templates on main AAP
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../../myvars
+  vars:
+    ctrl_host: "https://aap.{{ vault_domain }}"
+    ctrl_user: "admin"
+    ctrl_pass: "{{ aap_gateway_admin_passwd }}"
+
+    jt_labels:
+      - name: "Deploy Test AAP - 01 VM Setup"
+        labels:
+          - aap-autodeploy
+      - name: "Deploy Test AAP - 02 Infra Config"
+        labels:
+          - aap-autodeploy
+      - name: "Deploy Test AAP - 03 AAP Install"
+        labels:
+          - aap-autodeploy
+      - name: "Deploy Test AAP - 04 AAP Config"
+        labels:
+          - aap-autodeploy
+      - name: "Destroy Test AAP VM"
+        labels:
+          - aap-autodeploy
+      - name: "Destroy Test AAP VM v2"
+        labels:
+          - aap-autodeploy
+      - name: "Patch RHEL Servers - simroi"
+        labels:
+          - sim-roi
+      - name: "Deploy Application Updates - simroi"
+        labels:
+          - sim-roi
+      - name: "Security Compliance Scan - simroi"
+        labels:
+          - sim-roi
+      - name: "Database Backup - simroi"
+        labels:
+          - sim-roi
+      - name: "Firewall Rule Update - simroi"
+        labels:
+          - sim-roi
+      - name: "Deploy Automation Orchestrator"
+        labels:
+          - orchestrator-autodeploy
+      - name: "Cleanup AAP after Orchestrator"
+        labels:
+          - orchestrator-autodeploy
+      - name: "VMs deploy locally"
+        labels:
+          - generic
+      - name: "Deploy Zabbix Agent"
+        labels:
+          - selfhealing
+          - eda
+      - name: "Run Claude to analyse and fix"
+        labels:
+          - selfhealing
+
+  tasks:
+    - name: Create labels
+      ansible.controller.label:
+        name: "{{ item }}"
+        organization: Default
+        controller_host: "{{ ctrl_host }}"
+        controller_username: "{{ ctrl_user }}"
+        controller_password: "{{ ctrl_pass }}"
+        validate_certs: false
+      loop:
+        - aap-autodeploy
+        - sim-roi
+        - orchestrator-autodeploy
+        - generic
+        - selfhealing
+        - eda
+
+    - name: Apply labels to JTs
+      ansible.controller.job_template:
+        name: "{{ item.name }}"
+        labels: "{{ item.labels }}"
+        controller_host: "{{ ctrl_host }}"
+        controller_username: "{{ ctrl_user }}"
+        controller_password: "{{ ctrl_pass }}"
+        validate_certs: false
+      loop: "{{ jt_labels }}"
+      loop_control:
+        label: "{{ item.name }}"

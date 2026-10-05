@@ -1,0 +1,17 @@
+---
+- name: Configure new AAP instance (config-as-code)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - ../myvars
+    - vars/main.yml
+    - cac/base.yml
+  vars:
+    dispatch_include_wildcard_vars: true
+    aap_hostname: "https://{{ vm_name }}.{{ vault_domain }}"
+    aap_username: admin
+    aap_password: "{{ aap_gateway_admin_passwd }}"
+    aap_validate_certs: false
+  roles:
+    - infra.aap_configuration.dispatch

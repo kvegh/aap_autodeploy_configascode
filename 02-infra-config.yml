@@ -1,0 +1,73 @@
+---
+- name: "Configure DNS, certificate, and nginx reverse proxy"
+  hosts: hypervisor
+  become: true
+  vars_files:
+    - ../myvars
+    - vars/main.yml
+  vars:
+    aap_test_subdomain: "{{ vm_name }}"
+
+  pre_tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - vm_ip is defined
+          - vm_name is defined
+        fail_msg: "Required extra_vars: vm_ip, vm_name"
+
+  tasks:
+    - name: Create GoDaddy DNS A record
+      ansible.builtin.uri:
+        url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/A/{{ aap_test_subdomain }}"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ vault_godaddy_api_token }}"
+        body_format: json
+        body:
+          - data: "{{ vault_public_ip }}"
+            ttl: 600
+        status_code: 200
+      become: false
+
+    - name: Deploy temporary HTTP-only nginx config for certbot challenge
+      ansible.builtin.template:
+        src: templates/nginx-aap-test-http.conf.j2
+        dest: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
+        mode: "0644"
+
+    - name: Reload nginx for HTTP config
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+
+    - name: Wait for DNS propagation
+      ansible.builtin.assert:
+        that:
+          - lookup('community.general.dig', aap_test_subdomain + '.' + vault_domain, '@8.8.8.8') | length > 0
+        fail_msg: "DNS not yet propagated for {{ aap_test_subdomain }}.{{ vault_domain }}"
+      register: dns_check
+      until: dns_check is not failed
+      retries: 30
+      delay: 10
+
+    - name: Obtain Let's Encrypt certificate
+      ansible.builtin.command:
+        cmd: >-
+          certbot certonly --nginx
+          -d {{ aap_test_subdomain }}.{{ vault_domain }}
+          --non-interactive --agree-tos
+        creates: "/etc/letsencrypt/live/{{ aap_test_subdomain }}.{{ vault_domain }}/fullchain.pem"
+
+    - name: Deploy full SSL nginx reverse proxy config
+      ansible.builtin.template:
+        src: templates/nginx-aap-test.conf.j2
+        dest: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
+        mode: "0644"
+      notify: reload nginx
+
+  handlers:
+    - name: reload nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded

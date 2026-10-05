@@ -1,0 +1,119 @@
+---
+- name: "Destroy Test AAP VM"
+  hosts: hypervisor
+  become: true
+  vars_files:
+    - ../myvars
+    - vars/main.yml
+  vars:
+    aap_test_subdomain: "{{ vm_name }}"
+    vm_disk_path: "{{ vm_dir }}/{{ vm_name }}.disk.qcow2"
+    nginx_conf: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
+    cert_name: "{{ aap_test_subdomain }}.{{ vault_domain }}"
+    dns_record_name: "{{ aap_test_subdomain }}"
+
+  tasks:
+    - name: Validate vm_name is provided
+      ansible.builtin.assert:
+        that:
+          - vm_name is defined
+          - vm_name | length > 0
+        fail_msg: "vm_name must be provided as an extra variable"
+
+    - name: Validate vm_name matches allowed pattern
+      ansible.builtin.assert:
+        that:
+          - vm_name is match('^aap27-test-\d+$')
+        fail_msg: "Refusing to proceed — vm_name '{{ vm_name }}' does not match 'aap27-test-N'"
+
+    - name: Assert VM name is safe for virsh destroy
+      ansible.builtin.assert:
+        that:
+          - vm_name is match('^aap27-test-\d+$')
+          - vm_name is not match('.*(;|&&|\||\$|`).*')
+        fail_msg: "Refusing virsh destroy — vm_name '{{ vm_name }}' failed safety check"
+
+    - name: Destroy VM (force stop)
+      ansible.builtin.command:
+        cmd: "virsh destroy {{ vm_name }}"
+      register: destroy_result
+      failed_when: false
+      changed_when: destroy_result.rc == 0
+
+    - name: Assert VM name is safe for virsh undefine
+      ansible.builtin.assert:
+        that:
+          - vm_name is match('^aap27-test-\d+$')
+          - vm_name is not match('.*(;|&&|\||\$|`).*')
+        fail_msg: "Refusing virsh undefine — vm_name '{{ vm_name }}' failed safety check"
+
+    - name: Undefine VM
+      ansible.builtin.command:
+        cmd: "virsh undefine {{ vm_name }}"
+      register: undefine_result
+      failed_when:
+        - undefine_result.rc != 0
+        - "'failed to get domain' not in undefine_result.stderr"
+
+    - name: Assert disk path matches expected pattern
+      ansible.builtin.assert:
+        that:
+          - vm_disk_path is match('^/opt/vms/aap27-test-\d+\.disk\.qcow2$')
+        fail_msg: "Refusing to remove disk — path '{{ vm_disk_path }}' does not match expected pattern"
+
+    - name: Remove VM disk
+      ansible.builtin.file:
+        path: "{{ vm_disk_path }}"
+        state: absent
+
+    - name: Assert nginx config path matches expected pattern
+      ansible.builtin.assert:
+        that:
+          - nginx_conf is match('^/etc/nginx/conf\.d/aap27-test-\d+\.conf$')
+        fail_msg: "Refusing to remove nginx config — path '{{ nginx_conf }}' does not match expected pattern"
+
+    - name: Remove nginx config
+      ansible.builtin.file:
+        path: "{{ nginx_conf }}"
+        state: absent
+      notify: reload nginx
+
+    - name: Assert cert name matches expected pattern
+      ansible.builtin.assert:
+        that:
+          - cert_name is match('^aap27-test-\d+\.\S+$')
+          - cert_name is not match('.*(;|&&|\||\$|`).*')
+        fail_msg: "Refusing to delete cert — name '{{ cert_name }}' does not match expected pattern"
+
+    - name: Remove Let's Encrypt certificate
+      ansible.builtin.command:
+        cmd: "certbot delete --cert-name {{ cert_name }} --non-interactive"
+      register: certbot_delete
+      failed_when: false
+      changed_when: "'Deleted' in certbot_delete.stdout"
+
+    - name: Assert DNS record name matches expected pattern
+      ansible.builtin.assert:
+        that:
+          - dns_record_name is match('^aap27-test-\d+$')
+          - dns_record_name is not match('.*(;|&&|\||\$|`).*')
+        fail_msg: "Refusing to delete DNS record — name '{{ dns_record_name }}' does not match expected pattern"
+
+    - name: Remove GoDaddy DNS A record
+      ansible.builtin.uri:
+        url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/A/{{ dns_record_name }}"
+        method: DELETE
+        headers:
+          Authorization: "Bearer {{ vault_godaddy_api_token }}"
+        status_code: [200, 204, 404]
+      become: false
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: "VM {{ vm_name }} destroyed — disk, nginx, cert, and DNS cleaned up"
+
+  handlers:
+    - name: reload nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
