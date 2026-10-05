@@ -25,7 +25,7 @@ There's also `destroy-test-aap.yml` for teardown (with strict per-task safety as
 
 3. **Subdomain routing** — each test instance gets `aap27-test-N.{domain}`. AAP's Envoy gateway owns the domain root, so path-based routing doesn't work. Nginx reverse proxy is mandatory (VMs are on internal libvirt network).
 
-4. **Golden image** — RHEL 9.8 with `YOUR_AAP_USER` user (sudo, linger, SSH keys) and the installer bundle already unpacked. Avoids repeating host prep on every deploy.
+4. **Golden image** — RHEL 9.8 with the AAP service account (`vault_aap_install_user`; sudo, linger, SSH keys) and the installer bundle already unpacked. Avoids repeating host prep on every deploy.
 
 5. **Vault for all secrets** — the repo contains zero environment-specific values. Everything sensitive comes from `myvars` (vault-encrypted, repo root).
 

@@ -11,7 +11,7 @@ All playbooks and docs go in `AAP-advanced-features/aap-autodeploy/`. The VM dep
 ## Architecture Overview
 
 ```
-Golden Image (RHEL 9.8 qcow2 with YOUR_AAP_USER user, installer pre-staged)
+Golden Image (RHEL 9.8 qcow2 with the AAP service account (`vault_aap_install_user`), installer pre-staged)
     |
     v
 [1] Clone + resize disk + virt-customize hostname + virt-install on hypervisor
@@ -81,10 +81,10 @@ Must run before the AAP installer — the installer's Lightspeed OAuth task conn
 3. **Set bundle install vars** — add `bundle_install=true` and `bundle_dir` to inventory
 4. **Run the installer** — `ansible-playbook -i inventory ansible.containerized_installer.install`
    - Takes ~30-40 minutes
-   - Runs as `YOUR_AAP_USER` user (rootless podman)
+   - Runs rootless podman as the AAP service account (`vault_aap_install_user`)
 5. **Verify AAP** — ping the API
 
-The `YOUR_AAP_USER` user, sudo, linger, SSH authorized_keys, and the AAP installer bundle are all pre-staged in the golden image.
+The AAP service account (`vault_aap_install_user`), sudo, linger, SSH authorized_keys, and the AAP installer bundle are all pre-staged in the golden image.
 
 ### Step 4: AAP Config-as-Code (`04-aap-config.yml` — targets: new AAP)
 
@@ -152,7 +152,7 @@ vm_dir: "/opt/vms"
 
 4. **Vault for ALL secrets** — passwords, registry creds, hostnames, IPs. The repo contains zero environment-specific values.
 
-5. **Golden image as base** — pre-updated RHEL 9.8 with `YOUR_AAP_USER` user (sudo, linger, hypervisor SSH key), and the AAP installer bundle unpacked under `/opt/sources/`. Subscribe only to enable AAP repo and install ansible-core, not for general updates.
+5. **Golden image as base** — pre-updated RHEL 9.8 with the AAP service account (`vault_aap_install_user`; sudo, linger, hypervisor SSH key), and the AAP installer bundle unpacked under `/opt/sources/`. Subscribe only to enable AAP repo and install ansible-core, not for general updates.
 
 6. **Installer pre-staged in golden image** — eliminates the slow SCP transfer step entirely. The unpacked bundle (~3.5 GiB) is baked into the golden image.
 

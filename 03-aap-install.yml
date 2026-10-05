@@ -2,6 +2,8 @@
 - name: "Add target VM to inventory"
   hosts: localhost
   gather_facts: false
+  vars_files:
+    - ../myvars
   tasks:
     - name: Validate required variables
       ansible.builtin.assert:
@@ -14,8 +16,8 @@
       ansible.builtin.add_host:
         name: target_vm
         ansible_host: "{{ vm_ip }}"
-        ansible_user: ANSIBLE_USER
-        ansible_password: ANSIBLE_PW
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
         ansible_become: true
 
 
@@ -76,7 +78,7 @@
 - name: "Configure and install AAP"
   hosts: target_vm
   become: true
-  become_user: YOUR_AAP_USER
+  become_user: "{{ vault_aap_install_user }}"
   gather_facts: false
   vars_files:
     - ../myvars
