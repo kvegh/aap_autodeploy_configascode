@@ -8,7 +8,7 @@ Four playbooks, run in sequence. Each is a separate AAP job template.
 
 | Step | Playbook | Targets | What it does |
 |---|---|---|---|
-| 01 | `01-vm-setup.yml` | hypervisor | Clone golden image, resize disk, customize hostname, virt-install. Outputs `vm_name` and `vm_ip`. |
+| 01 | `01-linux-vm-setup.yml` | hypervisor | Clone golden image, resize disk, customize hostname, virt-install. Outputs `vm_name` and `vm_ip`. |
 | 02 | `02-infra-config.yml` | hypervisor | GoDaddy DNS A record, Let's Encrypt cert, nginx reverse proxy. Must run before 03 — the AAP installer needs the FQDN reachable. |
 | 03 | `03-aap-install.yml` | new VM | Grow filesystem, subscribe RHEL, install ansible-core, customize installer inventory, run containerized installer (~30-40 min). |
 | 04 | `04-aap-config.yml` | localhost → new AAP API | Post-install config-as-code. Creates all AAP objects (users, credentials, projects, JTs, EDA, schedules). |
@@ -37,7 +37,7 @@ There's also `destroy-test-aap.yml` for teardown (with strict per-task safety as
 
 ```
 aap-autodeploy/
-    01-vm-setup.yml
+    01-linux-vm-setup.yml
     02-infra-config.yml
     03-aap-install.yml
     04-aap-config.yml            # being rewritten to use dispatch role

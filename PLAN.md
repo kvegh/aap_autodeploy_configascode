@@ -34,7 +34,7 @@ Golden Image (RHEL 9.8 qcow2 with the AAP service account (`vault_aap_install_us
 
 ```
 aap-autodeploy/
-  01-vm-setup.yml              # Create VM from golden image
+  01-linux-vm-setup.yml              # Create VM from golden image
   02-infra-config.yml          # DNS, certbot, nginx reverse proxy
   03-aap-install.yml           # Prepare host + run AAP installer
   04-aap-config.yml            # AAP config-as-code (post-install)
@@ -54,7 +54,7 @@ Secrets come from `myvars` in the repo root (vault-encrypted).
 
 ## Step-by-Step Design
 
-### Step 1: VM Creation (`01-vm-setup.yml` — targets: hypervisor)
+### Step 1: VM Creation (`01-linux-vm-setup.yml` — targets: hypervisor)
 
 Clone golden image, resize disk, customize hostname, virt-install. Outputs `vm_name` and `vm_ip` for subsequent playbooks.
 
