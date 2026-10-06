@@ -93,5 +93,5 @@ Two categories:
 ### Done
 
 - [x] End-to-end test: run full sequence 01→02→03→04 (current task-based approach)
-- [x] CaC files: capture all current AAP resources (base_vault.yml + 7 project groups)
+- [x] CaC files: capture all current AAP resources (base_CaC_vault.yml + 7 project groups)
 - [x] Document CaC architecture in Configuration_as_Code.md

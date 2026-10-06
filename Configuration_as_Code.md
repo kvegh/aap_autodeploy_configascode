@@ -36,16 +36,16 @@ The CaC variable files are loaded via `vars_files` or `include_vars` — the dis
 
 ```
 cac/
-    base_vault.yml            # shared resources (org, users, credentials, EEs, inventories, hosts, projects, labels)
-    selfhealing.yml           # AIOps self-healing demo JTs + EDA          (complete)
-    simroi.yml                # simulated ROI dashboard JTs + schedules    (complete)
-    orchestrator_deploy.yml   # Automation Orchestrator JTs                (complete)
-    autodeploy.yml            # autodeploy pipeline JTs (01-04 + destroy)  (complete)
-    servicenow.yml            # ServiceNow ITSM integration               (skeleton)
-    config_exceptions.yml     # configuration drift detection              (skeleton)
-    intelligent_assistant.yml # Intelligent Assistant                      (skeleton)
-    base_vault.yml.example    # template for shared resources
-    project.yml.example       # template for per-project files
+    base_CaC_vault.yml         # shared resources (org, users, credentials, EEs, inventories, hosts, projects, labels)
+    selfhealing.yml            # AIOps self-healing demo JTs + EDA          (complete)
+    simroi.yml                 # simulated ROI dashboard JTs + schedules    (complete)
+    orchestrator_deploy.yml    # Automation Orchestrator JTs                (complete)
+    autodeploy.yml             # autodeploy pipeline JTs (01-04 + destroy)  (complete)
+    servicenow.yml             # ServiceNow ITSM integration               (skeleton)
+    config_exceptions.yml      # configuration drift detection              (skeleton)
+    intelligent_assistant.yml  # Intelligent Assistant                      (skeleton)
+    base_CaC_vault.yml.example # template for shared resources
+    project.yml.example        # template for per-project files
 ```
 
 Files are currently in `~/claude-wd/cac/` (outside the repo). They'll be vault-encrypted and committed once secrets are filled in.
@@ -91,7 +91,7 @@ Gotchas: `controller_templates` (not `controller_job_templates`), `aap_user_acco
 
 What the CaC files capture from the current AAP instance:
 
-### base_vault.yml (shared)
+### base_CaC_vault.yml (shared)
 - 1 organization (Default)
 - 4 users (admin, kkrzywic, mnolo, orchestrator_svc)
 - 4 credentials (hypervisor, default machine, vault, PAH token)
@@ -152,7 +152,7 @@ sync before the Job Template is applied. The current deployment playbook selects
 boot mode from the verified images, so the old template-side boot expression
 is omitted from the restore configuration.
 
-On a new AAP, provision these shared dependencies through `cac/base_vault.yml` first:
+On a new AAP, provision these shared dependencies through `cac/base_CaC_vault.yml` first:
 
 - Organization `Default`.
 - `main inventory`, including the `hypervisor` group and target host/connection
