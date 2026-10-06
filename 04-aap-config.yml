@@ -6,7 +6,7 @@
   vars_files:
     - ../myvars
     - vars/main.yml
-    - cac/base.yml
+    - cac/base_vault.yml
   vars:
     dispatch_include_wildcard_vars: true
     aap_hostname: "https://{{ vm_name }}.{{ vault_domain }}"

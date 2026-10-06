@@ -36,7 +36,7 @@ The CaC variable files are loaded via `vars_files` or `include_vars` — the dis
 
 ```
 cac/
-    base.yml                  # shared resources (org, users, credentials, EEs, inventories, hosts, projects, labels)
+    base_vault.yml            # shared resources (org, users, credentials, EEs, inventories, hosts, projects, labels)
     selfhealing.yml           # AIOps self-healing demo JTs + EDA          (complete)
     simroi.yml                # simulated ROI dashboard JTs + schedules    (complete)
     orchestrator_deploy.yml   # Automation Orchestrator JTs                (complete)
@@ -44,7 +44,7 @@ cac/
     servicenow.yml            # ServiceNow ITSM integration               (skeleton)
     config_exceptions.yml     # configuration drift detection              (skeleton)
     intelligent_assistant.yml # Intelligent Assistant                      (skeleton)
-    base.yml.example          # template for shared resources
+    base_vault.yml.example    # template for shared resources
     project.yml.example       # template for per-project files
 ```
 
@@ -91,7 +91,7 @@ Gotchas: `controller_templates` (not `controller_job_templates`), `aap_user_acco
 
 What the CaC files capture from the current AAP instance:
 
-### base.yml (shared)
+### base_vault.yml (shared)
 - 1 organization (Default)
 - 4 users (admin, kkrzywic, mnolo, orchestrator_svc)
 - 4 credentials (hypervisor, default machine, vault, PAH token)
