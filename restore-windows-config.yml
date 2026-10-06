@@ -1,0 +1,25 @@
+---
+- name: Restore Windows demo configuration on an AAP instance
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - "{{ windows_cac_file }}"
+  vars:
+    dispatch_include_wildcard_vars: true
+    aap_validate_certs: true
+  tasks:
+    - name: Validate target and authentication inputs
+      ansible.builtin.assert:
+        that:
+          - aap_hostname | default('') is match('^https://')
+          - >-
+            (aap_token | default('') | length > 0) or
+            ((aap_username | default('') | length > 0) and
+             (aap_password | default('') | length > 0))
+        fail_msg: Supply aap_hostname and aap_token or aap_username/aap_password through a protected variables file or AAP credential.
+      no_log: true
+
+    - name: Apply Windows project, template and workflow configuration
+      ansible.builtin.include_role:
+        name: infra.aap_configuration.dispatch

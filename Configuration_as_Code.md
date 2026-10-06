@@ -135,3 +135,56 @@ CaC files use `CHANGEME` as placeholder for all secrets. The migration workflow:
 2. Back up secrets to Bitwarden
 3. Vault-encrypt the files (or use inline `!vault` per-value)
 4. Commit encrypted files to the repo
+
+## Windows patching workflow restore
+
+The external `disconnected_windows_patching.yml` CaC file captures the Windows
+project, deployment Job Template, survey and `Deploy Windows + WSUS environment`
+workflow. It is staged alongside the other external CaC files for encryption
+and review before inclusion in Git. Step 04 does not load it yet. The four nodes have no
+edges and can run concurrently because their Job Template has
+`allow_simultaneous: true`. Concurrent workflow runs remain disabled to avoid
+competing deployments of the same four VM names.
+
+Objects are referenced by name and organization rather than source-instance
+IDs. The Git project uses HTTPS and branch `main`; project creation waits for
+sync before the Job Template is applied. The current deployment playbook selects
+boot mode from the verified images, so the old template-side boot expression
+is omitted from the restore configuration.
+
+On a new AAP, provision these shared dependencies through `cac/base.yml` first:
+
+- Organization `Default`.
+- `main inventory`, including the `hypervisor` group and target host/connection
+  variables appropriate for that environment.
+- `hypervisor cred`, including its SSH key and any required privilege-escalation
+  secrets. Secret values cannot be recovered from the controller API.
+- `Orchestrator EE` and its registry pull credentials if required.
+
+The target hypervisor must already have both images and the `internal` and
+`windows-isolated` networks. Change the node variables if target network names
+or VM names differ. The capture has environment-specific references and must be encrypted or
+parameterized before inclusion in Git. Shared secret configuration remains
+vault-encrypted.
+
+To apply only the Windows objects after the shared dependencies are provisioned,
+use `restore-windows-config.yml` with `windows_cac_file` pointing to the external
+reviewed/encrypted file. It avoids Step 04's existing `../myvars` path
+and takes authentication from a separately supplied protected file:
+
+```bash
+ansible-galaxy collection install infra.aap_configuration
+ansible-playbook restore-windows-config.yml \
+  -e windows_cac_file=/secure/disconnected_windows_patching.yml \
+  -e @/secure/target-aap-auth.yml --ask-vault-pass
+```
+
+The encrypted authentication file supplies `aap_hostname` and `aap_token`, or
+`aap_username` / `aap_password`. TLS verification defaults to enabled. Ensure
+`ansible.controller` and the dispatch role's dependencies are available in the
+execution environment. Keep registry and SSH secrets outside plaintext config.
+
+Neither restore entry point launches VM jobs. This restores configuration, not
+running guests or Windows account/WinRM setup. No restore against a second AAP
+has been performed yet. Reapplying the simplified workflow config creates or
+updates these four nodes; it does not remove unrelated nodes added manually.
