@@ -152,7 +152,7 @@ sync before the Job Template is applied. The current deployment playbook selects
 boot mode from the verified images, so the old template-side boot expression
 is omitted from the restore configuration.
 
-On a new AAP, provision these shared dependencies through `cac/base.yml` first:
+On a new AAP, provision these shared dependencies through `cac/base_vault.yml` first:
 
 - Organization `Default`.
 - `main inventory`, including the `hypervisor` group and target host/connection
