@@ -3,7 +3,7 @@
   hosts: hypervisor
   become: true
   vars_files:
-    - ../myvars
+    - myvars
     - vars/main.yml
   vars:
     aap_test_subdomain: "{{ vm_name }}"

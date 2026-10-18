@@ -18,7 +18,7 @@ The current `04-aap-config.yml` uses one task block per resource type (users, cr
   connection: local
   gather_facts: false
   vars_files:
-    - ../myvars
+    - myvars
     - vars/main.yml
   vars:
     dispatch_include_wildcard_vars: true
@@ -169,7 +169,7 @@ vault-encrypted.
 
 To apply only the Windows objects after the shared dependencies are provisioned,
 use `restore-windows-config.yml` with `windows_cac_file` pointing to the external
-reviewed/encrypted file. It avoids Step 04's existing `../myvars` path
+reviewed/encrypted file. It avoids Step 04's existing `myvars` path
 and takes authentication from a separately supplied protected file:
 
 ```bash

@@ -4,7 +4,7 @@
   connection: local
   gather_facts: false
   vars_files:
-    - ../../myvars
+    - ../myvars
   vars:
     ctrl_host: "https://aap.{{ vault_domain }}"
     ctrl_user: "admin"

@@ -36,25 +36,31 @@ There's also `destroy-test-aap.yml` for teardown (with strict per-task safety as
 ## File Structure
 
 ```
-aap-autodeploy/
+aap_autodeploy_configascode/
     01-linux-vm-setup.yml
     02-infra-config.yml
     03-aap-install.yml
-    04-aap-config.yml            # being rewritten to use dispatch role
+    04-aap-config.yml            # dispatch role against the new instance
     destroy-test-aap.yml
+    restore-windows-config.yml   # Windows objects only, onto a provisioned AAP
+    cac/
+        base_CaC_vault.yml       # shared CaC resources (vault-encrypted)
     templates/
         nginx-aap-test.conf.j2
+        nginx-aap-test-http.conf.j2
+    utils/
+        tag_jts.yml
     vars/
         main.yml                 # non-sensitive defaults (VM sizing, paths)
     documentation.md             # this file (includes TODOs)
     Configuration_as_Code.md     # CaC architecture and resource inventory
     PLAN.md                      # original design plan
-../myvars                        # vault-encrypted secrets (repo root)
+    myvars                       # vault-encrypted secrets (repo root)
 ```
 
 ## Secrets
 
-All secrets are in `myvars` at the repo root (vault-encrypted). Loaded via `vars_files: [../myvars]`.
+All secrets are in `myvars` at the repo root (vault-encrypted). Loaded via `vars_files: [myvars]`.
 
 Two categories:
 - **Infrastructure secrets** (steps 01-03): registry credentials, PostgreSQL passwords, RHSM activation key, GoDaddy API token, domain, hypervisor IP.

@@ -3,7 +3,7 @@
   hosts: localhost
   gather_facts: false
   vars_files:
-    - ../myvars
+    - myvars
   tasks:
     - name: Validate required variables
       ansible.builtin.assert:
@@ -26,7 +26,7 @@
   become: true
   gather_facts: false
   vars_files:
-    - ../myvars
+    - myvars
     - vars/main.yml
 
   tasks:
@@ -81,7 +81,7 @@
   become_user: "{{ vault_aap_install_user }}"
   gather_facts: false
   vars_files:
-    - ../myvars
+    - myvars
     - vars/main.yml
   vars:
     installer_dir_name: "ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64"

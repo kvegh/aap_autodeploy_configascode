@@ -43,7 +43,7 @@ aap-autodeploy/
     nginx-aap-test.conf.j2     # nginx reverse proxy config for test instance
   vars/
     main.yml                   # Non-sensitive defaults (sizing, paths)
-myvars                         # Vault-encrypted secrets (repo root)
+  myvars                       # Vault-encrypted secrets (repo root)
 ```
 
 Playbooks 02-04 take `vm_name` and `vm_ip` as extra_vars. Playbook 01 outputs these values.
@@ -94,7 +94,7 @@ Post-install configuration: projects, credentials, job templates, etc.
 
 ## Credential & Secret Handling
 
-All secrets live in `myvars` (vault-encrypted, in the repo root). The playbook loads it via `vars_files: [../myvars]`.
+All secrets live in `myvars` (vault-encrypted, in the repo root). The playbook loads it via `vars_files: [myvars]`.
 
 **Required variables in myvars** (same names as the current AAP inventory):
 

@@ -3,7 +3,7 @@
   hosts: hypervisor
   become: true
   vars_files:
-    - ../myvars
+    - myvars
     - vars/main.yml
   vars:
     vm_suffix: test
