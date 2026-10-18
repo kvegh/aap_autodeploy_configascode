@@ -118,6 +118,7 @@ from the organization and verify the remaining PAH source order.
 
 ### Reusable job inputs
 
+- [ ] Define a consistent extra-variable and survey mechanism across job templates: standardize variable names in templates, surveys, and playbooks; document defaults and survey/launch override precedence; normalize Boolean answers; and keep sensitive output protected by default. Adopt one shared logging-control name and meaning, reconciling the existing `secure_logging`, `windows_no_log`, `wsus_no_log`, and `chocolatey_no_log` controls.
 - [ ] Automate variable handoff between deployment jobs (01 -> 02 -> 03 -> 04): pass the discovered `vm_name` and `vm_ip` to 02/03 and an explicit `aap_hostname` API URL to 04, so operators do not copy values between launches. Use AAP workflow job artifacts (`ansible.builtin.set_stats`) where appropriate, while retaining inputs for independent stage runs.
 - [ ] Redesign and document job inputs so other operators can run each stage independently. Prefer established collection input names where available; require provisioning-specific values such as `vm_name` only in stages that need them.
 - [x] Require an explicit `aap_hostname` URL for Step 04, without `vm_name` or a derived domain URL.

@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.2.6
+
+Document the TODO for consistent extra-variable names, Job Template defaults,
+survey and launch overrides, Boolean handling, and logging controls. The audit
+found four logging variable names in existing templates; the TODO covers
+aligning them with their playbooks while keeping sensitive output protected by
+default. Reviewed README; it remains accurate. Whitespace checks passed. This
+adds planning documentation only; no templates or playbooks changed.
+
 ## 0.2.5
 
 Document the PAH-only collection sourcing decision implemented in `2725894`,
