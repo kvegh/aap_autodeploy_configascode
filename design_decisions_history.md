@@ -4,6 +4,34 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Load private configuration before applying shared AAP objects
+
+Implementation: `fd35d02`.
+
+Public playbooks remain separate from private deployment configuration. Step 04
+downloads the private repository using a token injected by an AAP custom
+credential, then decrypts and loads its shared base before the dispatch role runs.
+The repository URL is an input; the branch is always `main`, as requested, rather
+than a release tag. The token is supplied independently from the encrypted
+configuration so access does not depend on first downloading the file that would
+contain that token.
+
+The token stays out of Git URLs, command arguments, stored credential helpers,
+and task output. A private temporary checkout and authentication helper are
+removed after loading, including on tested failures. HTTPS certificate validation
+remains enabled, redirects are refused, and submodules are not downloaded.
+
+The existing `myvars` still supplies environment settings and target login while
+the new `cac` Vault credential decrypts private configuration. Removing `myvars`,
+reading the installer password, rotating the administrator password, and selecting
+demo files remain separate work.
+
+Eleven isolated HTTPS Git/Vault checks verified the current encrypted base with
+both Vault credentials, invalid inputs, authentication/decryption failures, TLS
+rejection, protected output, and temporary-file cleanup. The four version-helper
+tests and whitespace checks passed. Full syntax validation was blocked locally
+by the missing dispatch collection; no live AAP job or full deployment was run.
+
 ## Identify the source of the AAP configuration role
 
 Implementation: `e97480d`.

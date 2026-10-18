@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.1.1
+
+Document private configuration loading implemented in `fd35d02`, including the
+separate Git-token bootstrap, fixed `main` policy, secret-safe temporary download,
+retained `myvars`, and validation limits. Reviewed the README and confirmed it
+matches the implementation. Whitespace and staged-file checks passed. No AAP jobs
+were run and no release was published.
+
 ## 0.1.0
 
 Load Step 04's encrypted shared configuration from a private HTTPS Git repository
