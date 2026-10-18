@@ -54,8 +54,11 @@ to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardow
 ## Setup and secrets
 
 Use an execution environment with Ansible and the required collections, including
-`infra.aap_configuration`, `ansible.controller`, `redhat.rhel_system_roles`, and
-`community.general`. Verify the dispatch role's dependencies in that environment.
+`infra.aap_configuration`, `ansible.controller`, and `redhat.rhel_system_roles`.
+Verify the dispatch role's dependencies in that environment. Stage 02 checks
+public DNS using the built-in `uri` module and Google's HTTPS DNS API, as the
+previous successful deployment did. It waits for the expected public A record;
+no additional DNS lookup collection or Python package is required.
 `collections/requirements.yml` pins `infra.aap_configuration` to `4.10.0`.
 With collection downloads enabled, AAP installs it and its declared dependencies
 during project synchronization. The requirements file defines which collections

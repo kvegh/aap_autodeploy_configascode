@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.5.2
+
+Restore Stage 02's successful HTTPS DNS check using `ansible.builtin.uri`.
+The standalone checkout had an unprovided `community.general.dig` lookup instead
+of the implementation used by successful deployment job 993. Wait for the
+expected public A record before certificate issuance without adding runtime
+dependencies. Earlier VM creation and teardown stages do not need repeating.
+
+Validation: compared successful job 993 with failed job 1996, checked the
+playbook syntax, and checked whitespace. Live retry follows this source fix.
+
 ## 0.5.1
 
 Document the base/use-case ownership split and AIOps deployment implementation
