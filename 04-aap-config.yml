@@ -6,12 +6,97 @@
   vars_files:
     - myvars
     - vars/main.yml
-    - cac/base_CaC_vault.yml
   vars:
     dispatch_include_wildcard_vars: true
     aap_hostname: "https://{{ vm_name }}.{{ vault_domain }}"
     aap_username: admin
     aap_password: "{{ aap_gateway_admin_passwd }}"
     aap_validate_certs: false
+  pre_tasks:
+    - name: Require a private configuration repository URL without embedded credentials
+      ansible.builtin.assert:
+        that:
+          - aap_config_repo_url is defined
+          - aap_config_repo_url is string
+          - (aap_config_repo_url | ansible.builtin.urlsplit('scheme')) == 'https'
+          - (aap_config_repo_url | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
+          - (aap_config_repo_url | ansible.builtin.urlsplit('username')) is none
+          - (aap_config_repo_url | ansible.builtin.urlsplit('password')) is none
+          - (aap_config_repo_url | ansible.builtin.urlsplit('path')) not in ['', '/']
+          - (aap_config_repo_url | ansible.builtin.urlsplit('query')) == ''
+          - (aap_config_repo_url | ansible.builtin.urlsplit('fragment')) == ''
+          - aap_config_repo_url is not search('\\s')
+        fail_msg: Supply aap_config_repo_url as an HTTPS Git URL without credentials, query, or fragment.
+
+    - name: Require the injected CaC Git token
+      ansible.builtin.assert:
+        that:
+          - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
+        fail_msg: Attach the CaC Git credential that injects CAC_GIT_TOKEN.
+      no_log: true
+
+    - name: Create a private temporary configuration workspace
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: aap-cac-
+      register: cac_workspace
+
+    - name: Retrieve and load the encrypted shared configuration
+      block:
+        - name: Prepare Git authentication without putting the token in a URL or argument
+          ansible.builtin.copy:
+            dest: "{{ cac_workspace.path }}/git-askpass"
+            mode: '0700'
+            content: |
+              #!/bin/sh
+              case "$1" in
+                *Username*) printf '%s\n' 'x-access-token' ;;
+                *Password*) printf '%s\n' "$CAC_GIT_TOKEN" ;;
+                *) exit 1 ;;
+              esac
+
+        - name: Download the private configuration from main
+          ansible.builtin.git:
+            repo: "{{ aap_config_repo_url }}"
+            dest: "{{ cac_workspace.path }}/repository"
+            version: main
+            depth: 1
+            recursive: false
+            single_branch: true
+          environment:
+            GIT_ASKPASS: "{{ cac_workspace.path }}/git-askpass"
+            GIT_TERMINAL_PROMPT: '0'
+            LC_ALL: C
+            GIT_CONFIG_COUNT: '3'
+            GIT_CONFIG_KEY_0: credential.helper
+            GIT_CONFIG_VALUE_0: ''
+            GIT_CONFIG_KEY_1: http.followRedirects
+            GIT_CONFIG_VALUE_1: 'false'
+            GIT_CONFIG_KEY_2: http.sslVerify
+            GIT_CONFIG_VALUE_2: 'true'
+          no_log: true
+
+        - name: Read the encrypted shared configuration
+          ansible.builtin.slurp:
+            src: "{{ cac_workspace.path }}/repository/cac/base_CaC_vault.yml"
+          register: cac_encrypted_base
+          no_log: true
+
+        - name: Require a fully Vault-encrypted shared configuration
+          ansible.builtin.assert:
+            that:
+              - (cac_encrypted_base.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
+            fail_msg: The shared configuration must be a Vault-encrypted file.
+          no_log: true
+
+        - name: Decrypt and load the shared configuration with the attached Vault credentials
+          ansible.builtin.include_vars:
+            file: "{{ cac_workspace.path }}/repository/cac/base_CaC_vault.yml"
+          no_log: true
+      always:
+        - name: Remove the temporary configuration checkout and authentication helper
+          ansible.builtin.file:
+            path: "{{ cac_workspace.path }}"
+            state: absent
   roles:
     - infra.aap_configuration.dispatch

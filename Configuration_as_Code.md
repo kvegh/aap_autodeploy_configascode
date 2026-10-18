@@ -13,32 +13,25 @@ This lets us split configuration into logical files — one per project group �
 
 ## Target playbook (04-aap-config.yml)
 
-The current `04-aap-config.yml` uses dispatch. Its `vars_files` still references
-`cac/base_CaC_vault.yml` in the project checkout, although that populated file
-has moved to the private configuration repository. Private-source loading has
-not been implemented; the playbook cannot run from this checkout alone. Its
-dispatch structure is:
+The current `04-aap-config.yml` first clones the private repository supplied as
+`aap_config_repo_url`, always using `main`. It requires HTTPS without credentials
+embedded in the URL. A custom AAP credential injects `CAC_GIT_TOKEN`; a temporary
+Git askpass helper provides it during authentication. Token-bearing tasks hide
+their output, normal TLS verification remains enabled, redirects and stored Git
+credential helpers are disabled, and submodules are not fetched.
 
-```yaml
-- name: Configure new AAP instance (config-as-code)
-  hosts: localhost
-  connection: local
-  gather_facts: false
-  vars_files:
-    - myvars
-    - vars/main.yml
-    - cac/base_CaC_vault.yml  # private configuration; no longer in this checkout
-  vars:
-    dispatch_include_wildcard_vars: true
-    aap_hostname: "https://{{ vm_name }}.{{ vault_domain }}"
-    aap_username: admin
-    aap_password: "{{ aap_gateway_admin_passwd }}"
-    aap_validate_certs: false
-  roles:
-    - infra.aap_configuration.dispatch
-```
+Before running dispatch, the playbook requires a Vault-encrypted
+`cac/base_CaC_vault.yml` in that checkout and loads it with `include_vars`.
+The attached Vault credential with identifier `cac` decrypts this file. The
+temporary checkout and helper are removed even if downloading or loading fails.
+The role sees the loaded suffixed variables and applies them as before.
 
-The CaC variable files are loaded via `vars_files` or `include_vars` — the dispatch role picks up all suffixed variables automatically.
+`myvars` and `vars/main.yml` remain in `vars_files`. Keep the original/default
+Vault credential attached alongside the `cac` credential: the existing target
+URL and administrator login still come from `vm_name` and `myvars`. This change
+does not read the installer password, rotate the administrator password, remove
+`myvars`, or load demo files. See [README.md](README.md#stage-04-inputs) for inputs
+and execution-environment requirements. No full live Stage 04 run is implied.
 
 ## CaC file layout
 
@@ -62,9 +55,9 @@ This public repository retains two empty plaintext examples: use
 `cac/base_CaC_vault.yml.example` for shared resources and
 `cac/project.yml.example` for a demo. Both examples contain empty resource lists
 and commented entries with generic placeholders. See [README.md](README.md)
-for the preparation, encryption, verification, and commit workflow. Stage 04's
-private-source loading and demo selection remain outstanding; adding an encrypted
-file to the private repository does not automatically apply it.
+for the preparation, encryption, verification, and commit workflow. Stage 04
+loads only the shared `cac/base_CaC_vault.yml` from `main`; adding another encrypted
+file to the private repository does not automatically apply that demo.
 
 ## Variable naming
 
@@ -175,7 +168,8 @@ boot mode from the verified images, so the old template-side boot expression
 is omitted from the restore configuration.
 
 On a new AAP, provision these shared dependencies through the private
-`cac/base_CaC_vault.yml` first, once loading from that repository is implemented:
+`cac/base_CaC_vault.yml` first, after verifying Stage 04's target authentication
+and execution-environment dependencies:
 
 - Organization `Default`.
 - `main inventory`, including the `hypervisor` group and target host/connection

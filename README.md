@@ -23,12 +23,12 @@ Post-install configuration uses the `dispatch` role from the
 [Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
 It reads our CaC definitions and calls AAP APIs to create or update those objects.
 
-Stage 04 still expects `cac/base_CaC_vault.yml` in its project checkout, but the
-populated base has moved to the private configuration repository. Loading from
-that repository is not implemented, so Stage 04 cannot run from this checkout
-alone. Selectable demo profiles and automatic handoff remain planned. Full
-deployment with the current dispatch configuration has not been verified since
-the repository split.
+Stage 04 downloads the private configuration repository's `main` branch into a
+temporary directory, decrypts `cac/base_CaC_vault.yml`, and loads it before dispatch.
+It removes the temporary checkout and Git authentication helper after loading,
+including when downloading or loading fails. Selectable demo profiles and automatic
+handoff remain planned. Full deployment with the current dispatch configuration
+has not been verified since the repository split.
 The latest handoff reports missing dispatch collection availability and a mismatch
 between the installer password and the credentials Stage 04 uses. These require
 verification and resolution before an unattended deployment.
@@ -50,6 +50,33 @@ their credential inputs are encrypted in the private configuration repository's
 `cac/base_CaC_vault.yml`. Supply the appropriate Ansible Vault password through a
 local password file or an AAP Vault credential.
 Each operator must prepare configuration for their own environment.
+
+### Stage 04 inputs
+
+Supply `aap_config_repo_url` as the HTTPS Git URL of the private configuration
+repository. Stage 04 always uses `main`; the encrypted shared file must be at
+`cac/base_CaC_vault.yml`. Use a read-only token with access to that repository.
+Do not put the token in the URL or extra variables.
+
+Attach these credentials to the Stage 04 job template:
+
+- A custom Git credential that injects the token as `CAC_GIT_TOKEN` in the job
+  environment. Git reads it through a temporary askpass helper; it is not embedded
+  in command arguments or written into the checkout's Git configuration.
+- A Vault credential with identifier `cac` and the private configuration's password.
+- The existing Vault credential that decrypts `myvars`, using its original/default
+  identifier. `myvars` still supplies environment settings and target authentication.
+
+The execution environment must provide Git and trust the repository server's TLS
+certificate. HTTPS redirects and stored Git credential helpers are disabled for
+this download. Submodules are not fetched. Git servers must accept token
+authentication using the `x-access-token` username, as GitHub does.
+
+Continue supplying `vm_name`; the target URL is still derived from it and the
+domain in `myvars`. Reading the installer password, rotating the target admin
+password, removing `myvars`, and selecting demos are separate pending work.
+Attaching the credentials and adding this loader do not establish that the full
+Stage 04 job can successfully configure a target AAP.
 
 Never commit plaintext secrets or sensitive environment-specific data, including
 account names, hostnames, addresses, tokens, or keys. Vault-encrypted files/values
@@ -81,9 +108,8 @@ working directory. When a configuration is ready:
 4. Review staged files, then commit and push only the encrypted configuration.
 
 Keep the editable working files and Vault password file outside Git. This public
-repository's `cac/` retains the empty examples. Stage 04 must explicitly load the
-chosen configuration; private-repository loading and demo selection remain
-outstanding.
+repository's `cac/` retains the empty examples. Stage 04 loads the private shared
+base automatically; selection and loading of additional demo files remain planned.
 
 See [Configuration_as_Code.md](Configuration_as_Code.md) for variable naming,
 resource types, and restore dependencies. Empty templates do not provision

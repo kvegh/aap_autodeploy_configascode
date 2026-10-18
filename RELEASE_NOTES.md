@@ -1,5 +1,29 @@
 # Release notes
 
+## 0.1.0
+
+Load Step 04's encrypted shared configuration from a private HTTPS Git repository
+supplied as `aap_config_repo_url`, always using `main`. Authenticate through the
+injected `CAC_GIT_TOKEN` and a temporary askpass helper. Require a whole-file
+Ansible Vault payload at `cac/base_CaC_vault.yml`, load it before dispatch, and
+remove the temporary checkout/helper on success or failure. Keep the token out
+of Git URLs, command arguments, saved credential helpers, and task output;
+preserve TLS verification, reject URL credentials and redirects, and skip submodules.
+
+Validation: an isolated local HTTPS Git fixture passed 11 cases, including loading
+the existing unlabeled private base with both the default and `cac` Vault passwords,
+failed Git authentication, invalid/missing/plaintext CaC, wrong Vault password,
+untrusted TLS, and invalid repository URLs. Temporary checkouts were removed on
+all tested failures, and token/plaintext fixture values were absent from output.
+The four version-helper tests and whitespace checks passed. Full playbook syntax
+validation is blocked locally by the missing `infra.aap_configuration.dispatch`
+role; the loader itself ran successfully in isolation without that role.
+
+No AAP jobs were launched. The existing `myvars` environment/authentication remains;
+installer-password bootstrap, admin-password rotation, and demo selection are
+separate pending work. This change does not verify a full live Stage 04 run or
+publish a release.
+
 ## 0.0.7
 
 Document planned work to make deployment jobs reusable and independently runnable.

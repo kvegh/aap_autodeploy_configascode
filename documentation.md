@@ -34,7 +34,7 @@ There's also `destroy-test-aap.yml` for teardown (with strict per-task safety as
 
 6. **Safety assertions on destroy** — every destructive task in `destroy-test-aap.yml` has an `assert` guard validating the target against `^aap27-test-\d+$`. Shell injection patterns are rejected.
 
-7. **Config-as-Code via dispatch role** — Step 04 uses `infra.aap_configuration`'s dispatch role. Its fixed shared-base path remains unchanged, while the populated base now lives in the private configuration repository. Connecting that source and adding demo selection remain planned. See [Configuration_as_Code.md](Configuration_as_Code.md).
+7. **Config-as-Code via dispatch role** — Step 04 downloads the private configuration repository's `main` branch, loads its encrypted shared base, and uses `infra.aap_configuration`'s dispatch role to apply it. Demo selection remains planned. See [Configuration_as_Code.md](Configuration_as_Code.md).
 
 ## File Structure
 
@@ -69,6 +69,13 @@ Infrastructure and AAP access secrets are in `myvars` at the repo root
 CaC files in the separate private configuration repository. Editable configuration
 and Vault password files, including `vpf`, stay outside Git.
 
+Step 04 additionally requires a custom credential injecting `CAC_GIT_TOKEN` and a
+Vault credential with identifier `cac` to decrypt private CaC. Its repository URL
+is the `aap_config_repo_url` extra variable; the branch is always `main` and the
+shared file is `cac/base_CaC_vault.yml`. Keep the original/default `myvars` Vault
+credential attached too. See [README.md](README.md#stage-04-inputs) for full inputs
+and the Git/TLS requirements.
+
 Two categories:
 - **Infrastructure secrets** (steps 01-03): registry credentials, PostgreSQL passwords, RHSM activation key, GoDaddy API token, domain, hypervisor IP.
 - **AAP object secrets** (step 04): credential inputs (SSH keys, vault passwords, PAH tokens), user passwords. These live in the CaC variable files — see [Configuration_as_Code.md](Configuration_as_Code.md).
@@ -76,9 +83,10 @@ Two categories:
 ## Current State
 
 - Steps 01-03 exist; historical testing predates the repository split.
-- Step 04 uses dispatch but still references the former shared-base path. It
-  cannot run from this checkout alone until private-configuration loading is
-  implemented. Dependencies and target authentication also require verification.
+- Step 04 downloads and decrypts the private shared base before dispatch, using
+  the Git-token and `cac` Vault credentials. It still uses `myvars` for environment
+  and target authentication; installer-password bootstrap and password rotation
+  are not implemented. Dependencies and target authentication require verification.
 - The encrypted shared base is committed in the private configuration repository.
   Empty examples remain under this repository's `cac/`; editable populated
   configuration stays outside Git.
@@ -102,7 +110,7 @@ Two categories:
 ### CaC migration
 
 - [ ] Install `infra.aap_configuration` collection (needed for dispatch role)
-- [ ] Load shared configuration from the private configuration repository
+- [x] Load shared configuration from the private configuration repository's `main` branch
 - [ ] Add selection and loading of per-demo CaC alongside shared base configuration
 - [ ] Fill CHANGEME secrets in CaC files (credential inputs, EDA credentials, Event Stream)
 - [ ] Build Bitwarden backup script for secrets
