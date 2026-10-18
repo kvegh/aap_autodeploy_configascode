@@ -42,14 +42,12 @@
         state: reloaded
 
     - name: Wait for DNS propagation
-      ansible.builtin.uri:
-        url: "https://dns.google/resolve?name={{ (aap_test_subdomain + '.' + vault_domain) | urlencode }}&type=A"
-        return_content: true
+      ansible.builtin.assert:
+        that:
+          - vault_public_ip in query('community.general.dig', aap_test_subdomain + '.' + vault_domain, '@8.8.8.8', qtype='A')
+        fail_msg: "DNS has not propagated to the expected public address for {{ aap_test_subdomain }}.{{ vault_domain }}"
       register: dns_check
-      until:
-        - dns_check is succeeded
-        - dns_check.json.Status | default(-1) == 0
-        - vault_public_ip in (dns_check.json.Answer | default([]) | selectattr('type', 'equalto', 1) | map(attribute='data') | list)
+      until: dns_check is not failed
       retries: 30
       delay: 10
 

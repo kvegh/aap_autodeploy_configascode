@@ -2,3 +2,5 @@
 collections:
   - name: infra.aap_configuration
     version: '4.10.0'
+  - name: community.general
+    version: '11.4.0'

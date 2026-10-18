@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.5.3
+
+Use `community.general.dig` for Stage 02 DNS checks and declare the missing
+`community.general` 11.4.0 collection for PAH-backed project synchronization.
+This retains the collection-based playbook style and checks the expected public
+A record, rather than accepting any nonempty DNS result. The execution
+environment also needs `dnspython`; collection downloads do not install it.
+This supersedes the HTTPS DNS implementation in 0.5.2.
+
+Validation: Ansible syntax and whitespace checks passed. Collection compatibility,
+PAH availability, runtime dependencies, and the live retry are checked separately.
+
 ## 0.5.2
 
 Restore Stage 02's successful HTTPS DNS check using `ansible.builtin.uri`.
