@@ -4,6 +4,29 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Declare the configuration collection for project synchronization
+
+Implementation: `9243762`.
+
+Step 04 could not start because its dispatch role was absent from the job's
+collection search path. Storing the collection in private Automation Hub did not
+make it available to the job. The user requested a project requirement for
+`infra.aap_configuration`; it is pinned to the published version `4.10.0`.
+
+With collection downloads enabled, project synchronization resolves that
+requirement and its declared collection dependencies using the Galaxy credentials
+attached to the project's organization. The requirements file selects the
+collection, while organization credentials select accessible download sources.
+Using a private Hub `validated` repository therefore also requires its source
+credential on the organization. Python and system packages remain the execution
+environment's responsibility.
+
+The YAML structure and pin were checked against published Galaxy metadata, and
+staged-file and whitespace checks passed. No local dependency installation, AAP
+settings change, project synchronization, or job launch was performed for this
+change. A successful project synchronization is still needed before runtime
+collection availability can be verified.
+
 ## Apply the subscription before object configuration
 
 Implementation: `7503d96`.

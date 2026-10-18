@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.2.3
+
+Document the project collection requirement implemented in `9243762`, why a
+collection stored in private Hub also needs to be downloaded for the job, and
+the separate responsibilities of requirements and organization source credentials.
+The README already describes the implementation. Whitespace and staged-file
+checks passed. This documentation commit does not install dependencies or verify
+a live project synchronization or job run.
+
 ## 0.2.2
 
 Declare `infra.aap_configuration` version `4.10.0` in
