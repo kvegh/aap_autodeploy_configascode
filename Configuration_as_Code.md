@@ -1,6 +1,9 @@
 # Configuration as Code
 
-AAP post-install configuration using the `infra.aap_configuration` collection's `dispatch` role.
+AAP post-install configuration uses the `dispatch` role from `infra.aap_configuration`,
+the [Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
+CoP means Community of Practice. Both `04-aap-config.yml` and
+`restore-windows-config.yml` use this role to apply our AAP object definitions.
 
 ## How dispatch works
 

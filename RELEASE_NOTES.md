@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.0.5
+
+Document that AAP post-install configuration uses the Red Hat Communities of
+Practice collection `infra.aap_configuration`. Identify its `dispatch` role in
+Step 04 and the Windows restore playbook, explain its purpose, and link upstream.
+Verified both playbooks and the collection's official README; whitespace checks
+passed. Deployment behavior is unchanged; no AAP jobs were run.
+
 ## 0.0.4
 
 Document the private-configuration separation implemented in `6583b61`, including

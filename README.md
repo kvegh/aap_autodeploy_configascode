@@ -19,6 +19,10 @@ The repository contains four separate Ansible stages:
 | 03 | `03-aap-install.yml` | Prepare the VM and run the pre-staged AAP installer. |
 | 04 | `04-aap-config.yml` | Apply shared CaC through `infra.aap_configuration.dispatch`. |
 
+Post-install configuration uses the `dispatch` role from the
+[Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
+It reads our CaC definitions and calls AAP APIs to create or update those objects.
+
 Stage 04 still expects `cac/base_CaC_vault.yml` in its project checkout, but the
 populated base has moved to the private configuration repository. Loading from
 that repository is not implemented, so Stage 04 cannot run from this checkout
