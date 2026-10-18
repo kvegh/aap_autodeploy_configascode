@@ -4,6 +4,38 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Separate platform base from AIOps use-case deployment
+
+Implementation: `e864dc9`.
+
+The user clarified that base must exclude objects belonging to actual use cases,
+including their Git projects. Each use case gets an independent encrypted file
+and deployment Job Template. The broad private base was reduced to its platform
+organization and existing setting, with previous definitions preserved outside
+Git. The old credential intended for local PAH actually held an upstream token;
+it was omitted instead of copying an unrelated management token. Destination
+PAH bootstrap remains a separate requirement.
+
+The AIOps entry point loads only its encrypted configuration after base and
+requires reviewed readiness and explicit secret inputs before target changes.
+It uses temporary configuration access and creates persistent target-specific
+EDA access only when the corresponding credential is absent. Reruns preserve
+that credential and reject conflicting settings. Cleanup revokes an unsaved EDA
+token only when absence is verified, while retaining saved or uncertain access.
+This avoids reusing source-instance tokens or disrupting existing activations.
+
+The user selected the current working demo, with older/test objects inventoried
+separately outside Git, and approved use-case-specific copies of shared inventory,
+credentials, and runtime environments. Source AAP objects remain unchanged.
+External environment setup is deferred. Export tooling was approved separately
+and installed outside these repositories; it was not added to project requirements.
+
+Full syntax validation and eleven isolated real-Ansible checks with the actual
+EDA credential module passed. Empty template and whitespace checks passed.
+The AIOps deployment entry point must remain unlaunched; live validation is future
+work after its encrypted capture is reviewed. This does not claim a working
+restored external monitoring or assistant environment.
+
 ## Manage AAP 2.7 applications through Gateway
 
 Implementation: `44e1045`.

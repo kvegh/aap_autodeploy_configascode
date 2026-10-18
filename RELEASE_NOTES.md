@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.5.1
+
+Document the base/use-case ownership split and AIOps deployment implementation
+in `e864dc9`, including the user's current-demo selection, independent copies,
+secret/readiness checks, target-only EDA token handling, and unlaunched state.
+README and templates describe the same boundaries. Whitespace checks passed;
+this follow-up changes documentation only.
+
 ## 0.5.0
 
 Add a separate AIOps configuration deployment playbook for an AAP that already
