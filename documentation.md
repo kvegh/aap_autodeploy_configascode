@@ -106,9 +106,11 @@ from the organization and verify the remaining PAH source order.
 
 - Steps 01-03 exist; historical testing predates the repository split.
 - Step 04 downloads and decrypts the private shared base before dispatch, using
-  the Git-token and `cac` Vault credentials. It still uses `myvars` for environment
-  and target authentication; installer-password bootstrap and password rotation
-  are not implemented. Dependencies and target authentication require verification.
+  the Git-token and `cac` Vault credentials. It uses `myvars` for installer SSH
+  access, reads the current Gateway password unless explicitly supplied, and
+  obtains a per-run Gateway token for API authentication. Cleanup revokes it
+  after dispatch. Password rotation remains planned; full live verification
+  of the new authentication flow is pending.
 - The encrypted shared base is committed in the private configuration repository.
   Empty examples remain under this repository's `cac/`; editable populated
   configuration stays outside Git.
@@ -135,7 +137,8 @@ from the organization and verify the remaining PAH source order.
 
 ### CaC migration
 
-- [ ] Install `infra.aap_configuration` collection (needed for dispatch role)
+- [x] Supply `infra.aap_configuration` and its dependencies through PAH and project requirements
+- [x] Read the installer Gateway password and use a per-run Gateway token for Step 04 API calls
 - [x] Load shared configuration from the private configuration repository's `main` branch
 - [x] Decrypt and import the private subscription manifest before pushing AAP configuration
 - [ ] Add selection and loading of per-demo CaC alongside shared base configuration

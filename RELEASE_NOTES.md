@@ -1,5 +1,23 @@
 # Release notes
 
+## 0.4.0
+
+Bootstrap Step 04 authentication from the target installer Gateway password,
+read over SSH with the existing environment credentials and sudo. Accept an
+explicit current `aap_password` from encrypted configuration to skip installer
+access. Replace the stale saved-password assumption with a per-run Gateway
+token for subscription import and dispatch. Revoke the token afterward and
+remove the private workspace even when configuration or revocation fails.
+Keep password rotation as separate work and preserve the debug logging control.
+
+Diagnosis: the target installer Gateway password differs from the value the
+previous job used; its Controller password differs too. Values were not printed.
+Five isolated Ansible checks passed: installer bootstrap (including quoted
+password punctuation), explicit-password override, configuration rejection,
+authentication rejection, and revocation failure. Checks verified token use,
+revocation attempts, workspace cleanup, and protected output. YAML/whitespace
+checks passed; live subscription/configuration verification remains pending.
+
 ## 0.3.2
 
 Document that the multiple-choice debug survey requires quoted `"true"` or

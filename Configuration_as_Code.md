@@ -17,7 +17,8 @@ The current `04-aap-config.yml` first clones the private repository supplied as
 `aap_config_repo_url`, always using `main`. It requires HTTPS without credentials
 embedded in the URL. A custom AAP credential injects `CAC_GIT_TOKEN`; a temporary
 Git askpass helper provides it during authentication. Token-bearing tasks hide
-their output, normal TLS verification remains enabled, redirects and stored Git
+their output by default; `debug_logging: true` disables that protection. Normal
+Git TLS verification remains enabled, redirects and stored Git
 credential helpers are disabled, and submodules are not fetched.
 
 Before running dispatch, the playbook requires a Vault-encrypted
@@ -28,17 +29,23 @@ Ansible's `copy` action decrypts it using that same attached Vault credential,
 creating a mode-`0600` temporary ZIP. `ansible.controller.license` imports it into
 the explicit target AAP before dispatch; `force: false` preserves an existing
 non-trial license on reruns. The temporary checkout, ZIP, and helper are removed
-on success or failure. A failed subscription import prevents dispatch.
+on success or failure. A failed subscription import prevents dispatch. A per-run
+Gateway token authenticates both the license module and dispatch, then is revoked
+in cleanup. Workspace removal still runs if revocation fails.
 The role sees the loaded suffixed variables and applies them as before.
 
 `myvars` and `vars/main.yml` remain in `vars_files`. Keep the original/default
-Vault credential attached alongside the `cac` credential because the
-administrator login still comes from `myvars`. Supply the target HTTPS URL
+Vault credential attached alongside the `cac` credential because installer SSH
+access still comes from `myvars`. Unless current `aap_password` is supplied in
+encrypted configuration, Step 04 uses those SSH credentials and sudo to read
+`gateway_admin_password` from the target's installer inventory. It creates a
+Gateway token for the API calls instead of sending the saved password to the
+Controller API. Supply the target HTTPS URL
 explicitly as `aap_hostname`. Stage 04 does not use `vm_name`, `vm_ip`, or
 `vault_domain` to choose its target. Use an internally resolving hostname or an
-internal IP in that HTTPS URL to avoid the public reverse-proxy route. This change
-does not read the installer password, rotate the administrator password, remove
-`myvars`, or load demo files. See [README.md](README.md#stage-04-inputs) for inputs
+internal IP in that HTTPS URL to avoid the public reverse-proxy route. Password
+rotation, removing `myvars`, and demo loading remain future work.
+See [README.md](README.md#stage-04-inputs) for inputs
 and execution-environment requirements. No full live Stage 04 run is implied.
 
 ## Collection sources

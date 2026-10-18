@@ -11,7 +11,6 @@
     debug_logging: false
     aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
     aap_username: admin
-    aap_password: "{{ aap_gateway_admin_passwd }}"
     aap_validate_certs: false
   pre_tasks:
     - name: Require a Boolean debug logging choice
@@ -134,19 +133,93 @@
           diff: false
           no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
+        - name: Read the current Gateway administrator password from the installer
+          ansible.builtin.command:
+            argv:
+              - python3
+              - -c
+              - |
+                import json
+                import shlex
+                import sys
+                from pathlib import Path
+
+                for line in Path(sys.argv[1]).read_text().splitlines():
+                    key, separator, value = line.partition('=')
+                    if separator and key.strip() == 'gateway_admin_password':
+                        parts = shlex.split(value.strip(), comments=True)
+                        if parts:
+                            print(json.dumps({'password': parts[0]}))
+                            break
+                else:
+                    sys.exit('Gateway admin password is missing from the installer inventory.')
+              - "{{ installer_extract_dir }}/ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64/inventory"
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+          when: aap_password is not defined
+          changed_when: false
+          register: cac_installer_admin
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Use the current Gateway administrator password
+          ansible.builtin.set_fact:
+            aap_password: "{{ (cac_installer_admin.stdout | from_json).password }}"
+          when: aap_password is not defined
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Create a Gateway token for this configuration run
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
+            method: POST
+            url_username: "{{ aap_username }}"
+            url_password: "{{ aap_password }}"
+            force_basic_auth: true
+            body_format: json
+            body:
+              description: Temporary AAP AutoDeploy configuration token
+              scope: write
+              application: null
+            status_code: 201
+            validate_certs: "{{ aap_validate_certs }}"
+          register: cac_gateway_token
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Use the Gateway token for configuration roles
+          ansible.builtin.set_fact:
+            aap_token: "{{ cac_gateway_token.json.token }}"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
         - name: Apply the AAP subscription before pushing configuration
           ansible.controller.license:
             manifest: "{{ cac_workspace.path }}/manifest.zip"
             controller_host: "{{ aap_hostname }}"
-            controller_username: "{{ aap_username }}"
-            controller_password: "{{ aap_password }}"
+            controller_oauthtoken: "{{ aap_token }}"
             validate_certs: "{{ aap_validate_certs }}"
             force: false
           no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Apply shared AAP configuration
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.dispatch
       always:
-        - name: Remove the temporary checkout, decrypted manifest, and authentication helper
-          ansible.builtin.file:
-            path: "{{ cac_workspace.path }}"
-            state: absent
-  roles:
-    - infra.aap_configuration.dispatch
+        - name: Revoke the run token and clean the private workspace
+          block:
+            - name: Revoke the temporary Gateway token
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/{{ cac_gateway_token.json.id }}/"
+                method: DELETE
+                headers:
+                  Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+                status_code: [204, 404]
+                validate_certs: "{{ aap_validate_certs }}"
+              when: cac_gateway_token.json.id is defined
+              no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          always:
+            - name: Remove the temporary checkout, decrypted manifest, and authentication helper
+              ansible.builtin.file:
+                path: "{{ cac_workspace.path }}"
+                state: absent

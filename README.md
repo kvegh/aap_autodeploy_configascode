@@ -28,14 +28,16 @@ temporary directory, decrypts `cac/base_CaC_vault.yml`, and loads it before disp
 It also decrypts `cac/manifest.zip.vault` into a temporary ZIP and applies the AAP
 subscription through `ansible.controller.license` before dispatch. The module's
 `force: false` preserves an existing non-trial license on reruns. A failed import
-stops configuration. The temporary checkout, ZIP, and authentication helper are
-removed on success or failure. Selectable demo profiles and automatic
+stops configuration. A per-run Gateway token authenticates the subscription
+import and dispatch. It is revoked afterward, and the temporary checkout, ZIP,
+and authentication helper are removed on success or failure. Selectable demo profiles and automatic
 handoff remain planned. Full deployment with the current dispatch configuration
 has not been verified since the repository split.
 Live Step 04 testing has verified collection loading, private Git access, and
-decryption of the shared base and manifest. Subscription import failed before
-dispatch; the import error and target authentication still require diagnosis
-before an unattended deployment.
+decryption of the shared base and manifest. An HTTP 401 exposed a mismatch
+between the stored login password and the installer Gateway password. The new
+authentication bootstrap reads the installer password and uses a Gateway token;
+its full live subscription/configuration flow still requires verification.
 
 The separate `restore-windows-config.yml` applies a supplied Windows CaC file
 to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -109,7 +111,7 @@ Attach these credentials to the Stage 04 job template:
   in command arguments or written into the checkout's Git configuration.
 - A Vault credential with identifier `cac` and the private configuration's password.
 - The existing Vault credential that decrypts `myvars`, using its original/default
-  identifier. `myvars` still supplies environment settings and target authentication.
+  identifier. `myvars` still supplies environment settings and installer SSH access.
 
 AAP supplies the attached Vault passwords to Ansible at launch. `include_vars`
 decrypts the shared YAML and `copy` with `decrypt: true` restores the manifest ZIP
@@ -117,6 +119,21 @@ with mode `0600` inside the job's private temporary directory. Both use the same
 `cac` Vault credential; the playbook does not retrieve its password through AAP's
 API or require it in extra variables. The license module uploads the restored ZIP
 to the target AAP before the dispatch role applies object configuration.
+
+For a freshly installed target, Step 04 connects over SSH to the hostname or IP
+in `aap_hostname`, using `vault_ansible_user` and `vault_ansible_password` from
+`myvars`, with sudo access. It reads only `gateway_admin_password` from the
+installer inventory at the bundle path defined by `installer_extract_dir` and
+`aap_version`. It no longer assumes that `aap_gateway_admin_passwd` matches this
+target. For an existing target, supply its current `aap_password` through
+encrypted configuration to skip SSH/installer access. `aap_username` defaults
+to the administrator account and may be overridden.
+
+Step 04 creates a write-scope token through `/api/gateway/v1/tokens/` using the
+current Gateway login. The Controller license module and dispatch then use
+Bearer-token authentication. Dispatch runs inside the cleanup block so the
+token remains valid until configuration ends. Cleanup revokes the token after
+success or failure and removes the workspace even if revocation fails.
 
 The execution environment must provide `ansible.controller.license` and Git,
 and trust the repository server's TLS certificate. HTTPS redirects and stored
@@ -144,8 +161,8 @@ Stage 03 still uses `vm_name` and `vault_domain` to form the installer's fully
 qualified hostname. That hostname can resolve internally; Stage 04's explicit
 API URL determines how the configuration job connects.
 
-Reading the installer password, rotating the target admin
-password, removing `myvars`, and selecting demos are separate pending work.
+Rotating the target administrator password, removing the remaining `myvars`
+dependency, and selecting demos are separate pending work.
 Attaching the credentials and adding this loader do not establish that the full
 Stage 04 job can successfully configure a target AAP.
 
