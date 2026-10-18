@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.1.3
+
+Document the explicit Step 04 target URL decision and its implementation commit.
+Keep the installer hostname, API connection address, remaining authentication,
+and future automatic address handoff distinct. No runtime behavior changed.
+Validation: documentation review and whitespace checks passed; no AAP jobs ran.
+
 ## 0.1.2
 
 Require an explicit `aap_hostname` HTTPS URL for Step 04. Remove the derived

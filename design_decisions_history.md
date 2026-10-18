@@ -4,6 +4,25 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Choose the configuration API target explicitly
+
+Implementation: `0d4bb8d`.
+
+The user requested one explicit connection URL for Step 04, so operators can
+choose an internal hostname or IP instead of implicitly using public DNS and
+the reverse proxy. Step 04 now requires `aap_hostname` and validates that it is
+an HTTPS URL before fetching configuration. It no longer constructs a target
+from `vm_name` and the domain, and has no fallback to that naming scheme.
+
+Step 03 remains unchanged: its installer inventory uses the VM's fully qualified
+hostname, which can resolve internally. Step 04's API connection address is
+supplied separately. Administrator authentication still comes from `myvars`;
+automatic address handoff between deployment stages remains future work.
+
+Nine isolated target-input checks and eleven HTTPS Git/Vault loader checks
+passed. The real dispatch role and live AAP target were not exercised, and no
+deployment or configuration job was launched.
+
 ## Load private configuration before applying shared AAP objects
 
 Implementation: `fd35d02`.
