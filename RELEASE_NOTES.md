@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.0.2
+
+Document the version-policy and reusable CaC template decisions implemented in
+`f3efca9`. Explain independent project versions, generic templates versus populated
+encrypted configuration, and the scope of validation. This is the required
+decision-history follow-up to the `0.0.1` source baseline.
+
 ## 0.0.1
 
 Establish the initial tracked source baseline and adopt a per-commit version
