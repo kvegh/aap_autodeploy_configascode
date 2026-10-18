@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.5.8
+
+Document the unified CoP credential item schema implemented in `91b5fc6` and the
+successful syntax and credential lifecycle checks. Whitespace checks passed.
+This follow-up changes documentation only; live AIOps deployment remains pending.
+
 ## 0.5.7
 
 Use the CoP credential item schema consistently for AIOps EDA credentials:

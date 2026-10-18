@@ -22,6 +22,22 @@ Ansible syntax and whitespace validation passed. The original failure happened
 after DNS and temporary HTTP proxy configuration; the successful teardown and
 VM creation stages must not be repeated to retry this infrastructure stage.
 
+## Use the same EDA credential schema throughout deployment
+
+Implementation: `91b5fc6`.
+
+Integration review found that native exports normalized for CoP use
+`organization` and `credential_type`, while the special target-token handler
+expected the EDA module's argument names. The handler now reads the CoP item
+fields and translates them only at the module call. This keeps one schema for
+ordinary credentials and the target-specific Controller credential and avoids
+storing duplicate aliases in the encrypted configuration.
+
+Full syntax validation and eleven isolated checks using the installed EDA
+credential module passed. Secret protection, first creation, preservation on
+reruns, drift rejection, and cleanup remain covered. No live AIOps deployment
+was launched.
+
 ## Create Event Streams before activating AIOps rulebooks
 
 Implementation: `33f2575`.
