@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.0.7
+
+Document planned work to make deployment jobs reusable and independently runnable.
+Step 04 should accept the target AAP URL and credentials directly, allowing it to
+configure an existing installation without our VM naming or domain scheme.
+Provisioning-specific inputs should stay in stages that need them, using established
+collection input names where available. Whitespace and staged-file checks passed.
+This adds TODOs only; playbooks are unchanged and no AAP jobs were run.
+
 ## 0.0.6
 
 Document why the project credits the Red Hat Communities of Practice collection

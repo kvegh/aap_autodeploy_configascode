@@ -86,6 +86,11 @@ Two categories:
 
 ## TODOs
 
+### Reusable job inputs
+
+- [ ] Redesign and document job inputs so other operators can run each stage independently. Prefer established collection input names where available; require provisioning-specific values such as `vm_name` only in stages that need them.
+- [ ] Let Step 04 configure any existing AAP using an explicit target URL and authentication credentials, without requiring `vm_name` or deriving the URL from `vm_name` and `vault_domain`.
+
 ### Cleanup (existing AAP instance)
 
 - [ ] Sanitize variable names across playbooks and vault — establish a consistent naming convention (e.g., decide on `vault_` prefix vs no prefix, `password` vs `passwd`, snake_case consistently)
