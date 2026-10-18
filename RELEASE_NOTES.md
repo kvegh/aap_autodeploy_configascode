@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.5.4
+
+Document the Stage 02 dependency fix in `97e3236`, why its earlier successful
+implementation differed, and the collection-based DNS decision. The existing
+execution environment has compatible Ansible Core and `dnspython`; PAH curation
+and the requirements file provide the missing collection. Whitespace checks
+passed. This follow-up changes documentation only.
+
 ## 0.5.3
 
 Use `community.general.dig` for Stage 02 DNS checks and declare the missing

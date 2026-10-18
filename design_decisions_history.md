@@ -4,6 +4,24 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Declare the collection used for public DNS validation
+
+Implementation: `97e3236`; preceding HTTPS implementation: `de07aad`.
+
+Successful deployment job 993 used a built-in HTTPS DNS request, while the
+standalone checkout used an undeclared `community.general.dig` lookup and failed
+in job 1996 before certificate issuance. The brief HTTPS restoration was
+superseded by the user's preference for readable playbooks using reliable
+collections. Stage 02 therefore keeps the collection lookup, explicitly requires
+`community.general` 11.4.0 through PAH, and waits for the expected public A record.
+This version supports the actual execution environment's Ansible Core 2.16.19;
+its required `dnspython` package is already installed in that image. No Python
+package installation or execution environment change is needed for this fix.
+
+Ansible syntax and whitespace validation passed. The original failure happened
+after DNS and temporary HTTP proxy configuration; the successful teardown and
+VM creation stages must not be repeated to retry this infrastructure stage.
+
 ## Separate platform base from AIOps use-case deployment
 
 Implementation: `e864dc9`.
