@@ -4,6 +4,28 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Apply the subscription before object configuration
+
+Implementation: `7503d96`.
+
+The user required subscription activation before pushing configuration. Step 04
+now downloads the whole ZIP as `cac/manifest.zip.vault` alongside the encrypted
+shared base. The same attached `cac` Vault credential decrypts both through
+Ansible's runtime Vault support; no password lookup or new launch secret is needed.
+The ZIP is restored with restrictive permissions in the private temporary
+workspace and imported with `ansible.controller.license` before dispatch.
+
+Failed decryption or subscription import stops configuration. Cleanup removes
+the checkout, decrypted ZIP, and authentication helper on success or failure.
+The license module uses `force: false` to preserve an existing non-trial license
+when rerunning configuration. Installation registry/content access remains
+separate from this AAP activation step.
+
+Six isolated checks verified exact ZIP restoration, permissions, invalid inputs,
+wrong-password failure, failure ordering, and cleanup. The API was simulated
+because the required collections are absent locally; these checks do not claim
+a successful live subscription import or configuration push.
+
 ## Choose the configuration API target explicitly
 
 Implementation: `0d4bb8d`.

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.2.1
+
+Document subscription application implemented in `7503d96`, including automatic
+use of the attached Vault credential, private ZIP handling, failure ordering,
+cleanup, and preservation of an existing non-trial license. The README already
+describes the implementation. Whitespace checks passed; this documentation
+commit does not change runtime behavior or claim a successful live run.
+
 ## 0.2.0
 
 Apply the AAP subscription before configuration in Step 04. Require the complete
