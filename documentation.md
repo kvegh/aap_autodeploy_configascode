@@ -98,6 +98,7 @@ Two categories:
 
 ### Reusable job inputs
 
+- [ ] Automate variable handoff between deployment jobs (01 -> 02 -> 03 -> 04): pass the discovered `vm_name` and `vm_ip` to 02/03 and an explicit `aap_hostname` API URL to 04, so operators do not copy values between launches. Use AAP workflow job artifacts (`ansible.builtin.set_stats`) where appropriate, while retaining inputs for independent stage runs.
 - [ ] Redesign and document job inputs so other operators can run each stage independently. Prefer established collection input names where available; require provisioning-specific values such as `vm_name` only in stages that need them.
 - [x] Require an explicit `aap_hostname` URL for Step 04, without `vm_name` or a derived domain URL.
 - [ ] Make Step 04's target authentication independently configurable, removing its remaining `myvars` dependency.

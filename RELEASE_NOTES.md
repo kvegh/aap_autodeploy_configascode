@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.1.4
+
+Document the TODO for automatic variable handoff between deployment jobs,
+including discovered VM name/address values and Step 04's explicit API URL.
+Identify AAP workflow artifacts as the native mechanism and retain independent
+stage inputs. Reviewed the README's existing statement that automatic handoff
+is pending; it remains accurate. Whitespace and staged-file checks passed.
+This adds planning documentation only; no playbooks changed or AAP jobs ran.
+
 ## 0.1.3
 
 Document the explicit Step 04 target URL decision and its implementation commit.
