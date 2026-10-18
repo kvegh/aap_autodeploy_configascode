@@ -1,0 +1,40 @@
+---
+# Empty per-demo configuration for infra.aap_configuration.dispatch.
+# Copy to DEMO_PLACEHOLDER.yml and replace the _demo suffix consistently with
+# your demo's identifier. Every variable needs a suffix for wildcard dispatch.
+# Replace [] with that demo's resources. See the commented examples below.
+# Encrypt sensitive configuration before committing as DEMO_PLACEHOLDER_CaC_vault.yml.
+
+controller_projects_demo: []
+controller_credentials_demo: []
+controller_execution_environments_demo: []
+controller_inventories_demo: []
+controller_hosts_demo: []
+controller_groups_demo: []
+controller_templates_demo: []
+controller_workflows_demo: []
+controller_schedules_demo: []
+controller_labels_demo: []
+eda_projects_demo: []
+eda_credentials_demo: []
+eda_decision_environments_demo: []
+eda_rulebook_activations_demo: []
+eda_event_streams_demo: []
+
+# References use object names, not IDs copied from another AAP instance.
+# controller_projects_demo:
+#   - name: PROJECT_PLACEHOLDER
+#     organization: ORGANIZATION_PLACEHOLDER
+#     scm_type: git
+#     scm_url: REPOSITORY_URL_PLACEHOLDER
+#     scm_branch: BRANCH_PLACEHOLDER
+#     wait: true
+# controller_templates_demo:
+#   - name: JOB_TEMPLATE_PLACEHOLDER
+#     organization: ORGANIZATION_PLACEHOLDER
+#     project: PROJECT_PLACEHOLDER
+#     playbook: PLAYBOOK_PATH_PLACEHOLDER
+#     inventory: INVENTORY_PLACEHOLDER
+#     credentials:
+#       - CREDENTIAL_PLACEHOLDER
+#     execution_environment: EXECUTION_ENVIRONMENT_PLACEHOLDER

@@ -1,5 +1,8 @@
 # AAP AutoDeploy — Documentation
 
+See [README.md](README.md) for current status, setup, empty CaC templates, and
+the project version policy. Older completion notes below describe earlier runs.
+
 Automated deployment pipeline for AAP 2.7 test instances. Takes a RHEL 9.8 golden image and produces a fully configured AAP with all projects, credentials, job templates, EDA, and schedules.
 
 ## Pipeline
@@ -31,7 +34,7 @@ There's also `destroy-test-aap.yml` for teardown (with strict per-task safety as
 
 6. **Safety assertions on destroy** — every destructive task in `destroy-test-aap.yml` has an `assert` guard validating the target against `^aap27-test-\d+$`. Shell injection patterns are rejected.
 
-7. **Config-as-Code via dispatch role** — Step 04 is being migrated to `infra.aap_configuration`'s dispatch role with per-project variable files. See [Configuration_as_Code.md](Configuration_as_Code.md).
+7. **Config-as-Code via dispatch role** — Step 04 uses `infra.aap_configuration`'s dispatch role and currently loads only shared base configuration. Demo selection remains planned. See [Configuration_as_Code.md](Configuration_as_Code.md).
 
 ## File Structure
 
@@ -60,7 +63,9 @@ aap_autodeploy_configascode/
 
 ## Secrets
 
-All secrets are in `myvars` at the repo root (vault-encrypted). Loaded via `vars_files: [myvars]`.
+Infrastructure and AAP access secrets are in `myvars` at the repo root
+(vault-encrypted), loaded via `vars_files`. Object secrets also live in the
+encrypted CaC files. Vault password files, including `vpf`, stay outside Git.
 
 Two categories:
 - **Infrastructure secrets** (steps 01-03): registry credentials, PostgreSQL passwords, RHSM activation key, GoDaddy API token, domain, hypervisor IP.
@@ -68,9 +73,12 @@ Two categories:
 
 ## Current State
 
-- Steps 01-03: working, tested end-to-end.
-- Step 04: working with the current task-based approach. Migration to dispatch role pending.
-- CaC files: all current AAP resources captured. 5 project groups complete, 3 skeletons.
+- Steps 01-03 exist; historical testing predates the repository split.
+- Step 04 uses dispatch and loads only shared base configuration. Dependency
+  availability and target authentication require verification and resolution.
+- Only the encrypted shared base is committed. Empty examples are available
+  under `cac/`; populated demo files remain outside the repository.
+- The current full pipeline has not been verified end to end since the split.
 
 ## TODOs
 
@@ -85,7 +93,7 @@ Two categories:
 ### CaC migration
 
 - [ ] Install `infra.aap_configuration` collection (needed for dispatch role)
-- [ ] Rewrite `04-aap-config.yml` to use dispatch role + CaC variable files (replaces current task-per-resource approach)
+- [ ] Add selection and loading of per-demo CaC alongside shared base configuration
 - [ ] Fill CHANGEME secrets in CaC files (credential inputs, EDA credentials, Event Stream)
 - [ ] Build Bitwarden backup script for secrets
 - [ ] Vault-encrypt CaC files and commit to repo
@@ -98,6 +106,7 @@ Two categories:
 
 ### Done
 
-- [x] End-to-end test: run full sequence 01→02→03→04 (current task-based approach)
+- [x] Historical end-to-end test: full sequence 01→02→03→04 with the earlier task-based approach
+- [x] Replace Step 04's task-based implementation with the dispatch role
 - [x] CaC files: capture all current AAP resources (base_CaC_vault.yml + 7 project groups)
 - [x] Document CaC architecture in Configuration_as_Code.md

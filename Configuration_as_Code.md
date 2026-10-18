@@ -48,7 +48,14 @@ cac/
     project.yml.example        # template for per-project files
 ```
 
-Files are currently in `~/claude-wd/cac/` (outside the repo). They'll be vault-encrypted and committed once secrets are filled in.
+Populated demo working files are currently outside the repo. They'll be
+vault-encrypted and committed once secrets are filled in. The shared encrypted
+base and two empty plaintext examples are committed: use
+`cac/base_CaC_vault.yml.example` for shared resources and
+`cac/project.yml.example` for a demo. Both examples contain empty resource lists
+and commented entries with generic placeholders. See [README.md](README.md)
+for the preparation and encryption workflow. Stage 04 currently loads only the
+shared base; adding a demo file does not automatically apply it.
 
 ## Variable naming
 

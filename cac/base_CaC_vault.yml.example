@@ -1,0 +1,33 @@
+---
+# Empty shared configuration for infra.aap_configuration.dispatch.
+# Copy to a separate working file; keep this example free of actual values.
+# Replace [] with the resources needed by your environment.
+# Encrypt populated sensitive configuration before adding it to Git.
+# The file is plaintext despite its .example name; it contains no secrets.
+
+aap_organizations_base: []
+aap_teams_base: []
+# Keep the account used to apply configuration outside managed user accounts.
+aap_user_accounts_base: []
+controller_credential_types_base: []
+controller_credentials_base: []
+controller_execution_environments_base: []
+controller_inventories_base: []
+controller_hosts_base: []
+controller_groups_base: []
+controller_projects_base: []
+controller_labels_base: []
+
+# Example list entries, using generic placeholders only:
+# aap_organizations_base:
+#   - name: ORGANIZATION_PLACEHOLDER
+# controller_inventories_base:
+#   - name: INVENTORY_PLACEHOLDER
+#     organization: ORGANIZATION_PLACEHOLDER
+# controller_credentials_base:
+#   - name: CREDENTIAL_PLACEHOLDER
+#     organization: ORGANIZATION_PLACEHOLDER
+#     credential_type: Machine
+#     inputs:
+#       username: USERNAME_PLACEHOLDER
+#       password: PASSWORD_PLACEHOLDER
