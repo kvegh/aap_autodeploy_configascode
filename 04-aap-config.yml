@@ -8,11 +8,21 @@
     - vars/main.yml
   vars:
     dispatch_include_wildcard_vars: true
-    aap_hostname: "https://{{ vm_name }}.{{ vault_domain }}"
     aap_username: admin
     aap_password: "{{ aap_gateway_admin_passwd }}"
     aap_validate_certs: false
   pre_tasks:
+    - name: Require an explicit target AAP HTTPS URL
+      ansible.builtin.assert:
+        that:
+          - aap_hostname is defined
+          - aap_hostname is string
+          - (aap_hostname | ansible.builtin.urlsplit('scheme')) == 'https'
+          - (aap_hostname | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
+          - (aap_hostname | ansible.builtin.urlsplit('username')) is none
+          - (aap_hostname | ansible.builtin.urlsplit('password')) is none
+        fail_msg: Supply aap_hostname as the target AAP HTTPS URL, using the intended internal hostname or IP address.
+
     - name: Require a private configuration repository URL without embedded credentials
       ansible.builtin.assert:
         that:

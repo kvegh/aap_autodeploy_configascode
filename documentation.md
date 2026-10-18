@@ -16,7 +16,9 @@ Four playbooks, run in sequence. Each is a separate AAP job template.
 | 03 | `03-aap-install.yml` | new VM | Grow filesystem, subscribe RHEL, install ansible-core, customize installer inventory, run containerized installer (~30-40 min). |
 | 04 | `04-aap-config.yml` | localhost → new AAP API | Post-install config-as-code. Creates all AAP objects (users, credentials, projects, JTs, EDA, schedules). |
 
-Playbooks 02-04 take `vm_name` and `vm_ip` as extra vars.
+Playbooks 02 and 03 take `vm_name` and `vm_ip` as extra vars. Playbook 04 instead
+requires an explicit `aap_hostname` HTTPS URL and `aap_config_repo_url`. It does
+not use `vm_name` or `vm_ip` and has no domain-based fallback.
 
 There's also `destroy-test-aap.yml` for teardown (with strict per-task safety assertions against the `aap27-test-N` naming pattern).
 
@@ -26,7 +28,7 @@ There's also `destroy-test-aap.yml` for teardown (with strict per-task safety as
 
 2. **Bundle install** — the 3.5 GiB AAP installer is pre-staged in the golden image. No download at deploy time.
 
-3. **Subdomain routing** — each test instance gets `aap27-test-N.{domain}`. AAP's Envoy gateway owns the domain root, so path-based routing doesn't work. Nginx reverse proxy is mandatory (VMs are on internal libvirt network).
+3. **Subdomain routing** — each test instance gets `aap27-test-N.{domain}`. AAP's Envoy gateway owns the domain root, so public access uses hostname-based nginx routing. Stage 04 can connect directly through an internal hostname or IP supplied in `aap_hostname`; that configuration traffic does not require the public reverse proxy. Stage 03 still uses the VM's fully qualified hostname for installation, which can resolve internally.
 
 4. **Golden image** — RHEL 9.8 with the AAP service account (`vault_aap_install_user`; sudo, linger, SSH keys) and the installer bundle already unpacked. Avoids repeating host prep on every deploy.
 
@@ -97,7 +99,8 @@ Two categories:
 ### Reusable job inputs
 
 - [ ] Redesign and document job inputs so other operators can run each stage independently. Prefer established collection input names where available; require provisioning-specific values such as `vm_name` only in stages that need them.
-- [ ] Let Step 04 configure any existing AAP using an explicit target URL and authentication credentials, without requiring `vm_name` or deriving the URL from `vm_name` and `vault_domain`.
+- [x] Require an explicit `aap_hostname` URL for Step 04, without `vm_name` or a derived domain URL.
+- [ ] Make Step 04's target authentication independently configurable, removing its remaining `myvars` dependency.
 
 ### Cleanup (existing AAP instance)
 

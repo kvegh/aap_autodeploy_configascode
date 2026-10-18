@@ -53,6 +53,13 @@ Each operator must prepare configuration for their own environment.
 
 ### Stage 04 inputs
 
+Supply `aap_hostname` as the full HTTPS URL of the target AAP. Use an internal
+hostname that resolves to the internal IP, or the internal IP itself, to keep
+configuration traffic on the internal network. The execution environment must
+be able to reach that address. Stage 04 requires this explicit URL and has no
+fallback based on `vm_name` or `vault_domain`; it does not require `vm_name`
+or `vm_ip`.
+
 Supply `aap_config_repo_url` as the HTTPS Git URL of the private configuration
 repository. Stage 04 always uses `main`; the encrypted shared file must be at
 `cac/base_CaC_vault.yml`. Use a read-only token with access to that repository.
@@ -72,8 +79,11 @@ certificate. HTTPS redirects and stored Git credential helpers are disabled for
 this download. Submodules are not fetched. Git servers must accept token
 authentication using the `x-access-token` username, as GitHub does.
 
-Continue supplying `vm_name`; the target URL is still derived from it and the
-domain in `myvars`. Reading the installer password, rotating the target admin
+Stage 03 still uses `vm_name` and `vault_domain` to form the installer's fully
+qualified hostname. That hostname can resolve internally; Stage 04's explicit
+API URL determines how the configuration job connects.
+
+Reading the installer password, rotating the target admin
 password, removing `myvars`, and selecting demos are separate pending work.
 Attaching the credentials and adding this loader do not establish that the full
 Stage 04 job can successfully configure a target AAP.

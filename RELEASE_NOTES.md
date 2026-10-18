@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.1.2
+
+Require an explicit `aap_hostname` HTTPS URL for Step 04. Remove the derived
+`vm_name`/domain default and reject missing or invalid targets before downloading
+configuration. Operators can choose an internal hostname or IP without depending
+on provisioning names or the public reverse proxy. Document the required launch
+inputs and keep Step 03's installer FQDN separate.
+
+Validation: nine isolated input checks passed, including internal DNS and IP URLs
+without provisioning variables and rejection of missing, malformed, HTTP, and
+credential-bearing URLs. All eleven HTTPS Git/Vault loader checks passed with
+the explicit target input. Whitespace checks passed. The real dispatch collection
+and live target were not exercised; no AAP jobs or remote configuration changes
+were performed. Steps 01-03 remain unchanged.
+
 ## 0.1.1
 
 Document private configuration loading implemented in `fd35d02`, including the

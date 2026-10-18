@@ -27,8 +27,11 @@ temporary checkout and helper are removed even if downloading or loading fails.
 The role sees the loaded suffixed variables and applies them as before.
 
 `myvars` and `vars/main.yml` remain in `vars_files`. Keep the original/default
-Vault credential attached alongside the `cac` credential: the existing target
-URL and administrator login still come from `vm_name` and `myvars`. This change
+Vault credential attached alongside the `cac` credential because the
+administrator login still comes from `myvars`. Supply the target HTTPS URL
+explicitly as `aap_hostname`. Stage 04 does not use `vm_name`, `vm_ip`, or
+`vault_domain` to choose its target. Use an internally resolving hostname or an
+internal IP in that HTTPS URL to avoid the public reverse-proxy route. This change
 does not read the installer password, rotate the administrator password, remove
 `myvars`, or load demo files. See [README.md](README.md#stage-04-inputs) for inputs
 and execution-environment requirements. No full live Stage 04 run is implied.
