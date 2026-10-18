@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.4.1
+
+Document authentication bootstrap implemented in `62ab119`, the verified
+installer-password mismatch, Gateway token use, cleanup ordering, and remaining
+scope. README already describes the implementation. Documentation and
+whitespace checks passed. No runtime behavior changes in this follow-up.
+
 ## 0.4.0
 
 Bootstrap Step 04 authentication from the target installer Gateway password,

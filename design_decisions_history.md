@@ -51,6 +51,34 @@ settings change, project synchronization, or job launch was performed for this
 change. A successful project synchronization is still needed before runtime
 collection availability can be verified.
 
+## Bootstrap API access from the installed Gateway credentials
+
+Implementation: `62ab119`.
+
+Live subscription import returned HTTP 401. A read-only comparison over the
+target VM's supplied SSH login confirmed that its installer Gateway password
+differs from the saved password previously used by Step 04. The installer
+Controller password is separate as well. No password values were printed.
+
+The user had requested reading the current password from the installer. Step
+04 now reads only that Gateway password over SSH with sudo, unless an explicit
+current `aap_password` is supplied through encrypted configuration. It creates
+a per-run write-scope token at the Gateway token endpoint, then passes that
+token to the Controller license module and the configuration roles. This
+follows AAP 2.7's Gateway token authentication path without changing access or
+certificate-validation settings.
+
+Dispatch runs inside the protected workspace block so cleanup can revoke the
+token after configuration ends or fails. A nested cleanup block removes the
+checkout, manifest, and helper even if token revocation fails. Password rotation
+and removal of the remaining environment Vault dependency stay separate work.
+Normal output remains protected; the existing debug switch still applies.
+
+Five isolated Ansible checks verified installer parsing, an explicit password,
+token use, authentication/configuration failure, revocation attempts, protected
+output, and workspace cleanup. These fixture checks do not claim a successful
+live subscription import or full configuration push.
+
 ## Use an explicit debug switch for Step 04
 
 Implementation: `ff84279`.
