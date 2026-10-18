@@ -11,6 +11,8 @@
     # AAP 2.7 manages applications through Gateway; Controller no longer ships this module.
     aap_configuration_dispatcher_exclude_roles:
       - controller_applications
+      # Event Streams must exist before activations resolve their source mappings.
+      - eda_rulebook_activations
     debug_logging: false
     aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
     aap_username: admin
@@ -126,7 +128,56 @@
               - aiops_required_secret_variables is not mapping
               - aiops_eda_controller_credential_name is defined
               - aiops_eda_organization_name is defined
+              - eda_event_streams_aiops_demo is defined
+              - eda_event_streams_aiops_demo is sequence
+              - eda_event_streams_aiops_demo is not string
+              - eda_event_streams_aiops_demo is not mapping
+              - eda_event_streams_aiops_demo | length > 0
+              - eda_rulebook_activations_aiops_demo is defined
+              - eda_rulebook_activations_aiops_demo is sequence
+              - eda_rulebook_activations_aiops_demo is not string
+              - eda_rulebook_activations_aiops_demo is not mapping
+              - eda_rulebook_activations_aiops_demo | length > 0
             fail_msg: Complete and review the AIOps vault and its required secrets before deployment.
+
+        - name: Require named Event Streams with their target dependencies
+          ansible.builtin.assert:
+            that:
+              - item.name is defined
+              - item.name is string
+              - item.name | length > 0
+              - item.organization_name == aiops_eda_organization_name
+              - item.credential_name is defined
+              - item.credential_name is string
+              - item.credential_name | length > 0
+            fail_msg: Define each AIOps Event Stream by name, organization, and credential name.
+          loop: "{{ eda_event_streams_aiops_demo }}"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Require an Event Stream mapping for every AIOps activation
+          ansible.builtin.assert:
+            that:
+              - item.event_streams is defined
+              - item.event_streams is sequence
+              - item.event_streams is not string
+              - item.event_streams is not mapping
+              - item.event_streams | length > 0
+            fail_msg: Define the Event Stream source mappings for every AIOps activation.
+          loop: "{{ eda_rulebook_activations_aiops_demo }}"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Require activation mappings to reference defined Event Streams
+          ansible.builtin.assert:
+            that:
+              - item.1.event_stream is defined
+              - item.1.event_stream in (eda_event_streams_aiops_demo | map(attribute='name') | list)
+              - >-
+                (item.1.source_name is defined and item.1.source_name is string and item.1.source_name | length > 0) or
+                (item.1.source_index is defined and item.1.source_index is integer and item.1.source_index >= 0)
+              - not (item.1.source_name is defined and item.1.source_index is defined)
+            fail_msg: Reference an Event Stream defined in this AIOps vault and one rulebook source name or index.
+          loop: "{{ eda_rulebook_activations_aiops_demo | subelements('event_streams') }}"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Require the secret inputs listed by the AIOps configuration
           ansible.builtin.assert:
@@ -319,9 +370,54 @@
                  rejectattr('name', 'equalto', aiops_eda_controller_credential_name) | list }}
           no_log: true
 
-        - name: Apply AIOps use-case configuration
+        - name: Apply AIOps resources before Event Streams and activations
           ansible.builtin.include_role:
             name: infra.aap_configuration.dispatch
+
+        - name: Preserve EDA project revision settings omitted by CoP dispatch
+          ansible.eda.project:
+            name: "{{ item.new_name | default(item.name) }}"
+            update_revision_on_launch: "{{ item.update_revision_on_launch }}"
+            scm_update_cache_timeout: "{{ item.scm_update_cache_timeout | default(omit) }}"
+            sync: false
+            wait: true
+            state: "{{ item.state | default('present') }}"
+            controller_host: "{{ aap_hostname }}"
+            controller_token: "{{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+          loop: "{{ eda_projects_aiops_demo | default([]) | selectattr('update_revision_on_launch', 'defined') | list }}"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Apply AIOps Event Streams before activating their rulebooks
+          ansible.eda.event_stream:
+            name: "{{ item.name }}"
+            organization_name: "{{ item.organization_name }}"
+            credential_name: "{{ item.credential_name }}"
+            event_stream_type: "{{ item.event_stream_type | default(omit) }}"
+            headers: "{{ item.headers | default(omit) }}"
+            forward_events: "{{ item.forward_events | default(omit) }}"
+            state: "{{ item.state | default('present') }}"
+            controller_host: "{{ aap_hostname }}"
+            controller_token: "{{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+          loop: "{{ eda_event_streams_aiops_demo }}"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Select the AIOps activations after Event Stream creation
+          ansible.builtin.set_fact:
+            eda_rulebook_activations: "{{ eda_rulebook_activations_aiops_demo }}"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Apply AIOps activations with target Event Stream mappings
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.eda_rulebook_activations
+
+        - name: Require successful AIOps activation configuration
+          ansible.builtin.assert:
+            that:
+              - aap_configuration_role_errors | default({}) | dict2items | selectattr('value', 'ne', []) | list | length == 0
+            fail_msg: The AIOps activation role reported configuration errors.
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
       always:
         - name: Clean up unused EDA tokens and temporary configuration access
           block:

@@ -89,7 +89,29 @@ The hidden token's validity cannot be inferred from its presence.
 That special credential is removed from the list passed to ordinary dispatch.
 This matters because `ansible.eda.credential` 2.13.0 requires `inputs` for updates
 and defaults to updating secrets; sending an exported encryption marker would
-not provide a valid new target token. Other AIOps objects use normal dispatch.
+not provide a valid new target token.
+
+CoP dispatch 4.10.0 has no Event Stream role. The playbook therefore excludes
+`eda_rulebook_activations` from initial dispatch and applies configuration in this
+order:
+
+1. Controller resources, EDA credentials, projects, and decision environments
+   through dispatch.
+2. Supplemental `ansible.eda.project` updates for projects declaring
+   `update_revision_on_launch`, preserving that setting and
+   `scm_update_cache_timeout`. CoP 4.10.0 omits these fields. The prerequisite
+   project must already exist; the supplemental task waits without another sync.
+3. `eda_event_streams_aiops_demo` through `ansible.eda.event_stream`.
+4. `eda_rulebook_activations_aiops_demo` through the CoP
+   `eda_rulebook_activations` role.
+
+Both lists must be nonempty. Every activation must map a defined Event Stream
+using `event_stream` and either `source_name` or `source_index`. The module
+resolves names into the new target's IDs and rulebook source metadata. Source
+instance IDs and stream UUIDs are not reused. Stream definitions use module
+fields `name`, `organization_name`, `credential_name`, optional
+`event_stream_type`, `headers`, `forward_events`, and `state`. Connecting external
+event publishers to the new stream URLs remains outside this AAP-only work.
 
 The temporary configuration token is revoked and the checkout removed after
 ordinary success or failure. A newly generated persistent EDA token is revoked

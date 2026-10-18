@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.5.5
+
+Create AIOps Event Streams before their rulebook activations. CoP dispatch
+4.10.0 does not create streams, so the playbook first applies prerequisites,
+then uses `ansible.eda.event_stream`, and finally applies the activation role.
+Require named stream mappings and resolve new target IDs and source metadata
+without copying source-instance IDs or UUIDs. Preserve EDA project revision-on-
+launch and cache settings with the supported project module after dispatch.
+
+Validation: full Ansible syntax check and ten isolated checks using the actual
+EDA modules and CoP activation role passed. They cover dependency order, target
+ID resolution, incomplete mappings, API failures, and project revision settings.
+These checks used a synthetic API. The live AIOps Job Template remains unlaunched.
+
 ## 0.5.4
 
 Document the Stage 02 dependency fix in `97e3236`, why its earlier successful

@@ -214,6 +214,19 @@ review, a list named `aiops_required_secret_variables` (empty is allowed), and
 secret variables must be supplied, nonempty, and contain actual secret values.
 These checks stop incomplete captures before target API changes.
 
+Deployment applies Controller resources and EDA credentials, projects, and
+decision environments first. It then creates Event Streams with
+`ansible.eda.event_stream`, and finally applies the rulebook activations through
+the CoP role. After initial dispatch, a supplemental project task preserves
+`update_revision_on_launch` and its cache timeout when declared in the vault;
+CoP 4.10.0 does not forward those settings. It waits for the project without
+triggering a second sync. CoP dispatch 4.10.0 does not create Event Streams
+itself. The vault must contain nonempty `eda_event_streams_aiops_demo` and
+`eda_rulebook_activations_aiops_demo` lists, with every activation mapping
+referencing an Event Stream defined in the vault. References use names and
+rulebook source names or indexes; target IDs and stream UUIDs are generated on
+the new instance. External event publishers are outside this deployment's scope.
+
 The EDA Controller credential in `eda_credentials_aiops_demo` must use
 the target URL plus `/api/controller` for `inputs.host`, and
 `aiops_controller_access_token` for its
