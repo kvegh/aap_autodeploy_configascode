@@ -4,6 +4,17 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Identify the source of the AAP configuration role
+
+Implementation: `e97480d`.
+
+The user requested attribution to the Ansible Community of Practice. The upstream
+project identifies `infra.aap_configuration` as the Red Hat Communities of
+Practice AAP Configuration Collection. Step 04 and Windows restore both use its
+`dispatch` role to apply AAP object definitions. The README and CaC guide now
+name that role and link upstream so operators can find its documentation.
+This describes the existing configuration implementation; no playbooks changed.
+
 ## Separate editable, private, and generic configuration
 
 Implementation: `6583b61`.

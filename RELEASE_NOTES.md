@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.0.6
+
+Document why the project credits the Red Hat Communities of Practice collection
+for its AAP configuration role, referencing the documentation update in `e97480d`.
+Whitespace and staged-file checks passed.
+
 ## 0.0.5
 
 Document that AAP post-install configuration uses the Red Hat Communities of
