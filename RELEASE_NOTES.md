@@ -1,5 +1,23 @@
 # Release notes
 
+## 0.2.0
+
+Apply the AAP subscription before configuration in Step 04. Require the complete
+manifest ZIP as `cac/manifest.zip.vault` in the private repository. Use the
+attached `cac` Vault credential through Ansible's copy action to restore it into
+a mode-`0600` temporary file, then upload it with `ansible.controller.license`.
+Keep `force: false` so reruns preserve an existing non-trial license. Failed
+decryption or import prevents dispatch; cleanup removes the ZIP and checkout on
+success or failure. The launch inputs and existing credentials are unchanged.
+
+Pre-launch validation: six isolated manifest-flow checks passed, including exact
+binary ZIP restoration, restrictive permissions, rejection of plaintext, missing
+and corrupt payloads, wrong-password failure, configuration blocked after a
+simulated subscription rejection, and cleanup in every case. The license API was
+simulated because its collection and the dispatch role are not installed locally.
+Whitespace checks passed. No live subscription or configuration was applied as
+part of these checks.
+
 ## 0.1.4
 
 Document the TODO for automatic variable handoff between deployment jobs,

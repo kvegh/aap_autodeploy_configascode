@@ -17,7 +17,7 @@ The repository contains four separate Ansible stages:
 | 01 | `01-linux-vm-setup.yml` | Clone a prepared golden image and discover the VM address. |
 | 02 | `02-infra-config.yml` | Configure DNS, certificates, and the reverse proxy. |
 | 03 | `03-aap-install.yml` | Prepare the VM and run the pre-staged AAP installer. |
-| 04 | `04-aap-config.yml` | Apply shared CaC through `infra.aap_configuration.dispatch`. |
+| 04 | `04-aap-config.yml` | Apply the subscription manifest, then shared CaC through `infra.aap_configuration.dispatch`. |
 
 Post-install configuration uses the `dispatch` role from the
 [Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
@@ -25,8 +25,11 @@ It reads our CaC definitions and calls AAP APIs to create or update those object
 
 Stage 04 downloads the private configuration repository's `main` branch into a
 temporary directory, decrypts `cac/base_CaC_vault.yml`, and loads it before dispatch.
-It removes the temporary checkout and Git authentication helper after loading,
-including when downloading or loading fails. Selectable demo profiles and automatic
+It also decrypts `cac/manifest.zip.vault` into a temporary ZIP and applies the AAP
+subscription through `ansible.controller.license` before dispatch. The module's
+`force: false` preserves an existing non-trial license on reruns. A failed import
+stops configuration. The temporary checkout, ZIP, and authentication helper are
+removed on success or failure. Selectable demo profiles and automatic
 handoff remain planned. Full deployment with the current dispatch configuration
 has not been verified since the repository split.
 The latest handoff reports missing dispatch collection availability and a mismatch
@@ -61,8 +64,13 @@ fallback based on `vm_name` or `vault_domain`; it does not require `vm_name`
 or `vm_ip`.
 
 Supply `aap_config_repo_url` as the HTTPS Git URL of the private configuration
-repository. Stage 04 always uses `main`; the encrypted shared file must be at
-`cac/base_CaC_vault.yml`. Use a read-only token with access to that repository.
+repository. Stage 04 always uses `main`; it requires these Vault-encrypted files:
+
+- `cac/base_CaC_vault.yml`: the shared YAML configuration.
+- `cac/manifest.zip.vault`: the complete subscription manifest ZIP, encrypted as
+  a whole file. Keep the original archive intact before encrypting it.
+
+Use a read-only token with access to that repository.
 Do not put the token in the URL or extra variables.
 
 Attach these credentials to the Stage 04 job template:
@@ -74,8 +82,16 @@ Attach these credentials to the Stage 04 job template:
 - The existing Vault credential that decrypts `myvars`, using its original/default
   identifier. `myvars` still supplies environment settings and target authentication.
 
-The execution environment must provide Git and trust the repository server's TLS
-certificate. HTTPS redirects and stored Git credential helpers are disabled for
+AAP supplies the attached Vault passwords to Ansible at launch. `include_vars`
+decrypts the shared YAML and `copy` with `decrypt: true` restores the manifest ZIP
+with mode `0600` inside the job's private temporary directory. Both use the same
+`cac` Vault credential; the playbook does not retrieve its password through AAP's
+API or require it in extra variables. The license module uploads the restored ZIP
+to the target AAP before the dispatch role applies object configuration.
+
+The execution environment must provide `ansible.controller.license` and Git,
+and trust the repository server's TLS certificate. HTTPS redirects and stored
+Git credential helpers are disabled for
 this download. Submodules are not fetched. Git servers must accept token
 authentication using the `x-access-token` username, as GitHub does.
 

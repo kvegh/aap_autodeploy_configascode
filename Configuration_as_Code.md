@@ -23,7 +23,12 @@ credential helpers are disabled, and submodules are not fetched.
 Before running dispatch, the playbook requires a Vault-encrypted
 `cac/base_CaC_vault.yml` in that checkout and loads it with `include_vars`.
 The attached Vault credential with identifier `cac` decrypts this file. The
-temporary checkout and helper are removed even if downloading or loading fails.
+playbook also requires the whole-file encrypted ZIP at `cac/manifest.zip.vault`.
+Ansible's `copy` action decrypts it using that same attached Vault credential,
+creating a mode-`0600` temporary ZIP. `ansible.controller.license` imports it into
+the explicit target AAP before dispatch; `force: false` preserves an existing
+non-trial license on reruns. The temporary checkout, ZIP, and helper are removed
+on success or failure. A failed subscription import prevents dispatch.
 The role sees the loaded suffixed variables and applies them as before.
 
 `myvars` and `vars/main.yml` remain in `vars_files`. Keep the original/default
@@ -53,6 +58,9 @@ working-directory/cac/        # editable configuration outside Git
 The private configuration repository stores encrypted copies under `cac/`, named
 `base_CaC_vault.yml` and `DEMO_PLACEHOLDER_CaC_vault.yml`. The shared encrypted
 base has moved there. Editable working files remain outside Git.
+
+The private repository also holds `cac/manifest.zip.vault`, which encrypts the
+complete subscription ZIP without converting or unpacking its contents.
 
 This public repository retains two empty plaintext examples: use
 `cac/base_CaC_vault.yml.example` for shared resources and

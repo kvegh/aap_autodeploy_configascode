@@ -174,7 +174,7 @@ vm_dir: "/opt/vms"
 
 ## Decisions Made
 
-1. **No subscription manifest needed** — Red Hat defaults to SCA (Simple Content Access). The containerized installer pulls images using a registry service account (username/token in vault), not a manifest file.
+1. **Separate installation access from AAP activation** — SCA and registry credentials cover RHEL/content access during installation. AAP activation is separate: Step 04 imports a complete subscription manifest from the private repository's Vault-encrypted `cac/manifest.zip.vault` before applying configuration.
 
 2. **Full stack** — deploy all components (Gateway, Controller, EDA, Hub, MCP, Metrics) to match the production setup and support AIOps demo testing.
 

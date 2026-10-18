@@ -103,8 +103,40 @@
           ansible.builtin.include_vars:
             file: "{{ cac_workspace.path }}/repository/cac/base_CaC_vault.yml"
           no_log: true
+
+        - name: Read the encrypted AAP subscription manifest
+          ansible.builtin.slurp:
+            src: "{{ cac_workspace.path }}/repository/cac/manifest.zip.vault"
+          register: cac_encrypted_manifest
+          no_log: true
+
+        - name: Require a fully Vault-encrypted subscription manifest
+          ansible.builtin.assert:
+            that:
+              - (cac_encrypted_manifest.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
+            fail_msg: The subscription manifest must be a Vault-encrypted file.
+          no_log: true
+
+        - name: Decrypt the subscription manifest into the private temporary workspace
+          ansible.builtin.copy:
+            src: "{{ cac_workspace.path }}/repository/cac/manifest.zip.vault"
+            dest: "{{ cac_workspace.path }}/manifest.zip"
+            decrypt: true
+            mode: '0600'
+          diff: false
+          no_log: true
+
+        - name: Apply the AAP subscription before pushing configuration
+          ansible.controller.license:
+            manifest: "{{ cac_workspace.path }}/manifest.zip"
+            controller_host: "{{ aap_hostname }}"
+            controller_username: "{{ aap_username }}"
+            controller_password: "{{ aap_password }}"
+            validate_certs: "{{ aap_validate_certs }}"
+            force: false
+          no_log: true
       always:
-        - name: Remove the temporary configuration checkout and authentication helper
+        - name: Remove the temporary checkout, decrypted manifest, and authentication helper
           ansible.builtin.file:
             path: "{{ cac_workspace.path }}"
             state: absent

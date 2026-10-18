@@ -78,6 +78,12 @@ shared file is `cac/base_CaC_vault.yml`. Keep the original/default `myvars` Vaul
 credential attached too. See [README.md](README.md#stage-04-inputs) for full inputs
 and the Git/TLS requirements.
 
+The private repository must also provide `cac/manifest.zip.vault`, the complete
+AAP subscription manifest encrypted with the `cac` Vault password. Step 04
+decrypts it into a restricted temporary ZIP and calls `ansible.controller.license`
+before dispatch. Import failure stops configuration; cleanup runs on success or
+failure. RHEL subscription setup in Step 03 is separate from this AAP activation.
+
 Two categories:
 - **Infrastructure secrets** (steps 01-03): registry credentials, PostgreSQL passwords, RHSM activation key, GoDaddy API token, domain, hypervisor IP.
 - **AAP object secrets** (step 04): credential inputs (SSH keys, vault passwords, PAH tokens), user passwords. These live in the CaC variable files — see [Configuration_as_Code.md](Configuration_as_Code.md).
@@ -115,6 +121,7 @@ Two categories:
 
 - [ ] Install `infra.aap_configuration` collection (needed for dispatch role)
 - [x] Load shared configuration from the private configuration repository's `main` branch
+- [x] Decrypt and import the private subscription manifest before pushing AAP configuration
 - [ ] Add selection and loading of per-demo CaC alongside shared base configuration
 - [ ] Fill CHANGEME secrets in CaC files (credential inputs, EDA credentials, Event Stream)
 - [ ] Build Bitwarden backup script for secrets
