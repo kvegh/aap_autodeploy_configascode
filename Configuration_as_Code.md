@@ -41,6 +41,22 @@ does not read the installer password, rotate the administrator password, remove
 `myvars`, or load demo files. See [README.md](README.md#stage-04-inputs) for inputs
 and execution-environment requirements. No full live Stage 04 run is implied.
 
+## Collection sources
+
+The AAP running Stage 04 must download project collections from PAH only.
+Before project synchronization, sync the required certified, validated, and
+community collections and their dependencies into PAH, then attach credentials
+for those PAH repositories to the project's organization. The requirements file
+selects collections; these organization attachments select their download
+sources. Direct public Galaxy access is not recommended and must not be
+configured as a project fallback under this policy. PAH may sync community
+content from public Galaxy upstream.
+
+Include the PAH source credentials and organization associations when preparing
+CaC for another instance, keeping token values encrypted. The AAP running this
+job needs its own source configuration beforehand; applying configuration to a
+target does not bootstrap the running job's dependency downloads.
+
 ## CaC file layout
 
 ```
@@ -201,7 +217,6 @@ reviewed/encrypted file. It avoids Step 04's existing `myvars` path
 and takes authentication from a separately supplied protected file:
 
 ```bash
-ansible-galaxy collection install infra.aap_configuration
 ansible-playbook restore-windows-config.yml \
   -e windows_cac_file=/secure/disconnected_windows_patching.yml \
   -e @/secure/target-aap-auth.yml --ask-vault-pass
@@ -210,7 +225,10 @@ ansible-playbook restore-windows-config.yml \
 The encrypted authentication file supplies `aap_hostname` and `aap_token`, or
 `aap_username` / `aap_password`. TLS verification defaults to enabled. Ensure
 `ansible.controller` and the dispatch role's dependencies are available in the
-execution environment. Keep registry and SSH secrets outside plaintext config.
+execution environment, installing required collections from approved PAH
+repositories beforehand. A local CLI run must also use PAH sources rather than
+the default public Galaxy source. Keep registry and SSH secrets outside
+plaintext config.
 
 Neither restore entry point launches VM jobs. This restores configuration, not
 running guests or Windows account/WinRM setup. No restore against a second AAP

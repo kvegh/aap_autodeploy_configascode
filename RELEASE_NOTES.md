@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.2.4
+
+Document PAH as the exclusive collection source for project downloads. Sync
+certified, validated, and community content and all required dependencies into
+PAH before project synchronization; direct public Galaxy access is not
+recommended and must not be an organization fallback. Public Galaxy may remain
+an upstream for PAH community synchronization. Explain source bootstrap and
+encrypted CaC credentials, and remove the restore guide's implicit public
+Galaxy install command.
+
+Operational verification: removed the public Galaxy source from the existing
+organization and verified that its three PAH sources remain in order. AAP
+rejects deletion of the platform-managed public Galaxy credential; the
+protected object remains unattached. Documentation and whitespace checks passed.
+No playbook behavior changed and no jobs were launched for this policy change.
+
 ## 0.2.3
 
 Document the project collection requirement implemented in `9243762`, why a

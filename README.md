@@ -54,6 +54,7 @@ sources must also provide the certified
 `ansible.platform`, `ansible.hub`, `ansible.controller`, and `ansible.eda`
 dependencies. This does not install Python or system packages into the execution
 environment.
+
 The target infrastructure needs the prepared golden image, installer bundle,
 virtualization tools, and the DNS/certificate/proxy prerequisites described in
 [documentation.md](documentation.md) and [PLAN.md](PLAN.md).
@@ -63,6 +64,23 @@ their credential inputs are encrypted in the private configuration repository's
 `cac/base_CaC_vault.yml`. Supply the appropriate Ansible Vault password through a
 local password file or an AAP Vault credential.
 Each operator must prepare configuration for their own environment.
+
+### Collection source policy
+
+Project collection downloads must use private Automation Hub (PAH). Direct
+public Ansible Galaxy access is not recommended; do not attach it to the
+project's organization as a download source or fallback. Sync every required
+certified, validated, and community collection, including its dependencies,
+into PAH before synchronizing the project. Community content follows the same
+policy: public Galaxy may be an upstream source for a PAH sync, while projects
+download the curated content from PAH.
+
+Attach credentials for the required PAH repositories to the project's
+organization, preserving the intended source order. Keep tokens encrypted in
+CaC and provide them before project synchronization; job 04 cannot configure
+the sources it needs to download its own dependencies. A platform-managed
+public Galaxy credential may remain as an unattached object if AAP prevents
+its deletion. Verify that it is absent from the organization's active sources.
 
 ### Stage 04 inputs
 

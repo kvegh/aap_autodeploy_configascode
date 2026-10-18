@@ -88,6 +88,20 @@ Two categories:
 - **Infrastructure secrets** (steps 01-03): registry credentials, PostgreSQL passwords, RHSM activation key, GoDaddy API token, domain, hypervisor IP.
 - **AAP object secrets** (step 04): credential inputs (SSH keys, vault passwords, PAH tokens), user passwords. These live in the CaC variable files — see [Configuration_as_Code.md](Configuration_as_Code.md).
 
+## Collection supply
+
+Sync required collections and their dependencies into PAH before project
+synchronization, including community content. Attach only the required PAH
+certified, validated, and community repository credentials to the project's
+organization. `collections/requirements.yml` declares which collections to
+download; organization credentials determine where to find them.
+
+Direct public Galaxy access is not recommended and must not be configured as
+an organization download source or fallback under this project's policy. Public
+Galaxy may supply the PAH community sync upstream; project downloads use PAH.
+If AAP protects a managed public Galaxy credential from deletion, detach it
+from the organization and verify the remaining PAH source order.
+
 ## Current State
 
 - Steps 01-03 exist; historical testing predates the repository split.
