@@ -4,6 +4,30 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Download project collections exclusively from PAH
+
+Implementation and policy documentation: `2725894`.
+
+The user required collection curation in private Automation Hub, including
+community collections, rather than direct public Galaxy downloads by projects.
+Sync all required collections and dependencies into the corresponding PAH
+repositories before project synchronization. Organization source credentials
+must point to those PAH repositories; public Galaxy must not be an active
+source or fallback. PAH may continue using public Galaxy as an upstream when
+syncing community content. The requirements file still selects the collections.
+
+The public Galaxy source was detached from the existing organization. The
+three PAH sources were verified to remain attached in their existing order.
+AAP rejected deletion of the managed public Galaxy credential with a permission
+error, so it remains an unattached protected object. No access controls were
+changed. Source credentials on an AAP running Stage 04 are bootstrap inputs;
+target CaC cannot supply the running job's own dependency-download access.
+
+README, CaC guide, and operational documentation describe this policy and the
+encrypted-token requirement. Documentation and whitespace checks passed. No
+playbook behavior changed and no jobs were launched for this policy change;
+runtime dependency verification belongs to the separate Stage 04 run.
+
 ## Declare the configuration collection for project synchronization
 
 Implementation: `9243762`.

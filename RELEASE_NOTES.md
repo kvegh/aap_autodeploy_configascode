@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.2.5
+
+Document the PAH-only collection sourcing decision implemented in `2725894`,
+the user's curation requirement, verified organization source removal, and the
+managed credential deletion restriction. README already describes this policy.
+Documentation and whitespace checks passed. This follow-up changes no AAP
+settings or playbook behavior and launches no jobs.
+
 ## 0.2.4
 
 Document PAH as the exclusive collection source for project downloads. Sync
