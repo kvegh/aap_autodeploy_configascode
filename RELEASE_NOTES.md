@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.3.0
+
+Add `debug_logging` to Step 04 only. Default to `false`, enabling `no_log` and
+the dispatch collection's secure logging. Setting `true` disables those logging
+protections for troubleshooting. Accept native Booleans and the survey strings
+`true` and `false`; reject other values. Document that debug job output can
+include sensitive decrypted configuration. The existing Job Template now has
+a saved `false` default and an optional true/false survey with the same default.
+Other projects retain their current controls; broader consistency stays a TODO.
+
+Validation: six isolated Ansible checks passed for the protected default, native
+and survey Boolean values, dispatch setting, output visibility, and invalid
+input rejection. All nine existing Step 04 `no_log` settings use the tested
+inverse expression. The live template's default, survey, and retained settings
+were verified; whitespace checks passed. These checks did not apply target
+configuration or import a subscription.
+
 ## 0.2.6
 
 Document the TODO for consistent extra-variable names, Job Template defaults,

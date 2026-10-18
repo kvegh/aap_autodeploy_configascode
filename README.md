@@ -32,9 +32,10 @@ stops configuration. The temporary checkout, ZIP, and authentication helper are
 removed on success or failure. Selectable demo profiles and automatic
 handoff remain planned. Full deployment with the current dispatch configuration
 has not been verified since the repository split.
-The latest handoff reports missing dispatch collection availability and a mismatch
-between the installer password and the credentials Stage 04 uses. These require
-verification and resolution before an unattended deployment.
+Live Step 04 testing has verified collection loading, private Git access, and
+decryption of the shared base and manifest. Subscription import failed before
+dispatch; the import error and target authentication still require diagnosis
+before an unattended deployment.
 
 The separate `restore-windows-config.yml` applies a supplied Windows CaC file
 to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -116,6 +117,19 @@ with mode `0600` inside the job's private temporary directory. Both use the same
 `cac` Vault credential; the playbook does not retrieve its password through AAP's
 API or require it in extra variables. The license module uploads the restored ZIP
 to the target AAP before the dispatch role applies object configuration.
+
+### Step 04 debug logging
+
+`debug_logging` defaults to `false` in both the playbook and its Job Template.
+An optional true/false survey can override that default for a launch. Boolean
+values and the survey strings `true` and `false` are accepted; other inputs fail
+validation. The meaning is consistent: `false` enables `no_log`, while `true`
+disables it for troubleshooting. The same inverse value controls the dispatch
+collection's `aap_configuration_secure_logging` setting.
+
+Enabling debug logging can expose decrypted configuration and other sensitive
+data in AAP job output. Use it deliberately for troubleshooting; leave the
+saved default at `false`. This control currently applies only to Step 04.
 
 The execution environment must provide `ansible.controller.license` and Git,
 and trust the repository server's TLS certificate. HTTPS redirects and stored

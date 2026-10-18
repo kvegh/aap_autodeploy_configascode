@@ -8,10 +8,18 @@
     - vars/main.yml
   vars:
     dispatch_include_wildcard_vars: true
+    debug_logging: false
+    aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
     aap_username: admin
     aap_password: "{{ aap_gateway_admin_passwd }}"
     aap_validate_certs: false
   pre_tasks:
+    - name: Require a Boolean debug logging choice
+      ansible.builtin.assert:
+        that:
+          - debug_logging is boolean or (debug_logging is string and (debug_logging | lower) in ['true', 'false'])
+        fail_msg: Set debug_logging to true or false.
+
     - name: Require an explicit target AAP HTTPS URL
       ansible.builtin.assert:
         that:
@@ -43,7 +51,7 @@
         that:
           - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
         fail_msg: Attach the CaC Git credential that injects CAC_GIT_TOKEN.
-      no_log: true
+      no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
     - name: Create a private temporary configuration workspace
       ansible.builtin.tempfile:
@@ -84,38 +92,38 @@
             GIT_CONFIG_VALUE_1: 'false'
             GIT_CONFIG_KEY_2: http.sslVerify
             GIT_CONFIG_VALUE_2: 'true'
-          no_log: true
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Read the encrypted shared configuration
           ansible.builtin.slurp:
             src: "{{ cac_workspace.path }}/repository/cac/base_CaC_vault.yml"
           register: cac_encrypted_base
-          no_log: true
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Require a fully Vault-encrypted shared configuration
           ansible.builtin.assert:
             that:
               - (cac_encrypted_base.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
             fail_msg: The shared configuration must be a Vault-encrypted file.
-          no_log: true
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Decrypt and load the shared configuration with the attached Vault credentials
           ansible.builtin.include_vars:
             file: "{{ cac_workspace.path }}/repository/cac/base_CaC_vault.yml"
-          no_log: true
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Read the encrypted AAP subscription manifest
           ansible.builtin.slurp:
             src: "{{ cac_workspace.path }}/repository/cac/manifest.zip.vault"
           register: cac_encrypted_manifest
-          no_log: true
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Require a fully Vault-encrypted subscription manifest
           ansible.builtin.assert:
             that:
               - (cac_encrypted_manifest.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
             fail_msg: The subscription manifest must be a Vault-encrypted file.
-          no_log: true
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Decrypt the subscription manifest into the private temporary workspace
           ansible.builtin.copy:
@@ -124,7 +132,7 @@
             decrypt: true
             mode: '0600'
           diff: false
-          no_log: true
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Apply the AAP subscription before pushing configuration
           ansible.controller.license:
@@ -134,7 +142,7 @@
             controller_password: "{{ aap_password }}"
             validate_certs: "{{ aap_validate_certs }}"
             force: false
-          no_log: true
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
       always:
         - name: Remove the temporary checkout, decrypted manifest, and authentication helper
           ansible.builtin.file:
