@@ -37,16 +37,20 @@ stops configuration. A per-run Gateway token authenticates the subscription
 import and dispatch. It is revoked afterward, and the temporary checkout, ZIP,
 and authentication helper are removed after successful runs and ordinary task
 failures. Ansible role-loading errors or interruptions can prevent cleanup.
-Automatic demo selection and job handoff remain planned. The full
-01-to-04 deployment pipeline has not been verified since the repository split.
-Live Step 04 testing has verified private Git access, decryption, installer
-password retrieval, Gateway token creation, subscription import, and application
-of the shared base configuration. Job 1985 completed successfully on 2026-10-18
-in 162 seconds: 147 successful tasks, 36 changes, and no failures. Token revocation
-returned HTTP 204, and temporary workspace removal succeeded. The saved Job
-Template logging default remains protected. The separate `deploy-aiops-demo.yml`
-entry point loads only AIOps configuration after base. It is prepared for review
-and has not been launched against an AAP instance.
+Automatic demo selection and job handoff remain planned. On 2026-10-18, a fresh
+environment completed all four stages as individually launched jobs. VM creation
+succeeded, and infrastructure configuration succeeded after the missing DNS
+collection was curated in PAH and declared in project requirements. Installation
+needed a monitoring recovery after the Controller's overall timeout; the original
+installer completed successfully without being restarted.
+
+Step 04 job 2011 completed successfully in 22 seconds, applying the subscription
+and the reduced platform-only base. This verified private Git access, decryption,
+installer password retrieval, Gateway authentication, license import, and base
+dispatch. Token revocation and temporary workspace removal succeeded. Protected
+logging remained enabled. The separate `deploy-aiops-demo.yml` entry point loads
+only AIOps configuration after base. It is prepared for review and has not been
+launched against an AAP instance.
 
 The separate `restore-windows-config.yml` applies a supplied Windows CaC file
 to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -209,10 +213,13 @@ timeouts, and unsuccessful installer exits require inspecting protected installe
 logs before any installation retry. A listening HTTPS port alone is insufficient
 to establish successful installation.
 
+Live resume job 2008 verified the original installer's successful exit and an
+HTTP 200 Controller ping; the installer-launch task was skipped.
+
 Rotating the target administrator password, removing the remaining `myvars`
 dependency, and automatic demo selection are separate pending work.
-The shared base configuration flow is verified; AIOps configuration deployment
-and the complete deployment pipeline still require live validation.
+The four deployment stages are verified as individually launched jobs. Automatic
+job handoff and live AIOps configuration deployment remain pending.
 
 ### AIOps configuration deployment
 

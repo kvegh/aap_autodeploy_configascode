@@ -4,6 +4,27 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Resume installer monitoring without starting another installation
+
+Implementation: `64aec45`.
+
+The Controller stopped installation job 2002 at its overall 3,600-second timeout.
+Host preparation had consumed part of that budget, so the remote installer's
+separate 3,600-second async task had not reached its deadline. The last event
+reported that task as unfinished; there was no installer error to justify a
+second installation. The template timeout now allows 7,200 seconds.
+
+Stage 03 accepts an optional existing async job identifier. This mode skips host
+preparation, inventory edits, and installer launch, checks the existing result
+under the original installer account, and requires exit code zero before the
+Controller health check. Captured installer output remains protected. It does
+not extend an existing task's async limit or treat an open HTTPS port as success.
+
+Syntax and whitespace checks passed. Live resume job 2008 completed successfully
+in 32 seconds: the original installer reported success, the installer-launch task
+was skipped, and the Controller ping returned HTTP 200. No installation rerun or
+security-control workaround was needed.
+
 ## Declare the collection used for public DNS validation
 
 Implementation: `97e3236`; preceding HTTPS implementation: `de07aad`.

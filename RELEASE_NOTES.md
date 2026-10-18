@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.5.10
+
+Document installer monitoring recovery implemented in `64aec45` and the fresh
+four-stage deployment completed as individually launched jobs. Live resume
+verified the original installer's successful exit and Controller health without
+restarting installation. Step 04 applied the subscription and platform-only base
+in 22 seconds; temporary token and workspace cleanup succeeded with protected
+logging enabled. AIOps deployment remains unlaunched.
+
+Validation: live recovery and base deployment passed; documentation whitespace
+checks passed. Automatic inter-job handoff remains planned.
+
 ## 0.5.9
 
 Recover monitoring of an existing Stage 03 installer through the optional
