@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.3.2
+
+Document that the multiple-choice debug survey requires quoted `"true"` or
+`"false"` values in API launches. The playbook still accepts native Booleans
+when run directly and normalizes survey strings. Verified that the API accepts
+the survey-compatible debug launch and that the saved default remains false.
+Whitespace checks passed. This documentation change does not alter logging or
+claim a successful subscription import.
+
 ## 0.3.1
 
 Document Step 04's debug logging decision implemented in `ff84279`, including

@@ -129,7 +129,10 @@ username, as GitHub does.
 `debug_logging` defaults to `false` in both the playbook and its Job Template.
 An optional true/false survey can override that default for a launch. Boolean
 values and the survey strings `true` and `false` are accepted; other inputs fail
-validation. The meaning is consistent: `false` enables `no_log`, while `true`
+playbook validation. With the multiple-choice survey enabled, API launches must
+send `debug_logging` as the quoted string `"true"` or `"false"`, matching the
+survey choices; the playbook converts it to a Boolean. The meaning is consistent:
+`false` enables `no_log`, while `true`
 disables it for troubleshooting. The same inverse value controls the dispatch
 collection's `aap_configuration_secure_logging` setting.
 
