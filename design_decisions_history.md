@@ -22,6 +22,28 @@ Ansible syntax and whitespace validation passed. The original failure happened
 after DNS and temporary HTTP proxy configuration; the successful teardown and
 VM creation stages must not be repeated to retry this infrastructure stage.
 
+## Create Event Streams before activating AIOps rulebooks
+
+Implementation: `33f2575`.
+
+The CoP 4.10.0 dispatch list does not include Event Streams. A direct import of
+activations would therefore reference streams that did not exist. The AIOps
+playbook dispatches prerequisites first, creates streams through the supported
+EDA module, and only then applies the CoP activation role. The encrypted capture
+uses names and rulebook source names or indexes, so modules resolve the new
+instance's IDs, hashes, and stream UUIDs. Required mappings are validated before
+target configuration starts.
+
+CoP also omits EDA project revision-on-launch and cache settings even though the
+installed EDA project module supports them. A focused update after dispatch
+preserves declared values, waits for the existing project, and avoids a second
+source-control sync. These tasks supplement the collection's known omissions;
+they do not change source AAP objects or external event publishers.
+
+Full syntax validation and ten isolated checks using the actual EDA modules and
+CoP activation role passed, including ordering, target mapping, failure handling,
+and project setting preservation. The live AIOps Job Template remains unlaunched.
+
 ## Separate platform base from AIOps use-case deployment
 
 Implementation: `e864dc9`.

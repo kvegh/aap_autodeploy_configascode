@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.5.6
+
+Document Event Stream and activation ordering implemented in `33f2575`, the
+CoP field omissions supplemented through EDA modules, and the target-specific
+reference policy. Whitespace checks passed. This follow-up changes documentation
+only; the AIOps Job Template remains unlaunched.
+
 ## 0.5.5
 
 Create AIOps Event Streams before their rulebook activations. CoP dispatch
