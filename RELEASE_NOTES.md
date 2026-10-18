@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.2.2
+
+Declare `infra.aap_configuration` version `4.10.0` in
+`collections/requirements.yml` so AAP can download the missing dispatch role and
+its declared collection dependencies during project synchronization. Explain
+that the requirements file selects collections while the organization's Galaxy
+credentials select download sources, including a private Hub `validated`
+repository. The execution environment still supplies Python and system packages.
+
+Validation: the requirements YAML contains exactly the requested collection and
+matches the published Galaxy version; staged-file and whitespace checks passed.
+No dependencies were installed locally, no AAP settings were changed, and no
+project synchronization or job was launched. Runtime availability still requires
+a successful project synchronization.
+
 ## 0.2.1
 
 Document subscription application implemented in `7503d96`, including automatic

@@ -44,6 +44,16 @@ to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardow
 Use an execution environment with Ansible and the required collections, including
 `infra.aap_configuration`, `ansible.controller`, `redhat.rhel_system_roles`, and
 `community.general`. Verify the dispatch role's dependencies in that environment.
+`collections/requirements.yml` pins `infra.aap_configuration` to `4.10.0`.
+With collection downloads enabled, AAP installs it and its declared dependencies
+during project synchronization. The requirements file defines which collections
+are needed; Galaxy credentials attached to the project's organization define
+where AAP downloads them. To use private Automation Hub's `validated` repository,
+attach a Galaxy credential for that repository to the organization. Configured
+sources must also provide the certified
+`ansible.platform`, `ansible.hub`, `ansible.controller`, and `ansible.eda`
+dependencies. This does not install Python or system packages into the execution
+environment.
 The target infrastructure needs the prepared golden image, installer bundle,
 virtualization tools, and the DNS/certificate/proxy prerequisites described in
 [documentation.md](documentation.md) and [PLAN.md](PLAN.md).
