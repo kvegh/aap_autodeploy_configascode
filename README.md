@@ -30,14 +30,17 @@ subscription through `ansible.controller.license` before dispatch. The module's
 `force: false` preserves an existing non-trial license on reruns. A failed import
 stops configuration. A per-run Gateway token authenticates the subscription
 import and dispatch. It is revoked afterward, and the temporary checkout, ZIP,
-and authentication helper are removed on success or failure. Selectable demo profiles and automatic
+and authentication helper are removed after successful runs and ordinary task
+failures. Ansible role-loading errors or interruptions can prevent cleanup.
+Selectable demo profiles and automatic
 handoff remain planned. Full deployment with the current dispatch configuration
 has not been verified since the repository split.
-Live Step 04 testing has verified collection loading, private Git access, and
-decryption of the shared base and manifest. An HTTP 401 exposed a mismatch
-between the stored login password and the installer Gateway password. The new
-authentication bootstrap reads the installer password and uses a Gateway token;
-its full live subscription/configuration flow still requires verification.
+Live Step 04 testing has verified private Git access, decryption, installer
+password retrieval, Gateway token creation, and subscription import. Configuration
+then stopped because dispatch selected a legacy Controller application role whose
+module is absent from the installed Controller collection. Step 04 now excludes
+`controller_applications`; application configuration remains handled by
+`gateway_applications`. Full configuration verification remains pending.
 
 The separate `restore-windows-config.yml` applies a supplied Windows CaC file
 to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -133,7 +136,14 @@ Step 04 creates a write-scope token through `/api/gateway/v1/tokens/` using the
 current Gateway login. The Controller license module and dispatch then use
 Bearer-token authentication. Dispatch runs inside the cleanup block so the
 token remains valid until configuration ends. Cleanup revokes the token after
-success or failure and removes the workspace even if revocation fails.
+success or an ordinary task failure and removes the workspace even if revocation
+fails. Fatal role-loading errors or interruptions can skip Ansible's cleanup;
+such runs require checking for a leftover token.
+
+For AAP 2.7, dispatch excludes the legacy `controller_applications` role because
+`ansible.controller` 4.8.11 does not contain its application module. Dispatch's
+`gateway_applications` role applies `aap_applications` through `ansible.platform`.
+Other Controller configuration roles remain enabled.
 
 The execution environment must provide `ansible.controller.license` and Git,
 and trust the repository server's TLS certificate. HTTPS redirects and stored

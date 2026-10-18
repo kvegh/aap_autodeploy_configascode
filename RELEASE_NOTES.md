@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.4.2
+
+Exclude the legacy Controller application role from Step 04 dispatch on AAP 2.7.
+The installed `ansible.controller` 4.8.11 collection lacks its application module;
+Gateway application management remains enabled through `ansible.platform`.
+Other roles remain selected. Clarify that fatal role-loading errors can prevent
+Ansible cleanup. Live testing of the preceding authentication fix successfully
+read the installer password, created a Gateway token, and imported the subscription
+before encountering this role-loading error; its leftover token was revoked.
+
+Validation: inspected the actual five PAH collection artifacts and verified all
+59 module references across the 58 selected dispatch roles, retaining Gateway
+applications and Controller role assignments. No collections were installed for
+this check. Focused token lifecycle checks and whitespace validation passed.
+Full configuration verification remains pending.
+
 ## 0.4.1
 
 Document authentication bootstrap implemented in `62ab119`, the verified

@@ -8,6 +8,9 @@
     - vars/main.yml
   vars:
     dispatch_include_wildcard_vars: true
+    # AAP 2.7 manages applications through Gateway; Controller no longer ships this module.
+    aap_configuration_dispatcher_exclude_roles:
+      - controller_applications
     debug_logging: false
     aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
     aap_username: admin
