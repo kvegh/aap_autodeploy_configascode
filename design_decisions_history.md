@@ -4,6 +4,27 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Separate editable, private, and generic configuration
+
+Implementation: `6583b61`.
+
+The user requested moving the encrypted shared base into the private configuration
+repository and removing it from this repository's current tree. Generic empty
+examples remain here. This keeps reusable automation separate from the intended
+deployment configuration; existing Git history and release tags were preserved.
+
+Editable `base.yml` and demo files stay in the working directory outside Git.
+Completed configuration is copied, Vault-encrypted with the local password file,
+placed in the private repository, verified by its header and decrypted equality,
+then committed and pushed. The moved ciphertext was unchanged, and its private
+commit was pushed before the public copy was removed. The local plaintext base
+was created with restricted permissions. The password file stays outside Git.
+
+Step 04 was deliberately left unchanged within this migration's scope. It still
+references the former project-local base path, so loading from the private
+repository must be implemented before it can run from this checkout alone.
+No deployment or configuration jobs were launched.
+
 ## Adopt per-project versioning and reusable CaC templates
 
 Implementation: `f3efca9`.

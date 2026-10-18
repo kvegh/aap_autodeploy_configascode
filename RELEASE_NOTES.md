@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.0.4
+
+Document the private-configuration separation implemented in `6583b61`, including
+the external plaintext working files, verified encrypted-copy workflow, preserved
+history, and outstanding Step 04 loading integration. Whitespace and staged-file
+checks passed. This documentation update does not publish a release or deploy AAP.
+
 ## 0.0.3
 
 Move the populated encrypted shared CaC base to a separate private configuration
