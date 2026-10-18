@@ -72,9 +72,10 @@ Readiness and secret checks run before creating API tokens or applying objects.
 
 Declare the special EDA Controller credential using
 `aiops_eda_controller_credential_name` and `aiops_eda_organization_name`. Its entry
-in `eda_credentials_aiops_demo` uses `organization_name`, the built-in
-`Red Hat Ansible Automation Platform` credential type, `inputs.host` referencing
-the normalized `aap_hostname` plus `/api/controller`, and `inputs.oauth_token` referencing
+in `eda_credentials_aiops_demo` uses the CoP item keys `organization` and
+`credential_type` (the built-in `Red Hat Ansible Automation Platform` type),
+`inputs.host` referencing the normalized `aap_hostname` plus `/api/controller`,
+and `inputs.oauth_token` referencing
 `aiops_controller_access_token`. The playbook supplies that token at runtime.
 Do not export or reuse the source AAP's token.
 

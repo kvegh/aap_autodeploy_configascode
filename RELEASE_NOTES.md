@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.5.7
+
+Use the CoP credential item schema consistently for AIOps EDA credentials:
+`organization` and `credential_type`. The target-specific Controller credential
+handler translates those fields into the EDA module's argument names. This makes
+the exported configuration compatible with both ordinary dispatch and the special
+target-token handling, without duplicate field aliases.
+
+Validation: full Ansible syntax check and eleven isolated credential checks with
+the installed EDA module passed, including secret protection, target-token
+creation/preservation, and cleanup. No live AIOps deployment was launched.
+
 ## 0.5.6
 
 Document Event Stream and activation ordering implemented in `33f2575`, the

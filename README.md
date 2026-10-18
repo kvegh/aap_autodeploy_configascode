@@ -227,8 +227,9 @@ referencing an Event Stream defined in the vault. References use names and
 rulebook source names or indexes; target IDs and stream UUIDs are generated on
 the new instance. External event publishers are outside this deployment's scope.
 
-The EDA Controller credential in `eda_credentials_aiops_demo` must use
-the target URL plus `/api/controller` for `inputs.host`, and
+The EDA Controller credential in `eda_credentials_aiops_demo` uses the CoP
+item keys `organization` and `credential_type`. It must use the target URL plus
+`/api/controller` for `inputs.host`, and
 `aiops_controller_access_token` for its
 `inputs.oauth_token`. On first deployment the playbook generates a persistent
 target-specific Gateway token and immediately stores it in that EDA credential.

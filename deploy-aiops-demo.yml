@@ -267,8 +267,8 @@
           ansible.builtin.assert:
             that:
               - aiops_eda_controller_credential_definitions | length == 1
-              - aiops_eda_controller_credential_definitions[0].organization_name == aiops_eda_organization_name
-              - aiops_eda_controller_credential_definitions[0].credential_type_name == 'Red Hat Ansible Automation Platform'
+              - aiops_eda_controller_credential_definitions[0].organization == aiops_eda_organization_name
+              - aiops_eda_controller_credential_definitions[0].credential_type == 'Red Hat Ansible Automation Platform'
               - (aiops_eda_controller_credential_definitions[0].inputs.host | regex_replace('/+$', '')) == ((aap_hostname | regex_replace('/+$', '')) + '/api/controller')
             fail_msg: The AIOps EDA Controller credential must use the intended organization and target AAP.
           no_log: true
@@ -354,8 +354,8 @@
           ansible.eda.credential:
             name: "{{ aiops_eda_controller_credential_definitions[0].name }}"
             description: "{{ aiops_eda_controller_credential_definitions[0].description | default(omit) }}"
-            credential_type_name: "{{ aiops_eda_controller_credential_definitions[0].credential_type_name }}"
-            organization_name: "{{ aiops_eda_controller_credential_definitions[0].organization_name }}"
+            credential_type_name: "{{ aiops_eda_controller_credential_definitions[0].credential_type }}"
+            organization_name: "{{ aiops_eda_controller_credential_definitions[0].organization }}"
             inputs: "{{ aiops_eda_controller_credential_definitions[0].inputs }}"
             controller_host: "{{ aap_hostname }}"
             controller_token: "{{ aap_token }}"
