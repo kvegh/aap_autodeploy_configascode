@@ -118,6 +118,12 @@ with mode `0600` inside the job's private temporary directory. Both use the same
 API or require it in extra variables. The license module uploads the restored ZIP
 to the target AAP before the dispatch role applies object configuration.
 
+The execution environment must provide `ansible.controller.license` and Git,
+and trust the repository server's TLS certificate. HTTPS redirects and stored
+Git credential helpers are disabled for this download. Submodules are not
+fetched. Git servers must accept token authentication using the `x-access-token`
+username, as GitHub does.
+
 ### Step 04 debug logging
 
 `debug_logging` defaults to `false` in both the playbook and its Job Template.
@@ -130,12 +136,6 @@ collection's `aap_configuration_secure_logging` setting.
 Enabling debug logging can expose decrypted configuration and other sensitive
 data in AAP job output. Use it deliberately for troubleshooting; leave the
 saved default at `false`. This control currently applies only to Step 04.
-
-The execution environment must provide `ansible.controller.license` and Git,
-and trust the repository server's TLS certificate. HTTPS redirects and stored
-Git credential helpers are disabled for
-this download. Submodules are not fetched. Git servers must accept token
-authentication using the `x-access-token` username, as GitHub does.
 
 Stage 03 still uses `vm_name` and `vault_domain` to form the installer's fully
 qualified hostname. That hostname can resolve internally; Stage 04's explicit

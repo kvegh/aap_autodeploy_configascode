@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.3.1
+
+Document Step 04's debug logging decision implemented in `ff84279`, including
+the user's chosen name and meaning, protected defaults, survey override, and
+unchanged scope for other templates. Reviewed README and grouped the execution
+environment prerequisites with the other Step 04 inputs. Whitespace checks
+passed. No runtime behavior changes in this documentation follow-up.
+
 ## 0.3.0
 
 Add `debug_logging` to Step 04 only. Default to `false`, enabling `no_log` and

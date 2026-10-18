@@ -51,6 +51,26 @@ settings change, project synchronization, or job launch was performed for this
 change. A successful project synchronization is still needed before runtime
 collection availability can be verified.
 
+## Use an explicit debug switch for Step 04
+
+Implementation: `ff84279`.
+
+The user chose `debug_logging` with positive debugging semantics: `true` shows
+task output, while `false` enables `no_log`. The change is limited to Step 04;
+aligning other projects remains planned. Both the playbook and Job Template
+default to `false`, and an optional true/false survey supports a per-run override.
+Native Booleans and survey strings are normalized, and invalid choices fail.
+
+All nine existing protected tasks use the inverse of this switch. The dispatch
+collection receives the same inverse through `aap_configuration_secure_logging`.
+Debugging can therefore expose decrypted configuration in AAP job output, which
+is documented in the README and survey; the saved default stays protected.
+
+Six isolated Ansible checks verified default protection, native and survey
+values, dispatch mapping, output visibility, and invalid input rejection. The
+live template default and survey were verified without changing other template
+settings. Those checks did not import a subscription or apply target objects.
+
 ## Apply the subscription before object configuration
 
 Implementation: `7503d96`.
