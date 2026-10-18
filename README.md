@@ -8,6 +8,11 @@ The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
 
+Base means platform setup only. Use-case Git projects, inventories, hosts,
+credentials, execution environments, templates, workflows, and EDA integrations
+belong to their separate use-case configurations. Each use case has its own
+deployment Job Template and encrypted configuration file.
+
 ## Current implementation
 
 The repository contains four separate Ansible stages:
@@ -32,14 +37,16 @@ stops configuration. A per-run Gateway token authenticates the subscription
 import and dispatch. It is revoked afterward, and the temporary checkout, ZIP,
 and authentication helper are removed after successful runs and ordinary task
 failures. Ansible role-loading errors or interruptions can prevent cleanup.
-Selectable demo profiles and automatic handoff remain planned. The full
+Automatic demo selection and job handoff remain planned. The full
 01-to-04 deployment pipeline has not been verified since the repository split.
 Live Step 04 testing has verified private Git access, decryption, installer
 password retrieval, Gateway token creation, subscription import, and application
 of the shared base configuration. Job 1985 completed successfully on 2026-10-18
 in 162 seconds: 147 successful tasks, 36 changes, and no failures. Token revocation
 returned HTTP 204, and temporary workspace removal succeeded. The saved Job
-Template logging default remains protected. Per-demo files are not yet loaded.
+Template logging default remains protected. The separate `deploy-aiops-demo.yml`
+entry point loads only AIOps configuration after base. It is prepared for review
+and has not been launched against an AAP instance.
 
 The separate `restore-windows-config.yml` applies a supplied Windows CaC file
 to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -64,11 +71,17 @@ The target infrastructure needs the prepared golden image, installer bundle,
 virtualization tools, and the DNS/certificate/proxy prerequisites described in
 [documentation.md](documentation.md) and [PLAN.md](PLAN.md).
 
-Environment access values remain encrypted in `myvars`. Shared AAP objects and
-their credential inputs are encrypted in the private configuration repository's
-`cac/base_CaC_vault.yml`. Supply the appropriate Ansible Vault password through a
+Environment access values remain encrypted in `myvars`. Platform definitions
+are encrypted in the private configuration repository's `cac/base_CaC_vault.yml`;
+use-case objects and credential inputs belong in their own encrypted files.
+Supply the appropriate Ansible Vault password through a
 local password file or an AAP Vault credential.
 Each operator must prepare configuration for their own environment.
+
+The current private base contains only the platform organization and an existing
+platform setting. Historical use-case objects were removed from it before the
+clean deployment test. Destination PAH source bootstrap still needs valid local
+PAH credentials; a Red Hat upstream token cannot authenticate to local PAH.
 
 ### Collection source policy
 
@@ -164,16 +177,56 @@ collection's `aap_configuration_secure_logging` setting.
 
 Enabling debug logging can expose decrypted configuration and other sensitive
 data in AAP job output. Use it deliberately for troubleshooting; leave the
-saved default at `false`. This control currently applies only to Step 04.
+saved default at `false`. This control applies to Step 04 and the separate AIOps deployment entry point.
 
 Stage 03 still uses `vm_name` and `vault_domain` to form the installer's fully
 qualified hostname. That hostname can resolve internally; Stage 04's explicit
 API URL determines how the configuration job connects.
 
 Rotating the target administrator password, removing the remaining `myvars`
-dependency, and selecting demos are separate pending work.
-The shared base configuration flow is verified; selectable demo configuration
-and the complete deployment pipeline still require implementation or validation.
+dependency, and automatic demo selection are separate pending work.
+The shared base configuration flow is verified; AIOps configuration deployment
+and the complete deployment pipeline still require live validation.
+
+### AIOps configuration deployment
+
+Run `deploy-aiops-demo.yml` through its own Job Template only after Step 04 has
+finished on the chosen target. This job loads `cac/aiops_demo.yml` from the
+private repository's `main` branch. It does not load base or the subscription
+manifest, and it does not launch any of the imported demo Job Templates.
+Applying enabled EDA activation definitions can start those activations.
+
+The template uses the same execution environment, project, and three credentials
+as Step 04. Supply the target's explicit `aap_hostname` and
+`aap_config_repo_url`. `debug_logging` defaults to `false`; the optional survey
+accepts the quoted strings `"true"` and `"false"` for API launches. Authentication
+uses the current encrypted `aap_password`, or the installer SSH fallback described
+above. A temporary Gateway token is revoked after configuration.
+
+The encrypted AIOps file must declare `aiops_configuration_ready: true` after
+review, a list named `aiops_required_secret_variables` (empty is allowed), and
+`aiops_eda_controller_credential_name` / `aiops_eda_organization_name`. Required
+secret variables must be supplied, nonempty, and contain actual secret values.
+These checks stop incomplete captures before target API changes.
+
+The EDA Controller credential in `eda_credentials_aiops_demo` must use
+the target URL plus `/api/controller` for `inputs.host`, and
+`aiops_controller_access_token` for its
+`inputs.oauth_token`. On first deployment the playbook generates a persistent
+target-specific Gateway token and immediately stores it in that EDA credential.
+It never copies the source instance's token. On reruns it preserves the existing
+credential and token, checking organization, credential type, target URL, and
+other declared settings. A mismatch requires review rather than automatic token
+replacement. This check cannot verify the hidden token's validity or expiry.
+
+The persistent EDA token remains available after the job. If deployment fails,
+cleanup revokes a newly created token only when a successful API lookup proves
+that its EDA credential was not saved. An inconclusive lookup preserves the token
+for inspection, avoiding revocation of a token already needed by EDA. Ordinary
+cleanup still revokes the temporary configuration token and removes the checkout.
+Fatal role-loading errors and interruptions have the same cleanup limitations as
+Step 04. The AIOps Job Template is created for later use and must remain unlaunched
+until the encrypted capture and dependencies have been reviewed.
 
 Never commit plaintext secrets or sensitive environment-specific data, including
 account names, hostnames, addresses, tokens, or keys. Vault-encrypted files/values
@@ -204,9 +257,17 @@ working directory. When a configuration is ready:
    and equality with the working copy without displaying decrypted content.
 4. Review staged files, then commit and push only the encrypted configuration.
 
+The AIOps-specific filename is `aiops_demo.yml`; its contents are still whole-file
+Vault encrypted in the private repository. Its editable copy and extraction
+inventory stay outside Git. Only the current working demo is selected; older
+test objects are listed separately. Shared source inventory, SSH credentials,
+and runtime environments are copied under AIOps-specific names for independent
+ownership. Source objects remain untouched.
+
 Keep the editable working files and Vault password file outside Git. This public
 repository's `cac/` retains the empty examples. Stage 04 loads the private shared
-base automatically; selection and loading of additional demo files remain planned.
+base automatically. The separate AIOps entry point loads `cac/aiops_demo.yml`;
+adding other encrypted demo files does not apply them automatically.
 
 See [Configuration_as_Code.md](Configuration_as_Code.md) for variable naming,
 resource types, and restore dependencies. Empty templates do not provision

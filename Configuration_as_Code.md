@@ -2,8 +2,8 @@
 
 AAP post-install configuration uses the `dispatch` role from `infra.aap_configuration`,
 the [Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
-CoP means Community of Practice. Both `04-aap-config.yml` and
-`restore-windows-config.yml` use this role to apply our AAP object definitions.
+CoP means Community of Practice. `04-aap-config.yml`, `deploy-aiops-demo.yml`,
+and `restore-windows-config.yml` use this role to apply AAP object definitions.
 
 ## How dispatch works
 
@@ -47,13 +47,60 @@ Controller API. Supply the target HTTPS URL
 explicitly as `aap_hostname`. Stage 04 does not use `vm_name`, `vm_ip`, or
 `vault_domain` to choose its target. Use an internally resolving hostname or an
 internal IP in that HTTPS URL to avoid the public reverse-proxy route. Password
-rotation, removing `myvars`, and demo loading remain future work.
+rotation, removing `myvars`, and automatic demo selection remain future work.
 See [README.md](README.md#stage-04-inputs) for inputs
 and execution-environment requirements. Live job 1985 successfully applied the
 shared base configuration, revoked its token, and removed its workspace. Earlier
 testing verified subscription import; the successful rerun preserved that license.
-Per-demo configuration loading and full deployment-pipeline verification remain
-separate pending work.
+The separate AIOps loader is prepared but has not been launched. AIOps deployment
+and full deployment-pipeline verification remain separate pending work.
+
+## AIOps deployment after base
+
+The independent `deploy-aiops-demo.yml` loads the whole-file Vault-encrypted
+`cac/aiops_demo.yml` from the private repository's `main` branch. It takes the
+same explicit target URL, repository URL, and attached credentials as Step 04.
+It does not reapply base or import a subscription. Use the `_aiops_demo` suffix
+on the dispatch variables in this file. Each object has one defining file;
+shared dependencies are references to objects already installed by base.
+
+The file must set `aiops_configuration_ready: true` after review and declare
+`aiops_required_secret_variables`, a list of required secret variable names.
+An incomplete capture keeps readiness false. Required variables must resolve to
+nonempty values; missing values and exported `$encrypted$` markers are rejected.
+Readiness and secret checks run before creating API tokens or applying objects.
+
+Declare the special EDA Controller credential using
+`aiops_eda_controller_credential_name` and `aiops_eda_organization_name`. Its entry
+in `eda_credentials_aiops_demo` uses `organization_name`, the built-in
+`Red Hat Ansible Automation Platform` credential type, `inputs.host` referencing
+the normalized `aap_hostname` plus `/api/controller`, and `inputs.oauth_token` referencing
+`aiops_controller_access_token`. The playbook supplies that token at runtime.
+Do not export or reuse the source AAP's token.
+
+If that target credential does not exist, the playbook creates a write-scope
+Gateway token, then immediately saves it in the new EDA credential. The token
+is persistent because activations need it after the configuration job exits.
+If the credential already exists, the playbook preserves it and checks its
+organization, type, normalized target URL, token presence, and other declared
+nonsecret settings. Drift requires review; a rerun does not rotate the token.
+The hidden token's validity cannot be inferred from its presence.
+
+That special credential is removed from the list passed to ordinary dispatch.
+This matters because `ansible.eda.credential` 2.13.0 requires `inputs` for updates
+and defaults to updating secrets; sending an exported encryption marker would
+not provide a valid new target token. Other AIOps objects use normal dispatch.
+
+The temporary configuration token is revoked and the checkout removed after
+ordinary success or failure. A newly generated persistent EDA token is revoked
+only when an API lookup proves that no corresponding credential was saved.
+If that lookup fails, inspect the target before removing a potentially used
+token. Fatal Ansible role-loading errors or interruptions can skip cleanup.
+
+The new entry point and Job Template are prepared for later use, without a live
+deployment. They configure AAP objects only; they do not deploy the external
+monitoring, website, or assistant environment. Applying enabled EDA activations
+may start them. See [README.md](README.md#aiops-configuration-deployment) for inputs.
 
 ## Collection sources
 
@@ -75,18 +122,20 @@ target does not bootstrap the running job's dependency downloads.
 
 ```
 working-directory/cac/        # editable configuration outside Git
-    base.yml                   # shared resources (org, users, credentials, EEs, inventories, hosts, projects, labels)
-    selfhealing.yml            # AIOps self-healing demo JTs + EDA          (complete)
-    simroi.yml                 # simulated ROI dashboard JTs + schedules    (complete)
-    orchestrator_deploy.yml    # Automation Orchestrator JTs                (complete)
-    autodeploy.yml             # autodeploy pipeline JTs (01-04 + destroy)  (complete)
+    base.yml                   # platform-wide setup only
+    aiops_demo.yml             # current AIOps objects, dependencies, and readiness checks
+    selfhealing.yml            # historical partial capture, superseded by aiops_demo.yml
+    simroi.yml                 # historical ROI capture; refresh before use
+    orchestrator_deploy.yml    # historical Orchestrator capture; refresh before use
+    autodeploy.yml             # historical deployment-template capture; refresh before use
     servicenow.yml             # ServiceNow ITSM integration               (skeleton)
     config_exceptions.yml      # configuration drift detection              (skeleton)
     intelligent_assistant.yml  # Intelligent Assistant                      (skeleton)
 ```
 
 The private configuration repository stores encrypted copies under `cac/`, named
-`base_CaC_vault.yml` and `DEMO_PLACEHOLDER_CaC_vault.yml`. The shared encrypted
+`base_CaC_vault.yml`, `aiops_demo.yml`, or `DEMO_PLACEHOLDER_CaC_vault.yml`. All
+populated files are whole-file Vault encrypted regardless of filename. The shared encrypted
 base has moved there. Editable working files remain outside Git.
 
 The private repository also holds `cac/manifest.zip.vault`, which encrypts the
@@ -98,7 +147,8 @@ This public repository retains two empty plaintext examples: use
 and commented entries with generic placeholders. See [README.md](README.md)
 for the preparation, encryption, verification, and commit workflow. Stage 04
 loads only the shared `cac/base_CaC_vault.yml` from `main`; adding another encrypted
-file to the private repository does not automatically apply that demo.
+file to the private repository does not automatically apply that demo. The
+separate `deploy-aiops-demo.yml` entry point loads only `cac/aiops_demo.yml`.
 
 ## Variable naming
 
@@ -139,24 +189,38 @@ Gotchas: `controller_templates` (not `controller_job_templates`), `aap_user_acco
 
 ## Resource inventory
 
-What the CaC files capture from the current AAP instance:
+Current ownership differs from the original broad shared capture. That capture
+was preserved outside Git before separating platform and use-case definitions.
 
-### base_CaC_vault.yml (shared)
-- 1 organization (Default)
-- 4 users (admin, kkrzywic, mnolo, orchestrator_svc)
-- 4 credentials (hypervisor, default machine, vault, PAH token)
-- 1 custom EE (Orchestrator EE — ee-supported-rhel9)
-- 3 inventories (main inventory, Localhost, ROInventory)
-- 9 hosts across the 3 inventories
-- 4 projects (automation-ng-repo, SelfHealing Repo, Advanced AAP Features, AAP Advanced Features)
-- 6 labels
-- 1 generic JT (VMs deploy locally)
+### base_CaC_vault.yml (platform only)
 
-### selfhealing.yml (2 JTs + 1 EDA activation)
-- Deploy Zabbix Agent — deploys agent to testserver1
-- Run Claude to analyse and fix — Claude CLI self-healing on tra
-- Zabbix Rulebook v3 — EDA activation, triggers "Run Claude" on Zabbix agent-down alerts
-- EDA credentials and Event Stream are documented but commented (API doesn't expose them for listing)
+The current private base retains the platform organization and one existing
+platform setting. It contains no use-case projects, inventories, hosts, SSH
+credentials, execution environments, job templates, or workflows. Destination
+PAH-source bootstrap remains pending valid local PAH credentials.
+
+### aiops_demo.yml (current AIOps capture)
+
+The selected working demo has seven job templates and two active EDA rulebooks:
+agent remediation plus website enable/disable, outage, repair, and rearming.
+Its configuration includes the required AAP dependencies. Shared source objects
+are copied under AIOps-specific inventory, credential, and environment names;
+object references are rewritten consistently. The base organization is a
+prerequisite. Older workflow/test objects are inventoried outside Git and not
+selected for deployment. The earlier two-template `selfhealing.yml` capture was
+incomplete and must not be treated as the current source of truth.
+
+Object definitions establish ownership; references to definitions in another
+configuration establish dependencies. Compare service, resource type, parent
+scope, organization, and name rather than source-instance numeric IDs. Preserve
+the accepted inventory to recognize deletions. Git changes, service audit
+records, and normalized exports are complementary change checks. Review a
+difference before encrypting and committing an update. Secrets require explicit
+updates because API exports cannot reveal their stored values. These drift and
+restoration checks are planned, not yet automated. External environment
+configuration is deferred; this phase deploys AAP objects only.
+
+The following files are historical captures or skeletons needing refresh:
 
 ### simroi.yml (5 JTs + 5 schedules)
 - Patch RHEL, Deploy App Updates, Security Scan, Database Backup, Firewall Rule Update

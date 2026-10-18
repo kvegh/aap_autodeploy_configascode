@@ -4,18 +4,28 @@
 # your demo's identifier. Every variable needs a suffix for wildcard dispatch.
 # Replace [] with that demo's resources. See the commented examples below.
 # Encrypt sensitive configuration before committing as DEMO_PLACEHOLDER_CaC_vault.yml.
+# Objects defined here belong to this demo. Reference platform prerequisites by name.
 
+aap_applications_demo: []
+aap_teams_demo: []
+aap_user_accounts_demo: []
 controller_projects_demo: []
+controller_credential_types_demo: []
 controller_credentials_demo: []
+controller_credential_input_sources_demo: []
 controller_execution_environments_demo: []
 controller_inventories_demo: []
+controller_inventory_sources_demo: []
 controller_hosts_demo: []
 controller_groups_demo: []
 controller_templates_demo: []
 controller_workflows_demo: []
 controller_schedules_demo: []
+controller_notifications_demo: []
 controller_labels_demo: []
+controller_roles_demo: []
 eda_projects_demo: []
+eda_credential_types_demo: []
 eda_credentials_demo: []
 eda_decision_environments_demo: []
 eda_rulebook_activations_demo: []

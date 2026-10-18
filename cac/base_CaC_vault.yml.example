@@ -1,7 +1,7 @@
 ---
 # Empty shared configuration for infra.aap_configuration.dispatch.
 # Copy to a separate working file; keep this example free of actual values.
-# Replace [] with the resources needed by your environment.
+# Base owns platform-wide setup only. Keep all use-case objects in project files.
 # Encrypt populated sensitive configuration before adding it to Git.
 # The file is plaintext despite its .example name; it contains no secrets.
 
@@ -9,25 +9,17 @@ aap_organizations_base: []
 aap_teams_base: []
 # Keep the account used to apply configuration outside managed user accounts.
 aap_user_accounts_base: []
-controller_credential_types_base: []
+# Platform content-source credentials may belong here; machine credentials do not.
 controller_credentials_base: []
-controller_execution_environments_base: []
-controller_inventories_base: []
-controller_hosts_base: []
-controller_groups_base: []
-controller_projects_base: []
-controller_labels_base: []
+controller_settings_base: {}
 
 # Example list entries, using generic placeholders only:
 # aap_organizations_base:
 #   - name: ORGANIZATION_PLACEHOLDER
-# controller_inventories_base:
-#   - name: INVENTORY_PLACEHOLDER
-#     organization: ORGANIZATION_PLACEHOLDER
 # controller_credentials_base:
-#   - name: CREDENTIAL_PLACEHOLDER
+#   - name: CONTENT_SOURCE_CREDENTIAL_PLACEHOLDER
 #     organization: ORGANIZATION_PLACEHOLDER
-#     credential_type: Machine
+#     credential_type: Ansible Galaxy/Automation Hub API Token
 #     inputs:
-#       username: USERNAME_PLACEHOLDER
-#       password: PASSWORD_PLACEHOLDER
+#       url: PAH_REPOSITORY_URL_PLACEHOLDER
+#       token: TOKEN_PLACEHOLDER

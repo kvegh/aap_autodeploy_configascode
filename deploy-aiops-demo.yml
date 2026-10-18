@@ -1,0 +1,378 @@
+---
+- name: Deploy AIOps self-healing configuration after shared base
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - myvars
+    - vars/main.yml
+  vars:
+    dispatch_include_wildcard_vars: true
+    # AAP 2.7 manages applications through Gateway; Controller no longer ships this module.
+    aap_configuration_dispatcher_exclude_roles:
+      - controller_applications
+    debug_logging: false
+    aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
+    aap_username: admin
+    aap_validate_certs: false
+  pre_tasks:
+    - name: Require a Boolean debug logging choice
+      ansible.builtin.assert:
+        that:
+          - debug_logging is boolean or (debug_logging is string and (debug_logging | lower) in ['true', 'false'])
+        fail_msg: Set debug_logging to true or false.
+
+    - name: Require an explicit target AAP HTTPS URL
+      ansible.builtin.assert:
+        that:
+          - aap_hostname is defined
+          - aap_hostname is string
+          - (aap_hostname | ansible.builtin.urlsplit('scheme')) == 'https'
+          - (aap_hostname | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
+          - (aap_hostname | ansible.builtin.urlsplit('username')) is none
+          - (aap_hostname | ansible.builtin.urlsplit('password')) is none
+        fail_msg: Supply aap_hostname as the target AAP HTTPS URL, using the intended internal hostname or IP address.
+
+    - name: Require a private configuration repository URL without embedded credentials
+      ansible.builtin.assert:
+        that:
+          - aap_config_repo_url is defined
+          - aap_config_repo_url is string
+          - (aap_config_repo_url | ansible.builtin.urlsplit('scheme')) == 'https'
+          - (aap_config_repo_url | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
+          - (aap_config_repo_url | ansible.builtin.urlsplit('username')) is none
+          - (aap_config_repo_url | ansible.builtin.urlsplit('password')) is none
+          - (aap_config_repo_url | ansible.builtin.urlsplit('path')) not in ['', '/']
+          - (aap_config_repo_url | ansible.builtin.urlsplit('query')) == ''
+          - (aap_config_repo_url | ansible.builtin.urlsplit('fragment')) == ''
+          - aap_config_repo_url is not search('\\s')
+        fail_msg: Supply aap_config_repo_url as an HTTPS Git URL without credentials, query, or fragment.
+
+    - name: Require the injected CaC Git token
+      ansible.builtin.assert:
+        that:
+          - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
+        fail_msg: Attach the CaC Git credential that injects CAC_GIT_TOKEN.
+      no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+    - name: Create a private temporary configuration workspace
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: aap-aiops-cac-
+      register: cac_workspace
+
+    - name: Retrieve and apply only the encrypted AIOps configuration
+      block:
+        - name: Prepare Git authentication without putting the token in a URL or argument
+          ansible.builtin.copy:
+            dest: "{{ cac_workspace.path }}/git-askpass"
+            mode: '0700'
+            content: |
+              #!/bin/sh
+              case "$1" in
+                *Username*) printf '%s\n' 'x-access-token' ;;
+                *Password*) printf '%s\n' "$CAC_GIT_TOKEN" ;;
+                *) exit 1 ;;
+              esac
+
+        - name: Download the private configuration from main
+          ansible.builtin.git:
+            repo: "{{ aap_config_repo_url }}"
+            dest: "{{ cac_workspace.path }}/repository"
+            version: main
+            depth: 1
+            recursive: false
+            single_branch: true
+          environment:
+            GIT_ASKPASS: "{{ cac_workspace.path }}/git-askpass"
+            GIT_TERMINAL_PROMPT: '0'
+            LC_ALL: C
+            GIT_CONFIG_COUNT: '3'
+            GIT_CONFIG_KEY_0: credential.helper
+            GIT_CONFIG_VALUE_0: ''
+            GIT_CONFIG_KEY_1: http.followRedirects
+            GIT_CONFIG_VALUE_1: 'false'
+            GIT_CONFIG_KEY_2: http.sslVerify
+            GIT_CONFIG_VALUE_2: 'true'
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Read the encrypted AIOps configuration
+          ansible.builtin.slurp:
+            src: "{{ cac_workspace.path }}/repository/cac/aiops_demo.yml"
+          register: cac_encrypted_aiops
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Require a fully Vault-encrypted AIOps configuration
+          ansible.builtin.assert:
+            that:
+              - (cac_encrypted_aiops.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
+            fail_msg: The AIOps configuration must be a Vault-encrypted file.
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Decrypt and load the AIOps configuration with the attached Vault credentials
+          ansible.builtin.include_vars:
+            file: "{{ cac_workspace.path }}/repository/cac/aiops_demo.yml"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Require a reviewed and complete AIOps configuration
+          ansible.builtin.assert:
+            that:
+              - aiops_configuration_ready is defined
+              - aiops_configuration_ready is boolean
+              - aiops_configuration_ready
+              - aiops_required_secret_variables is defined
+              - aiops_required_secret_variables is sequence
+              - aiops_required_secret_variables is not string
+              - aiops_required_secret_variables is not mapping
+              - aiops_eda_controller_credential_name is defined
+              - aiops_eda_organization_name is defined
+            fail_msg: Complete and review the AIOps vault and its required secrets before deployment.
+
+        - name: Require the secret inputs listed by the AIOps configuration
+          ansible.builtin.assert:
+            that:
+              - item is string
+              - item in vars
+              - vars[item] is string
+              - vars[item] | length > 0
+              - vars[item] not in ['CHANGEME', '$encrypted$']
+            fail_msg: Supply every required AIOps secret through encrypted configuration.
+          loop: "{{ aiops_required_secret_variables }}"
+          no_log: true
+
+        - name: Read the current Gateway administrator password from the installer
+          ansible.builtin.command:
+            argv:
+              - python3
+              - -c
+              - |
+                import json
+                import shlex
+                import sys
+                from pathlib import Path
+
+                for line in Path(sys.argv[1]).read_text().splitlines():
+                    key, separator, value = line.partition('=')
+                    if separator and key.strip() == 'gateway_admin_password':
+                        parts = shlex.split(value.strip(), comments=True)
+                        if parts:
+                            print(json.dumps({'password': parts[0]}))
+                            break
+                else:
+                    sys.exit('Gateway admin password is missing from the installer inventory.')
+              - "{{ installer_extract_dir }}/ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64/inventory"
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+          when: aap_password is not defined
+          changed_when: false
+          register: cac_installer_admin
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Use the current Gateway administrator password
+          ansible.builtin.set_fact:
+            aap_password: "{{ (cac_installer_admin.stdout | from_json).password }}"
+          when: aap_password is not defined
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Create a Gateway token for this configuration run
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
+            method: POST
+            url_username: "{{ aap_username }}"
+            url_password: "{{ aap_password }}"
+            force_basic_auth: true
+            body_format: json
+            body:
+              description: Temporary AIOps CaC configuration token
+              scope: write
+              application: null
+            status_code: 201
+            validate_certs: "{{ aap_validate_certs }}"
+          register: cac_gateway_token
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Use the Gateway token for configuration roles
+          ansible.builtin.set_fact:
+            aap_token: "{{ cac_gateway_token.json.token }}"
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Prepare target-only EDA token substitution
+          ansible.builtin.set_fact:
+            aiops_controller_access_token: ''
+          no_log: true
+
+        - name: Select the EDA Controller credential definition
+          ansible.builtin.set_fact:
+            aiops_eda_controller_credential_definitions: >-
+              {{ eda_credentials_aiops_demo |
+                 selectattr('name', 'equalto', aiops_eda_controller_credential_name) | list }}
+          no_log: true
+
+        - name: Require one target-specific EDA Controller credential definition
+          ansible.builtin.assert:
+            that:
+              - aiops_eda_controller_credential_definitions | length == 1
+              - aiops_eda_controller_credential_definitions[0].organization_name == aiops_eda_organization_name
+              - aiops_eda_controller_credential_definitions[0].credential_type_name == 'Red Hat Ansible Automation Platform'
+              - (aiops_eda_controller_credential_definitions[0].inputs.host | regex_replace('/+$', '')) == ((aap_hostname | regex_replace('/+$', '')) + '/api/controller')
+            fail_msg: The AIOps EDA Controller credential must use the intended organization and target AAP.
+          no_log: true
+
+        - name: Find the existing target EDA Controller credential
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/eda/v1/eda-credentials/?name={{ aiops_eda_controller_credential_name | urlencode }}"
+            headers:
+              Authorization: "Bearer {{ aap_token }}"
+            status_code: 200
+            validate_certs: "{{ aap_validate_certs }}"
+          register: aiops_existing_eda_credential
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Require an unambiguous EDA credential on this target
+          ansible.builtin.assert:
+            that:
+              - aiops_existing_eda_credential.json.count in [0, 1]
+              - >-
+                aiops_existing_eda_credential.json.count == 0 or
+                (aiops_existing_eda_credential.json.results[0].organization.name == aiops_eda_organization_name and
+                 aiops_existing_eda_credential.json.results[0].credential_type.name == 'Red Hat Ansible Automation Platform' and
+                 (aiops_existing_eda_credential.json.results[0].inputs.oauth_token | default('') | length) > 0 and
+                 (aiops_existing_eda_credential.json.results[0].inputs.host | regex_replace('/+$', '')) ==
+                 ((aap_hostname | regex_replace('/+$', '')) + '/api/controller'))
+            fail_msg: The existing EDA Controller credential must belong to the intended organization and target AAP. Review mismatches before deployment.
+          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+
+        - name: Require review of existing EDA credential settings that differ from configuration
+          ansible.builtin.assert:
+            that:
+              - >-
+                (aiops_existing_eda_credential.json.results[0].inputs | dict2items |
+                 rejectattr('key', 'in', ['oauth_token', 'host']) | items2dict) ==
+                (aiops_eda_controller_credential_definitions[0].inputs | dict2items |
+                 rejectattr('key', 'in', ['oauth_token', 'host']) | items2dict)
+              - >-
+                aiops_eda_controller_credential_definitions[0].description is not defined or
+                aiops_existing_eda_credential.json.results[0].description ==
+                aiops_eda_controller_credential_definitions[0].description
+            fail_msg: Existing EDA credential settings differ from CaC. Review the difference without replacing its stored token automatically.
+          when: aiops_existing_eda_credential.json.count == 1
+          no_log: true
+
+        - name: Create a persistent Controller access token only for a new EDA credential
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
+            method: POST
+            url_username: "{{ aap_username }}"
+            url_password: "{{ aap_password }}"
+            force_basic_auth: true
+            body_format: json
+            body:
+              description: AIOps demo EDA Controller access
+              scope: write
+              application: null
+            status_code: 201
+            validate_certs: "{{ aap_validate_certs }}"
+          when: aiops_existing_eda_credential.json.count == 0
+          register: aiops_eda_access_token
+          no_log: true
+
+        - name: Supply the new target token for the EDA credential definition
+          ansible.builtin.set_fact:
+            aiops_controller_access_token: "{{ aiops_eda_access_token.json.token | default('') }}"
+          no_log: true
+
+        - name: Resolve the EDA credential definition with the newly generated target token
+          ansible.builtin.set_fact:
+            aiops_eda_controller_credential_definitions: >-
+              {{ eda_credentials_aiops_demo |
+                 selectattr('name', 'equalto', aiops_eda_controller_credential_name) | list }}
+          no_log: true
+
+        - name: Require the generated target token in the new EDA credential
+          ansible.builtin.assert:
+            that:
+              - aiops_existing_eda_credential.json.count == 1 or aiops_eda_controller_credential_definitions[0].inputs.oauth_token == aiops_controller_access_token
+            fail_msg: The new AIOps EDA Controller credential must use the generated target token.
+          no_log: true
+
+        - name: Save the new target token in its persistent EDA credential
+          ansible.eda.credential:
+            name: "{{ aiops_eda_controller_credential_definitions[0].name }}"
+            description: "{{ aiops_eda_controller_credential_definitions[0].description | default(omit) }}"
+            credential_type_name: "{{ aiops_eda_controller_credential_definitions[0].credential_type_name }}"
+            organization_name: "{{ aiops_eda_controller_credential_definitions[0].organization_name }}"
+            inputs: "{{ aiops_eda_controller_credential_definitions[0].inputs }}"
+            controller_host: "{{ aap_hostname }}"
+            controller_token: "{{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+          when: aiops_existing_eda_credential.json.count == 0
+          no_log: true
+
+        - name: Preserve the target Controller credential during ordinary dispatch
+          ansible.builtin.set_fact:
+            eda_credentials_aiops_demo: >-
+              {{ eda_credentials_aiops_demo |
+                 rejectattr('name', 'equalto', aiops_eda_controller_credential_name) | list }}
+          no_log: true
+
+        - name: Apply AIOps use-case configuration
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.dispatch
+      always:
+        - name: Clean up unused EDA tokens and temporary configuration access
+          block:
+            - name: Check whether a newly generated EDA token was saved
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/eda/v1/eda-credentials/?name={{ aiops_eda_controller_credential_name | urlencode }}"
+                headers:
+                  Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+                status_code: 200
+                validate_certs: "{{ aap_validate_certs }}"
+              when: aiops_eda_access_token.json.id is defined
+              register: aiops_saved_eda_credential
+              failed_when: false
+              no_log: true
+
+            - name: Report an inconclusive persistent EDA token cleanup check
+              ansible.builtin.debug:
+                msg: Could not verify whether the new EDA credential was saved. Its persistent token is preserved; inspect the target before revoking it.
+              when:
+                - aiops_eda_access_token.json.id is defined
+                - aiops_saved_eda_credential.status | default(0) != 200
+
+            - name: Revoke a newly generated EDA token proven not to have been saved
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/{{ aiops_eda_access_token.json.id }}/"
+                method: DELETE
+                headers:
+                  Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+                status_code: [204, 404]
+                validate_certs: "{{ aap_validate_certs }}"
+              when:
+                - aiops_eda_access_token.json.id is defined
+                - aiops_saved_eda_credential.status | default(0) == 200
+                - aiops_saved_eda_credential.json.count == 0
+              no_log: true
+
+          always:
+            - name: Revoke the run token and clean the private workspace
+              block:
+                - name: Revoke the temporary Gateway token
+                  ansible.builtin.uri:
+                    url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/{{ cac_gateway_token.json.id }}/"
+                    method: DELETE
+                    headers:
+                      Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+                    status_code: [204, 404]
+                    validate_certs: "{{ aap_validate_certs }}"
+                  when: cac_gateway_token.json.id is defined
+                  no_log: "{{ not (debug_logging | default(false) | bool) }}"
+              always:
+                - name: Remove the temporary AIOps checkout and authentication helper
+                  ansible.builtin.file:
+                    path: "{{ cac_workspace.path }}"
+                    state: absent

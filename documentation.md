@@ -116,8 +116,11 @@ from the organization and verify the remaining PAH source order.
   testing; the rerun preserved the existing license. Password rotation remains
   planned. The saved debug-logging default remains false.
 - The encrypted shared base is committed in the private configuration repository.
+  It now contains platform setup only; use-case objects belong to separate files.
   Empty examples remain under this repository's `cac/`; editable populated
   configuration stays outside Git.
+- `deploy-aiops-demo.yml` is a separate AIOps configuration entry point, prepared
+  for later use after base. Its Job Template must not be launched yet.
 - The current full pipeline has not been verified end to end since the split.
 
 ## TODOs
@@ -146,7 +149,11 @@ from the organization and verify the remaining PAH source order.
 - [x] Load shared configuration from the private configuration repository's `main` branch
 - [x] Decrypt and import the private subscription manifest before pushing AAP configuration
 - [x] Verify a complete Step 04 shared-base run, including token revocation and workspace cleanup
-- [ ] Add selection and loading of per-demo CaC alongside shared base configuration
+- [x] Separate use-case objects from platform base configuration
+- [x] Prepare a separate AIOps configuration playbook with its own encrypted file
+- [ ] Validate the AIOps deployment Job Template against a clean target after capture review
+- [ ] Add dedicated deployment entry points for the remaining use cases
+- [ ] Configure destination PAH sources using valid local PAH credentials
 - [ ] Fill CHANGEME secrets in CaC files (credential inputs, EDA credentials, Event Stream)
 - [ ] Build Bitwarden backup script for secrets
 - [ ] Vault-encrypt completed demo files, verify them, and commit/push to the private configuration repository
@@ -155,7 +162,8 @@ from the organization and verify the remaining PAH source order.
 
 ### CaC drift detection
 
-- [ ] Build activity stream export — AAP's `/api/controller/v2/activity_stream/` logs every create/update/delete from day one (876 entries currently, starting from install on 2026-07-11). Parse the stream incrementally (track last processed ID) to detect UI changes and sync them back into CaC files. This avoids the fragile approach of querying each object type separately, which breaks when new types are added in AAP updates.
+- [ ] Combine Git revision checks, Controller/Gateway/EDA audit records where available, and normalized object exports against the accepted CaC inventory. Track ownership, references, additions, modifications, and deletions; review differences before updating encrypted files. Preserve audit and revision checkpoints, explicitly maintain secrets, and periodically test restoration to a clean AAP. Audit records complement full comparison; they do not establish complete export coverage.
+- [ ] Cover external environment configuration in a later phase; current deployment scope is AAP objects only.
 
 ### Done
 

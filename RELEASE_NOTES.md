@@ -1,5 +1,28 @@
 # Release notes
 
+## 0.5.0
+
+Add a separate AIOps configuration deployment playbook for an AAP that already
+has platform base configuration. It loads only the encrypted `cac/aiops_demo.yml`
+from private Git, rejects incomplete captures and missing secrets, and creates
+target-specific EDA Controller access without copying a source-instance token.
+Reruns preserve that credential and reject conflicting settings. Temporary
+configuration tokens and checkouts are cleaned; persistent EDA access remains
+available to the imported activations. The new entry point must not run yet.
+
+Clarify base ownership and update the empty templates: platform setup belongs
+to base, while use-case projects, credentials, inventories, templates, and EDA
+integrations belong to their own configurations. The current private base was
+reduced to its organization and existing platform setting, with its previous
+definitions preserved outside Git. AIOps owns copies of formerly shared source
+inventory, credentials, and runtime environments. External setup is deferred.
+
+Validation: full Ansible syntax check passed. Eleven isolated real-Ansible
+checks using the installed EDA credential module passed, covering readiness,
+missing secrets, first deployment, preserved credentials, drift rejection,
+and token/workspace cleanup after failures. These checks used a synthetic API;
+the AIOps deployment playbook was not launched against a live AAP.
+
 ## 0.4.4
 
 Document the first successful complete Step 04 shared-base configuration run.
