@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.5.9
+
+Recover monitoring of an existing Stage 03 installer through the optional
+`aap_installer_resume_job_id`. Resume mode skips host preparation, inventory
+changes, and installer launch; it checks the existing async result before the
+Controller health check. Protect captured installer output and reject invalid
+job identifiers. Document separate Controller and remote installer time limits.
+
+Validation: Ansible syntax and whitespace checks passed. The live installation
+was interrupted by the Controller's overall timeout; successful installation
+and the new resume path have not yet been verified live.
+
 ## 0.5.8
 
 Document the unified CoP credential item schema implemented in `91b5fc6` and the

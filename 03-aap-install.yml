@@ -12,6 +12,14 @@
           - vm_name is defined
         fail_msg: "Required extra_vars: vm_ip, vm_name"
 
+    - name: Validate an optional existing installer job identifier
+      ansible.builtin.assert:
+        that:
+          - aap_installer_resume_job_id is string
+          - aap_installer_resume_job_id is match('^j?[0-9]+\.[0-9]+$')
+        fail_msg: Supply the async job identifier from the original installation job.
+      when: aap_installer_resume_job_id is defined
+
     - name: Add target VM to inventory
       ansible.builtin.add_host:
         name: target_vm
@@ -28,6 +36,11 @@
   vars_files:
     - myvars
     - vars/main.yml
+
+  pre_tasks:
+    - name: Skip host preparation when observing an existing installer
+      ansible.builtin.meta: end_play
+      when: aap_installer_resume_job_id is defined
 
   tasks:
     - name: Wait for SSH
@@ -89,27 +102,53 @@
     source_aap_fqdn: "aap.{{ vault_domain }}"
 
   tasks:
-    - name: Replace hostname in inventory
-      ansible.builtin.replace:
-        path: "{{ installer_extract_dir }}/{{ installer_dir_name }}/inventory"
-        regexp: "{{ source_aap_fqdn }}"
-        replace: "{{ aap_hostname }}"
+    - name: Start a new AAP installation
+      when: aap_installer_resume_job_id is not defined
+      block:
+        - name: Replace hostname in inventory
+          ansible.builtin.replace:
+            path: "{{ installer_extract_dir }}/{{ installer_dir_name }}/inventory"
+            regexp: "{{ source_aap_fqdn }}"
+            replace: "{{ aap_hostname }}"
 
-    - name: Set bundle install in inventory
-      ansible.builtin.lineinfile:
-        path: "{{ installer_extract_dir }}/{{ installer_dir_name }}/inventory"
-        line: "{{ item }}"
-        insertafter: '\[all:vars\]'
-      loop:
-        - "bundle_install=true"
-        - "bundle_dir={{ installer_extract_dir }}/{{ installer_dir_name }}/bundle"
+        - name: Set bundle install in inventory
+          ansible.builtin.lineinfile:
+            path: "{{ installer_extract_dir }}/{{ installer_dir_name }}/inventory"
+            line: "{{ item }}"
+            insertafter: '\[all:vars\]'
+          loop:
+            - "bundle_install=true"
+            - "bundle_dir={{ installer_extract_dir }}/{{ installer_dir_name }}/bundle"
 
-    - name: Run AAP installer
-      ansible.builtin.command:
-        cmd: ansible-playbook -i inventory ansible.containerized_installer.install
-        chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"
-      async: 3600
-      poll: 30
+        - name: Run AAP installer
+          ansible.builtin.command:
+            cmd: ansible-playbook -i inventory ansible.containerized_installer.install
+            chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"
+          async: 3600
+          poll: 30
+
+    - name: Observe the existing AAP installer without launching another
+      when: aap_installer_resume_job_id is defined
+      block:
+        - name: Wait for the existing installer result
+          ansible.builtin.async_status:
+            jid: "{{ aap_installer_resume_job_id }}"
+          register: aap_installer_resumed
+          until: aap_installer_resumed.finished | default(false) | bool
+          retries: 120
+          delay: 30
+          failed_when: false
+          no_log: true
+
+        - name: Require the existing installer to have completed successfully
+          ansible.builtin.assert:
+            that:
+              - aap_installer_resumed.rc is defined
+              - aap_installer_resumed.rc | int == 0
+            fail_msg: >-
+              The existing installer did not report success
+              (return code {{ aap_installer_resumed.rc | default('unavailable') }}).
+              Inspect its protected logs before retrying installation.
 
     - name: Verify AAP is accessible
       ansible.builtin.uri:

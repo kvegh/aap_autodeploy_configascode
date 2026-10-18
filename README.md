@@ -188,6 +188,27 @@ Stage 03 still uses `vm_name` and `vault_domain` to form the installer's fully
 qualified hostname. That hostname can resolve internally; Stage 04's explicit
 API URL determines how the configuration job connects.
 
+### Recover interrupted Stage 03 monitoring
+
+The Job Template's overall timeout must allow for host preparation as well as
+the installer's own 3,600-second async limit. A 3,600-second template timeout
+stopped a live run while its remote installer was still running; the template
+now allows 7,200 seconds. This timeout result does not establish an installer
+failure or justify starting another installer.
+
+To inspect that existing installation, launch Stage 03 with the same `vm_name`
+and `vm_ip`, plus `aap_installer_resume_job_id` from the original job's async
+events. For example, use a placeholder such as `j123456789012.34567`, replacing
+it with the actual identifier. This mode skips host preparation, installer
+inventory edits, and installer launch. It waits for the existing async result
+under the installer account, then runs the Controller health check only if the
+installer reports exit code zero. Installer output remains protected.
+
+Resume mode cannot extend the original remote async limit. Missing results,
+timeouts, and unsuccessful installer exits require inspecting protected installer
+logs before any installation retry. A listening HTTPS port alone is insufficient
+to establish successful installation.
+
 Rotating the target administrator password, removing the remaining `myvars`
 dependency, and automatic demo selection are separate pending work.
 The shared base configuration flow is verified; AIOps configuration deployment
