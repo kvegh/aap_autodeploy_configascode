@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.4.3
+
+Document the AAP 2.7 dispatch compatibility decision implemented in `44e1045`,
+the successful subscription import, collection-artifact validation, and cleanup
+limitation. README describes the same behavior. Whitespace checks passed;
+this follow-up changes documentation only.
+
 ## 0.4.2
 
 Exclude the legacy Controller application role from Step 04 dispatch on AAP 2.7.

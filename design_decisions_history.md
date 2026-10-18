@@ -4,6 +4,24 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Manage AAP 2.7 applications through Gateway
+
+Implementation: `44e1045`.
+
+The first live run with the corrected installer authentication successfully
+imported the subscription, then stopped while loading the collection's legacy
+Controller application role. The installed Controller collection does not
+provide that module. Step 04 excludes only `controller_applications`; the
+Gateway application role still handles `aap_applications`, and Controller role
+assignments remain enabled. The collection's supported role-exclusion setting
+avoids changing its downloaded contents or suppressing the failure.
+
+All 59 module references across the 58 selected roles were verified against
+the five actual PAH collection artifacts. Five token-lifecycle checks passed.
+The role-loading failure bypassed Ansible's normal cleanup, so its run token
+was revoked separately using CA-verified HTTPS over the trusted SSH connection.
+README now states this cleanup limitation. Full CaC verification remains pending.
+
 ## Download project collections exclusively from PAH
 
 Implementation and policy documentation: `2725894`.
