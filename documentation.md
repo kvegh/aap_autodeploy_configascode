@@ -81,8 +81,9 @@ and the Git/TLS requirements.
 The private repository must also provide `cac/manifest.zip.vault`, the complete
 AAP subscription manifest encrypted with the `cac` Vault password. Step 04
 decrypts it into a restricted temporary ZIP and calls `ansible.controller.license`
-before dispatch. Import failure stops configuration; cleanup runs on success or
-failure. RHEL subscription setup in Step 03 is separate from this AAP activation.
+before dispatch. Import failure stops configuration; cleanup runs after success
+or ordinary task failures. Fatal role-loading errors or interruptions can skip
+cleanup. RHEL subscription setup in Step 03 is separate from this AAP activation.
 
 Two categories:
 - **Infrastructure secrets** (steps 01-03): registry credentials, PostgreSQL passwords, RHSM activation key, GoDaddy API token, domain, hypervisor IP.
@@ -109,8 +110,11 @@ from the organization and verify the remaining PAH source order.
   the Git-token and `cac` Vault credentials. It uses `myvars` for installer SSH
   access, reads the current Gateway password unless explicitly supplied, and
   obtains a per-run Gateway token for API authentication. Cleanup revokes it
-  after dispatch. Password rotation remains planned; full live verification
-  of the new authentication flow is pending.
+  after dispatch. Live job 1985 verified this flow and shared base configuration:
+  147 successful tasks, 36 changes, no failures, successful token revocation,
+  and temporary workspace removal. Subscription import succeeded in preceding
+  testing; the rerun preserved the existing license. Password rotation remains
+  planned. The saved debug-logging default remains false.
 - The encrypted shared base is committed in the private configuration repository.
   Empty examples remain under this repository's `cac/`; editable populated
   configuration stays outside Git.
@@ -141,6 +145,7 @@ from the organization and verify the remaining PAH source order.
 - [x] Read the installer Gateway password and use a per-run Gateway token for Step 04 API calls
 - [x] Load shared configuration from the private configuration repository's `main` branch
 - [x] Decrypt and import the private subscription manifest before pushing AAP configuration
+- [x] Verify a complete Step 04 shared-base run, including token revocation and workspace cleanup
 - [ ] Add selection and loading of per-demo CaC alongside shared base configuration
 - [ ] Fill CHANGEME secrets in CaC files (credential inputs, EDA credentials, Event Stream)
 - [ ] Build Bitwarden backup script for secrets

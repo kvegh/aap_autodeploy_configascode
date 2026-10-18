@@ -20,7 +20,13 @@ All 59 module references across the 58 selected roles were verified against
 the five actual PAH collection artifacts. Five token-lifecycle checks passed.
 The role-loading failure bypassed Ansible's normal cleanup, so its run token
 was revoked separately using CA-verified HTTPS over the trusted SSH connection.
-README now states this cleanup limitation. Full CaC verification remains pending.
+README now states this cleanup limitation. Subsequent live job 1985, using source
+revision `7d65678`, completed shared base configuration in 162 seconds with 147
+successful tasks, 36 changes, and no failures. It preserved the previously
+imported license, revoked its run token with HTTP 204, and removed its workspace.
+The project wait that displayed retry messages finished successfully after
+46 seconds. Saved debug logging remains false. This verifies Step 04's shared
+base flow, not per-demo loading or the complete deployment pipeline.
 
 ## Download project collections exclusively from PAH
 

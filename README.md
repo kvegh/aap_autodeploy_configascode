@@ -32,15 +32,14 @@ stops configuration. A per-run Gateway token authenticates the subscription
 import and dispatch. It is revoked afterward, and the temporary checkout, ZIP,
 and authentication helper are removed after successful runs and ordinary task
 failures. Ansible role-loading errors or interruptions can prevent cleanup.
-Selectable demo profiles and automatic
-handoff remain planned. Full deployment with the current dispatch configuration
-has not been verified since the repository split.
+Selectable demo profiles and automatic handoff remain planned. The full
+01-to-04 deployment pipeline has not been verified since the repository split.
 Live Step 04 testing has verified private Git access, decryption, installer
-password retrieval, Gateway token creation, and subscription import. Configuration
-then stopped because dispatch selected a legacy Controller application role whose
-module is absent from the installed Controller collection. Step 04 now excludes
-`controller_applications`; application configuration remains handled by
-`gateway_applications`. Full configuration verification remains pending.
+password retrieval, Gateway token creation, subscription import, and application
+of the shared base configuration. Job 1985 completed successfully on 2026-10-18
+in 162 seconds: 147 successful tasks, 36 changes, and no failures. Token revocation
+returned HTTP 204, and temporary workspace removal succeeded. The saved Job
+Template logging default remains protected. Per-demo files are not yet loaded.
 
 The separate `restore-windows-config.yml` applies a supplied Windows CaC file
 to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -173,8 +172,8 @@ API URL determines how the configuration job connects.
 
 Rotating the target administrator password, removing the remaining `myvars`
 dependency, and selecting demos are separate pending work.
-Attaching the credentials and adding this loader do not establish that the full
-Stage 04 job can successfully configure a target AAP.
+The shared base configuration flow is verified; selectable demo configuration
+and the complete deployment pipeline still require implementation or validation.
 
 Never commit plaintext secrets or sensitive environment-specific data, including
 account names, hostnames, addresses, tokens, or keys. Vault-encrypted files/values

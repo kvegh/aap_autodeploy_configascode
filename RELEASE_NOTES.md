@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.4.4
+
+Document the first successful complete Step 04 shared-base configuration run.
+The job retrieves encrypted configuration and the manifest from private Git,
+authenticates using the installer password and a temporary Gateway token, and
+applies the shared AAP objects. Live job 1985 used source `7d65678`, completed in
+162 seconds with 147 successful tasks, 36 changes, and no failures, preserved
+the previously imported subscription, revoked its token with HTTP 204, and
+removed its temporary workspace. Saved debug logging remains false.
+
+The project polling wait completed successfully after 46 seconds; its retry
+messages did not indicate repeated failed project creation. Reviewed the full
+job events and the saved Job Template default. Documentation and whitespace
+checks passed. Per-demo loading and the full deployment pipeline remain pending.
+This update changes documentation only and publishes no release tag.
+
 ## 0.4.3
 
 Document the AAP 2.7 dispatch compatibility decision implemented in `44e1045`,

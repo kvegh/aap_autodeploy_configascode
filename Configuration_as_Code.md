@@ -7,7 +7,7 @@ CoP means Community of Practice. Both `04-aap-config.yml` and
 
 ## How dispatch works
 
-The `dispatch` role auto-merges suffixed variables into base variables. With `dispatch_include_wildcard_vars: true`, it discovers all variables matching a pattern (e.g., `controller_templates_*`), merges them into `controller_templates`, and applies them via `ansible.controller` modules.
+The `dispatch` role auto-merges suffixed variables into base variables. With `dispatch_include_wildcard_vars: true`, it discovers all variables matching a pattern (e.g., `controller_templates_*`), merges them into `controller_templates`, and applies them through the appropriate service collection, including `ansible.controller` and `ansible.platform`.
 
 This lets us split configuration into logical files — one per project group — without writing any glue code. The dispatch role handles the merge and the module calls.
 
@@ -29,10 +29,13 @@ Ansible's `copy` action decrypts it using that same attached Vault credential,
 creating a mode-`0600` temporary ZIP. `ansible.controller.license` imports it into
 the explicit target AAP before dispatch; `force: false` preserves an existing
 non-trial license on reruns. The temporary checkout, ZIP, and helper are removed
-on success or failure. A failed subscription import prevents dispatch. A per-run
+after success or ordinary task failures. Fatal role-loading errors or interruptions
+can prevent cleanup. A failed subscription import prevents dispatch. A per-run
 Gateway token authenticates both the license module and dispatch, then is revoked
 in cleanup. Workspace removal still runs if revocation fails.
-The role sees the loaded suffixed variables and applies them as before.
+The role sees the loaded suffixed variables and applies them as before. Step 04
+excludes the legacy `controller_applications` role on AAP 2.7; Gateway's role
+handles `aap_applications` through `ansible.platform` instead.
 
 `myvars` and `vars/main.yml` remain in `vars_files`. Keep the original/default
 Vault credential attached alongside the `cac` credential because installer SSH
@@ -46,7 +49,11 @@ explicitly as `aap_hostname`. Stage 04 does not use `vm_name`, `vm_ip`, or
 internal IP in that HTTPS URL to avoid the public reverse-proxy route. Password
 rotation, removing `myvars`, and demo loading remain future work.
 See [README.md](README.md#stage-04-inputs) for inputs
-and execution-environment requirements. No full live Stage 04 run is implied.
+and execution-environment requirements. Live job 1985 successfully applied the
+shared base configuration, revoked its token, and removed its workspace. Earlier
+testing verified subscription import; the successful rerun preserved that license.
+Per-demo configuration loading and full deployment-pipeline verification remain
+separate pending work.
 
 ## Collection sources
 
