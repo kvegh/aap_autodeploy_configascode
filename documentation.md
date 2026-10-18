@@ -34,7 +34,7 @@ There's also `destroy-test-aap.yml` for teardown (with strict per-task safety as
 
 6. **Safety assertions on destroy** — every destructive task in `destroy-test-aap.yml` has an `assert` guard validating the target against `^aap27-test-\d+$`. Shell injection patterns are rejected.
 
-7. **Config-as-Code via dispatch role** — Step 04 uses `infra.aap_configuration`'s dispatch role and currently loads only shared base configuration. Demo selection remains planned. See [Configuration_as_Code.md](Configuration_as_Code.md).
+7. **Config-as-Code via dispatch role** — Step 04 uses `infra.aap_configuration`'s dispatch role. Its fixed shared-base path remains unchanged, while the populated base now lives in the private configuration repository. Connecting that source and adding demo selection remain planned. See [Configuration_as_Code.md](Configuration_as_Code.md).
 
 ## File Structure
 
@@ -47,7 +47,8 @@ aap_autodeploy_configascode/
     destroy-test-aap.yml
     restore-windows-config.yml   # Windows objects only, onto a provisioned AAP
     cac/
-        base_CaC_vault.yml       # shared CaC resources (vault-encrypted)
+        base_CaC_vault.yml.example # empty shared CaC template
+        project.yml.example        # empty per-demo CaC template
     templates/
         nginx-aap-test.conf.j2
         nginx-aap-test-http.conf.j2
@@ -64,8 +65,9 @@ aap_autodeploy_configascode/
 ## Secrets
 
 Infrastructure and AAP access secrets are in `myvars` at the repo root
-(vault-encrypted), loaded via `vars_files`. Object secrets also live in the
-encrypted CaC files. Vault password files, including `vpf`, stay outside Git.
+(vault-encrypted), loaded via `vars_files`. Object secrets live in encrypted
+CaC files in the separate private configuration repository. Editable configuration
+and Vault password files, including `vpf`, stay outside Git.
 
 Two categories:
 - **Infrastructure secrets** (steps 01-03): registry credentials, PostgreSQL passwords, RHSM activation key, GoDaddy API token, domain, hypervisor IP.
@@ -74,10 +76,12 @@ Two categories:
 ## Current State
 
 - Steps 01-03 exist; historical testing predates the repository split.
-- Step 04 uses dispatch and loads only shared base configuration. Dependency
-  availability and target authentication require verification and resolution.
-- Only the encrypted shared base is committed. Empty examples are available
-  under `cac/`; populated demo files remain outside the repository.
+- Step 04 uses dispatch but still references the former shared-base path. It
+  cannot run from this checkout alone until private-configuration loading is
+  implemented. Dependencies and target authentication also require verification.
+- The encrypted shared base is committed in the private configuration repository.
+  Empty examples remain under this repository's `cac/`; editable populated
+  configuration stays outside Git.
 - The current full pipeline has not been verified end to end since the split.
 
 ## TODOs
@@ -93,10 +97,11 @@ Two categories:
 ### CaC migration
 
 - [ ] Install `infra.aap_configuration` collection (needed for dispatch role)
+- [ ] Load shared configuration from the private configuration repository
 - [ ] Add selection and loading of per-demo CaC alongside shared base configuration
 - [ ] Fill CHANGEME secrets in CaC files (credential inputs, EDA credentials, Event Stream)
 - [ ] Build Bitwarden backup script for secrets
-- [ ] Vault-encrypt CaC files and commit to repo
+- [ ] Vault-encrypt completed demo files, verify them, and commit/push to the private configuration repository
 - [ ] Complete skeleton CaC files: servicenow.yml, config_exceptions.yml, intelligent_assistant.yml
 - [ ] Test full 01→02→03→04 pipeline with new dispatch-based 04
 

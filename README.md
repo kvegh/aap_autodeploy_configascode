@@ -4,9 +4,9 @@ Deploy fresh Ansible Automation Platform instances and configure them for demos.
 The intended flow is to select a demo, deploy AAP, apply shared configuration
 plus that demo's configuration, and verify the result.
 
-The project has two deliverables: reusable CaC templates for other operators,
-and applicable, Vault-protected configuration for our shared resources and demos.
-The generic templates and populated environment configuration remain distinct.
+The project provides reusable automation and CaC templates for other operators.
+Populated shared and demo configuration is maintained in a separate private
+repository as Vault-encrypted files.
 
 ## Current implementation
 
@@ -19,9 +19,12 @@ The repository contains four separate Ansible stages:
 | 03 | `03-aap-install.yml` | Prepare the VM and run the pre-staged AAP installer. |
 | 04 | `04-aap-config.yml` | Apply shared CaC through `infra.aap_configuration.dispatch`. |
 
-Stage 04 currently loads only `cac/base_CaC_vault.yml`; selectable demo profiles
-and automatic handoff between stages remain planned. Full deployment with the
-current dispatch configuration has not been verified since the repository split.
+Stage 04 still expects `cac/base_CaC_vault.yml` in its project checkout, but the
+populated base has moved to the private configuration repository. Loading from
+that repository is not implemented, so Stage 04 cannot run from this checkout
+alone. Selectable demo profiles and automatic handoff remain planned. Full
+deployment with the current dispatch configuration has not been verified since
+the repository split.
 The latest handoff reports missing dispatch collection availability and a mismatch
 between the installer password and the credentials Stage 04 uses. These require
 verification and resolution before an unattended deployment.
@@ -38,9 +41,10 @@ The target infrastructure needs the prepared golden image, installer bundle,
 virtualization tools, and the DNS/certificate/proxy prerequisites described in
 [documentation.md](documentation.md) and [PLAN.md](PLAN.md).
 
-Environment access values are encrypted in `myvars`; shared AAP objects and their
-credential inputs are encrypted in `cac/base_CaC_vault.yml`. Supply the appropriate
-Ansible Vault password through a local password file or an AAP Vault credential.
+Environment access values remain encrypted in `myvars`. Shared AAP objects and
+their credential inputs are encrypted in the private configuration repository's
+`cac/base_CaC_vault.yml`. Supply the appropriate Ansible Vault password through a
+local password file or an AAP Vault credential.
 Each operator must prepare configuration for their own environment.
 
 Never commit plaintext secrets or sensitive environment-specific data, including
@@ -62,13 +66,20 @@ unique suffix, such as `controller_projects_DEMO_PLACEHOLDER`, and reference
 dependencies by object name. Keep configuration authentication separate from the
 credentials that demo jobs will use inside AAP.
 
-Encrypt sensitive completed files using Ansible Vault before copying them into
-`cac/` and staging them. Encrypted names follow `base_CaC_vault.yml` or
-`DEMO_PLACEHOLDER_CaC_vault.yml`; plaintext examples retain `.example`.
-The repository's existing encrypted base file is a captured configuration;
-using the example lets an operator build their own shared configuration instead.
-Adding a file under `cac/` does not automatically load it. Stage 04 must explicitly
-load the chosen files; selectable demo loading remains outstanding.
+Keep editable files such as `base.yml` and `DEMO_PLACEHOLDER.yml` in that
+working directory. When a configuration is ready:
+
+1. Create a separate Vault-encrypted copy using the local Vault password file.
+2. Place that encrypted copy in the private configuration repository's `cac/`.
+   Use `base_CaC_vault.yml` or `DEMO_PLACEHOLDER_CaC_vault.yml` as its name.
+3. Verify the Vault header, successful decryption with the intended password,
+   and equality with the working copy without displaying decrypted content.
+4. Review staged files, then commit and push only the encrypted configuration.
+
+Keep the editable working files and Vault password file outside Git. This public
+repository's `cac/` retains the empty examples. Stage 04 must explicitly load the
+chosen configuration; private-repository loading and demo selection remain
+outstanding.
 
 See [Configuration_as_Code.md](Configuration_as_Code.md) for variable naming,
 resource types, and restore dependencies. Empty templates do not provision
@@ -123,7 +134,7 @@ No standalone formatter or linter dependency is required for the version helper.
 ## Repository layout
 
 - Root playbooks: deployment, configuration, and guarded teardown.
-- `cac/`: encrypted configuration and empty plaintext examples.
+- `cac/`: empty plaintext examples; populated CaC lives in the private repository.
 - `vars/`: generic defaults; `templates/`: reverse-proxy templates.
 - `utils/`: existing controller-label utility.
 - `src/`: version-maintenance helper; `tests/`: its command-line tests.

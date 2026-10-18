@@ -10,7 +10,11 @@ This lets us split configuration into logical files — one per project group �
 
 ## Target playbook (04-aap-config.yml)
 
-The current `04-aap-config.yml` uses one task block per resource type (users, credentials, inventories, projects, JTs, schedules, EDA). The target state replaces all of that with:
+The current `04-aap-config.yml` uses dispatch. Its `vars_files` still references
+`cac/base_CaC_vault.yml` in the project checkout, although that populated file
+has moved to the private configuration repository. Private-source loading has
+not been implemented; the playbook cannot run from this checkout alone. Its
+dispatch structure is:
 
 ```yaml
 - name: Configure new AAP instance (config-as-code)
@@ -20,6 +24,7 @@ The current `04-aap-config.yml` uses one task block per resource type (users, cr
   vars_files:
     - myvars
     - vars/main.yml
+    - cac/base_CaC_vault.yml  # private configuration; no longer in this checkout
   vars:
     dispatch_include_wildcard_vars: true
     aap_hostname: "https://{{ vm_name }}.{{ vault_domain }}"
@@ -35,8 +40,8 @@ The CaC variable files are loaded via `vars_files` or `include_vars` — the dis
 ## CaC file layout
 
 ```
-cac/
-    base_CaC_vault.yml         # shared resources (org, users, credentials, EEs, inventories, hosts, projects, labels)
+working-directory/cac/        # editable configuration outside Git
+    base.yml                   # shared resources (org, users, credentials, EEs, inventories, hosts, projects, labels)
     selfhealing.yml            # AIOps self-healing demo JTs + EDA          (complete)
     simroi.yml                 # simulated ROI dashboard JTs + schedules    (complete)
     orchestrator_deploy.yml    # Automation Orchestrator JTs                (complete)
@@ -44,18 +49,19 @@ cac/
     servicenow.yml             # ServiceNow ITSM integration               (skeleton)
     config_exceptions.yml      # configuration drift detection              (skeleton)
     intelligent_assistant.yml  # Intelligent Assistant                      (skeleton)
-    base_CaC_vault.yml.example # template for shared resources
-    project.yml.example        # template for per-project files
 ```
 
-Populated demo working files are currently outside the repo. They'll be
-vault-encrypted and committed once secrets are filled in. The shared encrypted
-base and two empty plaintext examples are committed: use
+The private configuration repository stores encrypted copies under `cac/`, named
+`base_CaC_vault.yml` and `DEMO_PLACEHOLDER_CaC_vault.yml`. The shared encrypted
+base has moved there. Editable working files remain outside Git.
+
+This public repository retains two empty plaintext examples: use
 `cac/base_CaC_vault.yml.example` for shared resources and
 `cac/project.yml.example` for a demo. Both examples contain empty resource lists
 and commented entries with generic placeholders. See [README.md](README.md)
-for the preparation and encryption workflow. Stage 04 currently loads only the
-shared base; adding a demo file does not automatically apply it.
+for the preparation, encryption, verification, and commit workflow. Stage 04's
+private-source loading and demo selection remain outstanding; adding an encrypted
+file to the private repository does not automatically apply it.
 
 ## Variable naming
 
@@ -136,19 +142,25 @@ What the CaC files capture from the current AAP instance:
 
 ## Secret handling
 
-CaC files use `CHANGEME` as placeholder for all secrets. The migration workflow:
+Incomplete CaC files use `CHANGEME` placeholders. The working-copy workflow is:
 
-1. Fill in cleartext values in the CaC files
-2. Back up secrets to Bitwarden
-3. Vault-encrypt the files (or use inline `!vault` per-value)
-4. Commit encrypted files to the repo
+1. Edit and complete plaintext configuration in the working directory outside Git.
+2. Create a separate whole-file Vault-encrypted copy with the local password file.
+3. Put that copy in the private configuration repository's `cac/` directory.
+4. Verify the Vault header, successful decryption, and equality with the working
+   copy without displaying secrets.
+5. Review staged files, then commit and push only the encrypted configuration.
+
+The Vault password file remains outside both repositories. Secret backup to
+Bitwarden remains a separate TODO.
 
 ## Windows patching workflow restore
 
 The external `disconnected_windows_patching.yml` CaC file captures the Windows
 project, deployment Job Template, survey and `Deploy Windows + WSUS environment`
 workflow. It is staged alongside the other external CaC files for encryption
-and review before inclusion in Git. Step 04 does not load it yet. The four nodes have no
+and review before inclusion in the private configuration repository. Step 04 does
+not load it yet. The four nodes have no
 edges and can run concurrently because their Job Template has
 `allow_simultaneous: true`. Concurrent workflow runs remain disabled to avoid
 competing deployments of the same four VM names.
@@ -159,7 +171,8 @@ sync before the Job Template is applied. The current deployment playbook selects
 boot mode from the verified images, so the old template-side boot expression
 is omitted from the restore configuration.
 
-On a new AAP, provision these shared dependencies through `cac/base_CaC_vault.yml` first:
+On a new AAP, provision these shared dependencies through the private
+`cac/base_CaC_vault.yml` first, once loading from that repository is implemented:
 
 - Organization `Default`.
 - `main inventory`, including the `hypervisor` group and target host/connection

@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.0.3
+
+Move the populated encrypted shared CaC base to a separate private configuration
+repository and retain generic examples here. Keep editable plaintext configuration
+outside Git; encrypt a copy, verify its Vault header and decrypted equality, then
+commit and push the encrypted copy to the private repository.
+
+The private copy was verified and pushed before removing this repository's copy.
+Step 04 is unchanged and still expects the former local file, so it cannot run
+from this checkout alone. Private-configuration loading remains to be implemented.
+No AAP deployment or configuration jobs were run.
+
 ## 0.0.2
 
 Document the version-policy and reusable CaC template decisions implemented in
