@@ -4,6 +4,52 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Define a complete production replacement and trusted seed bootstrap
+
+Encrypted base credential inputs: `490a27b` and `9563936` in the private base
+configuration repository. Administrator-password implementation: `1216f38`.
+
+The operator clarified that the primary goal is a fresh AAP capable of taking
+over production tasks, including deploying further AAP instances. Individual
+demo imports remain supported, while complete replacement requires restoring
+the deployment automation itself, all relevant production objects and secret
+inputs, runtime dependencies, and functional verification.
+
+An existing trusted AAP starts with independently provisioned base Git and Vault
+credentials. The operator explicitly requested storing those inputs together in
+the encrypted base so a seed can configure another trusted instance. Including
+the decryption password in that ciphertext enables propagation after decryption;
+it does not provide the initial seed's access or recover a lost key. Recipients
+share the credentials' configuration access. Actual target credential and
+deployment-template provisioning remains unimplemented and is tracked in the
+plan, together with complete capture, job handoff, tests and controlled takeover.
+
+This documentation does not resume stopped deployments or establish successful
+password rollout or production takeover. Markdown whitespace checks were used;
+no AAP job was launched for this documentation.
+
+## Manage the administrator password in encrypted base configuration
+
+Implementation: `1216f38`.
+
+The operator requested that the desired administrator password live in the private
+base Vault and be applied by Step 04. The base now declares the password and a
+Gateway user entry that references it. Authentication first tries the desired
+password; HTTP 401 or an omitted password enables installer bootstrap. Other
+HTTP or connection errors stop rather than falling back. The CoP Gateway user
+role applies the account, followed by a fresh Basic-authenticated login check.
+
+When bootstrap was necessary, the deployed installer inventory is updated to the
+verified password and restricted to mode `0600`. This keeps the existing use-case
+importers' installer-based login current. A rerun using the configured password
+skips installer access. Password handling stays protected during diagnostics.
+
+All sixteen local tests passed, including seven authentication scenarios. Syntax,
+Vault round-trip and whitespace checks passed. The first rollout stopped at
+private-repository checkout before target changes because its token had been
+regenerated. The existing base Git credential was subsequently updated and
+repository access verified. The password rollout remains pending.
+
 ## Reuse the established Git-token credential type for Assistant Team
 
 Implementation: `1926669`.

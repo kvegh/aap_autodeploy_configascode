@@ -3,8 +3,39 @@
 The design below includes historical planning. See [README.md](README.md) for
 the current implementation and credential handling.
 
+## Main goal
+
+Deploy a fresh AAP that can take over all production AAP tasks from versioned
+configuration and encrypted secret inputs. The replacement must also be able to
+deploy and configure further AAP instances. An existing trusted AAP provides the
+initial seed; its first Git token and CaC Vault password are supplied independently.
+Selected demo deployments continue to use their separate configurations.
+
 ## TODO
 
+- [ ] Define and verify the complete production configuration inventory across
+  Gateway, Controller, EDA and PAH, including ownership, credentials, permissions,
+  dependencies and deletions. Preserve separate base and use-case ownership.
+- [ ] Provision the trusted replacement's bootstrap Git and Vault credentials
+  from the encrypted base. Stored credential inputs alone do not create those
+  objects; the first seed still needs independently supplied access.
+- [ ] Restore this deployment project's own projects, inventories, credential
+  types, credentials, Job Templates, surveys and workflows so the replacement
+  can deploy and configure further AAP instances. Rebuild target-specific URLs,
+  references and generated access tokens for the new instance.
+- [ ] Automate variable handoff and ordering between deployment, base, PAH
+  preparation and use-case import jobs, including resumable failure handling.
+- [ ] Verify production replacement with configuration comparison and functional
+  platform/use-case tests, including its ability to deploy another AAP. Treat
+  external environment services as explicit prerequisites until their separate
+  recreation work is implemented.
+- [ ] Define and test controlled takeover of schedules, EDA activations and other
+  automatic production triggers, including rollback, so a replacement can assume
+  the intended work without duplicate production execution.
+- [x] Implement desired administrator-password management in encrypted base
+  configuration, including installer bootstrap and protected password handling.
+- [ ] Verify the administrator-password rollout and subsequent rerun after the
+  repaired base Git credential. The initial attempt stopped before target changes.
 - [ ] Write and verify a step-by-step Configuration as Code guide, from a fresh
   checkout to a configured AAP. Cover prerequisites; copying and completing the
   base and use-case templates; object ownership and dependencies; private Git

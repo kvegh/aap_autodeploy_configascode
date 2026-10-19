@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.10.1
+
+Document the primary goal: recreate production AAP configuration and capabilities,
+including the ability to deploy further AAP instances. Explain the initial seed's
+independent Git and Vault access, encrypted credential inputs for trusted
+replacements, and the resulting trust boundary. Track complete production
+coverage, bootstrap provisioning, deployment templates, job handoff, functional
+tests and controlled takeover as remaining work. Document administrator-password
+implementation `1216f38` while keeping live rollout verification pending.
+
+Validation: documentation whitespace checks passed. No deployment, configuration
+import or production takeover was launched for this documentation.
+
 ## 0.10.0
 
 Manage the desired administrator password from the encrypted base configuration.

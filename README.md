@@ -1,8 +1,16 @@
 # AAP AutoDeploy and Configuration as Code
 
-Deploy fresh Ansible Automation Platform instances and configure them for demos.
-The intended flow is to select a demo, deploy AAP, apply shared configuration
-plus that demo's configuration, and verify the result.
+Recreate Ansible Automation Platform from configuration as code so that a new
+instance can take over the production platform's tasks, including deploying and
+configuring further AAP instances. An existing trusted AAP acts as the initial
+seed. Demo-specific deployments remain supported through separate use-case
+configurations.
+
+A production replacement needs the platform and use-case definitions, secret
+inputs, deployment automation, PAH content, execution environments and functional
+verification required for those tasks. The existing fresh-instance pipeline and
+selected use-case imports are parts of that goal. Complete production coverage,
+bootstrap credential provisioning and takeover verification remain pending.
 
 The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
@@ -216,6 +224,16 @@ recovery copy in a separately encrypted bootstrap vault outside the configuratio
 checkout. A token stored only inside the repository it unlocks cannot bootstrap
 its own download. Different tokens can use the same custom credential type;
 changing one use case's token must not replace another use case's credential.
+
+The encrypted base can also hold bootstrap credential inputs for a trusted
+replacement AAP: its base-repository Git token, CaC Vault credential, and
+use-case repository tokens. The seed must already have the initial Git token and
+Vault password independently. Storing the Vault password inside the encrypted
+base supports provisioning another trusted instance; it cannot unlock the first
+seed or recover a lost decryption key by itself. Keep the initial recovery copy
+separately. Every instance receiving these credentials gains their configuration
+access and belongs to the same trust boundary. These stored inputs do not yet
+create the replacement's credentials or deployment Job Templates automatically.
 
 These tokens serve a different purpose from Source Control credentials created
 on the target AAP. Those credentials allow imported projects to synchronize
