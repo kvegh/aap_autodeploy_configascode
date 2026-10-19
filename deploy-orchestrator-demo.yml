@@ -1,0 +1,277 @@
+---
+- name: Import Automation Orchestrator configuration after shared base
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - myvars
+    - vars/main.yml
+  vars:
+    dispatch_include_wildcard_vars: true
+    # AAP 2.7 manages applications through Gateway; Controller no longer ships this module.
+    aap_configuration_dispatcher_exclude_roles:
+      - controller_applications
+      # Import definitions without launching their automation.
+      - controller_job_launch
+      - controller_workflow_launch
+    debug_logging: false
+    aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
+    # Credential values remain protected even during diagnostic logging.
+    controller_configuration_credentials_secure_logging: true
+    aap_username: admin
+    aap_validate_certs: false
+  pre_tasks:
+    - name: Require a Boolean debug logging choice
+      ansible.builtin.assert:
+        that:
+          - debug_logging is boolean or (debug_logging is string and (debug_logging | lower) in ['true', 'false'])
+        fail_msg: Set debug_logging to true or false.
+
+    - name: Require an explicit target AAP HTTPS URL
+      ansible.builtin.assert:
+        that:
+          - aap_hostname is defined
+          - aap_hostname is string
+          - (aap_hostname | ansible.builtin.urlsplit('scheme')) == 'https'
+          - (aap_hostname | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
+          - (aap_hostname | ansible.builtin.urlsplit('username')) is none
+          - (aap_hostname | ansible.builtin.urlsplit('password')) is none
+        fail_msg: Supply aap_hostname as the target AAP HTTPS URL, using the intended internal hostname or IP address.
+
+    - name: Require a private configuration repository URL without embedded credentials
+      ansible.builtin.assert:
+        that:
+          - aap_config_repo_url is defined
+          - aap_config_repo_url is string
+          - (aap_config_repo_url | ansible.builtin.urlsplit('scheme')) == 'https'
+          - (aap_config_repo_url | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
+          - (aap_config_repo_url | ansible.builtin.urlsplit('username')) is none
+          - (aap_config_repo_url | ansible.builtin.urlsplit('password')) is none
+          - (aap_config_repo_url | ansible.builtin.urlsplit('path')) not in ['', '/']
+          - (aap_config_repo_url | ansible.builtin.urlsplit('query')) == ''
+          - (aap_config_repo_url | ansible.builtin.urlsplit('fragment')) == ''
+          - aap_config_repo_url is not search('\\s')
+        fail_msg: Supply aap_config_repo_url as an HTTPS Git URL without credentials, query, or fragment.
+
+    - name: Require the injected CaC Git token
+      ansible.builtin.assert:
+        that:
+          - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
+        fail_msg: Attach the CaC Git credential that injects CAC_GIT_TOKEN.
+      no_log: true
+
+    - name: Create a private temporary configuration workspace
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: aap-orchestrator-cac-
+      register: cac_workspace
+
+    - name: Retrieve and apply only the encrypted Orchestrator configuration
+      block:
+        - name: Prepare Git authentication without putting the token in a URL or argument
+          ansible.builtin.copy:
+            dest: "{{ cac_workspace.path }}/git-askpass"
+            mode: '0700'
+            content: |
+              #!/bin/sh
+              case "$1" in
+                *Username*) printf '%s\n' 'x-access-token' ;;
+                *Password*) printf '%s\n' "$CAC_GIT_TOKEN" ;;
+                *) exit 1 ;;
+              esac
+
+        - name: Retrieve the private configuration with protected Git diagnostics
+          block:
+            - name: Download the private configuration from main
+              ansible.builtin.git:
+                repo: "{{ aap_config_repo_url }}"
+                dest: "{{ cac_workspace.path }}/repository"
+                version: main
+                depth: 1
+                recursive: false
+                single_branch: true
+              environment:
+                GIT_ASKPASS: "{{ cac_workspace.path }}/git-askpass"
+                GIT_TERMINAL_PROMPT: '0'
+                LC_ALL: C
+                GIT_CONFIG_COUNT: '3'
+                GIT_CONFIG_KEY_0: credential.helper
+                GIT_CONFIG_VALUE_0: ''
+                GIT_CONFIG_KEY_1: http.followRedirects
+                GIT_CONFIG_VALUE_1: 'false'
+                GIT_CONFIG_KEY_2: http.sslVerify
+                GIT_CONFIG_VALUE_2: 'true'
+              no_log: true
+          rescue:
+            - name: Classify the private Git failure without logging its contents
+              ansible.builtin.set_fact:
+                cac_git_failure_category: >-
+                  {% if cac_git_failure_message is search('repository (.* )?not found|authentication failed|access denied|permission denied|could not read username|could not read password|invalid username|invalid credentials|returned error: (401|403|404)|terminal prompts disabled') %}
+                  repository access denied or repository not found
+                  {% elif cac_git_failure_message is search('could not resolve host|could not resolve proxy|name or service not known|temporary failure in name resolution') %}
+                  DNS resolution failure
+                  {% elif cac_git_failure_message is search('ssl certificate|ssl peer certificate|certificate verify failed|server certificate verification failed|ssl connection error|tls handshake|unable to get local issuer certificate') %}
+                  TLS or certificate validation failure
+                  {% elif cac_git_failure_message is search('redirect|redirection') %}
+                  HTTP redirect rejected
+                  {% elif cac_git_failure_message is search('timed out|timeout|failed to connect|could not connect|connection refused|network is unreachable|connection reset') %}
+                  connection failure or timeout
+                  {% else %}
+                  unclassified Git failure
+                  {% endif %}
+              vars:
+                cac_git_failure_message: "{{ ansible_failed_result.msg | default('', true) | string | lower }}"
+              no_log: true
+
+            - name: Report only the private Git failure category
+              ansible.builtin.fail:
+                msg: "Private configuration Git fetch failed: {{ cac_git_failure_category | trim }}."
+
+        - name: Read the encrypted Orchestrator configuration
+          ansible.builtin.slurp:
+            src: "{{ cac_workspace.path }}/repository/cac/orchestrator.yml"
+          register: cac_encrypted_orchestrator
+          no_log: true
+
+        - name: Require a fully Vault-encrypted Orchestrator configuration
+          ansible.builtin.assert:
+            that:
+              - (cac_encrypted_orchestrator.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
+            fail_msg: The Orchestrator configuration must be a Vault-encrypted file.
+          no_log: true
+
+        - name: Decrypt and load the Orchestrator configuration with the attached Vault credentials
+          ansible.builtin.include_vars:
+            file: "{{ cac_workspace.path }}/repository/cac/orchestrator.yml"
+          no_log: true
+
+        - name: Require a reviewed and complete Orchestrator configuration
+          ansible.builtin.assert:
+            that:
+              - orchestrator_capture_readiness is defined
+              - orchestrator_capture_readiness is mapping
+              - orchestrator_capture_readiness.aap_object_definitions_complete is boolean
+              - orchestrator_capture_readiness.aap_object_definitions_complete
+              - orchestrator_capture_readiness.static_secrets_recovered is boolean
+              - orchestrator_capture_readiness.static_secrets_recovered
+              - orchestrator_capture_readiness.portable_to_new_aap is boolean
+              - orchestrator_capture_readiness.portable_to_new_aap
+              - orchestrator_capture_readiness.remaining_review is sequence
+              - orchestrator_capture_readiness.remaining_review is not string
+              - orchestrator_capture_readiness.remaining_review is not mapping
+              - orchestrator_capture_readiness.remaining_review | length == 0
+            fail_msg: Complete and review the Orchestrator vault before importing it.
+
+        - name: Require the protected Orchestrator registry inputs
+          ansible.builtin.assert:
+            that:
+              - item in vars
+              - vars[item] is string
+              - vars[item] | length > 0
+              - vars[item] not in ['CHANGEME', '$encrypted$']
+            fail_msg: Supply the Orchestrator registry inputs through encrypted configuration.
+          loop:
+            - orchestrator_registry_username
+            - orchestrator_registry_password
+          no_log: true
+
+        - name: Require configuration without job launches or schedules
+          ansible.builtin.assert:
+            that:
+              - vars[item] | length == 0
+            fail_msg: This importer restores definitions only; remove job launches and schedules from this configuration.
+          loop: "{{ query('ansible.builtin.varnames', '^controller_(launch_jobs|workflow_launch_jobs|schedules)(_|$)') }}"
+          no_log: true
+
+        - name: Read the current Gateway administrator password from the installer
+          ansible.builtin.command:
+            argv:
+              - python3
+              - -c
+              - |
+                import json
+                import shlex
+                import sys
+                from pathlib import Path
+
+                for line in Path(sys.argv[1]).read_text().splitlines():
+                    key, separator, value = line.partition('=')
+                    if separator and key.strip() == 'gateway_admin_password':
+                        parts = shlex.split(value.strip(), comments=True)
+                        if parts:
+                            print(json.dumps({'password': parts[0]}))
+                            break
+                else:
+                    sys.exit('Gateway admin password is missing from the installer inventory.')
+              - "{{ installer_extract_dir }}/ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64/inventory"
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+          when: aap_password is not defined
+          changed_when: false
+          register: cac_installer_admin
+          no_log: true
+
+        - name: Use the current Gateway administrator password
+          ansible.builtin.set_fact:
+            aap_password: "{{ (cac_installer_admin.stdout | from_json).password }}"
+          when: aap_password is not defined
+          no_log: true
+
+        - name: Create a Gateway token for this configuration run
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
+            method: POST
+            url_username: "{{ aap_username }}"
+            url_password: "{{ aap_password }}"
+            force_basic_auth: true
+            body_format: json
+            body:
+              description: "Temporary Orchestrator CaC token {{ cac_workspace.path | basename }}"
+              scope: write
+              application: null
+            status_code: 201
+            validate_certs: "{{ aap_validate_certs }}"
+          register: cac_gateway_token
+          no_log: true
+
+        - name: Use the Gateway token for configuration roles
+          ansible.builtin.set_fact:
+            aap_token: "{{ cac_gateway_token.json.token }}"
+          no_log: true
+
+        - name: Combine Orchestrator definitions without logging their contents
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.dispatch
+            tasks_from: include_wildcard_vars
+            apply:
+              no_log: true
+          no_log: true
+
+        - name: Import Orchestrator definitions without launching jobs
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.dispatch
+          vars:
+            dispatch_include_wildcard_vars: false
+
+      always:
+        - name: Revoke the run token and clean the private workspace
+          block:
+            - name: Revoke the temporary Gateway token
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/{{ cac_gateway_token.json.id }}/"
+                method: DELETE
+                headers:
+                  Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+                status_code: [204, 404]
+                validate_certs: "{{ aap_validate_certs }}"
+              when: cac_gateway_token.json.id is defined
+              no_log: true
+          always:
+            - name: Remove the temporary checkout and authentication helper
+              ansible.builtin.file:
+                path: "{{ cac_workspace.path }}"
+                state: absent

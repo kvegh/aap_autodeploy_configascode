@@ -63,7 +63,9 @@ and checkout cleanup succeeded. Functional remediation tests remain pending.
 
 The separate `deploy-windows-demo.yml` imports the encrypted disconnected Windows
 configuration from its private repository. `restore-windows-config.yml` remains a
-local-file import utility. `destroy-test-aap.yml` handles guarded test-instance teardown.
+local-file import utility. `deploy-orchestrator-demo.yml` imports only Automation
+Orchestrator AAP definitions through a separate Job Template.
+`destroy-test-aap.yml` handles guarded test-instance teardown.
 
 The Windows importer creates inventory groups before linking their memberships.
 The CoP group role starts requests asynchronously, so a parent group can otherwise
@@ -408,6 +410,46 @@ live attempt stopped during the protected Git fetch, before target authenticatio
 or object changes; workspace cleanup succeeded. Import remains unverified until
 the fetch succeeds and the configuration job completes.
 
+### Automation Orchestrator configuration deployment
+
+Use `deploy-orchestrator-demo.yml` after shared base to import the Orchestrator's
+AAP objects. Supply `aap_hostname` as the explicit target HTTPS URL and
+`aap_config_repo_url` as its private configuration repository's HTTPS Git URL.
+The importer downloads `main` and loads only the whole-file Vault-encrypted
+`cac/orchestrator.yml`. Attach the custom Git credential with read access to
+that repository (`CAC_GIT_TOKEN`), the `cac` Vault credential, and the existing
+Vault credential for the environment settings in `myvars`. A protected
+`aap_password` may be supplied; otherwise it retrieves the current installer
+password over SSH. Git failures disclose only a fixed diagnostic category.
+
+The capture's `orchestrator_capture_readiness` mapping must set
+`aap_object_definitions_complete`, `static_secrets_recovered`, and
+`portable_to_new_aap` to Boolean `true`, with an empty `remaining_review` list.
+Its registry username and password must be populated inside the encrypted file.
+A pending functional OpenShift test does not prevent importing reviewed AAP
+objects. Job-launch, workflow-launch, and schedule definitions are rejected.
+
+The current capture defines eight objects: two Job Templates, one project,
+one inventory and its localhost host, one execution environment, one registry
+credential, and one label. The import preserves the deploy and cleanup surveys.
+Their AAP/OpenShift inputs are supplied when those imported templates are run;
+they are separate from the importer's own target URL and administrator login.
+The importer does not apply base or the subscription, launch either imported
+template, deploy OpenShift resources, or perform cleanup operations.
+
+`debug_logging` defaults to `false`, with the same optional `"false"`/`"true"`
+survey as the other import templates. Git authentication, Vault loading,
+registry credentials, wildcard combination, and temporary Gateway-token tasks
+remain protected during diagnostics. Ordinary object operations follow the
+logging choice. Each run revokes its own temporary Gateway token and removes
+its checkout on success or ordinary failure; checkout cleanup also runs if token
+revocation fails. Interruptions and fatal role-loading errors can prevent cleanup.
+
+Focused offline validation exercises actual Vault loading and eleven import
+preflight cases, including plaintext rejection, missing secrets, incomplete
+review, and attempts to execute automation. Three failure scenarios verify token
+revocation and workspace cleanup. The importer has not been launched against AAP.
+
 ## Start a CaC configuration
 
 The checkout includes two plaintext examples with empty resource lists:
@@ -496,7 +538,9 @@ collections installed in the selected Python environment. It explicitly skips
 when these dependencies are unavailable. Set `ANSIBLE_COLLECTIONS_PATH` to their
 installation directory when needed. It runs the real CoP dispatcher in check
 mode against synthetic definitions, without contacting AAP, and verifies that
-streams and activations stay out of initial dispatch.
+streams and activations stay out of initial dispatch. The Orchestrator regression
+uses synthetic encrypted captures for its actual preflight tasks and a local HTTP
+fixture for token cleanup; it does not contact AAP or run imported automation.
 
 These checks do not run AAP jobs. Ansible syntax checks alone do not verify
 Vault-file loading, authentication, dependency readiness, or successful deployment.

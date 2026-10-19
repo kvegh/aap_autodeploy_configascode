@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.8.0
+
+Add a dedicated Automation Orchestrator configuration importer. Load only its
+reviewed, whole-file Vault-encrypted private capture; validate registry inputs,
+reject job launches and schedules, and import definitions through CoP dispatch.
+Keep Git access, credentials, wildcard values, and temporary Gateway tokens
+protected during diagnostics. Revoke the run token and clean the checkout on
+ordinary failures, including failed token revocation. Imported deployment and
+cleanup Job Templates are never launched by the importer.
+
+Validation: all eleven local tests passed. New coverage runs eleven real Vault
+loading/preflight cases and three token/workspace cleanup scenarios. Full
+playbook syntax and the existing encrypted capture preflight passed. Live
+configuration import has not been launched.
+
 ## 0.7.5
 
 Document the Hub API's paired upstream authentication requirement and the
