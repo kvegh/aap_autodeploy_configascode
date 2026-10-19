@@ -65,6 +65,8 @@ The separate `deploy-windows-demo.yml` imports the encrypted disconnected Window
 configuration from its private repository. `restore-windows-config.yml` remains a
 local-file import utility. `deploy-orchestrator-demo.yml` imports only Automation
 Orchestrator AAP definitions through a separate Job Template.
+`deploy-assistant-team.yml` independently imports the six ordinary Assistant
+Team deployment and recovery templates and their supporting AAP objects.
 `destroy-test-aap.yml` handles guarded test-instance teardown.
 
 The Windows importer creates inventory groups before linking their memberships.
@@ -456,15 +458,35 @@ revocation fails. Interruptions and fatal role-loading errors can prevent cleanu
 Focused offline validation exercises actual Vault loading and eleven import
 preflight cases, including plaintext rejection, missing secrets, incomplete
 review, and attempts to execute automation. Three failure scenarios verify token
-revocation and workspace cleanup. The importer has not been launched against AAP.
+revocation and workspace cleanup. The first live definition import completed
+successfully; the imported deployment and cleanup templates were not launched.
 
-### Assistant Team configuration capture
+### Assistant Team configuration deployment
 
 The private companion repository stores the encrypted capture at
 `vaults/cac/assistant_team_vault.yml`. Its editable working copy and export
 inventory stay outside Git. The code repository is public, so its projects no
 longer require an SCM credential for private code. Access to the private companion
 repository remains a separate bootstrap requirement.
+
+Use `deploy-assistant-team.yml` after shared base. Supply `aap_hostname` as the
+explicit target AAP HTTPS URL and `aap_config_repo_url` in the form
+`ssh://git@GIT_HOST/OWNER/REPOSITORY.git`. The importer downloads `main` and loads
+only `vaults/cac/assistant_team_vault.yml`. Attach a repository-scoped read-only
+Git SSH credential that injects `CAC_GIT_SSH_KEY_FILE` and
+`CAC_GIT_KNOWN_HOSTS_FILE` as paths to files, plus the `cac` Vault credential and
+the existing Vault credential for `myvars`. Provision trusted Git host keys in
+that credential from an independently verified source. SSH requires strict host
+verification and never accepts unknown or changed keys automatically.
+
+The target administrator input follows the other importers: supply a protected
+`aap_password`, or let the importer retrieve the current installer password over
+SSH using the encrypted environment settings. It creates its own temporary
+Gateway token, revokes that token, and removes the private checkout after success
+or ordinary failure. Checkout cleanup still runs if token revocation fails.
+Interrupted jobs and fatal role-loading failures retain the existing cleanup
+limitation. `debug_logging` defaults to `false`; authentication, credential
+updates, Vault loading and wildcard combination remain protected during debugging.
 
 Capture the current project revisions, deployment and recovery templates, and
 external configuration credential definitions together. The injected inputs are
@@ -483,10 +505,21 @@ Controller variable lists. The seventh template is captured separately under
 `assistant_team_authentication_maintenance`, outside default CoP dispatch.
 Activate that optional section explicitly with repository write access, controller
 authorization and CA trust for the target AAP. A maintenance token or certificate
-bundle from the source AAP must
-not be treated as valid for another instance. Keep unresolved target inputs in
-the protected readiness report. A dedicated Assistant Team CaC import playbook
-and Job Template are still required before importing this capture.
+bundle from the source AAP must not be treated as valid for another instance.
+Keep unresolved optional inputs in the protected readiness report. The ordinary
+import requires Boolean readiness for ordinary objects, deployment configuration,
+static secrets and embedded encrypted configuration, with empty unresolved and
+required secret lists. It verifies all six embedded snapshots are whole-file
+Vault ciphertext and rejects launches and schedules. Overall capture readiness
+can remain false while optional maintenance or functional testing is outstanding;
+this does not authorize importing maintenance or executing runtime automation.
+
+Verify the declared PAH collections and existing service-side execution
+environment image before launching the import Job Template. The importer restores
+definitions only; it does not launch VM lifecycle, recovery, provider requests or
+authentication-maintenance operations. Offline validation exercises actual Vault
+loading, core completeness, encrypted snapshots, repository URL guards and token
+cleanup. A successful import is separate from testing the imported automation.
 
 ## Start a CaC configuration
 
@@ -579,6 +612,9 @@ mode against synthetic definitions, without contacting AAP, and verifies that
 streams and activations stay out of initial dispatch. The Orchestrator regression
 uses synthetic encrypted captures for its actual preflight tasks and a local HTTP
 fixture for token cleanup; it does not contact AAP or run imported automation.
+The Assistant Team regression additionally checks ordinary core completeness,
+preserved encrypted snapshots and separation from optional maintenance, plus SSH
+repository URL rejection and cleanup after failed imports.
 
 These checks do not run AAP jobs. Ansible syntax checks alone do not verify
 Vault-file loading, authentication, dependency readiness, or successful deployment.

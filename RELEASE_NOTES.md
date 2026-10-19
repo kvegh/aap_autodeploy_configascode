@@ -1,5 +1,23 @@
 # Release notes
 
+## 0.9.0
+
+Add a dedicated Assistant Team configuration importer for the six ordinary
+deployment, lifecycle and recovery templates and their supporting AAP objects.
+Read the encrypted capture from the private companion's `main` branch through
+an injected repository-scoped SSH key and independently trusted host keys.
+Require strict SSH host verification, complete ordinary secrets and all six
+embedded Vault ciphertexts. Keep optional authentication maintenance untouched;
+its unresolved target inputs do not block an ordinary definition import.
+Reject job launches and schedules, protect credential diagnostics, revoke the
+temporary Gateway token, and clean the checkout even if token revocation fails.
+
+Validation: all fourteen local tests passed. New coverage exercises sixteen
+actual encrypted-capture/core guard cases, six SSH repository URL cases and
+three token/workspace cleanup scenarios. Full syntax and the current encrypted
+capture preflight passed. No Assistant Team import or runtime automation was
+launched during implementation; PAH and image preparation precede a live import.
+
 ## 0.8.3
 
 Document consistent Orchestrator EE references and the refreshed Assistant Team
