@@ -4,6 +4,29 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Import disconnected Windows definitions independently from base
+
+Implementation: `a84bf09`.
+
+The Windows capture belongs to its own private configuration repository, so its
+import accepts an explicit target URL and repository URL rather than assuming
+the base or AIOps configuration store. It retrieves only the Vault-encrypted
+Windows definitions from `main`, checks readiness and required secrets, then
+uses the existing Gateway-token and CoP dispatch approach. Subscription and base
+configuration are prerequisites rather than repeated operations.
+
+Importing AAP definitions must not start Windows provisioning or patching. The
+entry point therefore rejects job-launch and schedule definitions and excludes
+the launch roles. It imports the captured Job Templates and workflow for later
+use. Existing target machines are not contacted by this configuration job.
+
+The CoP wildcard combiner can print its input values, so that step remains
+protected separately before ordinary dispatch. Credential updates and all Git,
+decryption, password, and token operations stay protected when diagnostics are
+enabled. Default logging remains protected throughout. Syntax, the real CoP
+dispatcher regression, seven Windows preflight cases, and version-tool tests
+passed. Live Windows import remains a separate pending validation.
+
 ## Keep module-native Event Stream definitions out of initial dispatch
 
 Implementation: `a64e16c`; encrypted deployment enablement: private configuration

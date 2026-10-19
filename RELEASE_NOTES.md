@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.6.1
+
+Document the separate Windows configuration importer implemented in `a84bf09`,
+including its definition-only scope, independent private repository input, and
+protected wildcard/credential logging during diagnostics. Documentation and
+whitespace checks passed. Live Windows import remains pending.
+
 ## 0.6.0
 
 Add a dedicated disconnected Windows CaC import. It retrieves only the encrypted
