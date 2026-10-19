@@ -4,6 +4,41 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Verify Assistant Team import with trusted local PAH downloads
+
+Encrypted Assistant Team fix: `094ee7f` in its private companion repository.
+Encrypted base trust fix: `63f08ff` in the private base configuration repository.
+The successful jobs used the existing importer from source `b80a1f0`.
+
+The operator authorized importing the six ordinary Assistant Team templates and
+their supporting objects. The first project creation failed because an empty
+source-control credential name matched every credential. Omitting that field
+correctly expresses anonymous access to the public code repository. Both encrypted
+project entries were corrected while preserving every other value and all six
+inner encrypted file snapshots; Vault round-trip and importer guards passed.
+
+Project synchronization then exposed a separate platform trust issue. The
+Controller service trusted the installer-generated CA, but its remote Podman
+engine resolved execution-environment volume sources on the host. The default
+host trust mount lacked that CA. A read-only mount from the installer's host-side
+extracted trust directory produced the same bundle hash as Controller and a
+verified HTTPS response. The encrypted base now declares this mount through the
+existing Controller settings role, preserving its prior mounts and certificate
+verification. Base job 2137 applied it; both project sync retries succeeded.
+
+The pinned certified collection was curated through local PAH before import.
+Import job 2139 succeeded with protected logging, and an independent TLS-verified
+API comparison passed 396 checks over all 21 objects and six templates. Run tokens
+and temporary workspaces were removed. API-masked secret fields were verified for
+presence and protection; nonsecret snapshot provenance and credential type
+injection matched the capture. Runtime deployment, recovery, provider calls and
+optional authentication maintenance were not executed.
+
+The operator also requested a planning item to capture Intelligent
+Assistant/Lightspeed completely, including installer/service configuration,
+vaulted credentials and passwords, Gateway OAuth, and an independent rebuild.
+This adds a TODO only and does not change that service.
+
 ## Verify the encrypted base administrator password on a deployed target
 
 Implementation: `1216f38`; verified runtime source: `c51aede`.

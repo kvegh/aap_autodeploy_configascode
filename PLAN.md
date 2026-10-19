@@ -16,6 +16,10 @@ Selected demo deployments continue to use their separate configurations.
 - [ ] Define and verify the complete production configuration inventory across
   Gateway, Controller, EDA and PAH, including ownership, credentials, permissions,
   dependencies and deletions. Preserve separate base and use-case ownership.
+- [ ] Capture and redeploy Intelligent Assistant/Lightspeed through CaC, including
+  installer/service settings, LLM credentials, database and service passwords,
+  and Gateway OAuth configuration. Vault sensitive inputs and independently
+  verify a fresh rebuild.
 - [ ] Provision the trusted replacement's bootstrap Git and Vault credentials
   from the encrypted base. Stored credential inputs alone do not create those
   objects; the first seed still needs independently supplied access.
@@ -53,6 +57,10 @@ Selected demo deployments continue to use their separate configurations.
 - [ ] Populate and verify the PAH requirements component in each existing use-case
   configuration, including collection versions, dependencies, and compatibility
   with its execution environment, before running the use case's automation.
+- [x] Prepare Assistant Team's declared PAH collection and existing execution image,
+  import the six ordinary templates and supporting objects, and independently
+  verify the configuration. Runtime tests and optional authentication maintenance
+  remain separate work.
 
 ## Context
 

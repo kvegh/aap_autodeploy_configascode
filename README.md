@@ -75,6 +75,8 @@ local-file import utility. `deploy-orchestrator-demo.yml` imports only Automatio
 Orchestrator AAP definitions through a separate Job Template.
 `deploy-assistant-team.yml` independently imports the six ordinary Assistant
 Team deployment and recovery templates and their supporting AAP objects.
+Its first successful live import restored all 21 owned objects; functional
+deployment and recovery tests remain separate.
 `destroy-test-aap.yml` handles guarded test-instance teardown.
 
 The Windows importer creates inventory groups before linking their memberships.
@@ -143,6 +145,18 @@ provide those sources before project synchronization; job 04 cannot configure
 the sources it needs to download its own dependencies. A platform-managed
 public Galaxy credential may remain as an unattached object if AAP prevents
 its deletion. Verify that it is absent from the organization's active sources.
+
+Project-update execution environments also need the platform CA used by local
+PAH. With a remote Podman engine, volume source paths refer to the host. Add the
+installer's host-side `aap/tls/extracted` directory as a read-only mount at
+`/etc/pki/ca-trust/extracted` through base
+`controller_settings_base.settings.AWX_ISOLATION_SHOW_PATHS`, preserving the
+existing mounts. The service container's internal path can resolve to a different
+host trust store. The [base example](cac/base_CaC_vault.yml.example) shows the
+generic mapping. Apply base before synchronizing the projects and keep
+`GALAXY_IGNORE_CERTS` false. The live base rerun applied this setting, and both
+Assistant Team project-update collection downloads then succeeded with certificate
+verification.
 
 The base PAH component configures `rh-certified`, `validated`, and `community`
 repository endpoints and their upstream remotes. Public Galaxy is permitted as
@@ -518,6 +532,8 @@ the attached token must authorize this repository. A separate credential of the
 same type can hold a different token without changing other use cases' access.
 Git uses a temporary askpass helper with HTTPS certificate verification enabled;
 the token stays out of URLs, command arguments and the helper's stored contents.
+For public code projects, omit the source-control credential field. An empty
+credential name can make the Controller module match every credential and fail.
 
 The target administrator input follows the other importers: supply a protected
 `aap_password`, or let the importer retrieve the current installer password over
@@ -560,6 +576,15 @@ definitions only; it does not launch VM lifecycle, recovery, provider requests o
 authentication-maintenance operations. Offline validation exercises actual Vault
 loading, core completeness, encrypted snapshots, repository URL guards and token
 cleanup. A successful import is separate from testing the imported automation.
+
+Live import job 2139 succeeded with protected logging after the declared certified
+collection was synchronized through PAH and the existing execution image verified
+in the Controller runtime's image store. Independent, TLS-verified API comparison
+passed 396 checks across all 21 owned objects, including both synchronized public
+code projects, six templates, credential attachments and protected snapshot inputs.
+The temporary Gateway token and checkout were removed. Optional authentication
+maintenance and the imported VM lifecycle, recovery and provider operations were
+not run.
 
 ## Start a CaC configuration
 

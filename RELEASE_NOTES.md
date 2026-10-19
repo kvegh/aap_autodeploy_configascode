@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.10.3
+
+Document the verified Assistant Team configuration import and its two encrypted
+configuration fixes: omit empty credential names for public code projects and
+mount the installer's generated CA trust read-only through base Controller
+settings. Add generic host-path guidance to the empty base template and keep
+certificate verification enabled. Track complete Intelligent Assistant/Lightspeed
+CaC capture and independent rebuild as a new TODO; that service is unchanged.
+
+Validation: base job 2137 applied the trust setting, both source-project sync
+retries succeeded through local PAH, and import job 2139 restored all 21 ordinary
+objects and six templates. Independent trusted-TLS comparison passed 396 checks.
+Private Vault round-trip and actual importer guards passed; six inner ciphertexts
+were preserved. Token and workspace cleanup succeeded. Runtime deployment,
+recovery, provider calls and optional authentication maintenance remain untested.
+Documentation whitespace and empty-template YAML checks passed.
+
 ## 0.10.2
 
 Document the completed administrator-password rollout from implementation

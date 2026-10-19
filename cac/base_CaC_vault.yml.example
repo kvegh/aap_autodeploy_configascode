@@ -19,6 +19,15 @@ aap_user_accounts_base: []
 # Platform content-source credentials may belong here; machine credentials do not.
 controller_credentials_base: []
 controller_settings_base: {}
+# Containerized installations using remote Podman need the generated platform CA
+# in project-update execution environments. Preserve existing isolation mounts
+# and use the installer service account's HOST trust path for the additional mount.
+# controller_settings_base:
+#   settings:
+#     AWX_ISOLATION_SHOW_PATHS:
+#       - /etc/pki/ca-trust:/etc/pki/ca-trust:O
+#       - /usr/share/pki:/usr/share/pki:O
+#       - /INSTALLER_HOME/aap/tls/extracted:/etc/pki/ca-trust/extracted:ro
 hub_collection_remotes_base: []
 hub_collection_repositories_base: []
 pah_base: {}
