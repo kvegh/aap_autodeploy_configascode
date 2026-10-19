@@ -55,8 +55,9 @@ API verification found all 29 expected AIOps objects, both Controller projects
 synchronized successfully, and both EDA activations running. Temporary token
 and checkout cleanup succeeded. Functional remediation tests remain pending.
 
-The separate `restore-windows-config.yml` applies a supplied Windows CaC file
-to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
+The separate `deploy-windows-demo.yml` imports the encrypted disconnected Windows
+configuration from its private repository. `restore-windows-config.yml` remains a
+local-file import utility. `destroy-test-aap.yml` handles guarded test-instance teardown.
 
 ## Setup and secrets
 
@@ -286,6 +287,38 @@ Never commit plaintext secrets or sensitive environment-specific data, including
 account names, hostnames, addresses, tokens, or keys. Vault-encrypted files/values
 are allowed. Keep `vpf` and other Vault password files outside Git. Ignore rules
 are a convenience; inspect staged files before committing.
+
+### Disconnected Windows configuration deployment
+
+Run `deploy-windows-demo.yml` through its own Job Template after shared base has
+been applied. Supply `aap_hostname` as the explicit target HTTPS URL and
+`aap_config_repo_url` as the private Windows configuration repository's HTTPS Git
+URL. It reads only the fully Vault-encrypted `cac/windows_disconnected.yml` from
+`main`. The attached Git token must have read access to this repository; access
+to another demo's private repository does not imply access here.
+
+Attach the same three credential types used by Step 04: the custom Git token
+injecting `CAC_GIT_TOKEN`, the `cac` Vault credential, and the existing Vault
+credential for `myvars`. Administrator authentication comes from an explicitly
+supplied protected `aap_password`, or the installer password retrieved over SSH
+using the existing environment settings. A temporary Gateway token authenticates
+the import and is revoked afterward; the checkout and askpass helper are removed
+on success and ordinary task failures.
+
+The vault must set `windows_disconnected_configuration_ready: true` and list its
+required secret variables in `windows_disconnected_required_secret_variables`.
+Every listed value must be present and nonempty. The importer restores inventory,
+credentials, projects, execution environments, Job Templates, and workflow
+definitions through CoP dispatch. It rejects job-launch and schedule definitions
+and excludes dispatch's launch roles. It does not apply the subscription or shared
+base, run the imported automation, or change Windows machines.
+
+`debug_logging` defaults to `false`, with the same optional `"false"`/`"true"`
+survey choice as other import templates. Authentication, decryption, wildcard
+variable combination, and credential updates remain protected even when enabling
+diagnostics. Ordinary object operations follow the diagnostic choice. Syntax and
+seven focused readiness, secret-input, and execution guards have passed; the new
+entry point has not yet been run against AAP.
 
 ## Start a CaC configuration
 

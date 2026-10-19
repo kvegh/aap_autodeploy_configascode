@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.6.0
+
+Add a dedicated disconnected Windows CaC import. It retrieves only the encrypted
+Windows definitions from the private repository's `main`, requires reviewed
+configuration and complete secret inputs, and dispatches AAP objects without
+running the imported jobs or workflows. Reject launches and schedules, preserve
+protected credential logging during diagnostics, and clean temporary Gateway
+authentication and the checkout. Subscription and shared base remain separate.
+
+Validation: full Ansible syntax check, the real CoP dispatcher regression, seven
+Windows preflight cases, version-tool tests, and whitespace checks passed. Live
+Windows configuration import has not yet run.
+
 ## 0.5.12
 
 Document the Event Stream dispatch correction in `a64e16c` and successful live
