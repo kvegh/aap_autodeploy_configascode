@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.7.5
+
+Document the Hub API's paired upstream authentication requirement and the
+URL-only base correction in `bf12d01`. Preserve local credentials and the
+separation between setup and synchronization; live rollout awaits a rerun.
+
 ## 0.7.4
 
 Keep upstream authentication URLs out of the URL-only base until their upstream

@@ -4,6 +4,24 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Defer upstream authentication during URL-only PAH setup
+
+Implementation: `bf12d01`.
+
+The diagnostic rollout reached the Hub remote module and returned HTTP 400:
+an upstream authentication URL requires its upstream token even when no sync is
+requested. The reusable base therefore omits that URL until future content
+preparation supplies both fields. Local repository setup and local download
+tokens do not require an upstream token. A protected preflight check now rejects
+an unpaired authentication URL before any target change. No access controls are
+weakened and no synchronization is added.
+
+The encrypted base was regenerated from its protected working copy, with matching
+Vault decryption and the private repository's minimal README preserved. Both PAH
+tests passed, including seven configuration cases and credential lifecycle
+coverage; full syntax and populated-base guards passed. A protected target rerun
+is required to establish live success.
+
 ## Validate credential types using the actual summary schema
 
 Implementation: `40906b1`.
