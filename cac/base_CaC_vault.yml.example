@@ -12,10 +12,31 @@ aap_user_accounts_base: []
 # Platform content-source credentials may belong here; machine credentials do not.
 controller_credentials_base: []
 controller_settings_base: {}
+hub_collection_remotes_base: []
+hub_collection_repositories_base: []
+
+# Base owns the PAH remotes, repositories, and distributions for rh-certified,
+# validated, and community content, plus their Controller Galaxy credentials
+# and organization attachments. Base configuration does not synchronize content.
+# Set sync: false on every repository; Stage 04 must also exclude the dispatch
+# role hub_collection_repository_sync so adding a repository never starts a sync.
+# Keep upstream sync tokens separate from local PAH download credentials.
+# hub_collection_repositories_base:
+#   - name: rh-certified
+#     remote: rh-certified
+#     distribution:
+#       name: rh-certified
+#       state: present
+#     sync: false
+#     state: present
 
 # Example list entries, using generic placeholders only:
 # aap_organizations_base:
 #   - name: ORGANIZATION_PLACEHOLDER
+#     galaxy_credentials:
+#       - PAH_CERTIFIED_CREDENTIAL_PLACEHOLDER
+#       - PAH_VALIDATED_CREDENTIAL_PLACEHOLDER
+#       - PAH_COMMUNITY_CREDENTIAL_PLACEHOLDER
 # controller_credentials_base:
 #   - name: CONTENT_SOURCE_CREDENTIAL_PLACEHOLDER
 #     organization: ORGANIZATION_PLACEHOLDER

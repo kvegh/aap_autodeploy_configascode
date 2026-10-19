@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.6.4
+
+Keep PAH collection synchronization out of base dispatch. Base owns the certified,
+validated, and community repository setup; use cases declare their collection
+requirements separately. Extend the empty templates and document bootstrap Git
+credentials versus target project SCM credentials. Add a TODO for a complete
+step-by-step CaC guide and the remaining PAH implementation.
+
+Create Windows inventory groups before applying their memberships so a parent
+cannot race child-group creation on a clean target. Seven tests passed, including
+the real group module's missing-child regression and existing dispatcher and
+preflight checks; both changed playbooks passed syntax checks. Live Windows
+import succeeded after a retry with the preceding source; this group-order fix
+has not yet been deployed. PAH repository configuration remains pending; no
+collection synchronization was performed.
+
 ## 0.6.3
 
 Document the protected Git failure classification implemented in `5ccb0ca` and

@@ -12,6 +12,12 @@ Base means platform setup only. Use-case Git projects, inventories, hosts,
 credentials, execution environments, templates, workflows, and EDA integrations
 belong to their separate use-case configurations. Each use case has its own
 deployment Job Template and encrypted configuration file.
+Base also owns PAH's certified, validated, and community repository setup and
+the Controller content-source credentials and organization attachments that use
+those repositories. Base does not synchronize collection content. Each use case
+declares which collections its own PAH preparation needs.
+
+The [project TODO](PLAN.md#todo) includes a complete, step-by-step CaC setup guide.
 
 ## Current implementation
 
@@ -59,6 +65,11 @@ The separate `deploy-windows-demo.yml` imports the encrypted disconnected Window
 configuration from its private repository. `restore-windows-config.yml` remains a
 local-file import utility. `destroy-test-aap.yml` handles guarded test-instance teardown.
 
+The Windows importer creates inventory groups before linking their memberships.
+The CoP group role starts requests asynchronously, so a parent group can otherwise
+refer to children that do not yet exist on a clean target. A successful import
+does not establish runtime collection compatibility or functional demo readiness.
+
 ## Setup and secrets
 
 Use an execution environment with Ansible and the required collections, including
@@ -93,8 +104,12 @@ Each operator must prepare configuration for their own environment.
 
 The current private base contains only the platform organization and an existing
 platform setting. Historical use-case objects were removed from it before the
-clean deployment test. Destination PAH source bootstrap still needs valid local
-PAH credentials; a Red Hat upstream token cannot authenticate to local PAH.
+clean deployment test. The required PAH base component is not yet deployed:
+it must configure the three repositories, their upstream remotes and download
+distributions, local PAH content-source credentials, and ordered organization
+attachments. It must not start synchronization. Destination PAH source bootstrap
+still needs valid local PAH credentials; a Red Hat upstream token cannot
+authenticate to local PAH.
 
 ### Collection source policy
 
@@ -112,6 +127,35 @@ CaC and provide them before project synchronization; job 04 cannot configure
 the sources it needs to download its own dependencies. A platform-managed
 public Galaxy credential may remain as an unattached object if AAP prevents
 its deletion. Verify that it is absent from the organization's active sources.
+
+The base PAH component configures `rh-certified`, `validated`, and `community`
+repository endpoints and their upstream remotes. Public Galaxy is permitted as
+the community remote's upstream; Controller projects download exclusively from
+PAH. Configuring these endpoints and synchronizing their content are separate
+operations. Set `sync: false` on base `hub_collection_repositories` entries and
+exclude `hub_collection_repository_sync` from Stage 04 dispatch: the CoP role
+otherwise defaults to synchronizing every defined repository. Creating a
+distribution makes a repository available at its PAH download endpoint.
+
+Every use-case configuration must include a `pah_requirements_demo` component,
+replacing `demo` with its identifier. List required collection names and versions
+under `certified`, `validated`, and `community`; include dependencies and keep
+the list aligned with the use-case repository's `collections/requirements.yml`
+and execution-environment requirements. Empty lists explicitly mean that a
+category is not needed. This component describes PAH preparation; it is not a
+CoP dispatch variable and does not currently trigger synchronization. Prepare
+and verify its content in PAH before synchronizing that use case's Controller
+projects. Do not overwrite other use cases' requirements when extending a
+shared PAH remote's collection list.
+
+PAH has separate authentication purposes: upstream Red Hat tokens authorize
+future certified/validated synchronization; local PAH credentials authorize
+repository management and downloads. The local download credential belongs in
+the encrypted base because every use case uses those platform sources. For AAP
+2.7, obtain local authentication through Gateway; the legacy
+`ansible.hub.ah_token` creation module is unsupported on that version. Verify
+the installed Hub collection's supported authentication before automating token
+creation or storing it in Controller credentials.
 
 ### Stage 04 inputs
 
@@ -131,6 +175,20 @@ repository. Stage 04 always uses `main`; it requires these Vault-encrypted files
 
 Use a read-only token with access to that repository.
 Do not put the token in the URL or extra variables.
+
+Private-repository read tokens are bootstrap credentials: the job needs one
+before it can download and decrypt the configuration. Store the runtime copy in
+an AAP custom credential that injects `CAC_GIT_TOKEN`, and attach the credential
+for the selected repository to that use case's deployment template. Keep a
+recovery copy in a separately encrypted bootstrap vault outside the configuration
+checkout. A token stored only inside the repository it unlocks cannot bootstrap
+its own download. Different tokens can use the same custom credential type;
+changing one use case's token must not replace another use case's credential.
+
+These tokens serve a different purpose from Source Control credentials created
+on the target AAP. Those credentials allow imported projects to synchronize
+their private playbook repositories and belong in their use case's encrypted
+configuration.
 
 Attach these credentials to the Stage 04 job template:
 

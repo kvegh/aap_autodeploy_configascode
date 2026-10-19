@@ -11,6 +11,8 @@
     # AAP 2.7 manages applications through Gateway; Controller no longer ships this module.
     aap_configuration_dispatcher_exclude_roles:
       - controller_applications
+      # Base prepares PAH repositories; use cases curate their content separately.
+      - hub_collection_repository_sync
     debug_logging: false
     aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
     aap_username: admin

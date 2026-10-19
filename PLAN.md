@@ -1,5 +1,25 @@
 # AAP AutoDeploy Plan
 
+The design below includes historical planning. See [README.md](README.md) for
+the current implementation and credential handling.
+
+## TODO
+
+- [ ] Write and verify a step-by-step Configuration as Code guide, from a fresh
+  checkout to a configured AAP. Cover prerequisites; copying and completing the
+  base and use-case templates; object ownership and dependencies; private Git
+  access and bootstrap credentials; Vault encryption and AAP credential setup;
+  subscription and base deployment; PAH repository setup without synchronization;
+  each use case's collection requirements and later PAH preparation; deployment
+  Job Templates and their inputs; validation, updates, deletions, and recovery.
+- [ ] Complete the base PAH component: configure certified, validated, and
+  community remotes, repositories, distributions, and Controller organization
+  sources using local PAH credentials. Do not synchronize content or attach a
+  direct public Galaxy source during base deployment.
+- [ ] Populate and verify the PAH requirements component in each existing use-case
+  configuration, including collection versions, dependencies, and compatibility
+  with its execution environment, before running the use case's automation.
+
 ## Context
 
 We need a repeatable, fully automated way to deploy fresh AAP 2.7 instances for testing. Currently there is no automation for the AAP platform install itself — only VM provisioning (`deploy_vms.yml`) and post-install configuration (`aap_deploy/` playbooks) exist separately. This project bridges the gap: from golden image clone to a fully working AAP test instance, driven entirely by Ansible.

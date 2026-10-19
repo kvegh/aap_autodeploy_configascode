@@ -31,6 +31,23 @@ eda_decision_environments_demo: []
 eda_rulebook_activations_demo: []
 eda_event_streams_demo: []
 
+# Required per-use-case PAH component. Declare every required collection and
+# version under the PAH repository that supplies it; include transitive needs.
+# Keep this aligned with the use-case source collections/requirements.yml and
+# execution-environment requirements. An empty list means none are required.
+# This manifest is metadata for PAH preparation; CoP dispatch does not consume
+# pah_requirements_demo or synchronize these collections automatically.
+pah_requirements_demo:
+  certified: []
+  validated: []
+  community: []
+# pah_requirements_demo:
+#   certified:
+#     - name: COLLECTION_NAMESPACE.COLLECTION_NAME
+#       version: VERSION_PLACEHOLDER
+#   validated: []
+#   community: []
+
 # References use object names, not IDs copied from another AAP instance.
 # controller_projects_demo:
 #   - name: PROJECT_PLACEHOLDER

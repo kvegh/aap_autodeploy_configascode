@@ -11,6 +11,8 @@
     # AAP 2.7 manages applications through Gateway; Controller no longer ships this module.
     aap_configuration_dispatcher_exclude_roles:
       - controller_applications
+      # Child groups must exist before the asynchronous role links them.
+      - controller_host_groups
       # Import definitions without launching their automation.
       - controller_job_launch
       - controller_workflow_launch
@@ -250,6 +252,24 @@
             name: infra.aap_configuration.dispatch
           vars:
             dispatch_include_wildcard_vars: false
+
+        - name: Create all Windows inventory groups before adding memberships
+          ansible.controller.group:
+            name: "{{ item.name }}"
+            inventory: "{{ item.inventory }}"
+            state: "{{ item.state | default('present') }}"
+            controller_host: "{{ aap_hostname }}"
+            controller_oauthtoken: "{{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+          loop: "{{ controller_groups | default([]) }}"
+          loop_control:
+            label: "{{ item.name }}"
+          when: item.state | default('present') != 'absent'
+          no_log: "{{ not (debug_logging | bool) }}"
+
+        - name: Apply the declared Windows inventory group memberships
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.controller_host_groups
       always:
         - name: Revoke the run token and clean the private workspace
           block:
