@@ -4,6 +4,26 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Plan recoverable per-instance MCP credentials
+
+This is planning only; persistent MCP provisioning has no implementation commit.
+The existing temporary base-authentication implementation is `1216f38`.
+
+The operator will create the current target's MCP API token manually and requested
+future automation in the TODO. Each fresh platform issues its own token, so base
+must provision instance-specific access rather than copy an old platform token.
+An AAP credential masks its secret on API reads and therefore cannot be the only
+copy needed to configure an external MCP client.
+
+The planned recoverable copy contains the token, endpoint and CA trust material
+in fully Vault-encrypted per-instance files in the private base repository. Opaque
+filenames avoid exposing environment names. A separate repository-scoped Git
+write credential enables saving these files while existing import access stays
+read-only. Client setup decrypts values into protected local configuration with
+certificate verification enabled. Provisioning, storage, rerun and rotation
+behavior remain unimplemented; no platform or client configuration changes are
+part of this documentation update.
+
 ## Verify Assistant Team import with trusted local PAH downloads
 
 Encrypted Assistant Team fix: `094ee7f` in its private companion repository.

@@ -26,6 +26,10 @@ those repositories. Base does not synchronize collection content. Each use case
 declares which collections its own PAH preparation needs.
 
 The [project TODO](PLAN.md#todo) includes a complete, step-by-step CaC setup guide.
+It also tracks persistent MCP token provisioning and Vault-encrypted per-instance
+connection values in the private base repository, with separate Git write access
+and client CA trust. API tokens are created manually for now; this storage and
+client-configuration automation is not implemented.
 
 ## Current implementation
 

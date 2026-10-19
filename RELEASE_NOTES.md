@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.10.4
+
+Document planned per-instance MCP API-token provisioning and recoverable,
+Vault-encrypted connection values in the private base configuration repository.
+Track a separately scoped Git write credential, opaque instance filenames,
+protected client configuration, CA trust, reruns and rotation. The operator will
+create the current target's API token manually; no token provisioning or write-back
+automation is implemented or launched by this planning update.
+
+Validation: documentation whitespace checks and staged-file review passed.
+No AAP jobs, API tokens or credentials were created or changed.
+
 ## 0.10.3
 
 Document the verified Assistant Team configuration import and its two encrypted
