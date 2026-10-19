@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.5.11
+
+Keep Event Stream creation out of initial AIOps dispatch. CoP 4.10.0 does include
+an Event Stream role, contrary to the earlier documentation, and it expects
+`organization` in each data item. Our explicit module task uses
+`organization_name`; dispatching the same definitions first caused a live
+missing-organization error. Exclude that role alongside activations so the
+dedicated stream task runs after prerequisites and before activation creation.
+
+Validation: the live diagnostic confirmed the exact missing-organization error.
+Ansible syntax and six isolated Event Stream/activation checks passed. A real
+CoP dispatch regression passed; removing either stream or activation exclusion
+fails safely in check mode before module execution. Live rerun follows this fix.
+
 ## 0.5.10
 
 Document installer monitoring recovery implemented in `64aec45` and the fresh

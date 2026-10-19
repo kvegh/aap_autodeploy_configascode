@@ -92,9 +92,11 @@ This matters because `ansible.eda.credential` 2.13.0 requires `inputs` for updat
 and defaults to updating secrets; sending an exported encryption marker would
 not provide a valid new target token.
 
-CoP dispatch 4.10.0 has no Event Stream role. The playbook therefore excludes
-`eda_rulebook_activations` from initial dispatch and applies configuration in this
-order:
+CoP dispatch 4.10.0 includes an Event Stream role. Its data items expect
+`organization`, while our dedicated stream definitions use the module's
+`organization_name` field. Initial dispatch therefore excludes both
+`eda_event_streams` and `eda_rulebook_activations`, applying configuration in
+this order:
 
 1. Controller resources, EDA credentials, projects, and decision environments
    through dispatch.

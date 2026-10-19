@@ -49,8 +49,9 @@ and the reduced platform-only base. This verified private Git access, decryption
 installer password retrieval, Gateway authentication, license import, and base
 dispatch. Token revocation and temporary workspace removal succeeded. Protected
 logging remained enabled. The separate `deploy-aiops-demo.yml` entry point loads
-only AIOps configuration after base. It is prepared for review and has not been
-launched against an AAP instance.
+only AIOps configuration after base. Its first live deployment reached Event
+Stream creation and exposed a dispatch field-mapping error. The exclusion fix
+is covered below; successful complete AIOps deployment is still being verified.
 
 The separate `restore-windows-config.yml` applies a supplied Windows CaC file
 to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -219,7 +220,7 @@ HTTP 200 Controller ping; the installer-launch task was skipped.
 Rotating the target administrator password, removing the remaining `myvars`
 dependency, and automatic demo selection are separate pending work.
 The four deployment stages are verified as individually launched jobs. Automatic
-job handoff and live AIOps configuration deployment remain pending.
+job handoff and successful complete AIOps configuration deployment remain pending.
 
 ### AIOps configuration deployment
 
@@ -248,8 +249,12 @@ decision environments first. It then creates Event Streams with
 the CoP role. After initial dispatch, a supplemental project task preserves
 `update_revision_on_launch` and its cache timeout when declared in the vault;
 CoP 4.10.0 does not forward those settings. It waits for the project without
-triggering a second sync. CoP dispatch 4.10.0 does not create Event Streams
-itself. The vault must contain nonempty `eda_event_streams_aiops_demo` and
+triggering a second sync. Initial dispatch excludes both `eda_event_streams`
+and `eda_rulebook_activations`. CoP 4.10.0 includes an Event Stream role, but
+its data items expect `organization`; our dedicated module definitions use
+`organization_name`. Excluding that role keeps stream creation in the explicit
+step, after prerequisites and before activations. The vault must contain
+nonempty `eda_event_streams_aiops_demo` and
 `eda_rulebook_activations_aiops_demo` lists, with every activation mapping
 referencing an Event Stream defined in the vault. References use names and
 rulebook source names or indexes; target IDs and stream UUIDs are generated on
@@ -272,8 +277,8 @@ that its EDA credential was not saved. An inconclusive lookup preserves the toke
 for inspection, avoiding revocation of a token already needed by EDA. Ordinary
 cleanup still revokes the temporary configuration token and removes the checkout.
 Fatal role-loading errors and interruptions have the same cleanup limitations as
-Step 04. The AIOps Job Template is created for later use and must remain unlaunched
-until the encrypted capture and dependencies have been reviewed.
+Step 04. This job deploys AAP configuration; external environment setup and
+functional remediation verification are separate work.
 
 Never commit plaintext secrets or sensitive environment-specific data, including
 account names, hostnames, addresses, tokens, or keys. Vault-encrypted files/values
@@ -355,14 +360,22 @@ advance the branch beyond the released version.
 
 ## Validation
 
-Run the local version-tool tests and whitespace check:
+Run the local tests and whitespace check:
 
 ```bash
 python3 -m unittest discover -s tests -v
 git diff --check
 ```
 
-These checks do not run Ansible jobs. Ansible syntax checks alone do not verify
+The version-tool tests need only Python's standard library. The dispatch
+regression additionally needs Ansible, PyYAML, and the declared runtime
+collections installed in the selected Python environment. It explicitly skips
+when these dependencies are unavailable. Set `ANSIBLE_COLLECTIONS_PATH` to their
+installation directory when needed. It runs the real CoP dispatcher in check
+mode against synthetic definitions, without contacting AAP, and verifies that
+streams and activations stay out of initial dispatch.
+
+These checks do not run AAP jobs. Ansible syntax checks alone do not verify
 Vault-file loading, authentication, dependency readiness, or successful deployment.
 No standalone formatter or linter dependency is required for the version helper.
 
@@ -372,7 +385,7 @@ No standalone formatter or linter dependency is required for the version helper.
 - `cac/`: empty plaintext examples; populated CaC lives in the private repository.
 - `vars/`: generic defaults; `templates/`: reverse-proxy templates.
 - `utils/`: existing controller-label utility.
-- `src/`: version-maintenance helper; `tests/`: its command-line tests.
+- `src/`: version-maintenance helper; `tests/`: version-tool and dispatch regressions.
 - `VERSION`, `RELEASE_NOTES.md`, and `AGENTS.md`: version and working rules.
 - `documentation.md`, `Configuration_as_Code.md`, and `PLAN.md`: detailed notes,
   CaC reference, and original design; historical TODOs need reconciliation.

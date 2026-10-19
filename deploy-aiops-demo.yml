@@ -12,6 +12,7 @@
     aap_configuration_dispatcher_exclude_roles:
       - controller_applications
       # Event Streams must exist before activations resolve their source mappings.
+      - eda_event_streams
       - eda_rulebook_activations
     debug_logging: false
     aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
