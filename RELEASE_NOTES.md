@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.5.12
+
+Document the Event Stream dispatch correction in `a64e16c` and successful live
+AIOps configuration deployment. Job 2018 completed in 94 seconds with 131
+successful tasks and no failures. Independent TLS-verified API checks found all
+29 expected objects, both Controller project syncs successful, and both EDA
+activations running. Temporary configuration and verification tokens were revoked;
+the configuration checkout was removed. Functional remediation tests remain pending.
+
+Validation: real dispatcher regression, six focused stream/activation checks,
+syntax, live deployment, object comparison, and documentation whitespace passed.
+
 ## 0.5.11
 
 Keep Event Stream creation out of initial AIOps dispatch. CoP 4.10.0 does include

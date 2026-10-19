@@ -49,9 +49,11 @@ and the reduced platform-only base. This verified private Git access, decryption
 installer password retrieval, Gateway authentication, license import, and base
 dispatch. Token revocation and temporary workspace removal succeeded. Protected
 logging remained enabled. The separate `deploy-aiops-demo.yml` entry point loads
-only AIOps configuration after base. Its first live deployment reached Event
-Stream creation and exposed a dispatch field-mapping error. The exclusion fix
-is covered below; successful complete AIOps deployment is still being verified.
+only AIOps configuration after base. After correcting an Event Stream dispatch
+field mapping, live job 2018 completed successfully in 94 seconds. Independent
+API verification found all 29 expected AIOps objects, both Controller projects
+synchronized successfully, and both EDA activations running. Temporary token
+and checkout cleanup succeeded. Functional remediation tests remain pending.
 
 The separate `restore-windows-config.yml` applies a supplied Windows CaC file
 to an existing AAP. `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -219,8 +221,8 @@ HTTP 200 Controller ping; the installer-launch task was skipped.
 
 Rotating the target administrator password, removing the remaining `myvars`
 dependency, and automatic demo selection are separate pending work.
-The four deployment stages are verified as individually launched jobs. Automatic
-job handoff and successful complete AIOps configuration deployment remain pending.
+The four deployment stages and AIOps configuration deployment are verified.
+Automatic job handoff and functional remediation tests remain pending.
 
 ### AIOps configuration deployment
 

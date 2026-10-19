@@ -4,6 +4,31 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Keep module-native Event Stream definitions out of initial dispatch
+
+Implementation: `a64e16c`; encrypted deployment enablement: private configuration
+commit `8a121e8`.
+
+The first live AIOps import exposed an incorrect earlier assumption that CoP
+4.10.0 lacked an Event Stream role. It includes that role, which reads each
+item's `organization` field. Our dedicated module definitions use
+`organization_name`, so initial dispatch attempted stream creation with a missing
+required organization. Diagnostic job 2016 confirmed that exact error while
+leaving other configuration logging protected.
+
+Initial dispatch now excludes streams as well as activations. The existing
+explicit stream task runs after prerequisites, followed by the activation role.
+A regression test exercises the real dispatcher, including negative controls
+that remove each exclusion. The earlier fixture replaced prerequisite dispatch
+with a stub and could not detect this integration error.
+
+The user authorized the first deployment, so the complete encrypted capture's
+readiness flag was enabled. Job 2018 then succeeded with 131 successful tasks and
+no failures. Independent API checks verified all 29 expected objects, successful
+Controller project syncs, and both EDA activations running. Configuration tokens
+and temporary files were cleaned; the persistent EDA credential was preserved.
+Functional remediation remains a separate test; no external setup was changed.
+
 ## Resume installer monitoring without starting another installation
 
 Implementation: `64aec45`.
@@ -63,10 +88,11 @@ was launched.
 
 Implementation: `33f2575`.
 
-The CoP 4.10.0 dispatch list does not include Event Streams. A direct import of
-activations would therefore reference streams that did not exist. The AIOps
-playbook dispatches prerequisites first, creates streams through the supported
-EDA module, and only then applies the CoP activation role. The encrypted capture
+This change introduced explicit Event Stream creation before activation import.
+Its initial assumption that CoP 4.10.0 lacked the stream role was incorrect;
+the later correction is documented above under `a64e16c`. The AIOps playbook
+dispatches prerequisites first, creates streams through the supported EDA module,
+and only then applies the CoP activation role. The encrypted capture
 uses names and rulebook source names or indexes, so modules resolve the new
 instance's IDs, hashes, and stream UUIDs. Required mappings are validated before
 target configuration starts.
