@@ -1,0 +1,86 @@
+---
+- name: Require a nonempty configured administrator password
+  ansible.builtin.assert:
+    that:
+      - aap_password is string
+      - aap_password | length > 0
+    fail_msg: Store a nonempty aap_password in the encrypted base configuration.
+  when: aap_password is defined
+  no_log: true
+
+- name: Try the configured administrator password
+  ansible.builtin.uri:
+    url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
+    method: POST
+    url_username: "{{ aap_username }}"
+    url_password: "{{ aap_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      description: Temporary AAP AutoDeploy configuration token
+      scope: write
+      application: null
+    status_code: [201, 401]
+    validate_certs: "{{ aap_validate_certs }}"
+  when: aap_password is defined
+  changed_when: cac_configured_gateway_token.status == 201
+  register: cac_configured_gateway_token
+  no_log: true
+
+- name: Bootstrap with the installer password when the configured login is not active
+  when: cac_configured_gateway_token.status | default(401) == 401
+  no_log: true
+  block:
+    - name: Read the current Gateway administrator password from the installer
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json
+            import shlex
+            import sys
+            from pathlib import Path
+
+            for line in Path(sys.argv[1]).read_text().splitlines():
+                key, separator, value = line.partition('=')
+                if separator and key.strip() == 'gateway_admin_password':
+                    parts = shlex.split(value.strip(), comments=True)
+                    if parts:
+                        print(json.dumps({'password': parts[0]}))
+                        break
+            else:
+                sys.exit('Gateway admin password is missing from the installer inventory.')
+          - "{{ installer_extract_dir }}/ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64/inventory"
+      delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
+        ansible_become: true
+      changed_when: false
+      register: cac_installer_admin
+
+    - name: Create a Gateway token with the current installer password
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
+        method: POST
+        url_username: "{{ aap_username }}"
+        url_password: "{{ (cac_installer_admin.stdout | from_json).password }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          description: Temporary AAP AutoDeploy configuration token
+          scope: write
+          application: null
+        status_code: 201
+        validate_certs: "{{ aap_validate_certs }}"
+      register: cac_installer_gateway_token
+
+- name: Select the successful Gateway login token
+  ansible.builtin.set_fact:
+    cac_gateway_token: >-
+      {{ cac_configured_gateway_token
+         if cac_configured_gateway_token.status | default(401) == 201
+         else cac_installer_gateway_token }}
+  no_log: true

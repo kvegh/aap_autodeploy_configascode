@@ -18,6 +18,7 @@
     # These roles may handle credential inputs even while ordinary diagnostics run.
     controller_configuration_credentials_secure_logging: true
     hub_configuration_collection_remote_secure_logging: true
+    gateway_users_secure_logging: true
     aap_username: admin
     aap_validate_certs: false
   pre_tasks:
@@ -144,60 +145,8 @@
           diff: false
           no_log: true
 
-        - name: Read the current Gateway administrator password from the installer
-          ansible.builtin.command:
-            argv:
-              - python3
-              - -c
-              - |
-                import json
-                import shlex
-                import sys
-                from pathlib import Path
-
-                for line in Path(sys.argv[1]).read_text().splitlines():
-                    key, separator, value = line.partition('=')
-                    if separator and key.strip() == 'gateway_admin_password':
-                        parts = shlex.split(value.strip(), comments=True)
-                        if parts:
-                            print(json.dumps({'password': parts[0]}))
-                            break
-                else:
-                    sys.exit('Gateway admin password is missing from the installer inventory.')
-              - "{{ installer_extract_dir }}/ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64/inventory"
-          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
-          vars:
-            ansible_connection: ssh
-            ansible_user: "{{ vault_ansible_user }}"
-            ansible_password: "{{ vault_ansible_password }}"
-            ansible_become: true
-          when: aap_password is not defined
-          changed_when: false
-          register: cac_installer_admin
-          no_log: true
-
-        - name: Use the current Gateway administrator password
-          ansible.builtin.set_fact:
-            aap_password: "{{ (cac_installer_admin.stdout | from_json).password }}"
-          when: aap_password is not defined
-          no_log: true
-
-        - name: Create a Gateway token for this configuration run
-          ansible.builtin.uri:
-            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
-            method: POST
-            url_username: "{{ aap_username }}"
-            url_password: "{{ aap_password }}"
-            force_basic_auth: true
-            body_format: json
-            body:
-              description: Temporary AAP AutoDeploy configuration token
-              scope: write
-              application: null
-            status_code: 201
-            validate_certs: "{{ aap_validate_certs }}"
-          register: cac_gateway_token
-          no_log: true
+        - name: Authenticate with the configured password or bootstrap from the installer
+          ansible.builtin.include_tasks: tasks/gateway-base-login.yml
 
         - name: Use the Gateway token for configuration roles
           ansible.builtin.set_fact:
@@ -245,6 +194,35 @@
             name: infra.aap_configuration.dispatch
           vars:
             dispatch_include_wildcard_vars: false
+
+        - name: Verify the configured administrator password after applying base
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/me/"
+            url_username: "{{ aap_username }}"
+            url_password: "{{ aap_password }}"
+            force_basic_auth: true
+            status_code: 200
+            validate_certs: "{{ aap_validate_certs }}"
+          when: aap_password is defined
+          no_log: true
+
+        - name: Keep the deployed installer password current after bootstrap
+          ansible.builtin.lineinfile:
+            path: "{{ installer_extract_dir }}/ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64/inventory"
+            regexp: '^\s*gateway_admin_password\s*='
+            mode: '0600'
+            line: "gateway_admin_password={{ aap_password | quote }}"
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+          when:
+            - aap_password is defined
+            - cac_installer_admin.stdout is defined
+          diff: false
+          no_log: true
       always:
         - name: Revoke the run token and clean the private workspace
           block:

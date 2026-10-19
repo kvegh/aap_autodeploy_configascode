@@ -238,14 +238,25 @@ with mode `0600` inside the job's private temporary directory. Both use the same
 API or require it in extra variables. The license module uploads the restored ZIP
 to the target AAP before the dispatch role applies object configuration.
 
-For a freshly installed target, Step 04 connects over SSH to the hostname or IP
-in `aap_hostname`, using `vault_ansible_user` and `vault_ansible_password` from
-`myvars`, with sudo access. It reads only `gateway_admin_password` from the
-installer inventory at the bundle path defined by `installer_extract_dir` and
-`aap_version`. It no longer assumes that `aap_gateway_admin_passwd` matches this
-target. For an existing target, supply its current `aap_password` through
-encrypted configuration to skip SSH/installer access. `aap_username` defaults
-to the administrator account and may be overridden.
+The encrypted base may define `aap_password` and an `aap_user_accounts_base`
+entry whose username is `{{ aap_username }}` and whose password is
+`{{ aap_password }}`. This declares the desired administrator password. Step 04
+tries that login first. If it is not active yet (HTTP 401), or no password was
+configured, the playbook reads the current `gateway_admin_password` from the
+deployed installer inventory over SSH using `vault_ansible_user` and
+`vault_ansible_password` from `myvars`, with sudo access. The bundle path uses
+`installer_extract_dir` and `aap_version`. Other authentication or connection
+errors stop the run; they do not trigger a bootstrap attempt.
+
+The CoP `gateway_users` role applies the declared administrator account using
+the temporary configuration token. Step 04 then verifies the configured password
+with a fresh login. After using installer bootstrap, it also updates that
+deployed inventory's Gateway password, so subsequent use-case importers can
+still read the current login there. Password operations remain protected even
+with diagnostic logging enabled. A rerun with the configured password already
+active does not require installer access. Existing targets can supply their
+current encrypted `aap_password` without a managed administrator entry.
+`aap_username` defaults to the administrator account and may be overridden.
 
 Step 04 creates a write-scope token through `/api/gateway/v1/tokens/` using the
 current Gateway login. The Controller license module and dispatch then use
@@ -308,8 +319,9 @@ to establish successful installation.
 Live resume job 2008 verified the original installer's successful exit and an
 HTTP 200 Controller ping; the installer-launch task was skipped.
 
-Rotating the target administrator password, removing the remaining `myvars`
-dependency, and automatic demo selection are separate pending work.
+Administrator password management comes from the encrypted base configuration.
+Removing the remaining `myvars` dependency and automatic demo selection remain
+separate pending work.
 The four deployment stages and AIOps configuration deployment are verified.
 Automatic job handoff and functional remediation tests remain pending.
 
@@ -617,6 +629,9 @@ fixture for token cleanup; it does not contact AAP or run imported automation.
 The Assistant Team regression additionally checks ordinary core completeness,
 preserved encrypted snapshots and separation from optional maintenance, plus HTTPS
 repository URL rejection, required token injection and cleanup after failed imports.
+The Gateway login regression checks initial password bootstrap, reruns without
+installer access, legacy installer-only configuration, rejected passwords and
+server/access failures, while verifying that secrets stay out of output.
 
 These checks do not run AAP jobs. Ansible syntax checks alone do not verify
 Vault-file loading, authentication, dependency readiness, or successful deployment.

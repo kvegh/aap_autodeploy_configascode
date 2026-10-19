@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.10.0
+
+Manage the desired administrator password from the encrypted base configuration.
+Try that login first, bootstrap from the deployed installer only when it is not
+active, and let the CoP Gateway user role apply the account password. Verify a
+fresh login, keep the deployed installer password current for use-case imports,
+and protect password operations even during diagnostics. A configured-password
+rerun does not need installer access.
+
+Validation: all sixteen local tests passed. Seven authentication scenarios
+exercise bootstrap, reruns, legacy configuration, rejected passwords and
+access/server failures without logging secrets. Ansible syntax, Vault round-trip
+and whitespace checks passed. Live rollout and final verification are documented
+separately after they complete.
+
 ## 0.9.2
 
 Use the existing CaC Git-token credential type for Assistant Team's private

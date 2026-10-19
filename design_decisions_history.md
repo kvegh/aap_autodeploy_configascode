@@ -4,6 +4,21 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Reuse the established Git-token credential type for Assistant Team
+
+Implementation: `1926669`.
+
+The operator requested the existing Git-token mechanism instead of a separate
+SSH deploy-key mechanism. The importer now requires an HTTPS Git URL and
+`CAC_GIT_TOKEN`, with the same temporary askpass helper and verified HTTPS used
+by the other CaC importers. The unused SSH credential type was removed before
+any key or credential was created. The token still needs read access to the
+selected private repository; sharing a type does not share its permissions.
+
+All fifteen local tests passed, including repository URL rejection, missing
+token handling, encrypted configuration guards and cleanup after failure. Full
+syntax and whitespace checks passed. No Assistant Team import was launched.
+
 ## Import the ordinary Assistant Team configuration independently
 
 Implementation: `614763a`.

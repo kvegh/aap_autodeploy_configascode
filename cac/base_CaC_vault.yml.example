@@ -5,9 +5,16 @@
 # Encrypt populated sensitive configuration before adding it to Git.
 # The file is plaintext despite its .example name; it contains no secrets.
 
+# Optional desired administrator password. Store it only in the encrypted copy.
+# Stage 04 uses the installer login for bootstrap when this password is not active.
+# aap_password: ADMIN_PASSWORD_PLACEHOLDER
+# aap_user_accounts_base:
+#   - username: "{{ aap_username }}"
+#     password: "{{ aap_password }}"
+#     state: present
 aap_organizations_base: []
 aap_teams_base: []
-# Keep the account used to apply configuration outside managed user accounts.
+# Empty by default; the encrypted example above may manage the administrator.
 aap_user_accounts_base: []
 # Platform content-source credentials may belong here; machine credentials do not.
 controller_credentials_base: []
