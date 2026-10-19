@@ -142,22 +142,34 @@ class AssistantTeamConfigurationTests(unittest.TestCase):
     def test_repository_guard_rejects_untrusted_or_embedded_credential_inputs(self):
         source = yaml.safe_load(PLAYBOOK.read_text())[0]
         guard = next(task for task in source["pre_tasks"]
-                     if task["name"] == "Require a private SSH configuration repository URL")
+                     if task["name"] == "Require a private configuration repository URL without embedded credentials")
         cases = [
-            ("ssh://git@git.example.invalid/owner/repository.git", True),
-            ("https://git.example.invalid/owner/repository.git", False),
-            ("ssh://git:synthetic-private-secret@git.example.invalid/owner/repository.git", False),
-            ("ssh://git@git.example.invalid/owner/repository.git?secret=value", False),
-            ("ssh://git@git.example.invalid/owner/repository.git#fragment", False),
-            ("ssh://git@git.example.invalid/owner/repository .git", False),
+            ("https://git.example.invalid/owner/repository.git", True),
+            ("ssh://git@git.example.invalid/owner/repository.git", False),
+            ("http://git.example.invalid/owner/repository.git", False),
+            ("https://git:synthetic-private-secret@git.example.invalid/owner/repository.git", False),
+            ("https://git@git.example.invalid/owner/repository.git", False),
+            ("https://git.example.invalid/owner/repository.git?secret=value", False),
+            ("https://git.example.invalid/owner/repository.git#fragment", False),
+            ("https://git.example.invalid/owner/repository .git", False),
         ]
         # Repository URL diagnostics must not expose malformed embedded secrets.
-        guard["no_log"] = True
-        with tempfile.TemporaryDirectory(prefix="assistant-cac-ssh-") as directory:
+        with tempfile.TemporaryDirectory(prefix="assistant-cac-url-") as directory:
             for url, succeeds in cases:
                 with self.subTest(url=url):
                     status, output = self.run_tasks(Path(directory), [guard], {"aap_config_repo_url": url})
                     self.assertEqual(status == 0, succeeds, output)
+
+    def test_git_token_is_required_without_disclosing_it(self):
+        source = yaml.safe_load(PLAYBOOK.read_text())[0]
+        guard = next(task for task in source["pre_tasks"]
+                     if task["name"] == "Require the injected CaC Git token")
+        with tempfile.TemporaryDirectory(prefix="assistant-cac-git-token-") as directory:
+            for token in ("", "synthetic-private-secret"):
+                with self.subTest(token_present=bool(token)):
+                    status, output = self.run_tasks(Path(directory), [guard], {},
+                                                    environment={"CAC_GIT_TOKEN": token})
+                    self.assertEqual(status == 0, bool(token), output)
 
     def test_failed_import_revokes_only_its_token_and_always_removes_workspace(self):
         source = yaml.safe_load(PLAYBOOK.read_text())[0]

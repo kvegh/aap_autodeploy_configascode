@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.9.2
+
+Use the existing CaC Git-token credential type for Assistant Team's private
+configuration import. Require an HTTPS repository URL and the injected
+`CAC_GIT_TOKEN`, and use the same temporary askpass authentication as the other
+importers. Keep TLS verification enabled and tokens out of URLs, command
+arguments and the helper's stored contents. Remove the unused SSH credential
+type; no SSH key or credential was created.
+
+Validation: all fifteen local tests passed, including eight repository URL
+cases, missing/present token checks, encrypted capture guards and failure cleanup.
+Full Ansible syntax and whitespace checks passed. No Assistant Team import or
+runtime automation was launched.
+
 ## 0.9.1
 
 Document the dedicated Assistant Team importer in `614763a`, its read-only SSH

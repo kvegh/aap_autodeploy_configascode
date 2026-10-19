@@ -471,13 +471,15 @@ repository remains a separate bootstrap requirement.
 
 Use `deploy-assistant-team.yml` after shared base. Supply `aap_hostname` as the
 explicit target AAP HTTPS URL and `aap_config_repo_url` in the form
-`ssh://git@GIT_HOST/OWNER/REPOSITORY.git`. The importer downloads `main` and loads
-only `vaults/cac/assistant_team_vault.yml`. Attach a repository-scoped read-only
-Git SSH credential that injects `CAC_GIT_SSH_KEY_FILE` and
-`CAC_GIT_KNOWN_HOSTS_FILE` as paths to files, plus the `cac` Vault credential and
-the existing Vault credential for `myvars`. Provision trusted Git host keys in
-that credential from an independently verified source. SSH requires strict host
-verification and never accepts unknown or changed keys automatically.
+`https://GIT_HOST/OWNER/REPOSITORY.git`. The importer downloads `main` and loads
+only `vaults/cac/assistant_team_vault.yml`. Use the existing custom CaC Git-token
+credential type, which injects `CAC_GIT_TOKEN`, with read access to this private
+repository. Attach that credential, the `cac` Vault credential, and the existing
+Vault credential for `myvars`. Reusing the type does not grant repository access;
+the attached token must authorize this repository. A separate credential of the
+same type can hold a different token without changing other use cases' access.
+Git uses a temporary askpass helper with HTTPS certificate verification enabled;
+the token stays out of URLs, command arguments and the helper's stored contents.
 
 The target administrator input follows the other importers: supply a protected
 `aap_password`, or let the importer retrieve the current installer password over
@@ -613,8 +615,8 @@ streams and activations stay out of initial dispatch. The Orchestrator regressio
 uses synthetic encrypted captures for its actual preflight tasks and a local HTTP
 fixture for token cleanup; it does not contact AAP or run imported automation.
 The Assistant Team regression additionally checks ordinary core completeness,
-preserved encrypted snapshots and separation from optional maintenance, plus SSH
-repository URL rejection and cleanup after failed imports.
+preserved encrypted snapshots and separation from optional maintenance, plus HTTPS
+repository URL rejection, required token injection and cleanup after failed imports.
 
 These checks do not run AAP jobs. Ansible syntax checks alone do not verify
 Vault-file loading, authentication, dependency readiness, or successful deployment.
