@@ -4,6 +4,24 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Verify the encrypted base administrator password on a deployed target
+
+Implementation: `1216f38`; verified runtime source: `c51aede`.
+
+After restoring the existing private-base Git credential, job 2125 successfully
+applied the desired password through the CoP Gateway user role and synchronized
+the deployed installer inventory with mode `0600`. Job 2128 successfully used
+the configured password and skipped installer access, bootstrap-token creation
+and inventory changes. This verifies that future base reruns can authenticate
+with the declared password while existing use-case importers can read the
+current installer login.
+
+Independent checks used trusted TLS and confirmed successful desired and
+installer logins, matching password and permissions, no leftover run tokens,
+and unchanged use-case object counts and EDA activation states. Both job event
+streams confirmed token revocation and temporary workspace removal. No imported
+use-case Job Template was launched for this verification.
+
 ## Define a complete production replacement and trusted seed bootstrap
 
 Encrypted base credential inputs: `490a27b` and `9563936` in the private base

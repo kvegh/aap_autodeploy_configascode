@@ -276,6 +276,14 @@ active does not require installer access. Existing targets can supply their
 current encrypted `aap_password` without a managed administrator entry.
 `aap_username` defaults to the administrator account and may be overridden.
 
+Live job 2125 applied the password through the CoP Gateway user role, verified
+that login, and synchronized the deployed installer inventory with mode `0600`.
+Job 2128 successfully reran using the configured password, skipping installer
+reads, bootstrap-token creation and inventory changes. Independent verification
+used trusted TLS and confirmed both logins, matching installer configuration,
+no remaining run tokens, and unchanged use-case object counts. Both jobs removed
+their temporary checkout and revoked their run token.
+
 Step 04 creates a write-scope token through `/api/gateway/v1/tokens/` using the
 current Gateway login. The Controller license module and dispatch then use
 Bearer-token authentication. Dispatch runs inside the cleanup block so the

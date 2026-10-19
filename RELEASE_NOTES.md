@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.10.2
+
+Document the completed administrator-password rollout from implementation
+`1216f38` and mark its verification TODO complete. Job 2125 applied the encrypted
+base password and updated the deployed installer inventory with mode `0600`.
+Job 2128 reran successfully with the configured password and skipped installer
+bootstrap. Both used source `c51aede` and removed their run token and workspace.
+
+Validation: independent trusted-TLS checks confirmed the desired login, matching
+installer password and permissions, no remaining configuration-run tokens, and
+preserved use-case object counts and EDA activation states. The first run had
+88 successful tasks and the rerun 85, with no failures or unreachable hosts.
+Documentation whitespace checks passed. The sixteen local implementation tests
+and Ansible syntax checks had already passed before rollout.
+
 ## 0.10.1
 
 Document the primary goal: recreate production AAP configuration and capabilities,

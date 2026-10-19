@@ -34,8 +34,9 @@ Selected demo deployments continue to use their separate configurations.
   the intended work without duplicate production execution.
 - [x] Implement desired administrator-password management in encrypted base
   configuration, including installer bootstrap and protected password handling.
-- [ ] Verify the administrator-password rollout and subsequent rerun after the
-  repaired base Git credential. The initial attempt stopped before target changes.
+- [x] Verify the administrator-password rollout and subsequent rerun after the
+  repaired base Git credential. Jobs 2125 and 2128 succeeded; the rerun used the
+  configured login and skipped installer bootstrap.
 - [ ] Write and verify a step-by-step Configuration as Code guide, from a fresh
   checkout to a configured AAP. Cover prerequisites; copying and completing the
   base and use-case templates; object ownership and dependencies; private Git
