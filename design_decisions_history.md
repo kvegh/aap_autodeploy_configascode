@@ -4,6 +4,40 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Import the ordinary Assistant Team configuration independently
+
+Implementation: `614763a`.
+
+The operator authorized deploying Assistant Team definitions after shared base,
+separately from running its deployment and recovery automation. The dedicated
+importer loads only the companion repository's encrypted CaC capture and restores
+six ordinary Job Templates with their supporting objects. Public code access
+does not provide access to the private configuration; repository-scoped read-only
+SSH access is injected as files, with independently trusted host keys and strict
+verification. No write credential or source Controller identity is propagated.
+
+The ordinary import validates complete deployment secrets and all six unchanged
+encrypted file snapshots. Optional authentication maintenance remains nested,
+outside dispatch, because it needs target-specific authorization and trust.
+Reading that optional mapping can recursively render deliberately unresolved
+inputs, so the ordinary importer leaves it untouched. A regression includes such
+an unresolved input and rejects adding a seventh template to ordinary dispatch.
+Functional readiness and optional maintenance remain separate from importing
+complete ordinary AAP definitions. PAH collection and service-image availability
+must be verified before a live import.
+
+Authentication follows the established temporary Gateway-token approach.
+Sensitive tasks remain protected during diagnostics, and cleanup removes the
+checkout after ordinary failures, including failed token revocation. Launch and
+schedule definitions are rejected; imported automation is never executed by this
+entry point. Interrupted jobs and fatal role-loading errors retain the existing
+cleanup limitation.
+
+All fourteen local tests passed, with sixteen Assistant Team Vault/core guard
+cases, six SSH URL cases and three failed-import cleanup scenarios. Full syntax
+and the current encrypted capture's actual preflight passed. Implementation did
+not launch Assistant Team configuration import or runtime automation.
+
 ## Align encrypted use-case captures with their current source
 
 Private capture implementations: Orchestrator `0fd3b53`; Assistant Team

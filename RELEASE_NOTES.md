@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.9.1
+
+Document the dedicated Assistant Team importer in `614763a`, its read-only SSH
+bootstrap access, encrypted snapshot guards, definition-only scope, optional
+maintenance separation and focused validation. No additional target import or
+runtime automation was launched. Documentation whitespace checks passed.
+
 ## 0.9.0
 
 Add a dedicated Assistant Team configuration importer for the six ordinary
