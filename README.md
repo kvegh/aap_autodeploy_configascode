@@ -437,6 +437,9 @@ objects. Job-launch, workflow-launch, and schedule definitions are rejected.
 The current capture defines eight objects: two Job Templates, one project,
 one inventory and its localhost host, one execution environment, one registry
 credential, and one label. The import preserves the deploy and cleanup surveys.
+Use `Orchestrator EE` consistently for the execution environment definition,
+the project's default environment, and both Job Templates. These references
+must resolve within the imported configuration on a clean target.
 Their AAP/OpenShift inputs are supplied when those imported templates are run;
 they are separate from the importer's own target URL and administrator login.
 The importer does not apply base or the subscription, launch either imported
@@ -454,6 +457,36 @@ Focused offline validation exercises actual Vault loading and eleven import
 preflight cases, including plaintext rejection, missing secrets, incomplete
 review, and attempts to execute automation. Three failure scenarios verify token
 revocation and workspace cleanup. The importer has not been launched against AAP.
+
+### Assistant Team configuration capture
+
+The private companion repository stores the encrypted capture at
+`vaults/cac/assistant_team_vault.yml`. Its editable working copy and export
+inventory stay outside Git. The code repository is public, so its projects no
+longer require an SCM credential for private code. Access to the private companion
+repository remains a separate bootstrap requirement.
+
+Capture the current project revisions, deployment and recovery templates, and
+external configuration credential definitions together. The injected inputs are
+encrypted file snapshots from the private companion; do not restore obsolete
+Vault paths inside the code repository or assume that a historical release still
+includes environment configuration. Preserve the existing encrypted authentication
+snapshots without refreshing provider credentials during a configuration export.
+
+The capture also declares its collection requirements for PAH and its execution
+environment image and pull policy. Prepare the required content through PAH
+before project synchronization; validated object definitions do not establish
+that collections or container images are available on the target.
+
+Six ordinary deployment and recovery templates are captured in the standard
+Controller variable lists. The seventh template is captured separately under
+`assistant_team_authentication_maintenance`, outside default CoP dispatch.
+Activate that optional section explicitly with repository write access, controller
+authorization and CA trust for the target AAP. A maintenance token or certificate
+bundle from the source AAP must
+not be treated as valid for another instance. Keep unresolved target inputs in
+the protected readiness report. A dedicated Assistant Team CaC import playbook
+and Job Template are still required before importing this capture.
 
 ## Start a CaC configuration
 

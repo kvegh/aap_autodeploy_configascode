@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.8.3
+
+Document consistent Orchestrator EE references and the refreshed Assistant Team
+capture. Public code access replaces the obsolete code SCM secret; encrypted
+configuration snapshots supply ordinary deployment and recovery inputs. Keep
+authentication maintenance separate with explicit authorization for the target.
+Declare PAH collection and execution environment prerequisites before project sync.
+
+Validation covers object references, strict Ansible rendering, native export of
+all seven Assistant Team templates, Vault round trips, and equality of the six
+embedded ciphertexts. No configuration import, automation, or provider
+authentication refresh was launched.
+
 ## 0.8.2
 
 Document the successful protected PAH base rollout and independent verification:

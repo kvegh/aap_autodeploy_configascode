@@ -4,6 +4,36 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Align encrypted use-case captures with their current source
+
+Private capture implementations: Orchestrator `0fd3b53`; Assistant Team
+`2c3a825`, documented in `fbd7afd`.
+
+The operator chose `Orchestrator EE` as the common name for the execution
+environment definition, the project's default, and both Job Templates. The
+previous project reference named an object the capture did not create, so the
+three other references were aligned before attempting a clean-target import.
+The configuration's remaining values were preserved.
+
+Assistant Team was refreshed from the current Controller configuration and native
+CoP export. Its public code no longer requires an SCM credential for private code.
+The capture includes current project revisions and the encrypted external file
+credential for six deployment/recovery templates. Existing deployment and model
+authentication ciphertexts remain unchanged. Authentication maintenance is
+captured separately from ordinary dispatch because its repository write access,
+controller identity and trusted CA must be prepared for the target AAP.
+
+The capture declares required PAH content and the execution environment's pull
+prerequisite. Empty PAH repositories can prevent project synchronization before
+runtime automation is launched. A dedicated Assistant Team importer is still
+outstanding; validated capture data is separate from completed target deployment.
+
+Validation checked owned references, native export of all seven templates,
+strict ordinary rendering, missing maintenance input rejection and a synthetic
+maintenance render. Vault headers and private round trips passed, and all six
+embedded ciphertexts matched their source files exactly. No AAP configuration
+import, runtime job, or provider authentication refresh was launched.
+
 ## Verify the protected PAH base rollout
 
 Implementations: `5fc2c98`, `40906b1`, and `bf12d01`; encrypted base: private
