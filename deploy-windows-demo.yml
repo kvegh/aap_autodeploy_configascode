@@ -80,26 +80,52 @@
                 *) exit 1 ;;
               esac
 
-        - name: Download the private configuration from main
-          ansible.builtin.git:
-            repo: "{{ aap_config_repo_url }}"
-            dest: "{{ cac_workspace.path }}/repository"
-            version: main
-            depth: 1
-            recursive: false
-            single_branch: true
-          environment:
-            GIT_ASKPASS: "{{ cac_workspace.path }}/git-askpass"
-            GIT_TERMINAL_PROMPT: '0'
-            LC_ALL: C
-            GIT_CONFIG_COUNT: '3'
-            GIT_CONFIG_KEY_0: credential.helper
-            GIT_CONFIG_VALUE_0: ''
-            GIT_CONFIG_KEY_1: http.followRedirects
-            GIT_CONFIG_VALUE_1: 'false'
-            GIT_CONFIG_KEY_2: http.sslVerify
-            GIT_CONFIG_VALUE_2: 'true'
-          no_log: true
+        - name: Retrieve the private configuration with protected Git diagnostics
+          block:
+            - name: Download the private configuration from main
+              ansible.builtin.git:
+                repo: "{{ aap_config_repo_url }}"
+                dest: "{{ cac_workspace.path }}/repository"
+                version: main
+                depth: 1
+                recursive: false
+                single_branch: true
+              environment:
+                GIT_ASKPASS: "{{ cac_workspace.path }}/git-askpass"
+                GIT_TERMINAL_PROMPT: '0'
+                LC_ALL: C
+                GIT_CONFIG_COUNT: '3'
+                GIT_CONFIG_KEY_0: credential.helper
+                GIT_CONFIG_VALUE_0: ''
+                GIT_CONFIG_KEY_1: http.followRedirects
+                GIT_CONFIG_VALUE_1: 'false'
+                GIT_CONFIG_KEY_2: http.sslVerify
+                GIT_CONFIG_VALUE_2: 'true'
+              no_log: true
+          rescue:
+            - name: Classify the private Git failure without logging its contents
+              ansible.builtin.set_fact:
+                cac_git_failure_category: >-
+                  {% if cac_git_failure_message is search('repository (.* )?not found|authentication failed|access denied|permission denied|could not read username|could not read password|invalid username|invalid credentials|returned error: (401|403|404)|terminal prompts disabled') %}
+                  repository access denied or repository not found
+                  {% elif cac_git_failure_message is search('could not resolve host|could not resolve proxy|name or service not known|temporary failure in name resolution') %}
+                  DNS resolution failure
+                  {% elif cac_git_failure_message is search('ssl certificate|ssl peer certificate|certificate verify failed|server certificate verification failed|ssl connection error|tls handshake|unable to get local issuer certificate') %}
+                  TLS or certificate validation failure
+                  {% elif cac_git_failure_message is search('redirect|redirection') %}
+                  HTTP redirect rejected
+                  {% elif cac_git_failure_message is search('timed out|timeout|failed to connect|could not connect|connection refused|network is unreachable|connection reset') %}
+                  connection failure or timeout
+                  {% else %}
+                  unclassified Git failure
+                  {% endif %}
+              vars:
+                cac_git_failure_message: "{{ ansible_failed_result.msg | default('', true) | string | lower }}"
+              no_log: true
+
+            - name: Report only the private Git failure category
+              ansible.builtin.fail:
+                msg: "Private configuration Git fetch failed: {{ cac_git_failure_category | trim }}."
 
         - name: Read the encrypted Windows configuration
           ansible.builtin.slurp:

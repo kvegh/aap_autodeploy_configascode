@@ -295,7 +295,14 @@ been applied. Supply `aap_hostname` as the explicit target HTTPS URL and
 `aap_config_repo_url` as the private Windows configuration repository's HTTPS Git
 URL. It reads only the fully Vault-encrypted `cac/windows_disconnected.yml` from
 `main`. The attached Git token must have read access to this repository; access
-to another demo's private repository does not imply access here.
+to another demo's private repository does not imply access here. For a fine-grained
+token, include the chosen configuration repository in its selected repositories
+and grant repository contents read access. The Git credential remains separate
+from the Vault credential needed to decrypt the downloaded configuration.
+
+Git failures report only a fixed category: repository access/not found, DNS,
+TLS/certificate, redirect, connection/timeout, or an unclassified failure. Raw Git
+errors and credential data stay hidden, including with diagnostics enabled.
 
 Attach the same three credential types used by Step 04: the custom Git token
 injecting `CAC_GIT_TOKEN`, the `cac` Vault credential, and the existing Vault
@@ -317,8 +324,10 @@ base, run the imported automation, or change Windows machines.
 survey choice as other import templates. Authentication, decryption, wildcard
 variable combination, and credential updates remain protected even when enabling
 diagnostics. Ordinary object operations follow the diagnostic choice. Syntax and
-seven focused readiness, secret-input, and execution guards have passed; the new
-entry point has not yet been run against AAP.
+seven focused readiness, secret-input, and execution guards have passed. The first
+live attempt stopped during the protected Git fetch, before target authentication
+or object changes; workspace cleanup succeeded. Import remains unverified until
+the fetch succeeds and the configuration job completes.
 
 ## Start a CaC configuration
 

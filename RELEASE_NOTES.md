@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.6.2
+
+Report a safe failure category when the Windows private configuration checkout
+fails. Keep raw Git errors protected and distinguish repository access/not found,
+DNS, TLS/certificate, redirects, connection/timeout, and other errors. Document
+that the Git token must grant read access to the selected configuration repository.
+
+Validation: seven synthetic Git failures produced only fixed categories, exposed
+neither synthetic secrets nor raw errors, and ran the actual workspace cleanup.
+Syntax, existing regression tests, and whitespace checks passed. The first live
+Windows attempt stopped at checkout before target changes; a diagnostic rerun is
+needed to identify its category.
+
 ## 0.6.1
 
 Document the separate Windows configuration importer implemented in `a84bf09`,
