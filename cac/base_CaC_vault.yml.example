@@ -14,6 +14,7 @@ controller_credentials_base: []
 controller_settings_base: {}
 hub_collection_remotes_base: []
 hub_collection_repositories_base: []
+pah_base: {}
 
 # Base owns the PAH remotes, repositories, and distributions for rh-certified,
 # validated, and community content, plus their Controller Galaxy credentials
@@ -21,6 +22,25 @@ hub_collection_repositories_base: []
 # Set sync: false on every repository; Stage 04 must also exclude the dispatch
 # role hub_collection_repository_sync so adding a repository never starts a sync.
 # Keep upstream sync tokens separate from local PAH download credentials.
+# Complete pah_base before running Stage 04. Credential names and repository order
+# must match the organization's galaxy_credentials list. The playbook creates
+# read-scope tokens on the target; never copy a previous target's download token.
+# pah_base:
+#   organization: ORGANIZATION_PLACEHOLDER
+#   download_credentials:
+#     - name: PAH_CERTIFIED_CREDENTIAL_PLACEHOLDER
+#       repository: rh-certified
+#     - name: PAH_VALIDATED_CREDENTIAL_PLACEHOLDER
+#       repository: validated
+#     - name: PAH_COMMUNITY_CREDENTIAL_PLACEHOLDER
+#       repository: community
+# hub_collection_remotes_base:
+#   - name: rh-certified
+#     url: CERTIFIED_UPSTREAM_HTTPS_URL_PLACEHOLDER
+#   - name: validated
+#     url: VALIDATED_UPSTREAM_HTTPS_URL_PLACEHOLDER
+#   - name: community
+#     url: COMMUNITY_UPSTREAM_HTTPS_URL_PLACEHOLDER
 # hub_collection_repositories_base:
 #   - name: rh-certified
 #     remote: rh-certified
@@ -28,7 +48,9 @@ hub_collection_repositories_base: []
 #       name: rh-certified
 #       state: present
 #     sync: false
+#     update_repo: false
 #     state: present
+#   # Repeat for validated and community with matching remote/distribution names.
 
 # Example list entries, using generic placeholders only:
 # aap_organizations_base:
@@ -37,10 +59,5 @@ hub_collection_repositories_base: []
 #       - PAH_CERTIFIED_CREDENTIAL_PLACEHOLDER
 #       - PAH_VALIDATED_CREDENTIAL_PLACEHOLDER
 #       - PAH_COMMUNITY_CREDENTIAL_PLACEHOLDER
-# controller_credentials_base:
-#   - name: CONTENT_SOURCE_CREDENTIAL_PLACEHOLDER
-#     organization: ORGANIZATION_PLACEHOLDER
-#     credential_type: Ansible Galaxy/Automation Hub API Token
-#     inputs:
-#       url: PAH_REPOSITORY_URL_PLACEHOLDER
-#       token: TOKEN_PLACEHOLDER
+# PAH credentials above are managed separately; omit them from
+# controller_credentials_base. Other platform credentials can use that list.

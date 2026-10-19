@@ -15,6 +15,9 @@
       - hub_collection_repository_sync
     debug_logging: false
     aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
+    # These roles may handle credential inputs even while ordinary diagnostics run.
+    controller_configuration_credentials_secure_logging: true
+    hub_configuration_collection_remote_secure_logging: true
     aap_username: admin
     aap_validate_certs: false
   pre_tasks:
@@ -55,7 +58,7 @@
         that:
           - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
         fail_msg: Attach the CaC Git credential that injects CAC_GIT_TOKEN.
-      no_log: "{{ not (debug_logging | default(false) | bool) }}"
+      no_log: true
 
     - name: Create a private temporary configuration workspace
       ansible.builtin.tempfile:
@@ -96,38 +99,41 @@
             GIT_CONFIG_VALUE_1: 'false'
             GIT_CONFIG_KEY_2: http.sslVerify
             GIT_CONFIG_VALUE_2: 'true'
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Read the encrypted shared configuration
           ansible.builtin.slurp:
             src: "{{ cac_workspace.path }}/repository/cac/base_CaC_vault.yml"
           register: cac_encrypted_base
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Require a fully Vault-encrypted shared configuration
           ansible.builtin.assert:
             that:
               - (cac_encrypted_base.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
             fail_msg: The shared configuration must be a Vault-encrypted file.
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Decrypt and load the shared configuration with the attached Vault credentials
           ansible.builtin.include_vars:
             file: "{{ cac_workspace.path }}/repository/cac/base_CaC_vault.yml"
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
+
+        - name: Validate the base PAH setup before changing the target
+          ansible.builtin.include_tasks: tasks/pah-base-validate.yml
 
         - name: Read the encrypted AAP subscription manifest
           ansible.builtin.slurp:
             src: "{{ cac_workspace.path }}/repository/cac/manifest.zip.vault"
           register: cac_encrypted_manifest
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Require a fully Vault-encrypted subscription manifest
           ansible.builtin.assert:
             that:
               - (cac_encrypted_manifest.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
             fail_msg: The subscription manifest must be a Vault-encrypted file.
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Decrypt the subscription manifest into the private temporary workspace
           ansible.builtin.copy:
@@ -136,7 +142,7 @@
             decrypt: true
             mode: '0600'
           diff: false
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Read the current Gateway administrator password from the installer
           ansible.builtin.command:
@@ -168,13 +174,13 @@
           when: aap_password is not defined
           changed_when: false
           register: cac_installer_admin
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Use the current Gateway administrator password
           ansible.builtin.set_fact:
             aap_password: "{{ (cac_installer_admin.stdout | from_json).password }}"
           when: aap_password is not defined
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Create a Gateway token for this configuration run
           ansible.builtin.uri:
@@ -191,12 +197,13 @@
             status_code: 201
             validate_certs: "{{ aap_validate_certs }}"
           register: cac_gateway_token
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
 
         - name: Use the Gateway token for configuration roles
           ansible.builtin.set_fact:
             aap_token: "{{ cac_gateway_token.json.token }}"
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+            hub_token: "{{ cac_gateway_token.json.token }}"
+          no_log: true
 
         - name: Apply the AAP subscription before pushing configuration
           ansible.controller.license:
@@ -205,11 +212,39 @@
             controller_oauthtoken: "{{ aap_token }}"
             validate_certs: "{{ aap_validate_certs }}"
             force: false
-          no_log: "{{ not (debug_logging | default(false) | bool) }}"
+          no_log: true
+
+        - name: Create base organizations before their PAH credentials
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.gateway_organizations
+          vars:
+            aap_organizations: "{{ aap_organizations_base }}"
+            assign_galaxy_credentials_to_org: false
+
+        - name: Prepare persistent local PAH download credentials
+          ansible.builtin.include_tasks:
+            file: tasks/pah-download-credential.yml
+            apply:
+              no_log: true
+          loop: "{{ pah_base.download_credentials }}"
+          loop_control:
+            loop_var: cac_pah_credential
+            label: "{{ cac_pah_credential.repository }}"
+          vars:
+            cac_pah_repository_url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/galaxy/content/{{ cac_pah_credential.repository }}/"
+
+        - name: Combine shared configuration without logging credential inputs
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.dispatch
+            tasks_from: include_wildcard_vars
+            apply:
+              no_log: true
 
         - name: Apply shared AAP configuration
           ansible.builtin.include_role:
             name: infra.aap_configuration.dispatch
+          vars:
+            dispatch_include_wildcard_vars: false
       always:
         - name: Revoke the run token and clean the private workspace
           block:
@@ -222,7 +257,7 @@
                 status_code: [204, 404]
                 validate_certs: "{{ aap_validate_certs }}"
               when: cac_gateway_token.json.id is defined
-              no_log: "{{ not (debug_logging | default(false) | bool) }}"
+              no_log: true
           always:
             - name: Remove the temporary checkout, decrypted manifest, and authentication helper
               ansible.builtin.file:

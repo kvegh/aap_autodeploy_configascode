@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.7.0
+
+Extend Stage 04 base configuration with certified, validated, and community PAH
+remotes, repositories, download distributions, and ordered organization sources.
+Replace direct Galaxy downloads with local PAH credentials. Create a read-scope
+Gateway token only when a repository's credential is missing; preserve matching
+credentials on reruns and clean up demonstrably unsaved tokens after failure.
+Keep target tokens separate from the reusable encrypted base and from each
+run's temporary management token. No collection content is synchronized.
+
+Nine tests passed, including actual Ansible execution of five PAH configuration
+guards and the real Controller credential module against a local API fixture.
+The token regression covers creation, rerun preservation, failed saves before and
+after persistence, credential drift, and protected output with diagnostics enabled.
+Stage 04 syntax and the populated working base guards passed. Target rollout
+remains pending.
+
 ## 0.6.5
 
 Document the PAH ownership, bootstrap credential separation, clean-target group

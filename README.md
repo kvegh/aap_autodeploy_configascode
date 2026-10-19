@@ -28,7 +28,7 @@ The repository contains four separate Ansible stages:
 | 01 | `01-linux-vm-setup.yml` | Clone a prepared golden image and discover the VM address. |
 | 02 | `02-infra-config.yml` | Configure DNS, certificates, and the reverse proxy. |
 | 03 | `03-aap-install.yml` | Prepare the VM and run the pre-staged AAP installer. |
-| 04 | `04-aap-config.yml` | Apply the subscription manifest, then shared CaC through `infra.aap_configuration.dispatch`. |
+| 04 | `04-aap-config.yml` | Apply the subscription, PAH sources and local download credentials, then shared CaC through `infra.aap_configuration.dispatch`. |
 
 Post-install configuration uses the `dispatch` role from the
 [Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
@@ -102,14 +102,13 @@ Supply the appropriate Ansible Vault password through a
 local password file or an AAP Vault credential.
 Each operator must prepare configuration for their own environment.
 
-The current private base contains only the platform organization and an existing
-platform setting. Historical use-case objects were removed from it before the
-clean deployment test. The required PAH base component is not yet deployed:
-it must configure the three repositories, their upstream remotes and download
-distributions, local PAH content-source credentials, and ordered organization
-attachments. It must not start synchronization. Destination PAH source bootstrap
-still needs valid local PAH credentials; a Red Hat upstream token cannot
-authenticate to local PAH.
+The private base contains the platform organization and setting, plus certified,
+validated, and community PAH remotes, repositories, distributions, and ordered
+Controller source attachments. Historical use-case objects remain separate.
+Stage 04 creates a target-local, read-scope Gateway token for each missing PAH
+download credential and stores it in Controller. It preserves existing matching
+credentials on reruns. Base configuration never starts a collection sync.
+This extension has offline validation; its target rollout is pending.
 
 ### Collection source policy
 
@@ -122,8 +121,8 @@ policy: public Galaxy may be an upstream source for a PAH sync, while projects
 download the curated content from PAH.
 
 Attach credentials for the required PAH repositories to the project's
-organization, preserving the intended source order. Keep tokens encrypted in
-CaC and provide them before project synchronization; job 04 cannot configure
+organization, preserving the intended source order. Protect bootstrap tokens and
+provide those sources before project synchronization; job 04 cannot configure
 the sources it needs to download its own dependencies. A platform-managed
 public Galaxy credential may remain as an unattached object if AAP prevents
 its deletion. Verify that it is absent from the organization's active sources.
@@ -150,12 +149,33 @@ shared PAH remote's collection list.
 
 PAH has separate authentication purposes: upstream Red Hat tokens authorize
 future certified/validated synchronization; local PAH credentials authorize
-repository management and downloads. The local download credential belongs in
-the encrypted base because every use case uses those platform sources. For AAP
-2.7, obtain local authentication through Gateway; the legacy
-`ansible.hub.ah_token` creation module is unsupported on that version. Verify
-the installed Hub collection's supported authentication before automating token
-creation or storing it in Controller credentials.
+repository management and downloads. Base configures upstream URLs without
+requiring an upstream token or downloading content. Supply encrypted upstream
+tokens before a later use-case synchronization.
+
+The encrypted base's `pah_base` defines the organization and three ordered
+`download_credentials` entries, each with `name` and `repository`. Stage 04 builds
+their local URLs from the explicit target `aap_hostname`, creates target-only
+read tokens, and saves them in Controller's Galaxy credentials. These persistent
+download tokens are distinct from the temporary write token used for management,
+which also supplies `hub_token` to the CoP Hub roles and is revoked afterward.
+The unsupported AAP 2.7 `ansible.hub.ah_token` creation module is not used.
+
+On reruns, an existing credential must have the expected organization, Galaxy
+type, local URL, no external authentication URL, and a stored token. A mismatch
+stops for review; the importer never silently repoints a credential or rotates a
+hidden token. Token presence does not establish validity; expiry or revocation
+requires credential repair. A new token is revoked after a failed save only if
+a follow-up lookup proves the credential absent. An uncertain save retains the
+token for inspection. Target tokens stay in the target's encrypted credential
+store rather than being copied into a base intended for future instances.
+
+The final organization association replaces its Galaxy source list with the
+three PAH credentials in certified, validated, community order. An installed
+public Galaxy credential can remain unattached. No imported use-case jobs,
+workflows, activations, project synchronizations, or collection syncs are launched
+by this base extension. Sensitive tasks stay protected even with ordinary
+`debug_logging` diagnostics enabled.
 
 ### Stage 04 inputs
 
@@ -241,14 +261,12 @@ An optional true/false survey can override that default for a launch. Boolean
 values and the survey strings `true` and `false` are accepted; other inputs fail
 playbook validation. With the multiple-choice survey enabled, API launches must
 send `debug_logging` as the quoted string `"true"` or `"false"`, matching the
-survey choices; the playbook converts it to a Boolean. The meaning is consistent:
-`false` enables `no_log`, while `true`
-disables it for troubleshooting. The same inverse value controls the dispatch
-collection's `aap_configuration_secure_logging` setting.
-
-Enabling debug logging can expose decrypted configuration and other sensitive
-data in AAP job output. Use it deliberately for troubleshooting; leave the
-saved default at `false`. This control applies to Step 04 and the separate AIOps deployment entry point.
+survey choices; the playbook converts it to a Boolean. `false` enables ordinary
+role `no_log`, while `true` enables their troubleshooting output through the
+dispatch collection's inverse `aap_configuration_secure_logging` setting.
+Step 04 authentication, decryption, variable combination, credential operations,
+and remote-token handling always remain protected. Keep the saved default at
+`false`. The separate AIOps importer also uses the `debug_logging` name.
 
 Stage 03 still uses `vm_name` and `vault_domain` to form the installer's fully
 qualified hostname. That hostname can resolve internally; Stage 04's explicit

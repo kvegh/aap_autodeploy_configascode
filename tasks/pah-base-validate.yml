@@ -1,0 +1,39 @@
+---
+- name: Require the base PAH source definitions
+  ansible.builtin.assert:
+    that:
+      - pah_base is mapping
+      - pah_base.organization is string
+      - pah_base.organization | length > 0
+      - pah_base.download_credentials is sequence
+      - pah_base.download_credentials | length == 3
+      - pah_base.download_credentials | map(attribute='repository') | list == ['rh-certified', 'validated', 'community']
+      - pah_base.download_credentials | map(attribute='name') | unique | length == 3
+      - hub_collection_remotes_base | map(attribute='name') | sort == ['community', 'rh-certified', 'validated']
+      - hub_collection_repositories_base | map(attribute='name') | sort == ['community', 'rh-certified', 'validated']
+      - aap_organizations_base | selectattr('name', 'equalto', pah_base.organization) | list | length == 1
+      - (aap_organizations_base | selectattr('name', 'equalto', pah_base.organization) | first).galaxy_credentials == (pah_base.download_credentials | map(attribute='name') | list)
+    fail_msg: Define the certified, validated, and community PAH sources in base, in that order, and attach only their credentials to the base organization.
+
+- name: Require repository setup without synchronization
+  ansible.builtin.assert:
+    that:
+      - item.sync is defined
+      - item.sync is boolean
+      - not item.sync
+      - not (item.update_repo | default(false) | bool)
+      - item.remote == item.name
+      - item.distribution.name == item.name
+      - item.distribution.state == 'present'
+      - item.state | default('present') == 'present'
+    fail_msg: Base repositories must expose their matching remote through a distribution, with sync false and update_repo false.
+  loop: "{{ hub_collection_repositories_base }}"
+
+- name: Require local PAH credential names separate from ordinary credentials
+  ansible.builtin.assert:
+    that:
+      - item.name is string
+      - item.name | length > 0
+      - item.name not in (controller_credentials_base | default([]) | map(attribute='name') | list)
+    fail_msg: Define each PAH download credential once, under pah_base.download_credentials.
+  loop: "{{ pah_base.download_credentials }}"

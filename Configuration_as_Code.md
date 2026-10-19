@@ -16,8 +16,8 @@ This lets us split configuration into logical files â€” one per project group â€
 The current `04-aap-config.yml` first clones the private repository supplied as
 `aap_config_repo_url`, always using `main`. It requires HTTPS without credentials
 embedded in the URL. A custom AAP credential injects `CAC_GIT_TOKEN`; a temporary
-Git askpass helper provides it during authentication. Token-bearing tasks hide
-their output by default; `debug_logging: true` disables that protection. Normal
+Git askpass helper provides it during authentication. Token-bearing tasks always
+hide their output; `debug_logging: true` enables ordinary role diagnostics. Normal
 Git TLS verification remains enabled, redirects and stored Git
 credential helpers are disabled, and submodules are not fetched.
 
@@ -31,11 +31,23 @@ the explicit target AAP before dispatch; `force: false` preserves an existing
 non-trial license on reruns. The temporary checkout, ZIP, and helper are removed
 after success or ordinary task failures. Fatal role-loading errors or interruptions
 can prevent cleanup. A failed subscription import prevents dispatch. A per-run
-Gateway token authenticates both the license module and dispatch, then is revoked
+Gateway token authenticates the license module and dispatch, including Hub roles
+through their separate `hub_token` variable, then is revoked
 in cleanup. Workspace removal still runs if revocation fails.
 The role sees the loaded suffixed variables and applies them as before. Step 04
 excludes the legacy `controller_applications` role on AAP 2.7; Gateway's role
 handles `aap_applications` through `ansible.platform` instead.
+
+Base PAH setup reads `pah_base.download_credentials` and the three repository
+definitions from the encrypted base. It requires `sync: false` and
+`update_repo: false`, and excludes the CoP collection synchronization role.
+The standard remote and repository roles create the certified, validated, and
+community sources and their download distributions without downloading content.
+For each missing local Galaxy credential, a target-generated read-scope Gateway
+token is saved in Controller. Existing matching credentials preserve their tokens.
+The organization receives only those three PAH sources, in that order, replacing
+the default public Galaxy association. See the [source policy](README.md#collection-source-policy)
+for lifecycle, failure cleanup, and future synchronization requirements.
 
 `myvars` and `vars/main.yml` remain in `vars_files`. Keep the original/default
 Vault credential attached alongside the `cac` credential because installer SSH
