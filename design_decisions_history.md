@@ -4,6 +4,19 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Validate credential types using the actual summary schema
+
+Implementation: `40906b1`.
+
+The first PAH rollout created its local download credentials before failing at
+the Hub remote role. A diagnostic rerun then stopped at credential preservation:
+the Controller summary returns a credential type's name but omits its kind.
+The guard now compares the exact built-in Galaxy credential type name. This
+preserves the intended type check without replacing credentials or their tokens.
+The local API fixture now reflects the actual summary schema; both focused PAH
+tests passed, covering guards and the full credential lifecycle. The original
+Hub failure still requires its separate diagnostic rerun.
+
 ## Configure PAH in base without synchronizing content
 
 Implementation: `5fc2c98`.

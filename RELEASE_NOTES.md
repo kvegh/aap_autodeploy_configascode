@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.7.3
+
+Document the API-summary correction in `40906b1` and its focused PAH regression
+validation. Existing credentials remain preserved; the earlier Hub remote
+failure still requires a diagnostic rerun.
+
 ## 0.7.2
 
 Validate existing PAH credentials using the type name returned by AAP's summary
