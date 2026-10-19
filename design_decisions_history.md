@@ -4,6 +4,40 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Configure PAH in base without synchronizing content
+
+Implementation: `5fc2c98`.
+
+Base now owns three PAH remotes, repositories, download distributions, and
+Controller source associations in certified, validated, community order. The
+organization's source list replaces the public Galaxy fallback with those local
+sources. Upstream URLs are configured without fetching content or requiring
+Red Hat synchronization credentials at this stage. Repository definitions must
+explicitly disable synchronization, and the separate CoP synchronization role
+remains excluded. Use-case content preparation is still a separate task.
+
+The Hub roles require their own authentication variable, so the temporary
+Gateway management token now supplies both Controller and Hub authentication.
+Controller also needs credentials that survive the configuration job. Each
+missing PAH credential receives a target-generated read token, stored immediately
+in Controller. Matching existing credentials retain their hidden tokens; drift
+stops for review. This avoids copying a source instance's token into another
+instance or continuously creating replacement tokens on reruns. The reusable
+encrypted base stores definitions rather than tokens belonging to an older target.
+
+A failed save revokes the newly generated token only when a subsequent lookup
+proves no credential was saved. An ambiguous result retains the token for review,
+avoiding deletion of a token that Controller may already use. Management token
+revocation and workspace cleanup remain independent. Authentication, decrypted
+configuration, and credential-bearing tasks stay protected even when ordinary
+diagnostics are enabled.
+
+Nine tests passed. Local Ansible runs exercise source-order and no-sync guards,
+and the actual Controller credential module covers creation, reruns, interrupted
+saves, drift, and protected output against a local API fixture. Stage 04 syntax,
+populated base validation, and full Vault encryption/decryption equality checks
+passed. Live target rollout remains pending at this documentation commit.
+
 ## Keep PAH setup in base and create groups before linking children
 
 Implementation: `d2e6988`.

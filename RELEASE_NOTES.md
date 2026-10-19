@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.7.1
+
+Document the base PAH implementation in `5fc2c98`: local repository sources,
+separate management and persistent read tokens, rerun preservation, failure
+cleanup, and synchronization exclusions. Nine tests, syntax checks, populated
+base validation, and Vault round-trip checks passed; live rollout remains pending.
+
 ## 0.7.0
 
 Extend Stage 04 base configuration with certified, validated, and community PAH
