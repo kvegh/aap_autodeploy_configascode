@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.7.2
+
+Validate existing PAH credentials using the type name returned by AAP's summary
+API. That summary omits `kind`; the original guard therefore stopped a rerun
+after credentials had been created. Correct the real-module regression fixture
+to use the actual API shape. Credential tokens remain preserved.
+
 ## 0.7.1
 
 Document the base PAH implementation in `5fc2c98`: local repository sources,

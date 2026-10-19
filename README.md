@@ -162,7 +162,8 @@ which also supplies `hub_token` to the CoP Hub roles and is revoked afterward.
 The unsupported AAP 2.7 `ansible.hub.ah_token` creation module is not used.
 
 On reruns, an existing credential must have the expected organization, Galaxy
-type, local URL, no external authentication URL, and a stored token. A mismatch
+type, local URL, no external authentication URL, and a stored token. Type checks
+use the name returned by the API's summary, which omits the kind. A mismatch
 stops for review; the importer never silently repoints a credential or rotates a
 hidden token. Token presence does not establish validity; expiry or revocation
 requires credential repair. A new token is revoked after a failed save only if

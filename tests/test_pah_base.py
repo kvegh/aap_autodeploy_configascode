@@ -114,7 +114,7 @@ class PahBaseTests(unittest.TestCase):
                         credential = dict(payload, id=1, url="/api/controller/v2/credentials/1/",
                                           inputs=dict(payload["inputs"], token="$encrypted$"),
                                           summary_fields={"organization": {"name": "Synthetic organization"},
-                                                          "credential_type": {"kind": "galaxy"}})
+                                                          "credential_type": {"id": 3, "name": "Ansible Galaxy/Automation Hub API Token", "description": ""}})
                         state["credentials"].append(credential)
                     return self.respond(201 if state["save_mode"] == "ok" else 400,
                                         state["credentials"][0] if state["save_mode"] == "ok" else
