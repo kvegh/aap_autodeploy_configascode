@@ -4,6 +4,38 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Keep PAH setup in base and create groups before linking children
+
+Implementation: `d2e6988`.
+
+The user clarified that base owns PAH's certified, validated, and community
+repository configuration and Controller content sources. Base must not
+synchronize content. Each use case separately declares its collection
+requirements, including versions and dependencies. The dispatcher defaults to
+synchronizing defined repositories, so Stage 04 now explicitly excludes that
+role. Empty templates document both responsibilities. Actual target PAH setup
+and population of existing use-case requirements remain TODOs.
+
+Private Git access is needed before the encrypted configuration can be loaded.
+Its runtime token therefore belongs in the deploying AAP's custom credential,
+with a separately encrypted bootstrap recovery copy. A target project's Source
+Control credential serves a different purpose: synchronizing that project's
+private playbook repository after import. Repository-specific credentials keep
+one access update from replacing another deployment's token.
+
+The first Windows import to reach inventory creation failed at the parent
+group; its child groups were submitted afterward by the asynchronous CoP role.
+A retry succeeded once those children existed. The importer now creates group
+skeletons first, then calls the standard role for full definitions and
+memberships. A regression exercises the real Controller group module and
+reproduces the missing-child failure before verifying the new sequence.
+Existing empty-membership drift behavior is unchanged.
+
+Seven tests and syntax checks passed. Live import succeeded with the preceding
+source after a retry, without launching imported automation; the new ordering
+has offline validation only. The project TODO also calls for a complete,
+step-by-step CaC guide covering setup, deployment, verification, and recovery.
+
 ## Diagnose private configuration fetches without printing Git errors
 
 Implementation: `5ccb0ca`.

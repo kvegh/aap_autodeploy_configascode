@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.6.5
+
+Document the PAH ownership, bootstrap credential separation, clean-target group
+ordering, and step-by-step CaC guide TODO implemented in `d2e6988`. Preserve the
+distinction between successful live import using the preceding source and the
+offline-validated ordering fix. Documentation whitespace checks passed.
+
 ## 0.6.4
 
 Keep PAH collection synchronization out of base dispatch. Base owns the certified,
