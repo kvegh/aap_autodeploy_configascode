@@ -4,6 +4,26 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Verify the protected PAH base rollout
+
+Implementations: `5fc2c98`, `40906b1`, and `bf12d01`; encrypted base: private
+configuration commit `82643da`.
+
+The protected rollout succeeded after the API summary and upstream field-pair
+fixes. Independent TLS-verified API checks found the three intended remotes,
+repositories, distributions, and ordered local Controller download credentials.
+The organization no longer includes public Galaxy as a source. Collection
+repository versions remained unchanged, and no collection synchronization task
+was created. Periodic Hub resource synchronization is distinct from collection
+content synchronization and was already present before rollout.
+
+The same three read-scope download tokens survived the reruns without replacement
+or duplication. Temporary management and verification tokens were removed, and
+the configuration workspace was cleaned. The successful job had no failures
+with protected logging enabled. These checks establish repository and source
+setup, not populated content or functional use-case tests. Upstream Red Hat
+authentication and use-case collection preparation remain separate work.
+
 ## Import Orchestrator definitions separately from platform and runtime deployment
 
 Implementation: `de5b54c`.

@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.8.2
+
+Document the successful protected PAH base rollout and independent verification:
+three remotes, repositories, distributions, and ordered local download sources;
+public Galaxy unattached; collection versions unchanged and no content sync;
+existing read tokens preserved; temporary tokens and workspace removed. Mark
+the live PAH verification TODO complete. Use-case content preparation and
+functional tests remain separate. Documentation whitespace checks passed.
+
 ## 0.8.1
 
 Document the dedicated Orchestrator configuration importer in `de5b54c`, its

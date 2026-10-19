@@ -110,7 +110,12 @@ Controller source attachments. Historical use-case objects remain separate.
 Stage 04 creates a target-local, read-scope Gateway token for each missing PAH
 download credential and stores it in Controller. It preserves existing matching
 credentials on reruns. Base configuration never starts a collection sync.
-This extension has offline validation; its target rollout is pending.
+The protected rollout completed successfully in 104 seconds. Independent API
+checks verified all three remotes, repositories, distributions, and ordered
+local source credentials. Public Galaxy is no longer attached to the organization.
+Collection repository versions stayed unchanged and no collection sync task was
+created. Existing read tokens were preserved across reruns; management and
+verification tokens and the temporary configuration workspace were removed.
 
 ### Collection source policy
 

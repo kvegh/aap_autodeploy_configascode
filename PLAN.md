@@ -16,7 +16,7 @@ the current implementation and credential handling.
   community remotes, repositories, distributions, and Controller organization
   sources using local PAH credentials. Do not synchronize content or attach a
   direct public Galaxy source during base deployment.
-- [ ] Verify the implemented base PAH setup on a deployed target, including
+- [x] Verify the implemented base PAH setup on a deployed target, including
   token preservation on rerun, ordered local sources, and no content sync.
 - [ ] Populate and verify the PAH requirements component in each existing use-case
   configuration, including collection versions, dependencies, and compatibility
