@@ -15,6 +15,14 @@
       - (aap_organizations_base | selectattr('name', 'equalto', pah_base.organization) | first).galaxy_credentials == (pah_base.download_credentials | map(attribute='name') | list)
     fail_msg: Define the certified, validated, and community PAH sources in base, in that order, and attach only their credentials to the base organization.
 
+- name: Require an upstream token when configuring an upstream authentication URL
+  ansible.builtin.assert:
+    that:
+      - (item.auth_url | default('', true) | length) == 0 or (item.token | default('', true) | length) > 0
+    fail_msg: Omit a remote's auth_url until its upstream token is supplied; URL-only setup does not require synchronization credentials.
+  loop: "{{ hub_collection_remotes_base }}"
+  no_log: true
+
 - name: Require repository setup without synchronization
   ansible.builtin.assert:
     that:

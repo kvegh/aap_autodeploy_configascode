@@ -22,6 +22,8 @@ pah_base: {}
 # Set sync: false on every repository; Stage 04 must also exclude the dispatch
 # role hub_collection_repository_sync so adding a repository never starts a sync.
 # Keep upstream sync tokens separate from local PAH download credentials.
+# URL-only setup omits auth_url. Hub requires token whenever auth_url is set;
+# add both through encrypted configuration before future content synchronization.
 # Complete pah_base before running Stage 04. Credential names and repository order
 # must match the organization's galaxy_credentials list. The playbook creates
 # read-scope tokens on the target; never copy a previous target's download token.

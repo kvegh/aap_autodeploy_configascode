@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.7.4
+
+Keep upstream authentication URLs out of the URL-only base until their upstream
+tokens are supplied. Hub rejects an authentication URL without a token even when
+no synchronization is requested. Validate this pair before modifying the target,
+extend the protected regression cases, and document the future sync prerequisite.
+Local PAH download credentials and tokens are preserved.
+Both focused PAH tests passed, including seven configuration cases and the
+credential lifecycle; syntax, populated-base guards, and Vault equality passed.
+
 ## 0.7.3
 
 Document the API-summary correction in `40906b1` and its focused PAH regression

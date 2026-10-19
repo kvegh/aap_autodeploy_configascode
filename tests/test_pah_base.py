@@ -65,11 +65,18 @@ class PahBaseTests(unittest.TestCase):
         changed = copy.deepcopy(complete)
         changed["pah_base"]["download_credentials"].reverse()
         cases.append(("wrong source order", changed, False))
+        changed = copy.deepcopy(complete)
+        changed["hub_collection_remotes_base"][0]["auth_url"] = "https://sso.example.invalid/token"
+        cases.append(("upstream authentication without token", changed, False))
+        changed = copy.deepcopy(changed)
+        changed["hub_collection_remotes_base"][0]["token"] = "synthetic-upstream-secret"
+        cases.append(("upstream authentication with token", changed, True))
         for name, variables, succeeds in cases:
             with self.subTest(name=name):
                 result = self.run_play(variables, [{"ansible.builtin.include_tasks":
                                                     str(TASKS / "pah-base-validate.yml")}])
                 self.assertEqual(result.returncode == 0, succeeds, result.stdout + result.stderr)
+                self.assertNotIn("synthetic-upstream-secret", result.stdout + result.stderr)
 
     def test_tokens_survive_reruns_and_failed_saves_are_cleaned_safely(self):
         roots = os.environ.get("ANSIBLE_COLLECTIONS_PATH", "").split(os.pathsep)

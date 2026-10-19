@@ -151,7 +151,9 @@ PAH has separate authentication purposes: upstream Red Hat tokens authorize
 future certified/validated synchronization; local PAH credentials authorize
 repository management and downloads. Base configures upstream URLs without
 requiring an upstream token or downloading content. Supply encrypted upstream
-tokens before a later use-case synchronization.
+tokens before a later use-case synchronization. Omit `auth_url` during URL-only
+setup: Hub requires `token` whenever `auth_url` is specified, even without a sync.
+Stage 04 validates this pair before changing the target.
 
 The encrypted base's `pah_base` defines the organization and three ordered
 `download_credentials` entries, each with `name` and `repository`. Stage 04 builds
