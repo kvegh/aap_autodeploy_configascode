@@ -4,6 +4,32 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Import Orchestrator definitions separately from platform and runtime deployment
+
+Implementation: `de5b54c`.
+
+Orchestrator needs a dedicated CaC entry point after base, with its own private
+configuration repository and Git read credential. `deploy-orchestrator-demo.yml`
+loads only `cac/orchestrator.yml` from `main`. It uses the existing capture's
+readiness mapping and protected registry inputs instead of changing the capture
+schema or storing bootstrap access inside the repository being downloaded.
+The reviewed capture defines eight owned AAP objects, including deployment and
+cleanup Job Templates and their launch surveys. Those runtime operations remain
+separate from importing their definitions; launch and schedule definitions are
+rejected, and the dispatch launch roles are excluded.
+
+Authentication follows the established importers: explicit target URL, encrypted
+administrator input or installer SSH fallback, and a temporary Gateway token for
+CoP dispatch. Sensitive tasks remain protected during diagnostic logging. Token
+revocation and workspace removal run after ordinary failures; a token-revocation
+error still permits workspace cleanup. Fatal role-loading errors and interrupted
+jobs retain the existing cleanup limitation.
+
+All eleven local tests passed. New tests ran eleven actual Vault loading and
+preflight cases plus three failed-import cleanup scenarios. Full syntax and the
+existing encrypted capture's new guards passed. No configuration import or
+Orchestrator/OpenShift runtime operation was launched during this implementation.
+
 ## Defer upstream authentication during URL-only PAH setup
 
 Implementation: `bf12d01`.

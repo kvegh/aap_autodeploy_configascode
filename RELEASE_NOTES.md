@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.8.1
+
+Document the dedicated Orchestrator configuration importer in `de5b54c`, its
+separate bootstrap access and runtime launch inputs, definition-only scope,
+protected diagnostics, cleanup guarantees, and focused offline validation.
+No configuration import or Orchestrator runtime operation has been launched.
+
 ## 0.8.0
 
 Add a dedicated Automation Orchestrator configuration importer. Load only its
