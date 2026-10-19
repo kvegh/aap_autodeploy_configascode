@@ -4,6 +4,25 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Diagnose private configuration fetches without printing Git errors
+
+Implementation: `5ccb0ca`.
+
+The first Windows import stopped during the protected private checkout before
+target authentication or object changes. Because the Git error can contain
+credential-bearing data, enabling raw output is inappropriate. The fetch now
+rescues failures, privately classifies their message, and reports only a fixed
+category. This distinguishes repository access/not-found errors from DNS, TLS,
+redirect, connection/timeout, and unclassified failures without changing access
+controls or trying alternate credentials.
+
+Seven synthetic failures exercised the actual rescue and cleanup tasks with
+diagnostics enabled. They produced the expected fixed categories, hid both the
+synthetic secret and raw errors, and removed each temporary checkout. Full
+syntax and existing regression tests passed. The live error category still
+requires a rerun; token repository permissions must not be assumed from a
+successful checkout of a different private repository.
+
 ## Import disconnected Windows definitions independently from base
 
 Implementation: `a84bf09`.

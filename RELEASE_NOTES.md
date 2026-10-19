@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.6.3
+
+Document the protected Git failure classification implemented in `5ccb0ca` and
+its validation of fixed messages, secret protection, and workspace cleanup.
+Documentation whitespace checks passed. Live error classification awaits rerun.
+
 ## 0.6.2
 
 Report a safe failure category when the Windows private configuration checkout
