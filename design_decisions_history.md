@@ -4,6 +4,36 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Create recoverable target-local MCP access during base configuration
+
+Implementation: `5542cbd`.
+
+The user requested that base configuration issue an administrator MCP token with
+read and write access on every new installation. Gateway scope `write` provides
+both operations within that account's permissions. Provision it after the final
+administrator login is verified, separately from the temporary management token
+that ordinary run cleanup revokes.
+
+The API returns a new bearer value only once. Save that value atomically in a
+root-owned private file on its target so an authorized operator can recover it
+for an external client. The directory uses mode `0700` and the file uses `0600`.
+This interim storage uses existing guest SSH/sudo access and requires no new Git
+write credential. Encrypted per-instance repository storage, client certificate
+trust and controlled rotation remain separate planned work.
+
+Reruns validate metadata, expiry, target identity and saved bearer authentication
+before preserving existing access. Preserve manually created matching tokens
+without issuing duplicates; their hidden value cannot be recovered from the API.
+Unsafe storage or ambiguous/mismatched access stops for operator review. After
+a failed save, revoke a new token only when inspection proves that its recovery
+copy was not saved. Preserve inconclusive outcomes for inspection rather than
+silently breaking access. Sensitive operations remain hidden during diagnostics.
+
+Seven MCP tests exercised the actual tasks against an offline HTTP fixture and a
+local substitute for the target filesystem. The complete 23-test suite and Stage
+04 syntax check passed. Read-only inspection confirmed the live Gateway response
+shapes; no live token, base deployment, VM or external client was changed.
+
 ## Limit PAH selection and remove obsolete collection releases
 
 Documentation and verified-maintenance commit: `67de471`, following the policy

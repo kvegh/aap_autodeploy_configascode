@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.11.1
+
+Document implementation `5542cbd` and its rationale: provision persistent
+administrator MCP access after final base login verification, preserve existing
+access on reruns, and keep a recoverable copy in private target-side storage.
+Distinguish that interim storage from planned encrypted repository write-back,
+client trust setup and controlled rotation.
+
+Validation: the implementation passed all 23 offline tests and its Ansible
+syntax check. This documentation update passed whitespace and version-header
+consistency checks. No live deployment or token change was performed.
+
 ## 0.11.0
 
 Create persistent administrator MCP access during base configuration after the
