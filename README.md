@@ -733,6 +733,16 @@ the project's default environment, and both Job Templates. These references
 must resolve within the imported configuration on a clean target.
 Their AAP/OpenShift inputs are supplied when those imported templates are run;
 they are separate from the importer's own target URL and administrator login.
+The encrypted localhost definition preserves job-time Python selection:
+
+```yaml
+ansible_python_interpreter: !unsafe "{{ ansible_playbook_python }}"
+```
+
+The `!unsafe` YAML tag prevents the importer's Jinja evaluation from replacing
+the expression with its own Python path. AAP stores the expression as ordinary
+host-variable text, and each imported job evaluates it in its own execution
+environment. Use the tag for this deferred value inside the encrypted capture.
 The importer does not apply base or the subscription, launch either imported
 template, deploy OpenShift resources, or perform cleanup operations.
 
@@ -951,6 +961,9 @@ mode against synthetic definitions, without contacting AAP, and verifies that
 streams and activations stay out of initial dispatch. The Orchestrator regression
 uses synthetic encrypted captures for its actual preflight tasks and a local HTTP
 fixture for token cleanup; it does not contact AAP or run imported automation.
+It also exercises the installed CoP wildcard combination and host-parameter
+rendering with different import/job Python paths, checking that a literal
+interpreter expression survives storage and resolves at job runtime.
 The Assistant Team regression additionally checks ordinary core completeness,
 preserved encrypted snapshots and separation from optional maintenance, plus HTTPS
 repository URL rejection, required token injection and cleanup after failed imports.

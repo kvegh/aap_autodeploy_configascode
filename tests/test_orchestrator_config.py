@@ -1,6 +1,7 @@
 """Run the importer's real Vault guards and cleanup without contacting AAP."""
 
 import copy
+import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import os
@@ -22,6 +23,60 @@ PLAYBOOK = Path(__file__).resolve().parents[1] / "deploy-orchestrator-demo.yml"
 
 @unittest.skipUnless(yaml and importlib.util.find_spec("ansible"), "requires Ansible and PyYAML")
 class OrchestratorConfigurationTests(unittest.TestCase):
+    def test_interpreter_expression_survives_cop_import_and_resolves_at_job_runtime(self):
+        roots = os.environ.get("ANSIBLE_COLLECTIONS_PATH", "").split(os.pathsep)
+        roles = next((Path(root) / "ansible_collections/infra/aap_configuration/roles"
+                      for root in roots if root and (
+                          Path(root) / "ansible_collections/infra/aap_configuration/roles/controller_hosts/tasks/main.yml"
+                      ).is_file()), None)
+        if roles is None:
+            self.skipTest("requires installed infra.aap_configuration")
+
+        from ansible.plugins.loader import init_plugin_loader
+        from ansible.utils.collection_loader import AnsibleCollectionConfig
+        from ansible.parsing.dataloader import DataLoader
+        from ansible.template import Templar
+        from ansible.module_utils.common.validation import check_type_dict
+
+        if AnsibleCollectionConfig.collection_finder is None:
+            init_plugin_loader()
+        wildcard = yaml.safe_load((roles / "dispatch/tasks/include_wildcard_vars.yml").read_text())[0]
+        host_tasks = yaml.safe_load((roles / "controller_hosts/tasks/main.yml").read_text())
+        host_parameters = next(task["ansible.controller.host"] for block in host_tasks
+                               for task in block.get("block", []) if "ansible.controller.host" in task)
+        loader = DataLoader()
+        expression = "{{ ansible_playbook_python }}"
+        for tag in ("", "!unsafe "):
+            with self.subTest(literal=bool(tag)):
+                data = loader.load(
+                    "controller_hosts_orchestrator:\n"
+                    "  - name: localhost\n"
+                    "    inventory: Synthetic inventory\n"
+                    "    variables:\n"
+                    "      ansible_connection: local\n"
+                    "      ansible_python_interpreter: " + tag + '"' + expression + '"\n')
+                variables = {**data, **wildcard["vars"],
+                             "aap_configuration_all_vars": ["controller_hosts"],
+                             "item": "controller_hosts_orchestrator",
+                             "ansible_playbook_python": "/import/bin/python"}
+                templar = Templar(loader=loader, variables=variables)
+                combined = {templar.template(key): value for key, value in
+                            templar.template(wildcard["ansible.builtin.set_fact"]).items()}
+                variables.update(combined)
+                variables.update({"__controller_host_item": combined["controller_hosts"][0],
+                                  "aap_hostname": "https://aap.example.invalid",
+                                  "aap_token": "synthetic-gateway-token", "aap_validate_certs": True,
+                                  "controller_configuration_host_enforce_defaults": False,
+                                  "omit": "__omit__"})
+                rendered = Templar(loader=loader, variables=variables).template(host_parameters)
+                # Use the real module argument conversion and the API JSON boundary.
+                saved = json.loads(json.dumps(check_type_dict(rendered["variables"])))
+                self.assertEqual(saved["ansible_python_interpreter"], expression if tag else "/import/bin/python")
+                runtime = Templar(loader=loader, variables={
+                    "ansible_playbook_python": "/runtime/bin/python"}).template(saved)
+                self.assertEqual(runtime["ansible_python_interpreter"],
+                                 "/runtime/bin/python" if tag else "/import/bin/python")
+
     def run_tasks(self, root, tasks, variables, vault_password=None):
         config = root / "ansible.cfg"
         config.write_text("[defaults]\nstdout_callback = default\nretry_files_enabled = False\n")

@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.15.4
+
+Test and document deferred interpreter rendering for Orchestrator imports.
+Companion encrypted capture `c141e1a` marks the existing localhost interpreter
+expression `!unsafe`, preserving it for each imported job's execution environment
+instead of storing the import process's Python path. Other decoded configuration
+and secret inputs are unchanged.
+
+Validation: all three focused Orchestrator tests passed, including actual CoP
+wildcard/host-parameter rendering with different import and job Python paths.
+Vault header, decryption roundtrip, actual Ansible loading and documentation
+checks passed. Live import verification remains separate at this commit.
+
 ## 0.15.3
 
 Document planning change `d7be1cc`: manual stage retries remain the selected
