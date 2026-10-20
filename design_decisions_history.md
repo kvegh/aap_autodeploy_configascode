@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Restore AutoDeploy as a use case and orchestrate complete deployments
+
+Implementation: `6c83591`; encrypted companion capture: `9020feb`.
+
+The user requested one workflow that creates an AAP, applies shared base, then
+imports captured use cases in parallel, including the ability for the replacement
+to deploy another instance. AutoDeploy therefore has its own encrypted capture
+and importer rather than placing its deployment objects in platform base. The
+workflow passes only the created VM identity, address and internal API URL;
+installer hostname handling remains separate. After explicit PAH/image
+preparation it branches to four captured demos and AutoDeploy itself, excluding
+teardown and functional demo jobs.
+
+The capture keeps environment credentials and populated object references in the
+existing encrypted companion repository. A dedicated provisioning key was
+explicitly approved and independently verified; the workspace's GitHub SSH
+identity was excluded. Existing environment Vault access is captured separately
+from base's Git and CaC Vault bootstrap credentials. Exact PAH collection batches
+preserve multiple required versions, restore complete remote requirements even
+after failure, and observe asynchronous policy completion before syncing.
+Thirty existing/graph tests and three real-task mock-PAH tests passed, as did
+syntax and private encryption/reference checks. Fresh recursive deployment and
+full production coverage remain unverified; a captured Windows collection's
+runtime version mismatch remains an explicit follow-up.
 ## Review the current CaC implementation against Red Hat guidance
 
 Planning commit: `9dad713`.

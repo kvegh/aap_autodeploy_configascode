@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.13.1
+
+Document source implementation `6c83591`, encrypted companion capture `9020feb`,
+and the ownership, dedicated-key, job handoff and PAH preparation decisions.
+Record the offline verification boundaries and remaining recursive/runtime tests.
+
 ## 0.13.0
 
 - Add the complete deployment workflow: VM creation, infrastructure, installation,
