@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.12.2
+
+Protect DNS creation and removal requests with `no_log` so API authorization
+headers remain hidden in AAP job results. Both playbooks passed syntax checks;
+no teardown was repeated for validation.
+
 ## 0.12.1
 
 Document implementation `18f50b2` and the shared bootstrap boundary, collision

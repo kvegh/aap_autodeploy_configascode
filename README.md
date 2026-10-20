@@ -10,11 +10,15 @@ A production replacement needs the platform and use-case definitions, secret
 inputs, deployment automation, PAH content, execution environments and functional
 verification required for those tasks. The existing fresh-instance pipeline and
 selected use-case imports are parts of that goal. Complete production coverage,
-bootstrap credential provisioning and takeover verification remain pending.
+live verification of bootstrap credential provisioning and takeover verification
+remain pending.
 
 The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
+
+DNS creation and removal keep their API requests and responses protected with
+`no_log`, including when diagnostic logging is enabled for other tasks.
 
 Base means platform setup only. Use-case Git projects, inventories, hosts,
 credentials, execution environments, templates, workflows, and EDA integrations

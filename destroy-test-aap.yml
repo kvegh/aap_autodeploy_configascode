@@ -107,6 +107,7 @@
           Authorization: "Bearer {{ vault_godaddy_api_token }}"
         status_code: [200, 204, 404]
       become: false
+      no_log: true
 
     - name: Report
       ansible.builtin.debug:

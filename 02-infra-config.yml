@@ -29,6 +29,7 @@
             ttl: 600
         status_code: 200
       become: false
+      no_log: true
 
     - name: Deploy temporary HTTP-only nginx config for certbot challenge
       ansible.builtin.template:
