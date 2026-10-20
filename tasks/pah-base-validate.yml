@@ -1,4 +1,18 @@
 ---
+- name: Require an explicit latest-plus-required-versions PAH policy
+  ansible.builtin.assert:
+    that:
+      - pah_collection_policy is defined
+      - pah_collection_policy is mapping
+      - pah_collection_policy.mode == 'latest_installed_plus_requirements'
+      - pah_collection_policy.sync_highest_versions is integer
+      - pah_collection_policy.sync_highest_versions == 1
+      - pah_collection_policy.retain_repo_versions is integer
+      - pah_collection_policy.retain_repo_versions == 1
+      - pah_collection_policy.repositories == ['rh-certified', 'validated', 'community']
+      - pah_collection_policy.require_complete_requirements_audit is sameas true
+    fail_msg: Declare one highest remote version and one repository snapshot, with audited project and dependency exceptions before release pruning.
+
 - name: Require the base PAH source definitions
   ansible.builtin.assert:
     that:

@@ -46,6 +46,11 @@ class PahBaseTests(unittest.TestCase):
         names = ["rh-certified", "validated", "community"]
         credentials = [{"name": "PAH " + name, "repository": name} for name in names]
         complete = {
+            "pah_collection_policy": {
+                "mode": "latest_installed_plus_requirements", "sync_highest_versions": 1,
+                "retain_repo_versions": 1, "repositories": names,
+                "require_complete_requirements_audit": True,
+            },
             "pah_base": {"organization": "Synthetic organization", "download_credentials": credentials},
             "aap_organizations_base": [{"name": "Synthetic organization", "galaxy_credentials":
                                         [item["name"] for item in credentials]}],
@@ -55,6 +60,12 @@ class PahBaseTests(unittest.TestCase):
                  "distribution": {"name": name, "state": "present"}} for name in names],
         }
         cases = [("safe", complete, True)]
+        for field, value in (("sync_highest_versions", True),
+                             ("retain_repo_versions", 0),
+                             ("require_complete_requirements_audit", False)):
+            changed = copy.deepcopy(complete)
+            changed["pah_collection_policy"][field] = value
+            cases.append(("unsafe retention " + field, changed, False))
         for field in ("sync", "update_repo"):
             changed = copy.deepcopy(complete)
             changed["hub_collection_repositories_base"][0][field] = True

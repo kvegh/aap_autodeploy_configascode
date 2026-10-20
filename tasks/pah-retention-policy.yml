@@ -1,0 +1,9 @@
+---
+- name: Configure PAH selection and snapshot limits without synchronizing or pruning
+  pah_collection_retention:
+    operation: configure
+    hub_host: "{{ aap_hostname }}"
+    hub_token: "{{ hub_token }}"
+    validate_certs: "{{ aap_validate_certs }}"
+    policy: "{{ pah_collection_policy }}"
+  no_log: true

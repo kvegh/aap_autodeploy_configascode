@@ -1,0 +1,71 @@
+---
+- name: Preview or explicitly apply audited PAH collection release retention
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - myvars
+    - vars/main.yml
+  vars:
+    aap_username: admin
+    aap_validate_certs: false
+    pah_retention_operation: plan
+  tasks:
+    - name: Require preview or an explicitly reviewed apply operation
+      ansible.builtin.assert:
+        that:
+          - pah_retention_operation in ['plan', 'apply']
+          - pah_retention_operation != 'apply' or pah_retention_approved_plan is defined
+        fail_msg: Preview first; apply requires the previously reviewed complete plan.
+
+    - name: Evaluate the target using its encrypted policy and reviewed source audit
+      block:
+        - name: Retrieve the encrypted configuration inputs
+          ansible.builtin.include_tasks: tasks/private-config-checkout.yml
+
+        - name: Authenticate to the configured target
+          ansible.builtin.include_tasks: tasks/gateway-base-login.yml
+
+        - name: Preview or apply the reviewed collection release policy
+          pah_collection_retention:
+            operation: "{{ pah_retention_operation }}"
+            hub_host: "{{ aap_hostname }}"
+            hub_token: "{{ cac_gateway_token.json.token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+            policy: "{{ pah_collection_policy }}"
+            requirements_audit: "{{ pah_collection_requirements_audit | default({}) }}"
+            expected_plan: "{{ pah_retention_approved_plan | default({}) }}"
+          register: pah_retention_result
+          no_log: true
+
+        - name: Require a local temporary path when saving a preview for review
+          ansible.builtin.assert:
+            that:
+              - pah_retention_plan_file is string
+              - pah_retention_plan_file is match('^/tmp/[^\r\n]+$')
+              - "'/../' not in pah_retention_plan_file"
+            fail_msg: Store the protected preview outside Git, under /tmp.
+          when:
+            - pah_retention_operation == 'plan'
+            - pah_retention_plan_file is defined
+
+        - name: Save the protected preview outside Git when requested
+          ansible.builtin.copy:
+            dest: "{{ pah_retention_plan_file }}"
+            content: "{{ {'pah_retention_approved_plan': pah_retention_result.plan} | to_nice_json }}"
+            mode: '0600'
+          when:
+            - pah_retention_operation == 'plan'
+            - pah_retention_plan_file is defined
+          no_log: true
+          diff: false
+
+        - name: Report the result without exposing collection source details
+          ansible.builtin.debug:
+            msg: >-
+              {{ 'Preview complete; releases proposed for removal: ' ~ (pah_retention_result.plan.remove_count | string)
+                 if pah_retention_operation == 'plan'
+                 else 'Reviewed retention applied; releases removed: ' ~ (pah_retention_result.collection_releases_removed | string) }}
+      always:
+        - name: Revoke temporary authentication and remove the private checkout
+          ansible.builtin.include_tasks: tasks/private-config-cleanup.yml

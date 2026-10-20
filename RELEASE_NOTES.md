@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.14.0
+
+- Declare latest-plus-required collection retention in encrypted base; Stage 04
+  configures and verifies each remote's highest-version selection and each
+  repository's single-snapshot retention without syncing or deleting content.
+- Add a separate preview/apply curator. Preserve each repository's newest installed
+  release, actual reviewed project/playbook/EE requirements,
+  and dependency closure. Reject incomplete or changed audits, active target
+  work, missing dependencies and stale previews before pruning associations.
+- Document the external-client/seed requirement, maintenance window, mutable
+  image limitations and remaining production audit/recurring execution work.
+  No production curation or global content deletion was performed.
+- Nineteen focused retention tests passed. The 52-test broad run passed every
+  other test; its legacy PAH guard fixture was updated for the required policy
+  and that focused guard test then passed, including unsafe-policy cases.
+  Stage 04/curation syntax, whitespace, and private Vault round-trip checks passed.
+
 ## 0.13.1
 
 Document source implementation `6c83591`, encrypted companion capture `9020feb`,

@@ -100,19 +100,25 @@ Selected demo deployments continue to use their separate configurations.
   collection requires Ansible Core 2.18 or newer while the current execution image
   reports 2.16.19. Review a compatible execution image or requirement change, then
   run meaningful functional tests.
-- [ ] Keep the number of retained PAH collection versions small for simplicity.
-  Derive the exact versions to synchronize from project and execution-environment
-  requirements and their dependency constraints, and declare that required set in
-  the PAH CaC configuration and remote requirements. Retain multiple versions of a
-  collection only when projects explicitly require them, including dependency
-  requirements. For collections without a fixed project requirement, select one
-  current compatible version. Audit requirements before pruning older versions,
-  and prevent unbounded version selection from downloading release histories.
-  Manage remote `sync_highest_versions: 1` separately from repository snapshot
-  `retain_repo_versions: 1`. Add supported module/API handling for the remote
-  limit, which the installed `ansible.hub.collection_remote` module does not
-  expose. Encode exact pins and their dependency closure in the encrypted CaC
-  configuration, preserving older versions explicitly required by projects.
+- [x] Declare the PAH latest-plus-required-versions policy in encrypted base.
+  Stage 04 configures and verifies remote `sync_highest_versions: 1` separately
+  from repository snapshot `retain_repo_versions: 1`, without content sync or
+  collection release deletion. The installed remote module's missing selection
+  field is handled through a narrowly scoped API extension.
+- [x] Add a separate preview/apply curator that preserves each repository's newest
+  installed release plus audited project/playbook/EE requirements and dependency
+  closure. Reject missing requirements, changed project revisions, unknown EEs,
+  active target jobs/tasks and stale previews. Apply only an explicitly reviewed
+  plan; remove repository associations without global content/orphan deletion.
+- [ ] Complete the current production requirements audit before actual pruning
+  or recurring curation. Verify project/playbook/EE source files and provenance,
+  actual required pins, dependency constraints and immutable image inventories
+  where applicable. Matching a mutable image tag is not proof of its content.
+  Derive upstream refresh requirements separately: the curator's newest
+  installed release is not necessarily the newest upstream release. Schedule
+  reviewed ongoing curation externally or add verified own-job exclusion before
+  offering a target-side curator JT. No production prune is authorized by the
+  base policy implementation.
 - [x] Perform a reviewed one-time PAH cleanup: reduce 263 collection releases to
   16 across 15 collections, keeping each newest present release and the older
   RHEL system roles version explicitly pinned by projects. Set all three remote

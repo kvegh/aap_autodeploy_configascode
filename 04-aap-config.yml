@@ -195,6 +195,9 @@
           vars:
             dispatch_include_wildcard_vars: false
 
+        - name: Configure the PAH collection selection and snapshot retention policy
+          ansible.builtin.include_tasks: tasks/pah-retention-policy.yml
+
         - name: Verify the configured administrator password after applying base
           ansible.builtin.uri:
             url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/me/"

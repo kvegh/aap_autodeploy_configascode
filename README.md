@@ -264,18 +264,62 @@ replacing `demo` with its identifier. List required collection names and version
 under `certified`, `validated`, and `community`; include dependencies and keep
 the list aligned with the use-case repository's `collections/requirements.yml`
 and execution-environment requirements. Empty lists explicitly mean that a
-category is not needed. This component describes PAH preparation; it is not a
-CoP dispatch variable and does not currently trigger synchronization. Prepare
-and verify its content in PAH before synchronizing that use case's Controller
-projects. Do not overwrite other use cases' requirements when extending a
+category is not needed. This component is not a CoP dispatch variable. Stage 05
+prepares and verifies the consolidated encrypted `cac_workflow_pah` catalog
+before importing Controller projects; keep that catalog aligned with each
+use case's source requirements. Its exact batches preserve separately required
+older versions. Do not overwrite other use cases' requirements when extending a
 shared PAH remote's collection list.
 
-The [TODO](PLAN.md#todo) tracks keeping PAH version counts small: synchronize and
-declare only the versions required by projects, execution environments and their
-dependencies in the PAH CaC configuration. Keep multiple versions only when those
-requirements justify them; otherwise select one current compatible version.
-Audit requirements before pruning content. Automated enforcement and cleanup
-remain planned.
+Encrypted base declares `pah_collection_policy`. Stage 04 sets and verifies
+`sync_highest_versions: 1` on all three remotes and `retain_repo_versions: 1` on
+their repositories, without synchronizing content or deleting collection
+releases. This API extension is needed because the installed collection remote
+module does not expose `sync_highest_versions`. The public base example contains
+the generic policy template; actual environment configuration remains encrypted.
+
+Collection release curation is a separate, preview-first operation in
+`pah-collection-retention.yml`. It keeps the newest installed version of each
+collection within each managed repository, then preserves versions justified
+by reviewed project, playbook or execution-environment requirements and their
+dependency closure. The same collection may occur in multiple repositories;
+another repository's newer release does not remove this repository's latest,
+and its older latest does not preserve obsolete copies in this repository.
+The curator does not discover the newest upstream release. Stage 05
+owns the separately declared synchronization requirements and preserves explicit
+older pins when preparing content.
+
+Pruning needs `pah_collection_requirements_audit` from encrypted configuration
+or protected external input. The [audit example](cac/pah_requirements_audit.yml.example)
+shows the schema. Review every current project at its deployed Git revision,
+including nested playbook requirements and referenced execution-environment
+requirements; record source paths, file SHA-256 digests and actual requirements.
+Declare absence of requirements explicitly. Match every live execution
+environment to its reviewed source or an inventory of an image pinned by digest.
+Project revision and image-string checks detect declared configuration changes;
+they do not prove that a mutable image tag still resolves to the same image or
+that an image was built from its declared project source. Resolve that uncertainty
+before marking the audit complete. Existing captured versions are not evidence
+that a project requires those versions.
+
+Use an external client or a different seed AAP against an idle target. The
+curator refuses active target jobs and project updates, including its own job if
+launched on the target itself; no target-side curation JT is provisioned. PAH
+tasks, unknown or changed requirements, missing dependencies, unsupported
+version constraints and nonstable releases also block pruning. Preview does
+not change the target. Before apply, establish a maintenance window that prevents
+new target job/workflow launches, project updates and other PAH writes until
+verification finishes. The idle preflight and repository baseline comparisons
+are checks, not a continuous lock on Controller or PAH. An optional
+`pah_retention_plan_file` saves the protected
+preview under `/tmp` with mode `0600`, outside Git. To apply, set
+`pah_retention_operation: apply` and supply the reviewed
+`pah_retention_approved_plan`; an exact plan and repository-baseline comparison
+prevents applying a stale preview. Apply removes only obsolete associations
+from the managed repositories and verifies the retained content. It performs no
+global content deletion or orphan cleanup. A complete current production audit
+and recurring execution remain [TODOs](PLAN.md#todo); base deployment does not
+silently enable deletion or schedule curation.
 
 A one-time cleanup on 2026-10-20 reduced the deployed repositories from 263 to
 16 collection releases across 15 collections: certified retains 10, community
@@ -283,8 +327,8 @@ retains five, and validated retains one. It kept the newest release already
 present for each collection plus `redhat.rhel_system_roles` 1.120.5, which two
 projects explicitly pin, alongside 2.4.2. The three collection remotes now have
 exact requirements, explicit dependency closure, and `sync_highest_versions: 1`.
-Repository snapshot retention remains one. This maintenance did not implement
-recurring cleanup or update the encrypted CaC source; both remain TODOs. Content
+Repository snapshot retention remains one. That maintenance preceded the
+declarative base policy above; recurring cleanup remains a TODO. Content
 was removed from repository snapshots without a global orphan cleanup, so these
 counts do not establish reclaimed storage.
 
@@ -301,8 +345,8 @@ for `sync_highest_versions` and the [repository retention guide](https://pulppro
 for snapshot retention.
 
 The installed `ansible.hub.collection_remote` module does not expose
-`sync_highest_versions`. Declarative enforcement needs module support or a
-supported API integration before this setting can be managed by base dispatch.
+`sync_highest_versions`. Stage 04 now applies that setting through the dedicated
+`pah_collection_retention` API extension after CoP dispatch creates the sources.
 Keep the encrypted base configuration aligned with the live remote requirements;
 do not replace it from an older plaintext export.
 

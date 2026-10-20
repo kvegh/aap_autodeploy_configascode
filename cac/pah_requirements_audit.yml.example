@@ -1,0 +1,41 @@
+---
+# Review actual source requirements at every deployed project revision.
+# Populate outside Git; store environment-specific data only encrypted.
+# This example deliberately cannot authorize pruning.
+pah_collection_requirements_audit:
+  complete: false
+  projects:
+    - name: PROJECT_PLACEHOLDER
+      scm_revision: COMMIT_SHA_PLACEHOLDER
+      files:
+        - path: collections/requirements.yml
+          sha256: FILE_SHA256_PLACEHOLDER
+          kind: project
+          collections:
+            - name: example.tools
+              version: "1.2.3"
+        - path: execution-environment.yml
+          sha256: FILE_SHA256_PLACEHOLDER
+          kind: execution_environment
+          # Expand referenced collection requirements and audit their files too.
+          collections: []
+    - name: PROJECT_WITHOUT_REQUIREMENTS_PLACEHOLDER
+      scm_revision: COMMIT_SHA_PLACEHOLDER
+      no_requirements_verified: true
+      files: []
+  execution_environments:
+    - name: EXECUTION_ENVIRONMENT_PLACEHOLDER
+      image: IMAGE_REFERENCE_PLACEHOLDER
+      requirements_source:
+        project: PROJECT_PLACEHOLDER
+        path: execution-environment.yml
+    - name: VENDOR_ENVIRONMENT_PLACEHOLDER
+      image: IMMUTABLE_IMAGE_REFERENCE_PLACEHOLDER
+      # Alternative: a reviewed collection inventory for an image whose live
+      # reference ends in the same @sha256 digest. Mutable tags are rejected here.
+      image_inventory:
+        digest: IMAGE_SHA256_PLACEHOLDER
+        sha256: INVENTORY_FILE_SHA256_PLACEHOLDER
+        collections:
+          - name: example.vendor
+            version: "2.0.0"

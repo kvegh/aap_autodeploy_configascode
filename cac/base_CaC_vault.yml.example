@@ -32,6 +32,19 @@ hub_collection_remotes_base: []
 hub_collection_repositories_base: []
 pah_base: {}
 
+# Base sets selection/snapshot limits without synchronizing or deleting content.
+# Release pruning separately preserves the newest installed release and audited
+# project/playbook/execution-environment requirements plus dependency closure.
+pah_collection_policy:
+  mode: latest_installed_plus_requirements
+  sync_highest_versions: 1
+  retain_repo_versions: 1
+  repositories:
+    - rh-certified
+    - validated
+    - community
+  require_complete_requirements_audit: true
+
 # Base owns the PAH remotes, repositories, and distributions for rh-certified,
 # validated, and community content, plus their Controller Galaxy credentials
 # and organization attachments. Base configuration does not synchronize content.
