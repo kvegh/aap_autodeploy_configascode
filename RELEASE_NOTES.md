@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.12.3
+
+Document implementation `6ad202d` and the DNS authorization logging boundary.
+
 ## 0.12.2
 
 Protect DNS creation and removal requests with `no_log` so API authorization

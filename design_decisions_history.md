@@ -1,5 +1,15 @@
 # Design decisions history
 
+## Protect DNS authorization during provisioning and cleanup
+
+Implementation: `6ad202d`.
+
+The rebuild preflight found that the DNS API tasks could include authorization
+headers in ordinary task results. Both creation and removal now suppress their
+requests and responses independently of diagnostic logging elsewhere. Syntax
+checks passed for infrastructure configuration and teardown; teardown was not
+repeated to validate this logging change.
+
 ## Provision configuration access on trusted replacement instances
 
 Implementation: `18f50b2`.
