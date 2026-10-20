@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Provision configuration access on trusted replacement instances
+
+Implementation: `18f50b2`.
+
+The user requested that shared base create the four configuration-repository Git
+credentials and the CaC Vault credential from inputs already held in encrypted
+base. This allows a trusted replacement to read and decrypt the same private
+configuration repositories. The first seed still needs its initial access
+independently. Provisioning rejects incompatible existing ownership, types,
+injection schemas and Vault identifiers, and preserves already stored secret
+values on reruns. Rotation remains a separate operation. Deployment-project
+objects and provisioning-environment credentials belong to the AutoDeploy use
+case rather than shared platform base. Four isolated real-task tests and a
+Stage 04 syntax check passed; no live rollout was used for that validation.
+
 This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.

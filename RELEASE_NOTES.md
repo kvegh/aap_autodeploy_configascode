@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.12.1
+
+Document implementation `18f50b2` and the shared bootstrap boundary, collision
+guards, preserved credentials on reruns, and offline-only verification.
+
 ## 0.12.0
 
 - Create the four private-configuration Git credentials and the CaC Vault
