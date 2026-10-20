@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.12.5
+
+Document implementation `5f8c3e0` and the distinction between installer async
+runtime and the surrounding Job Template timeout.
+
 ## 0.12.4
 
 Allow the AAP installer and its existing-job observer up to two hours instead of

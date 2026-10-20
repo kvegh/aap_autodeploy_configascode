@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Allow fresh installation to exceed the old one-hour async ceiling
+
+Implementation: `5f8c3e0`.
+
+An earlier fresh installation reached the one-hour command ceiling and required
+observation of its existing async job. A longer Job Template timeout alone did
+not extend that command ceiling. The installer command and existing-job observer
+now allow two hours; the documented template timeout is three hours to cover
+host preparation and health checks. Resume behavior still observes the original
+job instead of launching another installer. Stage 03 passed syntax validation.
+
 ## Protect DNS authorization during provisioning and cleanup
 
 Implementation: `6ad202d`.
