@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.10.5
+
+Document the planned PAH collection version policy: synchronize and declare only
+project-required versions and dependencies in CaC, retain multiple versions only
+when those requirements need them, and avoid unbounded release-history downloads.
+Audit project and execution-environment requirements before pruning older content.
+Retention enforcement and cleanup remain unimplemented.
+
+Validation: documentation whitespace checks and staged-file review passed.
+This planning change does not deploy configuration or remove collection content.
+
 ## 0.10.4
 
 Document planned per-instance MCP API-token provisioning and recoverable,

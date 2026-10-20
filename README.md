@@ -182,6 +182,13 @@ and verify its content in PAH before synchronizing that use case's Controller
 projects. Do not overwrite other use cases' requirements when extending a
 shared PAH remote's collection list.
 
+The [TODO](PLAN.md#todo) tracks keeping PAH version counts small: synchronize and
+declare only the versions required by projects, execution environments and their
+dependencies in the PAH CaC configuration. Keep multiple versions only when those
+requirements justify them; otherwise select one current compatible version.
+Audit requirements before pruning content. Automated enforcement and cleanup
+remain planned.
+
 PAH has separate authentication purposes: upstream Red Hat tokens authorize
 future certified/validated synchronization; local PAH credentials authorize
 repository management and downloads. Base configures upstream URLs without

@@ -70,6 +70,14 @@ Selected demo deployments continue to use their separate configurations.
 - [ ] Populate and verify the PAH requirements component in each existing use-case
   configuration, including collection versions, dependencies, and compatibility
   with its execution environment, before running the use case's automation.
+- [ ] Keep the number of retained PAH collection versions small for simplicity.
+  Derive the exact versions to synchronize from project and execution-environment
+  requirements and their dependency constraints, and declare that required set in
+  the PAH CaC configuration and remote requirements. Retain multiple versions of a
+  collection only when projects explicitly require them, including dependency
+  requirements. For collections without a fixed project requirement, select one
+  current compatible version. Audit requirements before pruning older versions,
+  and prevent unbounded version selection from downloading release histories.
 - [x] Prepare Assistant Team's declared PAH collection and existing execution image,
   import the six ordinary templates and supporting objects, and independently
   verify the configuration. Runtime tests and optional authentication maintenance
