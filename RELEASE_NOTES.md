@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.10.6
+
+Document planning commit `c547f68` and the rationale for keeping only justified
+PAH collection versions in the decision history. Version selection, retention
+enforcement and cleanup remain planned.
+
+Validation: documentation whitespace, version-header consistency and staged-file
+review passed. No deployment or content deletion is part of this documentation.
+
 ## 0.10.5
 
 Document the planned PAH collection version policy: synchronize and declare only

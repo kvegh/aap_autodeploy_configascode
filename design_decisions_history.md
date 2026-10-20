@@ -4,6 +4,22 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Plan PAH version retention from project requirements
+
+Planning commit: `c547f68`. Automated selection, retention and cleanup remain
+unimplemented.
+
+The operator requested fewer collection versions for simpler PAH management.
+Synchronize only the exact versions required by projects and execution
+environments, including their dependency constraints, and declare the required
+set in PAH configuration as code. Keep multiple versions of a collection only
+when project requirements justify each retained version. Otherwise select one
+current compatible version. Audit requirements before pruning older content and
+avoid unbounded remote selections that download complete release histories.
+
+The TODO and README describe this future policy. The planning change does not
+deploy a retention mechanism or remove collection content.
+
 ## Plan recoverable per-instance MCP credentials
 
 This is planning only; persistent MCP provisioning has no implementation commit.
