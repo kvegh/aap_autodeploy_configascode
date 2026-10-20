@@ -137,10 +137,11 @@ URL intact. No credentials, passwords or tokens are put in workflow artifacts.
 The workflow's only survey question is `debug_logging`; saved repository URLs
 are supplied on each appropriate node, and each existing Job Template keeps its
 own credentials. Concurrent runs of this workflow are disabled.
-Failure stops downstream success nodes. Inspect and resume an existing instance
-with its individual Job Templates; relaunching the entire workflow creates a
-new instance and consumes another counter value. Installer observation remains
-available through Stage 03's existing async-job identifier.
+Failure stops downstream success nodes. Recover manually by rerunning the failed
+Job Templates with the same instance inputs, then launching the remaining stages.
+Relaunching the entire workflow creates a new instance and consumes another
+counter value. Installer observation remains available through Stage 03's existing
+async-job identifier.
 
 AutoDeploy is a separate use case rather than platform base. Its whole-file
 Vault-encrypted `cac/autodeploy.yml` lives beside `cac/base_CaC_vault.yml` in the

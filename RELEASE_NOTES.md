@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.15.2
+
+Document manual stage retries as the deployment workflow recovery method and
+remove the automatic workflow recovery TODO at the operator's request. Retry
+failed Job Templates with the same instance inputs, then run the remaining
+stages. A full workflow relaunch still creates another instance.
+
+Validation: documentation diff and version checks passed. No deployment code
+or live configuration changed.
+
 ## 0.15.1
 
 Document implementation `0b3910b` and encrypted capture commits `0146052` and

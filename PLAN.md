@@ -70,9 +70,6 @@ Selected demo deployments continue to use their separate configurations.
 - [ ] Verify the new AutoDeploy importer and complete workflow on a fresh target,
   then prove that replacement can deploy another instance. Offline tests and
   configuration capture are not evidence of successful recursive deployment.
-- [ ] Extend resumable workflow failure handling. Individual Job Templates and
-  Stage 03's existing-job observer support manual recovery; relaunching the full
-  workflow currently creates a new instance and consumes another counter.
 - [ ] Verify production replacement with configuration comparison and functional
   platform/use-case tests, including its ability to deploy another AAP. Treat
   external environment services as explicit prerequisites until their separate
