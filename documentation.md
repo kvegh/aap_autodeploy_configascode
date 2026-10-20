@@ -162,7 +162,7 @@ from the organization and verify the remaining PAH source order.
 
 ### CaC drift detection
 
-- [ ] Combine Git revision checks, Controller/Gateway/EDA audit records where available, and normalized object exports against the accepted CaC inventory. Track ownership, references, additions, modifications, and deletions; review differences before updating encrypted files. Preserve audit and revision checkpoints, explicitly maintain secrets, and periodically test restoration to a clean AAP. Audit records complement full comparison; they do not establish complete export coverage.
+- [ ] Combine Git revision checks, Controller/Gateway/EDA audit records where available, and normalized object exports against the accepted CaC inventory. Track ownership, references, additions, modifications, and deletions; review differences before updating encrypted files. Preserve audit and revision checkpoints, explicitly maintain secrets, and periodically test restoration to a clean AAP. Audit records complement full comparison; they do not establish complete export coverage. Incremental audit-log catch-up is a future task in the [project TODO](PLAN.md#todo); continue CaC comparisons for now.
 - [ ] Cover external environment configuration in a later phase; current deployment scope is AAP objects only.
 
 ### Done

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.14.4
+
+Plan incremental CaC catch-up using component audit logs, durable checkpoints,
+targeted configuration retrieval and dependency checks, with Git checks and
+periodic full comparisons for coverage. Keep the current CaC comparison approach
+until the future mechanism is implemented and verified. No log-based automation
+or scheduling was added. Documentation whitespace and version checks passed.
+
 ## 0.14.3
 
 Document fix `fb87a08`: fresh base setup uses the successful installer login for

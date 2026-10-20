@@ -37,6 +37,10 @@ declares which collections its own PAH preparation needs.
 The [project TODO](PLAN.md#todo) includes a complete, step-by-step CaC setup guide.
 It also tracks a review against Red Hat's CaC guidance, covering access, exports,
 secret handling, validation, drift, deletions, and Git workflow for this stack.
+Current drift review uses CaC comparisons. Incremental catch-up using AAP audit
+logs is planned: identify changed objects, retrieve their current configuration
+and dependencies, and review differences before updating encrypted captures.
+Audit checkpoints, component coverage and retention gaps still need validation.
 Base implements persistent MCP token creation with a protected target-side copy.
 The TODO tracks Vault-encrypted per-instance connection values in the private
 base repository, separate Git write access, client configuration and CA trust.

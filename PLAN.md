@@ -22,6 +22,14 @@ Selected demo deployments continue to use their separate configurations.
 - [ ] Define and verify the complete production configuration inventory across
   Gateway, Controller, EDA and PAH, including ownership, credentials, permissions,
   dependencies and deletions. Preserve separate base and use-case ownership.
+- [ ] Add audit-log analysis for incremental CaC catch-up. Track a last-processed
+  checkpoint for the relevant component audit feeds; detect created, modified,
+  deleted and reassociated owned objects, then retrieve their current definitions
+  and affected dependencies for comparison with CaC. Review differences before
+  updating encrypted captures. Check Git changes alongside audit events, handle
+  missing or expired records, and retain periodic full comparisons to verify
+  coverage. Continue the existing CaC comparison approach until this is implemented
+  and verified.
 - [ ] Capture and redeploy Intelligent Assistant/Lightspeed through CaC, including
   installer/service settings, LLM credentials, database and service passwords,
   and Gateway OAuth configuration. Vault sensitive inputs and independently
