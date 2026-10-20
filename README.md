@@ -189,6 +189,35 @@ requirements justify them; otherwise select one current compatible version.
 Audit requirements before pruning content. Automated enforcement and cleanup
 remain planned.
 
+A one-time cleanup on 2026-10-20 reduced the deployed repositories from 263 to
+16 collection releases across 15 collections: certified retains 10, community
+retains five, and validated retains one. It kept the newest release already
+present for each collection plus `redhat.rhel_system_roles` 1.120.5, which two
+projects explicitly pin, alongside 2.4.2. The three collection remotes now have
+exact requirements, explicit dependency closure, and `sync_highest_versions: 1`.
+Repository snapshot retention remains one. This maintenance did not implement
+recurring cleanup or update the encrypted CaC source; both remain TODOs. Content
+was removed from repository snapshots without a global orphan cleanup, so these
+counts do not establish reclaimed storage.
+
+Use the collection remote's `sync_highest_versions: 1` to limit version selection
+on a future sync. `retain_repo_versions: 1` only retains one repository snapshot;
+it does not remove older collection releases from that snapshot. Pin the required
+versions in remote requirements and include their complete dependency closure.
+When that closure is explicit, set `sync_dependencies: false` so broad dependency
+constraints do not download additional releases. Preserve older exact pins that
+projects still require alongside the newest retained release. A remote selection
+limit does not remove collection versions already present: pruning is a separate,
+audited repository operation. See the [Pulp Ansible changelog](https://pulpproject.org/pulp_ansible/changes/)
+for `sync_highest_versions` and the [repository retention guide](https://pulpproject.org/pulpcore/docs/user/guides/update-repo-retention/)
+for snapshot retention.
+
+The installed `ansible.hub.collection_remote` module does not expose
+`sync_highest_versions`. Declarative enforcement needs module support or a
+supported API integration before this setting can be managed by base dispatch.
+Keep the encrypted base configuration aligned with the live remote requirements;
+do not replace it from an older plaintext export.
+
 PAH has separate authentication purposes: upstream Red Hat tokens authorize
 future certified/validated synchronization; local PAH credentials authorize
 repository management and downloads. Base configures upstream URLs without

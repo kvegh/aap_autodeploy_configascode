@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.10.7
+
+Document the reviewed one-time PAH cleanup: 263 collection releases reduced to
+16 across 15 collections, preserving newest present releases and the older RHEL
+system roles release explicitly pinned by projects. Distinguish the applied
+remote `sync_highest_versions: 1` limit from repository snapshot retention and
+describe exact dependency pins. Track the remaining encrypted CaC integration,
+module support and recurring enforcement separately from the completed
+maintenance. No cleanup automation is introduced by this documentation change.
+
+Validation: both repository cleanup tasks completed; retained content and project
+requirements were audited. All three remotes use exact pins and a version limit
+of one; all repository snapshot limits remain one. Documentation whitespace,
+version-header consistency and staged-file review passed. No global orphan
+cleanup or runtime automation jobs were run.
+
 ## 0.10.6
 
 Document planning commit `c547f68` and the rationale for keeping only justified

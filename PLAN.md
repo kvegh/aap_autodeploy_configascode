@@ -78,6 +78,17 @@ Selected demo deployments continue to use their separate configurations.
   requirements. For collections without a fixed project requirement, select one
   current compatible version. Audit requirements before pruning older versions,
   and prevent unbounded version selection from downloading release histories.
+  Manage remote `sync_highest_versions: 1` separately from repository snapshot
+  `retain_repo_versions: 1`. Add supported module/API handling for the remote
+  limit, which the installed `ansible.hub.collection_remote` module does not
+  expose. Encode exact pins and their dependency closure in the encrypted CaC
+  configuration, preserving older versions explicitly required by projects.
+- [x] Perform a reviewed one-time PAH cleanup: reduce 263 collection releases to
+  16 across 15 collections, keeping each newest present release and the older
+  RHEL system roles version explicitly pinned by projects. Set all three remote
+  `sync_highest_versions` limits to one, pin the complete dependency closure, and
+  verify repository snapshot retention remains one. Declarative enforcement in
+  encrypted CaC and recurring selection/cleanup remain separate TODOs above.
 - [x] Prepare Assistant Team's declared PAH collection and existing execution image,
   import the six ordinary templates and supporting objects, and independently
   verify the configuration. Runtime tests and optional authentication maintenance
