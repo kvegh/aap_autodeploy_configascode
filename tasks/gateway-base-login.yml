@@ -83,4 +83,8 @@
       {{ cac_configured_gateway_token
          if cac_configured_gateway_token.status | default(401) == 201
          else cac_installer_gateway_token }}
+    cac_gateway_login_password: >-
+      {{ aap_password
+         if cac_configured_gateway_token.status | default(401) == 201
+         else (cac_installer_admin.stdout | from_json).password }}
   no_log: true

@@ -463,6 +463,13 @@ deployed installer inventory over SSH using `vault_ansible_user` and
 `installer_extract_dir` and `aap_version`. Other authentication or connection
 errors stop the run; they do not trigger a bootstrap attempt.
 
+The successful login password is retained only in a protected, noncached fact
+for pre-rotation PAH download-token creation. On a fresh instance this is the
+installer password; on a configured-password rerun it is the configured password.
+The desired `aap_password` remains unchanged. This lets Stage 04 issue the local
+PAH credentials before the administrator's desired password has been applied.
+No password is passed in workflow statistics or artifacts.
+
 The CoP `gateway_users` role applies the declared administrator account using
 the temporary configuration token. Step 04 then verifies the configured password
 with a fresh login. After using installer bootstrap, it also updates that

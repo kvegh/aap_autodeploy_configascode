@@ -1,5 +1,6 @@
 """Exercise PAH setup guards and token persistence against a local fake API."""
 
+import base64
 import copy
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
@@ -123,6 +124,9 @@ class PahBaseTests(unittest.TestCase):
             def do_POST(self):
                 payload = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
                 if self.path.endswith("/tokens/"):
+                    expected = "Basic " + base64.b64encode(b"synthetic-user:synthetic-current-admin-secret").decode()
+                    if self.headers.get("Authorization") != expected:
+                        return self.respond(401, {"detail": "Expected the active bootstrap password"})
                     if payload["scope"] != "read":
                         return self.respond(400, {"detail": "Expected read scope"})
                     state["tokens_created"] += 1
@@ -150,6 +154,7 @@ class PahBaseTests(unittest.TestCase):
         variables = {
             "aap_hostname": target, "aap_token": "synthetic-management-secret",
             "aap_username": "synthetic-user", "aap_password": "synthetic-admin-secret",
+            "cac_gateway_login_password": "synthetic-current-admin-secret",
             "aap_validate_certs": True, "debug_logging": True,
             "pah_base": {"organization": "Synthetic organization"},
             "cac_pah_credential": {"name": "Synthetic PAH credential", "repository": "rh-certified"},
@@ -162,7 +167,7 @@ class PahBaseTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 self.assertEqual(state["tokens_created"], 1)
                 self.assertEqual(state["tokens_deleted"], [])
-                for secret in ("synthetic-persistent-secret", "synthetic-management-secret", "synthetic-admin-secret"):
+                for secret in ("synthetic-persistent-secret", "synthetic-management-secret", "synthetic-admin-secret", "synthetic-current-admin-secret"):
                     self.assertNotIn(secret, result.stdout + result.stderr)
             for mode, deleted in (("fail-before-save", [2]), ("fail-after-save", [2])):
                 state["credentials"] = []

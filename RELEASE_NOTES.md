@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.14.2
+
+Fix fresh base deployment when the desired administrator password is not active
+yet. Retain the password that successfully authenticated in a protected local
+fact and use it to issue PAH read tokens before password rotation; preserve the
+desired `aap_password` for configuration and later verification. Configured-login
+reruns retain their existing PAH credentials. No password is cached or passed in
+workflow statistics/artifacts.
+
+Three focused regression tests passed, covering fresh/rerun login selection,
+pre-rotation PAH issuance, token preservation and failure cleanup. Base, PAH
+preparation, AutoDeploy and curator syntax checks and whitespace checks passed.
+
 ## 0.14.1
 
 Document implementation `768550d` and encrypted base policy `cd4a4ab`, including

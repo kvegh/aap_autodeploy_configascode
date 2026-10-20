@@ -83,12 +83,16 @@ class GatewayBaseLoginTests(unittest.TestCase):
                         reader["delegate_to"] = "localhost"
                         reader["vars"] = {"ansible_connection": "local", "ansible_become": False}
                         tasks.append({"name": "Check the selected token", "ansible.builtin.assert": {
-                            "that": ["cac_gateway_token.json.id == 73", "cac_gateway_token.json.token == 'synthetic-gateway-token'"]},
+                            "that": ["cac_gateway_token.json.id == 73", "cac_gateway_token.json.token == 'synthetic-gateway-token'",
+                                     "cac_gateway_login_password == expected_current_password",
+                                     "aap_password | default(none) == expected_desired_password"]},
                             "no_log": True})
                         variables = {
                             "aap_hostname": "http://127.0.0.1:" + str(server.server_port),
                             "aap_username": "test-user", "aap_validate_certs": True,
                             "installer_extract_dir": str(root), "aap_version": "test",
+                            "expected_current_password": current,
+                            "expected_desired_password": desired,
                         }
                         if desired is not None:
                             variables["aap_password"] = desired
