@@ -17,6 +17,11 @@ The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
 
+Stage 03 allows the containerized installer up to two hours. Its existing-job
+observer waits for the same ceiling without starting another installer. Set the
+installation Job Template timeout to three hours to leave room for host
+preparation and final health checks.
+
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.
 

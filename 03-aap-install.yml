@@ -124,7 +124,7 @@
           ansible.builtin.command:
             cmd: ansible-playbook -i inventory ansible.containerized_installer.install
             chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"
-          async: 3600
+          async: 7200
           poll: 30
 
     - name: Observe the existing AAP installer without launching another
@@ -135,7 +135,7 @@
             jid: "{{ aap_installer_resume_job_id }}"
           register: aap_installer_resumed
           until: aap_installer_resumed.finished | default(false) | bool
-          retries: 120
+          retries: 240
           delay: 30
           failed_when: false
           no_log: true

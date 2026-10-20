@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.12.4
+
+Allow the AAP installer and its existing-job observer up to two hours instead of
+one, avoiding premature async termination during fresh installation. The
+installation template needs a three-hour timeout for preparation and checks.
+Stage 03 passed syntax validation; no installer was launched for this check.
+
 ## 0.12.3
 
 Document implementation `6ad202d` and the DNS authorization logging boundary.
