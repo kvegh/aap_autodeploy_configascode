@@ -1,6 +1,7 @@
 """Exercise Assistant Team import guards and cleanup without contacting AAP."""
 
 import copy
+import base64
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import os
@@ -86,7 +87,7 @@ class AssistantTeamConfigurationTests(unittest.TestCase):
                 "configuration": {"controller_templates": [{
                     "name": "Excluded maintenance", "extra_vars": "{{ intentionally_missing_maintenance_input }}"}]},
             },
-            "controller_templates_assistant_team": [{"name": str(i)} for i in range(6)],
+            "controller_templates_assistant_team": [{"name": str(i)} for i in range(7)],
             "controller_credentials_assistant_team": [{"inputs": snapshot_inputs}],
             **{name: "synthetic-private-secret" for name in [
                 "assistant_team_hypervisor_ssh_username", "assistant_team_hypervisor_ssh_private_key",
@@ -217,6 +218,143 @@ class AssistantTeamConfigurationTests(unittest.TestCase):
                         self.assertEqual(requests, [(
                             "/api/gateway/v1/tokens/73/", "Bearer synthetic-gateway-token")]
                             if token_created else [], output)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def test_lifecycle_ca_uses_installer_home_and_supports_reviewed_override(self):
+        source = yaml.safe_load((PLAYBOOK.parent / "tasks" / "assistant-team-lifecycle.yml").read_text())[0]
+        with tempfile.TemporaryDirectory(prefix="assistant-cac-ca-path-") as directory:
+            for lifecycle, expected in [
+                ({}, "/home/synthetic-installer/aap/tls/extracted/pem/directory-hash/ca-bundle.crt"),
+                ({"ca_path": "/synthetic-reviewed/custom-ca.pem"}, "/synthetic-reviewed/custom-ca.pem"),
+            ]:
+                with self.subTest(override=bool(lifecycle)):
+                    status, output = self.run_tasks(Path(directory), [{
+                        "ansible.builtin.assert": {"that": ["cac_assistant_ca_path == expected_ca_path"]},
+                        "vars": source["vars"],
+                    }], {
+                        "assistant_team_lifecycle": lifecycle,
+                        "vault_ansible_user": "synthetic-ssh",
+                        "vault_aap_install_user": "synthetic-installer",
+                        "expected_ca_path": expected,
+                    })
+                    self.assertEqual(status, 0, output)
+
+    def test_existing_service_password_is_verified_and_omitted_before_dispatch(self):
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+
+            def do_GET(self):
+                wanted = 'Basic ' + base64.b64encode(b'synthetic-user:synthetic-private-secret').decode()
+                valid = self.headers.get('Authorization') == wanted
+                body = (b'{"results":[{"username":"synthetic-user","is_superuser":false,"is_platform_auditor":false}]}'
+                        if valid else b'{"detail":"Rejected synthetic login"}')
+                self.send_response(200 if valid else 401)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            source = yaml.safe_load((PLAYBOOK.parent / 'tasks/assistant-team-lifecycle.yml').read_text())[0]['block']
+            existing = copy.deepcopy(next(task for task in source if task['name'] ==
+                                          'Prove control and preserve the password of an existing service user'))
+            existing['block'][0].pop('vars')
+            existing['block'][0]['delegate_to'] = 'localhost'
+            with tempfile.TemporaryDirectory(prefix='assistant-existing-password-') as directory:
+                root = Path(directory)
+                marker = root / 'definitions-updated'
+                for count, password, succeeds in [
+                    (1, 'synthetic-private-secret', True),
+                    (1, 'wrong-synthetic-password', False),
+                    (0, 'synthetic-private-secret', True),
+                ]:
+                    with self.subTest(existing_user=bool(count), authenticated=succeeds):
+                        marker.unlink(missing_ok=True)
+                        fixture = [{
+                            'no_log': True,
+                            'block': [existing, {
+                                'name': 'Inspect the payload passed to the subsequent CoP dispatch',
+                                'ansible.builtin.assert': {'that': [
+                                    'aap_user_accounts | length == 1',
+                                    "aap_user_accounts[0].username == 'synthetic-user'",
+                                    "aap_user_accounts[0].email == 'changed@example.invalid'",
+                                    "('password' not in aap_user_accounts[0]) == (cac_assistant_existing_user.json.count == 1)",
+                                ]},
+                            }, {
+                                'name': 'Simulate subsequent definition updates',
+                                'ansible.builtin.copy': {'dest': str(marker), 'content': 'updated', 'mode': '0600'},
+                            }],
+                        }]
+                        status, output = self.run_tasks(root, fixture, {
+                            'aap_hostname': 'http://127.0.0.1:' + str(server.server_port),
+                            'cac_assistant_existing_user': {'json': {'count': count}},
+                            'assistant_team_lifecycle': {'username': 'synthetic-user'},
+                            'assistant_team_inventory_service_password': password,
+                            'cac_assistant_ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
+                            'aap_user_accounts': [{'username': 'synthetic-user',
+                                                   'email': 'changed@example.invalid',
+                                                   'password': 'synthetic-private-secret',
+                                                   'update_secrets': False}],
+                        })
+                        self.assertEqual(status == 0, succeeds, output)
+                        self.assertEqual(marker.exists(), succeeds, output)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def test_service_password_must_be_verified_before_any_inventory_grant(self):
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+
+            def do_GET(self):
+                wanted = 'Basic ' + base64.b64encode(b'synthetic-user:synthetic-private-secret').decode()
+                valid = self.headers.get('Authorization') == wanted
+                body = (b'{"results":[{"username":"synthetic-user","is_superuser":false,"is_platform_auditor":false}]}'
+                        if valid else b'{"detail":"Rejected synthetic login"}')
+                self.send_response(200 if valid else 401)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            source = yaml.safe_load((PLAYBOOK.parent / 'tasks/assistant-team-lifecycle.yml').read_text())[0]['block']
+            names = ['Verify the encrypted service password identifies this nonprivileged account',
+                     'Require service account control before assigning any inventory role']
+            tasks = [copy.deepcopy(next(task for task in source if task['name'] == name)) for name in names]
+            tasks[0].pop('vars')
+            tasks[0]['delegate_to'] = 'localhost'
+            with tempfile.TemporaryDirectory(prefix='assistant-service-grant-') as directory:
+                root = Path(directory)
+                marker = root / 'grant-applied'
+                for password, succeeds in [('synthetic-private-secret', True), ('wrong-synthetic-password', False)]:
+                    with self.subTest(authenticated=succeeds):
+                        marker.unlink(missing_ok=True)
+                        fixture = [{
+                            'no_log': True,
+                            'block': [*tasks, {'name': 'Simulate the subsequent inventory grant',
+                                              'ansible.builtin.copy': {'dest': str(marker), 'content': 'granted', 'mode': '0600'}}],
+                        }]
+                        status, output = self.run_tasks(root, fixture, {
+                            'aap_hostname': 'http://127.0.0.1:' + str(server.server_port),
+                            'assistant_team_lifecycle': {'username': 'synthetic-user'},
+                            'assistant_team_inventory_service_password': password,
+                            'cac_assistant_ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
+                        })
+                        self.assertEqual(status == 0, succeeds, output)
+                        self.assertEqual(marker.exists(), succeeds, output)
         finally:
             server.shutdown()
             server.server_close()

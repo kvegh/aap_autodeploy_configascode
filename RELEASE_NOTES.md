@@ -1,5 +1,31 @@
 # Release notes
 
+## 0.15.0
+
+Refresh Assistant Team configuration import for seven ordinary templates,
+including Shutdown and the current controlled deployment/retirement surveys.
+Import the inventory service identity and its dedicated inventory grant through
+CoP before issuing target-local access. Reuse the captured credential schema;
+generate a new encrypted service password and preserve a protected token copy
+on each target. Verify TLS, token ownership/scope, permissions, saved bindings
+and credential material on reruns; reject collisions without automatic rotation.
+Revoke only this run's new token when failure proves it was not saved.
+
+The companion Windows capture now includes patch-level assessment and WSUS
+patch-ceiling templates, with existing definitions preserved and collection
+pins aligned with the consolidated PAH catalog. Both refreshed captures use the
+documented per-use-case PAH requirement schema. No imported VM, patching,
+shutdown, retirement or provider-recovery automation was launched by this work.
+
+Validation: 70 distinct offline tests passed, including 15 service-token behavior
+checks and focused existing-user password and installer-CA tests. Existing users
+must authenticate before definition updates, and their update payload omits the
+password so metadata changes cannot reset it. Assistant playbook syntax, strict
+Ansible rendering, whole-file Vault
+round trips, preserved ciphertext/injector checks and object references passed.
+The target's internal URL and installed CA passed a separate verified HTTPS
+inspection. Assistant target rollout remains separate from these source checks.
+
 ## 0.14.5
 
 Document planning commit `cce0e28` and the decision to retain current CaC

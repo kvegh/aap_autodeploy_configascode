@@ -137,6 +137,12 @@ Selected demo deployments continue to use their separate configurations.
   import the six ordinary templates and supporting objects, and independently
   verify the configuration. Runtime tests and optional authentication maintenance
   remain separate work.
+- [ ] Verify the refreshed Windows and Assistant Team captures on a clean target:
+  Windows patch assessment/ceiling templates; Assistant lifecycle surveys,
+  Shutdown template, inventory-scoped service identity/grant and target-local
+  token/CA/credential provisioning. Confirm reruns preserve access and verified
+  HTTPS matches the configured target URL. Functional demo execution remains a
+  separate authorized test.
 
 ## Context
 

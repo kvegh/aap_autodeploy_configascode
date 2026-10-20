@@ -92,8 +92,8 @@ The separate `deploy-windows-demo.yml` imports the encrypted disconnected Window
 configuration from its private repository. `restore-windows-config.yml` remains a
 local-file import utility. `deploy-orchestrator-demo.yml` imports only Automation
 Orchestrator AAP definitions through a separate Job Template.
-`deploy-assistant-team.yml` independently imports the six ordinary Assistant
-Team deployment and recovery templates and their supporting AAP objects.
+`deploy-assistant-team.yml` independently imports seven ordinary Assistant
+Team deployment, lifecycle and recovery templates and their supporting AAP objects.
 Its first successful live import restored all 21 owned objects; functional
 deployment and recovery tests remain separate.
 `destroy-test-aap.yml` handles guarded test-instance teardown.
@@ -102,6 +102,10 @@ The Windows importer creates inventory groups before linking their memberships.
 The CoP group role starts requests asynchronously, so a parent group can otherwise
 refer to children that do not yet exist on a clean target. A successful import
 does not establish runtime collection compatibility or functional demo readiness.
+The refreshed encrypted Windows capture includes patch-level assessment and
+WSUS patch-ceiling templates. Its 20 templates and 17 workflow nodes retain the
+existing owned dependencies; the new target templates receive the Windows label
+without changing the source templates.
 
 ## Setup and secrets
 
@@ -788,8 +792,8 @@ environment image and pull policy. Prepare the required content through PAH
 before project synchronization; validated object definitions do not establish
 that collections or container images are available on the target.
 
-Six ordinary deployment and recovery templates are captured in the standard
-Controller variable lists. The seventh template is captured separately under
+Seven ordinary deployment, lifecycle and recovery templates are captured in the
+standard Controller variable lists. Authentication maintenance is captured separately under
 `assistant_team_authentication_maintenance`, outside default CoP dispatch.
 Activate that optional section explicitly with repository write access, controller
 authorization and CA trust for the target AAP. A maintenance token or certificate
@@ -801,6 +805,43 @@ required secret lists. It verifies all six embedded snapshots are whole-file
 Vault ciphertext and rejects launches and schedules. Overall capture readiness
 can remain false while optional maintenance or functional testing is outstanding;
 this does not authorize importing maintenance or executing runtime automation.
+
+The current lifecycle capture includes the Shutdown template and controlled VM
+name surveys for fresh deployment and retirement. Retirement defaults to a
+preview and requires an explicit confirmation to delete. Arbitrary launch extra
+variables are disabled on these three lifecycle templates. The deployment-test
+project pins the reviewed application release and explicitly selects the owned
+execution environment.
+
+The encrypted configuration also defines a nonadministrator inventory service
+account, a long password, and its administrator grant on the dedicated Assistant
+Team inventory. CoP imports these prerequisites before the templates. The importer
+reuses the captured lifecycle credential schema, then issues a token on the new
+target using that service account. Source-instance tokens and inventory IDs are
+never copied. New target deployments register their guests; existing source guest
+registrations stay outside this dedicated capture's owned scope.
+
+The service token is stored on its target at
+`/var/lib/aap-autodeploy/assistant-team-inventory-token.json`, in a root-owned
+directory with mode `0700` and a regular file with mode `0600`. The resolved
+credential contains that target's URL, inventory ID, CA and token. Reruns preserve
+the password and token and verify the stored binding and credential checksum.
+An existing service account must authenticate with its encrypted password before
+any definition updates. Its password is then omitted from user updates, so other
+metadata changes cannot reset it.
+Duplicate or expired tokens, unexpected privileges, incompatible credential
+schemas, changed CA/URL/inventory bindings, and existing access without a
+recoverable token copy require review. Only a newly issued token proved not to
+have been saved is revoked after a failed first setup.
+
+Lifecycle clients require verified HTTPS. The importer reads the installed CA
+from the target over the existing trusted SSH connection, and verifies the URL
+before creating lifecycle resources. By default the CA is below the installer
+user's `aap/tls/extracted/pem/directory-hash/ca-bundle.crt`; an encrypted lifecycle
+`ca_path` can select another installed trust file. The supplied `aap_hostname`
+must match a certificate DNS or IP SAN and be reachable from the execution
+environment. Trusting a CA alone does not make an unmatched IP address valid.
+This check does not disable certificate verification or replace certificates.
 
 Verify the declared PAH collections and existing service-side execution
 environment image before launching the import Job Template. The importer restores
@@ -912,6 +953,9 @@ fixture for token cleanup; it does not contact AAP or run imported automation.
 The Assistant Team regression additionally checks ordinary core completeness,
 preserved encrypted snapshots and separation from optional maintenance, plus HTTPS
 repository URL rejection, required token injection and cleanup after failed imports.
+The inventory-service regression covers first setup, protected storage, token
+reuse, masked credential checksums, privilege/schema/binding collisions, expiry,
+and both confirmed and uncertain save failures using synthetic secrets.
 The Gateway login regression checks initial password bootstrap, reruns without
 installer access, legacy installer-only configuration, rejected passwords and
 server/access failures, while verifying that secrets stay out of output.

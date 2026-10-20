@@ -18,6 +18,7 @@
     aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
     # Credential values remain protected even during diagnostic logging.
     controller_configuration_credentials_secure_logging: true
+    gateway_users_secure_logging: true
     aap_username: admin
     aap_validate_certs: false
   pre_tasks:
@@ -166,8 +167,8 @@
               - assistant_team_required_secrets is not string
               - assistant_team_required_secrets is not mapping
               - assistant_team_required_secrets | length == 0
-              - controller_templates_assistant_team | length == 6
-            fail_msg: Complete the six ordinary Assistant Team definitions and secrets; keep authentication maintenance outside default dispatch.
+              - controller_templates_assistant_team | length == 7
+            fail_msg: Complete the seven ordinary Assistant Team definitions and secrets; keep authentication maintenance outside default dispatch.
           no_log: true
 
         - name: Require protected ordinary deployment credentials
@@ -293,6 +294,9 @@
           no_log: true
 
         - name: Import Assistant Team definitions without launching jobs
+          ansible.builtin.include_tasks: tasks/assistant-team-lifecycle.yml
+
+        - name: Import all Assistant Team definitions with target-local lifecycle access
           ansible.builtin.include_role:
             name: infra.aap_configuration.dispatch
           vars:

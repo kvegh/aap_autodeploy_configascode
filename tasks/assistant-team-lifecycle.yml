@@ -1,0 +1,311 @@
+---
+# Definitions remain encrypted; only this target can issue its service bearer.
+- name: Prepare target-owned Assistant Team inventory lifecycle access
+  no_log: true
+  diff: false
+  vars:
+    cac_assistant_ca_path: >-
+      {{ assistant_team_lifecycle.ca_path | default('/home/' ~ vault_aap_install_user ~
+         '/aap/tls/extracted/pem/directory-hash/ca-bundle.crt') }}
+  block:
+    - name: Require the reviewed inventory lifecycle contract
+      ansible.builtin.assert:
+        that:
+          - assistant_team_lifecycle is mapping
+          - assistant_team_lifecycle.username is string
+          - assistant_team_lifecycle.username | length > 0
+          - assistant_team_inventory_service_password is string
+          - assistant_team_inventory_service_password | length >= 48
+          - assistant_team_lifecycle.inventory is string
+          - assistant_team_lifecycle.organization is string
+          - assistant_team_lifecycle.credential_name is string
+          - assistant_team_lifecycle.credential_type_name is string
+          - assistant_team_lifecycle.token_description is string
+          - aap_user_accounts_assistant_team | length == 1
+          - aap_user_accounts_assistant_team[0].username == assistant_team_lifecycle.username
+          - aap_user_accounts_assistant_team[0].password == assistant_team_inventory_service_password
+          - not aap_user_accounts_assistant_team[0].is_superuser
+          - not aap_user_accounts_assistant_team[0].is_platform_auditor
+          - not aap_user_accounts_assistant_team[0].update_secrets
+          - controller_roles_assistant_team | length == 1
+          - controller_roles_assistant_team[0].user == assistant_team_lifecycle.username
+          - controller_roles_assistant_team[0].inventory == assistant_team_lifecycle.inventory
+          - controller_roles_assistant_team[0].role == 'admin'
+        fail_msg: Supply reviewed target-only inventory service definitions and an encrypted long password.
+
+    - name: Select the already captured lifecycle credential type
+      ansible.builtin.set_fact:
+        cac_assistant_lifecycle_types: >-
+          {{ controller_credential_types | selectattr('name', 'equalto',
+             assistant_team_lifecycle.credential_type_name) | list }}
+
+    - name: Require exactly one lifecycle type definition
+      ansible.builtin.assert:
+        that:
+          - cac_assistant_lifecycle_types | length == 1
+        fail_msg: Reuse one reviewed lifecycle credential schema; do not add an alternative token type.
+
+    - name: Verify the target HTTPS identity with its installed CA before creating resources
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/me/"
+        headers:
+          Authorization: "Bearer {{ aap_token }}"
+        validate_certs: true
+        ca_path: "{{ cac_assistant_ca_path }}"
+        status_code: 200
+      delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
+        ansible_become: true
+
+    - name: Inspect the existing lifecycle service identity
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/users/?username={{ assistant_team_lifecycle.username | urlencode }}"
+        headers:
+          Authorization: "Bearer {{ aap_token }}"
+        validate_certs: "{{ aap_validate_certs }}"
+        status_code: 200
+      register: cac_assistant_existing_user
+
+    - name: Refuse privileged or ambiguous service-account collisions
+      ansible.builtin.assert:
+        that:
+          - cac_assistant_existing_user.json.count in [0, 1]
+          - cac_assistant_existing_user.json.next is none
+          - >-
+            cac_assistant_existing_user.json.count == 0 or
+            (not cac_assistant_existing_user.json.results[0].is_superuser and
+             not cac_assistant_existing_user.json.results[0].is_platform_auditor)
+        fail_msg: Review the existing lifecycle identity; a privileged account is never demoted or reused automatically.
+
+    - name: Inspect the existing lifecycle credential schema
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/controller/v2/credential_types/?name={{ assistant_team_lifecycle.credential_type_name | urlencode }}"
+        headers:
+          Authorization: "Bearer {{ aap_token }}"
+        validate_certs: "{{ aap_validate_certs }}"
+        status_code: 200
+      register: cac_assistant_existing_type
+
+    - name: Inspect the named target inventory before assigning ownership
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/controller/v2/inventories/?name={{ assistant_team_lifecycle.inventory | urlencode }}"
+        headers:
+          Authorization: "Bearer {{ aap_token }}"
+        validate_certs: "{{ aap_validate_certs }}"
+        status_code: 200
+      register: cac_assistant_existing_inventory
+
+    - name: Refuse an inventory owned by another organization
+      ansible.builtin.assert:
+        that:
+          - cac_assistant_existing_inventory.json.count in [0, 1]
+          - cac_assistant_existing_inventory.json.next is none
+          - >-
+            cac_assistant_existing_inventory.json.count == 0 or
+            cac_assistant_existing_inventory.json.results[0].summary_fields.organization.name == assistant_team_lifecycle.organization
+        fail_msg: Review the dedicated inventory name and organization before assigning service access.
+
+    - name: Review existing service access before adding any grant
+      when: cac_assistant_existing_user.json.count == 1
+      block:
+        - name: Resolve the existing Controller service identity
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/controller/v2/users/?username={{ assistant_team_lifecycle.username | urlencode }}"
+            headers:
+              Authorization: "Bearer {{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+            status_code: 200
+          register: cac_assistant_existing_controller_user
+
+        - name: Require one nonprivileged matching Controller account
+          ansible.builtin.assert:
+            that:
+              - cac_assistant_existing_controller_user.json.count == 1
+              - cac_assistant_existing_controller_user.json.next is none
+              - not cac_assistant_existing_controller_user.json.results[0].is_superuser
+              - not cac_assistant_existing_controller_user.json.results[0].is_system_auditor
+
+        - name: Inspect direct Controller service grants
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/controller/v2/role_user_assignments/?user={{ cac_assistant_existing_controller_user.json.results[0].id }}"
+            headers:
+              Authorization: "Bearer {{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+            status_code: 200
+          register: cac_assistant_existing_grants
+
+        - name: Inspect inherited Controller service access through teams
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/controller/v2/users/{{ cac_assistant_existing_controller_user.json.results[0].id }}/teams/"
+            headers:
+              Authorization: "Bearer {{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+            status_code: 200
+          register: cac_assistant_existing_teams
+
+        - name: Refuse additional existing grants instead of widening service access
+          ansible.builtin.assert:
+            that:
+              - cac_assistant_existing_grants.json.next is none
+              - cac_assistant_existing_teams.json.count == 0
+              - cac_assistant_existing_teams.json.next is none
+              - >-
+                cac_assistant_existing_grants.json.count == 0 or
+                (cac_assistant_existing_grants.json.count == 1 and
+                 cac_assistant_existing_inventory.json.count == 1 and
+                 cac_assistant_existing_grants.json.results[0].content_type == 'awx.inventory' and
+                 cac_assistant_existing_grants.json.results[0].object_id | string == cac_assistant_existing_inventory.json.results[0].id | string and
+                 cac_assistant_existing_grants.json.results[0].summary_fields.role_definition.name == 'Inventory Admin')
+            fail_msg: Review existing service permissions; extra grants and team memberships are never reused or removed automatically.
+
+    - name: Preserve only the same lifecycle credential purpose and schema
+      ansible.builtin.assert:
+        that:
+          - cac_assistant_existing_type.json.count in [0, 1]
+          - cac_assistant_existing_type.json.next is none
+          - >-
+            cac_assistant_existing_type.json.count == 0 or
+            (cac_assistant_existing_type.json.results[0].kind == cac_assistant_lifecycle_types[0].kind and
+             cac_assistant_existing_type.json.results[0].inputs == cac_assistant_lifecycle_types[0].inputs and
+             cac_assistant_existing_type.json.results[0].injectors == cac_assistant_lifecycle_types[0].injectors)
+        fail_msg: Review a credential-type collision instead of changing an existing schema.
+
+    - name: Prove control and preserve the password of an existing service user
+      when: cac_assistant_existing_user.json.count == 1
+      block:
+        - name: Authenticate an existing service account before any definition updates
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/me/"
+            url_username: "{{ assistant_team_lifecycle.username }}"
+            url_password: "{{ assistant_team_inventory_service_password }}"
+            force_basic_auth: true
+            validate_certs: true
+            ca_path: "{{ cac_assistant_ca_path }}"
+            status_code: 200
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+          register: cac_assistant_existing_login
+
+        - name: Require control of the matching existing nonprivileged account
+          ansible.builtin.assert:
+            that:
+              - cac_assistant_existing_principals | length == 1
+              - cac_assistant_existing_principals[0].username == assistant_team_lifecycle.username
+              - not cac_assistant_existing_principals[0].is_superuser
+              - not cac_assistant_existing_principals[0].is_platform_auditor
+          vars:
+            cac_assistant_existing_principals: "{{ cac_assistant_existing_login.json.results | default([cac_assistant_existing_login.json]) }}"
+
+        # update_secrets:false can still send a password when another field
+        # changes. Omit it entirely for an already authenticated account.
+        - name: Preserve the existing password during ordinary metadata updates
+          ansible.builtin.set_fact:
+            aap_user_accounts: >-
+              {{ [aap_user_accounts[0] | dict2items |
+                  rejectattr('key', 'equalto', 'password') | items2dict] }}
+
+    - name: Import service identity and inventory before granting access
+      ansible.builtin.include_role:
+        name: infra.aap_configuration.dispatch
+      vars:
+        dispatch_include_wildcard_vars: false
+        aap_configuration_dispatcher_exclude_roles:
+          - controller_applications
+          - controller_job_templates
+          - controller_roles
+          - controller_job_launch
+          - controller_workflow_launch
+
+    - name: Verify the encrypted service password identifies this nonprivileged account
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/me/"
+        url_username: "{{ assistant_team_lifecycle.username }}"
+        url_password: "{{ assistant_team_inventory_service_password }}"
+        force_basic_auth: true
+        validate_certs: true
+        ca_path: "{{ cac_assistant_ca_path }}"
+        status_code: 200
+      delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
+        ansible_become: true
+      register: cac_assistant_service_login
+
+    - name: Require service account control before assigning any inventory role
+      ansible.builtin.assert:
+        that:
+          - cac_assistant_service_principals | length == 1
+          - cac_assistant_service_principals[0].username == assistant_team_lifecycle.username
+          - not cac_assistant_service_principals[0].is_superuser
+          - not cac_assistant_service_principals[0].is_platform_auditor
+        fail_msg: The encrypted password must identify the intended nonprivileged account before access is granted.
+      vars:
+        cac_assistant_service_principals: "{{ cac_assistant_service_login.json.results | default([cac_assistant_service_login.json]) }}"
+
+    - name: Apply only the reviewed inventory grant after proving account control
+      ansible.builtin.include_role:
+        name: infra.aap_configuration.controller_roles
+      vars:
+        controller_configuration_role_secure_logging: true
+
+    - name: Inspect private token storage on the target
+      ansible.builtin.stat:
+        path: /var/lib/aap-autodeploy
+        follow: false
+      delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
+        ansible_become: true
+      register: cac_assistant_store
+
+    - name: Require protected target storage from base deployment
+      ansible.builtin.assert:
+        that:
+          - cac_assistant_store.stat.exists
+          - cac_assistant_store.stat.isdir
+          - not cac_assistant_store.stat.islnk
+          - cac_assistant_store.stat.uid == 0
+          - cac_assistant_store.stat.mode == '0700'
+        fail_msg: Apply base first and review root-owned private target storage before creating lifecycle access.
+
+    - name: Issue or reuse only this target's scoped service token
+      assistant_lifecycle_token:
+        hostname: "{{ aap_hostname }}"
+        admin_token: "{{ aap_token }}"
+        username: "{{ assistant_team_lifecycle.username }}"
+        password: "{{ assistant_team_inventory_service_password }}"
+        inventory: "{{ assistant_team_lifecycle.inventory }}"
+        organization: "{{ assistant_team_lifecycle.organization }}"
+        credential: "{{ assistant_team_lifecycle.credential_name }}"
+        credential_type: "{{ cac_assistant_lifecycle_types[0] }}"
+        description: "{{ assistant_team_lifecycle.token_description }}"
+        ca_path: "{{ cac_assistant_ca_path }}"
+      delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
+        ansible_become: true
+      register: cac_assistant_service
+
+    - name: Add the resolved local credential for the final CoP import
+      ansible.builtin.set_fact:
+        controller_credentials: >-
+          {{ controller_credentials +
+             [{'name': assistant_team_lifecycle.credential_name,
+               'organization': assistant_team_lifecycle.organization,
+               'credential_type': assistant_team_lifecycle.credential_type_name,
+               'inputs': cac_assistant_service.credential_inputs,
+               'update_secrets': false}] }}
+      when: cac_assistant_service.credential_inputs is defined
