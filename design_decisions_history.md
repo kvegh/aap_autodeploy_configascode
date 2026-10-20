@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Review the current CaC implementation against Red Hat guidance
+
+Planning commit: `9dad713`.
+
+The user requested a TODO to compare this project with Red Hat's Configuration
+as Code guidance. Review automation access, content sources, capture coverage,
+secrets, validation, drift, deletions and Git workflow for applicable gaps.
+Account for the article's different AAP versions and example collection when
+assessing the current AAP 2.7 CoP implementation. This schedules a review;
+it does not establish compliance or change platform configuration. The README
+overview also now reflects implemented target-side MCP token creation and the
+remaining encrypted repository storage and client setup work. Documentation
+whitespace, source-link and version consistency checks passed.
+
 ## Allow fresh installation to exceed the old one-hour async ceiling
 
 Implementation: `5f8c3e0`.

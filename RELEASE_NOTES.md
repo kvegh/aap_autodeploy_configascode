@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.12.7
+
+Document planning commit `9dad713` and the reason for reviewing this AAP 2.7
+implementation against Red Hat's CaC guidance. The review remains a TODO.
+Documentation whitespace and version consistency checks passed.
+
 ## 0.12.6
 
 Document a planned review against Red Hat's Configuration as Code guidance.
