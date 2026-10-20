@@ -1,173 +1,92 @@
-# AAP AutoDeploy — Documentation
+# AAP AutoDeploy: deployment overview
 
-See [README.md](README.md) for current status, setup, empty CaC templates, and
-the project version policy. Older completion notes below describe earlier runs.
+[README.md](README.md) contains setup instructions, inputs and current behavior.
+[PLAN.md](PLAN.md#todo) is the single project TODO list: each open area explains
+why it matters and the intended result; completed work is at [Done:](PLAN.md#done).
+[design_decisions_history.md](design_decisions_history.md) preserves past decisions.
 
-Automated deployment pipeline for AAP 2.7 test instances. Takes a RHEL 9.8 golden image and produces a fully configured AAP with all projects, credentials, job templates, EDA, and schedules.
+## Deployment sequence
 
-## Pipeline
+Each stage is a separate AAP Job Template. The complete workflow runs stages
+01-05 on success, then applies the five captured use cases in parallel.
 
-Four playbooks, run in sequence. Each is a separate AAP job template.
+| Stage | Playbook | Purpose |
+|---|---|---|
+| 01 | `01-linux-vm-setup.yml` | Clone the prepared golden image and discover its address. |
+| 02 | `02-infra-config.yml` | Configure DNS, certificates and reverse-proxy routing. |
+| 03 | `03-aap-install.yml` | Prepare the guest and run the bundled AAP installer. |
+| 04 | `04-aap-config.yml` | Apply subscription and platform-only base configuration. |
+| 05 | `05-prepare-use-cases.yml` | Prepare the declared PAH collections and existing execution image. |
 
-| Step | Playbook | Targets | What it does |
-|---|---|---|---|
-| 01 | `01-linux-vm-setup.yml` | hypervisor | Clone golden image, resize disk, customize hostname, virt-install. Outputs `vm_name` and `vm_ip`. |
-| 02 | `02-infra-config.yml` | hypervisor | GoDaddy DNS A record, Let's Encrypt cert, nginx reverse proxy. Must run before 03 — the AAP installer needs the FQDN reachable. |
-| 03 | `03-aap-install.yml` | new VM | Grow filesystem, subscribe RHEL, install ansible-core, customize installer inventory, run containerized installer (~30-40 min). |
-| 04 | `04-aap-config.yml` | localhost → new AAP API | Post-install config-as-code. Creates all AAP objects (users, credentials, projects, JTs, EDA, schedules). |
+The five importers are `deploy-aiops-demo.yml`, `deploy-windows-demo.yml`,
+`deploy-orchestrator-demo.yml`, `deploy-assistant-team.yml` and
+`deploy-autodeploy.yml`. AutoDeploy restores the deployment templates and workflow
+on the replacement. Importing definitions does not establish functional demo
+readiness; applying enabled EDA activations can start them.
 
-Playbooks 02 and 03 take `vm_name` and `vm_ip` as extra vars. Playbook 04 instead
-requires an explicit `aap_hostname` HTTPS URL and `aap_config_repo_url`. It does
-not use `vm_name` or `vm_ip` and has no domain-based fallback.
+Stage 01 publishes only `vm_name`, `vm_ip` and `aap_hostname` as workflow artifacts.
+Stage 03 uses a separate installer hostname. Stage 04 and the use-case importers
+connect through the explicit `aap_hostname` HTTPS URL, allowing an internal route
+independent of VM naming and public reverse-proxy access. Credentials are not
+passed through workflow artifacts.
 
-There's also `destroy-test-aap.yml` for teardown (with strict per-task safety assertions against the `aap27-test-N` naming pattern).
+Recover a failed sequence by rerunning the failed stage with the same inputs and
+then launching remaining stages. A full workflow relaunch creates another VM.
+Stage 03 can observe an existing installer using its async-job identifier;
+it does not need to start the installer again.
 
-## Key Decisions
+`destroy-test-aap.yml` is separate guarded teardown, never a deployment-workflow
+step. Review its exact target before launching it.
 
-1. **Separate playbooks, not one monolith** — originally planned as a single multi-play playbook, split into 4 for independent AAP job template execution and easier reruns on failure.
+## Configuration and secrets
 
-2. **Bundle install** — the 3.5 GiB AAP installer is pre-staged in the golden image. No download at deploy time.
+Base owns platform settings, subscription, desired administrator password,
+bootstrap Git/Vault access, persistent MCP access and PAH source configuration.
+Use-case files own their projects, inventories, credentials, execution
+environments, labels, templates, workflows and integrations. Each has a separate
+configuration importer; Stage 04 does not load all use cases implicitly.
 
-3. **Subdomain routing** — each test instance gets `aap27-test-N.{domain}`. AAP's Envoy gateway owns the domain root, so public access uses hostname-based nginx routing. Stage 04 can connect directly through an internal hostname or IP supplied in `aap_hostname`; that configuration traffic does not require the public reverse proxy. Stage 03 still uses the VM's fully qualified hostname for installation, which can resolve internally.
+Public empty templates are in `cac/`. Populated working files and Vault password
+files stay outside Git. Completed configuration is whole-file encrypted, checked
+for successful decryption/equality, then committed to its private repository.
+The manifest is the complete ZIP encrypted as `cac/manifest.zip.vault`.
 
-4. **Golden image** — RHEL 9.8 with the AAP service account (`vault_aap_install_user`; sudo, linger, SSH keys) and the installer bundle already unpacked. Avoids repeating host prep on every deploy.
+Imports fetch the chosen private repository's `main` branch using a credential
+injecting `CAC_GIT_TOKEN`. A separate Vault credential with identifier `cac`
+decrypts its contents. The original Vault credential is still needed for
+`myvars`, which supplies environment/guest-access settings. Target authentication
+supports the configured password and installer bootstrap; base manages the
+desired password. See [Stage 04 inputs](README.md#stage-04-inputs).
 
-5. **Vault for all secrets** — the repo contains zero environment-specific values. Everything sensitive comes from `myvars` (vault-encrypted, repo root).
-
-6. **Safety assertions on destroy** — every destructive task in `destroy-test-aap.yml` has an `assert` guard validating the target against `^aap27-test-\d+$`. Shell injection patterns are rejected.
-
-7. **Config-as-Code via dispatch role** — Step 04 downloads the private configuration repository's `main` branch, loads its encrypted shared base, and uses `infra.aap_configuration`'s dispatch role to apply it. Demo selection remains planned. See [Configuration_as_Code.md](Configuration_as_Code.md).
-
-## File Structure
-
-```
-aap_autodeploy_configascode/
-    01-linux-vm-setup.yml
-    02-infra-config.yml
-    03-aap-install.yml
-    04-aap-config.yml            # dispatch role against the new instance
-    destroy-test-aap.yml
-    restore-windows-config.yml   # Windows objects only, onto a provisioned AAP
-    cac/
-        base_CaC_vault.yml.example # empty shared CaC template
-        project.yml.example        # empty per-demo CaC template
-    templates/
-        nginx-aap-test.conf.j2
-        nginx-aap-test-http.conf.j2
-    utils/
-        tag_jts.yml
-    vars/
-        main.yml                 # non-sensitive defaults (VM sizing, paths)
-    documentation.md             # this file (includes TODOs)
-    Configuration_as_Code.md     # CaC architecture and resource inventory
-    PLAN.md                      # original design plan
-    myvars                       # vault-encrypted secrets (repo root)
-```
-
-## Secrets
-
-Infrastructure and AAP access secrets are in `myvars` at the repo root
-(vault-encrypted), loaded via `vars_files`. Object secrets live in encrypted
-CaC files in the separate private configuration repository. Editable configuration
-and Vault password files, including `vpf`, stay outside Git.
-
-Step 04 additionally requires a custom credential injecting `CAC_GIT_TOKEN` and a
-Vault credential with identifier `cac` to decrypt private CaC. Its repository URL
-is the `aap_config_repo_url` extra variable; the branch is always `main` and the
-shared file is `cac/base_CaC_vault.yml`. Keep the original/default `myvars` Vault
-credential attached too. See [README.md](README.md#stage-04-inputs) for full inputs
-and the Git/TLS requirements.
-
-The private repository must also provide `cac/manifest.zip.vault`, the complete
-AAP subscription manifest encrypted with the `cac` Vault password. Step 04
-decrypts it into a restricted temporary ZIP and calls `ansible.controller.license`
-before dispatch. Import failure stops configuration; cleanup runs after success
-or ordinary task failures. Fatal role-loading errors or interruptions can skip
-cleanup. RHEL subscription setup in Step 03 is separate from this AAP activation.
-
-Two categories:
-- **Infrastructure secrets** (steps 01-03): registry credentials, PostgreSQL passwords, RHSM activation key, GoDaddy API token, domain, hypervisor IP.
-- **AAP object secrets** (step 04): credential inputs (SSH keys, vault passwords, PAH tokens), user passwords. These live in the CaC variable files — see [Configuration_as_Code.md](Configuration_as_Code.md).
+Base creates four private Git-read credentials and the CaC Vault credential on
+the replacement from encrypted inputs. The first trusted seed still needs those
+initial access secrets supplied independently. Target-issued MCP/PAH/EDA tokens
+belong to their installation; API exports cannot recover masked secret values.
+Persistent MCP recovery storage is on the target; encrypted client write-back
+remains in the project TODO.
 
 ## Collection supply
 
-Sync required collections and their dependencies into PAH before project
-synchronization, including community content. Attach only the required PAH
-certified, validated, and community repository credentials to the project's
-organization. `collections/requirements.yml` declares which collections to
-download; organization credentials determine where to find them.
+Base configures certified, validated and community PAH sources and organization
+attachments without content synchronization. Stage 05 prepares declared use-case
+requirements later. Project requirements select collections; organization
+credentials select the PAH download sources. Direct public Galaxy project access
+is not this project's policy; PAH may use Galaxy as its community upstream.
 
-Direct public Galaxy access is not recommended and must not be configured as
-an organization download source or fallback under this project's policy. Public
-Galaxy may supply the PAH community sync upstream; project downloads use PAH.
-If AAP protects a managed public Galaxy credential from deletion, detach it
-from the organization and verify the remaining PAH source order.
+Remote highest-version selection and repository snapshot retention are separate
+settings. Base configures both; collection pruning is a separate reviewed
+preview/apply operation, not an automatic effect of base deployment.
 
-## Current State
+## Verification status
 
-- Steps 01-03 exist; historical testing predates the repository split.
-- Step 04 downloads and decrypts the private shared base before dispatch, using
-  the Git-token and `cac` Vault credentials. It uses `myvars` for installer SSH
-  access, reads the current Gateway password unless explicitly supplied, and
-  obtains a per-run Gateway token for API authentication. Cleanup revokes it
-  after dispatch. Live job 1985 verified this flow and shared base configuration:
-  147 successful tasks, 36 changes, no failures, successful token revocation,
-  and temporary workspace removal. Subscription import succeeded in preceding
-  testing; the rerun preserved the existing license. Password rotation remains
-  planned. The saved debug-logging default remains false.
-- The encrypted shared base is committed in the private configuration repository.
-  It now contains platform setup only; use-case objects belong to separate files.
-  Empty examples remain under this repository's `cac/`; editable populated
-  configuration stays outside Git.
-- `deploy-aiops-demo.yml` is a separate AIOps configuration entry point, prepared
-  for later use after base. Its Job Template must not be launched yet.
-- The current full pipeline has not been verified end to end since the split.
+On 20 October 2026 a fresh replacement completed stages 01-04, prerequisite
+preparation and all five captured use-case imports through individually launched
+jobs. Bootstrap credential bindings and persistent MCP access were independently
+checked. Full CoP/API production-versus-replacement comparison was completed;
+Windows and Orchestrator follow-up configuration fixes were also imported.
 
-## TODOs
-
-### Reusable job inputs
-
-- [ ] Define a consistent extra-variable and survey mechanism across job templates: standardize variable names in templates, surveys, and playbooks; document defaults and survey/launch override precedence; normalize Boolean answers; and keep sensitive output protected by default. Use `debug_logging`, where `false` enables `no_log` and `true` disables it. Step 04 adopts this name first; reconcile the existing `secure_logging`, `windows_no_log`, `wsus_no_log`, and `chocolatey_no_log` controls in other projects later.
-- [x] Give Step 04 a `debug_logging: false` Job Template default and an optional true/false survey, with matching playbook and dispatch logging behavior.
-- [ ] Automate variable handoff between deployment jobs (01 -> 02 -> 03 -> 04): pass the discovered `vm_name` and `vm_ip` to 02/03 and an explicit `aap_hostname` API URL to 04, so operators do not copy values between launches. Use AAP workflow job artifacts (`ansible.builtin.set_stats`) where appropriate, while retaining inputs for independent stage runs.
-- [ ] Redesign and document job inputs so other operators can run each stage independently. Prefer established collection input names where available; require provisioning-specific values such as `vm_name` only in stages that need them.
-- [x] Require an explicit `aap_hostname` URL for Step 04, without `vm_name` or a derived domain URL.
-- [ ] Make Step 04's target authentication independently configurable, removing its remaining `myvars` dependency.
-
-### Cleanup (existing AAP instance)
-
-- [ ] Sanitize variable names across playbooks and vault — establish a consistent naming convention (e.g., decide on `vault_` prefix vs no prefix, `password` vs `passwd`, snake_case consistently)
-- [ ] Clean up duplicate credentials (ids 9, 10 — empty "hypervisor cred" entries) in AAP UI
-- [ ] Clean up temp host "golden-image-temp" (host 11) from AAP inventory
-- [ ] Delete temp JT 29 ("TEMP - Configure AutoDeploy JTs") from AAP UI
-- [ ] Destroy leftover test VMs: aap27-test-10, aap27-test-11
-
-### CaC migration
-
-- [x] Supply `infra.aap_configuration` and its dependencies through PAH and project requirements
-- [x] Read the installer Gateway password and use a per-run Gateway token for Step 04 API calls
-- [x] Load shared configuration from the private configuration repository's `main` branch
-- [x] Decrypt and import the private subscription manifest before pushing AAP configuration
-- [x] Verify a complete Step 04 shared-base run, including token revocation and workspace cleanup
-- [x] Separate use-case objects from platform base configuration
-- [x] Prepare a separate AIOps configuration playbook with its own encrypted file
-- [ ] Validate the AIOps deployment Job Template against a clean target after capture review
-- [ ] Add dedicated deployment entry points for the remaining use cases
-- [ ] Configure destination PAH sources using valid local PAH credentials
-- [ ] Fill CHANGEME secrets in CaC files (credential inputs, EDA credentials, Event Stream)
-- [ ] Build Bitwarden backup script for secrets
-- [ ] Vault-encrypt completed demo files, verify them, and commit/push to the private configuration repository
-- [ ] Complete skeleton CaC files: servicenow.yml, config_exceptions.yml, intelligent_assistant.yml
-- [ ] Test full 01→02→03→04 pipeline with new dispatch-based 04
-
-### CaC drift detection
-
-- [ ] Combine Git revision checks, Controller/Gateway/EDA audit records where available, and normalized object exports against the accepted CaC inventory. Track ownership, references, additions, modifications, and deletions; review differences before updating encrypted files. Preserve audit and revision checkpoints, explicitly maintain secrets, and periodically test restoration to a clean AAP. Audit records complement full comparison; they do not establish complete export coverage. Incremental audit-log catch-up is a future task in the [project TODO](PLAN.md#todo); continue CaC comparisons for now.
-- [ ] Cover external environment configuration in a later phase; current deployment scope is AAP objects only.
-
-### Done
-
-- [x] Historical end-to-end test: full sequence 01→02→03→04 with the earlier task-based approach
-- [x] Replace Step 04's task-based implementation with the dispatch role
-- [x] CaC files: capture all current AAP resources (base_CaC_vault.yml + 7 project groups)
-- [x] Document CaC architecture in Configuration_as_Code.md
+Full workflow execution, recursive deployment, safe reruns, functional demo tests
+and production takeover remain open in [PLAN.md](PLAN.md#todo). Sensitive evidence
+and detailed environment comparisons stay outside Git. Historical completion
+notes are available in Git history and the decision history, rather than a second
+TODO list here.

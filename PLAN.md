@@ -1,328 +1,266 @@
-# AAP AutoDeploy Plan
+# AAP AutoDeploy and Configuration as Code: work plan
 
-The design below includes historical planning. See [README.md](README.md) for
-the current implementation and credential handling.
+## Goal and current position
 
-## Main goal
+Build a replacement AAP from versioned configuration and encrypted secrets. It
+must run the intended production tasks and be able to deploy another complete
+AAP itself. We provide reusable automation/templates; our populated base and
+use-case configurations live separately, encrypted in private repositories.
 
-Deploy a fresh AAP that can take over all production AAP tasks from versioned
-configuration and encrypted secret inputs. The replacement must also be able to
-deploy and configure further AAP instances. An existing trusted AAP provides the
-initial seed; its first Git token and CaC Vault password are supplied independently.
-Selected demo deployments continue to use their separate configurations.
+An existing trusted AAP supplies the initial Git-read token and CaC Vault
+password. Base provisions that access on the replacement. Base owns platform
+setup; each use case owns its projects, inventories, credentials, execution
+environments, templates and workflows.
+
+As of 20 October 2026, a fresh replacement has received base and all five
+captured use cases: AIOps Self-Healing, Disconnected Windows, Automation
+Orchestrator, Assistant Team and AutoDeploy. Independent configuration comparison
+is complete. Imports prove that definitions were restored; functional tests,
+complete production coverage and recursive deployment remain open.
+
+This is the single project TODO list. See [README.md](README.md) for setup and
+[design_decisions_history.md](design_decisions_history.md) for past decisions.
+Protected comparison reports, exports and plaintext working files stay outside Git.
 
 ## TODO
 
-- [ ] Review this project against [Red Hat's Configuration as Code guidance](https://developers.redhat.com/articles/2025/05/27/how-start-configuration-code-ansible-instance).
-  Assess automation accounts and token lifecycle, content sources, export
-  completeness, secret handling, validation, drift and deletions, and Git
-  workflow. Document applicable improvements for AAP 2.7 and the existing CoP
-  collections, accounting for the guide's different versions and example
-  collection.
-- [ ] Define and verify the complete production configuration inventory across
-  Gateway, Controller, EDA and PAH, including ownership, credentials, permissions,
-  dependencies and deletions. Preserve separate base and use-case ownership.
-- [ ] Add audit-log analysis for incremental CaC catch-up. Track a last-processed
-  checkpoint for the relevant component audit feeds; detect created, modified,
-  deleted and reassociated owned objects, then retrieve their current definitions
-  and affected dependencies for comparison with CaC. Review differences before
-  updating encrypted captures. Check Git changes alongside audit events, handle
-  missing or expired records, and retain periodic full comparisons to verify
-  coverage. Continue the existing CaC comparison approach until this is implemented
-  and verified.
-- [ ] Capture and redeploy Intelligent Assistant/Lightspeed through CaC, including
-  installer/service settings, LLM credentials, database and service passwords,
-  and Gateway OAuth configuration. Vault sensitive inputs and independently
-  verify a fresh rebuild.
-- [x] Implement persistent MCP access in base: create a target-local administrator
-  token with write scope after administrator-password verification. Save its
-  recoverable value in protected root-owned storage on the target, verify and
-  preserve it on reruns, and preserve existing manually created access.
-- [ ] Verify persistent MCP provisioning and reruns through a live base deployment.
-  Offline API tests establish task behavior; no live rollout is claimed.
-- [ ] Save generated per-instance MCP connection values, including the token,
-  endpoint and CA trust material, as fully CaC-Vault-encrypted files in the private
-  base configuration repository. Use opaque instance identifiers in filenames,
-  verify encryption before uploading, and protect secret tasks with `no_log`.
-  Provision a separate fine-grained Git write credential limited to that repository
-  with Contents read/write; preserve the existing read credentials. Allow trusted
-  clients to decrypt the saved values into protected local configuration outside
-  Git, with certificate verification enabled. An API-masked AAP credential alone
-  is not a recoverable token copy. The implemented interim copy is a private
-  root-owned file on its target; encrypted Git write-back, client setup and
-  controlled rotation remain pending.
-- [x] Implement provisioning of the trusted replacement's four bootstrap Git
-  credentials and CaC Vault credential from encrypted base. Reuse the compatible
-  Git injection type, reject ownership/type/identifier collisions, and preserve
-  existing secret values on reruns. The first seed still needs independently
-  supplied access.
-- [ ] Verify bootstrap credential provisioning on a fresh target and on a rerun;
-  the implementation has passed isolated Controller API tests only.
-- [x] Implement AutoDeploy as a separate captured use case, with its encrypted
-  configuration in the existing private companion repository. Restore its
-  source project, dedicated inventories and execution environment, provisioning
-  and environment Vault credentials, deployment/import/teardown templates,
-  surveys, and repeatable workflow. Shared Git and CaC Vault access stays in base.
-- [x] Implement a success-only complete deployment workflow, passing the created
-  VM name, address and internal AAP URL through nonsecret artifacts, then applying
-  base, preparing exact PAH prerequisites, and importing the four captured demos
-  plus AutoDeploy itself in parallel. Teardown is not a workflow step.
-- [ ] Verify the new AutoDeploy importer and complete workflow on a fresh target,
-  then prove that replacement can deploy another instance. Offline tests and
-  configuration capture are not evidence of successful recursive deployment.
-- [ ] Verify production replacement with configuration comparison and functional
-  platform/use-case tests, including its ability to deploy another AAP. Treat
-  external environment services as explicit prerequisites until their separate
-  recreation work is implemented.
-- [ ] Define and test controlled takeover of schedules, EDA activations and other
-  automatic production triggers, including rollback, so a replacement can assume
-  the intended work without duplicate production execution.
-- [x] Implement desired administrator-password management in encrypted base
-  configuration, including installer bootstrap and protected password handling.
-- [x] Verify the administrator-password rollout and subsequent rerun after the
-  repaired base Git credential. Jobs 2125 and 2128 succeeded; the rerun used the
-  configured login and skipped installer bootstrap.
-- [ ] Write and verify a step-by-step Configuration as Code guide, from a fresh
-  checkout to a configured AAP. Cover prerequisites; copying and completing the
-  base and use-case templates; object ownership and dependencies; private Git
-  access and bootstrap credentials; Vault encryption and AAP credential setup;
-  subscription and base deployment; PAH repository setup without synchronization;
-  each use case's collection requirements and later PAH preparation; deployment
-  Job Templates and their inputs; validation, updates, deletions, and recovery.
-- [x] Implement the base PAH component: configure certified, validated, and
-  community remotes, repositories, distributions, and Controller organization
-  sources using local PAH credentials. Do not synchronize content or attach a
-  direct public Galaxy source during base deployment.
-- [x] Verify the implemented base PAH setup on a deployed target, including
-  token preservation on rerun, ordered local sources, and no content sync.
-- [ ] Populate and verify the PAH requirements component in each existing use-case
-  configuration, including collection versions, dependencies, and compatibility
-  with its execution environment, before running the use case's automation. The
-  AutoDeploy capture now consolidates exact requirements and ownership for the
-  five workflow use cases; separate per-use-case vault components and runtime
-  validation remain pending.
-- [ ] Resolve the Windows runtime version mismatch: the captured Chocolatey
-  collection requires Ansible Core 2.18 or newer while the current execution image
-  reports 2.16.19. Review a compatible execution image or requirement change, then
-  run meaningful functional tests.
-- [x] Declare the PAH latest-plus-required-versions policy in encrypted base.
-  Stage 04 configures and verifies remote `sync_highest_versions: 1` separately
-  from repository snapshot `retain_repo_versions: 1`, without content sync or
-  collection release deletion. The installed remote module's missing selection
-  field is handled through a narrowly scoped API extension.
-- [x] Add a separate preview/apply curator that preserves each repository's newest
-  installed release plus audited project/playbook/EE requirements and dependency
-  closure. Reject missing requirements, changed project revisions, unknown EEs,
-  active target jobs/tasks and stale previews. Apply only an explicitly reviewed
-  plan; remove repository associations without global content/orphan deletion.
-- [ ] Complete the current production requirements audit before actual pruning
-  or recurring curation. Verify project/playbook/EE source files and provenance,
-  actual required pins, dependency constraints and immutable image inventories
-  where applicable. Matching a mutable image tag is not proof of its content.
-  Derive upstream refresh requirements separately: the curator's newest
-  installed release is not necessarily the newest upstream release. Schedule
-  reviewed ongoing curation externally or add verified own-job exclusion before
-  offering a target-side curator JT. No production prune is authorized by the
-  base policy implementation.
-- [x] Perform a reviewed one-time PAH cleanup: reduce 263 collection releases to
-  16 across 15 collections, keeping each newest present release and the older
-  RHEL system roles version explicitly pinned by projects. Set all three remote
-  `sync_highest_versions` limits to one, pin the complete dependency closure, and
-  verify repository snapshot retention remains one. Declarative enforcement in
-  encrypted CaC and recurring selection/cleanup remain separate TODOs above.
-- [x] Prepare Assistant Team's declared PAH collection and existing execution image,
-  import the six ordinary templates and supporting objects, and independently
-  verify the configuration. Runtime tests and optional authentication maintenance
-  remain separate work.
-- [ ] Verify the refreshed Windows and Assistant Team captures on a clean target:
-  Windows patch assessment/ceiling templates; Assistant lifecycle surveys,
-  Shutdown template, inventory-scoped service identity/grant and target-local
-  token/CA/credential provisioning. Confirm reruns preserve access and verified
-  HTTPS matches the configured target URL. Functional demo execution remains a
-  separate authorized test.
+### 1. Resolve the remaining configuration differences
 
-## Context
+Why: the comparison found settings whose intended behavior is not explicit in
+CaC. Decide the desired behavior before changing captures; a difference alone
+is not proof of a defect.
 
-We need a repeatable, fully automated way to deploy fresh AAP 2.7 instances for testing. Currently there is no automation for the AAP platform install itself — only VM provisioning (`deploy_vms.yml`) and post-install configuration (`aap_deploy/` playbooks) exist separately. This project bridges the gap: from golden image clone to a fully working AAP test instance, driven entirely by Ansible.
+- [ ] **1.1 AutoDeploy interpreter:** decide how its localhost jobs select Python.
+  Orchestrator's expression is fixed; AutoDeploy still omits the setting.
+- [ ] **1.2 AutoDeploy project policy:** choose and declare source-cleaning,
+  project timeout and default execution-environment settings.
+- [ ] **1.3 AIOps OAuth policy:** review whether the application and its PKCE
+  setting are needed, then capture the intended policy. No authentication
+  failure was demonstrated by the comparison.
+- [ ] **1.4 Image reproducibility:** decide where images need version/digest pins
+  and build provenance. Matching mutable tags resolve to different contents.
+- [ ] **1.5 Object ownership:** decide which additional users, teams, grants,
+  SSO applications and installer-created access policies belong in CaC.
 
-All playbooks and docs go in `AAP-advanced-features/aap-autodeploy/`. The VM deployment playbook stays in `automAIton`. No sensitive data (passwords, tokens, IPs, hostnames) in the repo — everything parameterized via vault.
+Goal: document each decision, update encrypted captures where needed and verify
+those updates. Record intentional exclusions too.
 
----
+### 2. Capture the remaining production use cases
 
-## Architecture Overview
+Why: the five captured use cases do not represent every production task.
 
-```
-Golden Image (RHEL 9.8 qcow2 with the AAP service account (`vault_aap_install_user`), installer pre-staged)
-    |
-    v
-[1] Clone + resize disk + virt-customize hostname + virt-install on hypervisor
-    |
-    v
-[2] Configure DNS + certbot + nginx reverse proxy on hypervisor
-    |
-    v
-[3] Prepare host, customize inventory, run AAP installer
-    |
-    v
-[4] AAP config-as-code (post-install configuration)
-```
+- [ ] **2.1 Intelligent Assistant/Lightspeed:** capture installer/service settings,
+  provider credentials, database/service passwords and Gateway OAuth setup;
+  independently verify a fresh rebuild.
+- [ ] **2.2 ServiceNow ITSM and Configuration Exceptions:** complete the skeleton
+  configurations and add dedicated importers.
+- [ ] **2.3 Other production scope:** review ROI/simulation, portal and legacy/test
+  objects. Capture required automation and document deliberate exclusions.
 
----
+Goal: each included use case has owned objects, labels, permissions, secrets,
+PAH requirements, dependencies and a verified importer. External services remain
+explicit prerequisites; recreating those environments is later work.
 
-## Deliverables
+### 3. Test that imported automation actually works
 
-### Files in `AAP-advanced-features/aap-autodeploy/`
+Why: successful configuration import does not prove the imported jobs work.
 
-```
-aap-autodeploy/
-  01-linux-vm-setup.yml              # Create VM from golden image
-  02-infra-config.yml          # DNS, certbot, nginx reverse proxy
-  03-aap-install.yml           # Prepare host + run AAP installer
-  04-aap-config.yml            # AAP config-as-code (post-install)
-  destroy-test-aap.yml         # Destroy a test VM
-  templates/
-    nginx-aap-test.conf.j2     # nginx reverse proxy config for test instance
-  vars/
-    main.yml                   # Non-sensitive defaults (sizing, paths)
-  myvars                       # Vault-encrypted secrets (repo root)
-```
+- [ ] **3.1 Windows compatibility:** resolve or verify the last audited mismatch
+  between Chocolatey requirements (Core 2.18+) and the image (Core 2.16.19).
+- [ ] **3.2 Test automation:** create post-deployment test playbooks/Job Templates
+  for each use case, with clear prerequisites and expected results.
+- [ ] **3.3 Run functional tests:** verify platform access/content supply and each
+  demo's actual function. Separate AAP failures from external prerequisites and
+  plan disruptive tests explicitly.
 
-Playbooks 02-04 take `vm_name` and `vm_ip` as extra_vars. Playbook 01 outputs these values.
+Goal: every included use case has a repeatable test and a verified result.
 
-Secrets come from `myvars` in the repo root (vault-encrypted).
+### 4. Prove full workflow and recursive deployment
 
----
+Why: stages and imports succeeded individually; one complete workflow run and
+use of the replacement as the next seed are not yet proven.
 
-## Step-by-Step Design
+- [ ] **4.1 Full workflow:** deploy a fresh target through the complete workflow;
+  verify artifact handoff, PAH preparation and all five parallel import branches.
+- [ ] **4.2 Next generation:** use that replacement's imported workflow and
+  credentials to deploy and configure another complete AAP.
 
-### Step 1: VM Creation (`01-linux-vm-setup.yml` — targets: hypervisor)
+Goal: a new AAP can reproduce itself. Recovery remains manual: rerun failed
+stages with the same inputs, then run remaining stages. Relaunching the whole
+workflow creates another instance. Automatic workflow recovery was dropped.
 
-Clone golden image, resize disk, customize hostname, virt-install. Outputs `vm_name` and `vm_ip` for subsequent playbooks.
+### 5. Verify safe reruns and credential preservation
 
-- VM naming pattern: `aap{{ aap_version_short }}-{{ vm_suffix }}-{{ counter }}` (e.g., `aap27-test-1`)
-- The same name is used as VM name, hostname, and DNS subdomain for consistency.
+Why: fresh bootstrap works; repeated imports must preserve working access.
 
-### Step 2: Infrastructure Config (`02-infra-config.yml` — targets: hypervisor)
+- [ ] **5.1 Base rerun:** verify preservation of the four Git-read credentials,
+  CaC Vault credential, PAH download tokens and recoverable MCP token.
+- [ ] **5.2 Use-case reruns:** verify refreshed Windows and Assistant lifecycle
+  definitions, inventory-scoped identity/grant and target-local token/CA bindings;
+  verify AIOps token reuse and repeated application of the other importers.
+- [ ] **5.3 Failure handling:** verify agreed cleanup/recovery cases without
+  rotating working secrets or revoking tokens already saved for ongoing use.
 
-Must run before the AAP installer — the installer's Lightspeed OAuth task connects to the gateway via FQDN.
+Goal: repeatable configuration without lost access. Fresh presence/binding checks
+are done; exports cannot establish equality of API-masked secret values.
 
-1. **GoDaddy DNS A record** — point subdomain to hypervisor's public IP
-2. **Certbot** — obtain Let's Encrypt certificate for the subdomain
-3. **Nginx template + reload** — reverse proxy matching existing AAP setup (HSTS, rate limit, websocket upgrade)
+### 6. Finish PAH requirements auditing and recurring curation
 
-**Domain approach — use a subdomain**, not a path:
-- AAP's Envoy gateway expects to own the domain root; path-based routing breaks it
-- New subdomain: matches VM name, e.g., `aap27-test-1.{{ domain }}`
-- Nginx reverse proxy is **required** — VMs are on an internal libvirt network, only the hypervisor has a public IP.
+Why: use cases need compatible content; pruning needs evidence of what must stay.
 
-### Step 3: AAP Installation (`03-aap-install.yml` — targets: new VM)
+- [ ] **6.1 Use-case requirements:** finish auditing each encrypted use-case
+  component for collections, required versions, dependencies and EE compatibility.
+  The combined AutoDeploy prerequisites already work; Windows and Assistant
+  Team also expose the common per-use-case requirements schema.
+- [ ] **6.2 Production audit:** verify project/playbook/EE sources, revisions,
+  actual pins, dependency constraints and image provenance. A captured version
+  alone is not evidence that a project requires it.
+- [ ] **6.3 Recurring curation:** establish reviewed preview/apply operation and
+  scheduling after the audit. Preserve each repository's newest installed release
+  plus required pins/dependencies; determine upstream refresh needs separately.
+  Use an external runner against an idle target, or implement safe own-job
+  handling before adding a target-side curator template.
 
-1. **Prepare host** — wait for SSH, grow filesystem, subscribe to RHEL, install ansible-core
-2. **Customize the inventory** — search-and-replace hostname from source AAP FQDN to new VM's FQDN
-3. **Set bundle install vars** — add `bundle_install=true` and `bundle_dir` to inventory
-4. **Run the installer** — `ansible-playbook -i inventory ansible.containerized_installer.install`
-   - Takes ~30-40 minutes
-   - Runs rootless podman as the AAP service account (`vault_aap_install_user`)
-5. **Verify AAP** — ping the API
+Goal: reliable content supply and controlled retention. Base policy and one-time
+cleanup are done; recurring pruning is not enabled or authorized by that policy.
+A collection appearing in multiple repositories is not itself a cleanup problem.
 
-The AAP service account (`vault_aap_install_user`), sudo, linger, SSH authorized_keys, and the AAP installer bundle are all pre-staged in the golden image.
+### 7. Make CaC change detection repeatable
 
-### Step 4: AAP Config-as-Code (`04-aap-config.yml` — targets: new AAP)
+Why: UI/API edits, such as a changed timeout, can disappear on rebuild.
 
-Post-install configuration: projects, credentials, job templates, etc.
+- [ ] **7.1 Comparison process:** maintain the accepted ownership/dependency
+  inventory, check Git revisions and compare normalized CoP/API exports with CaC.
+  Detect additions, modifications, deletions and reassociations; review changes
+  before updating encrypted files. Update secrets explicitly; exports mask them.
+- [ ] **7.2 Audit-log catch-up, later:** use component audit checkpoints to find
+  changed objects, then retrieve their current definitions and dependencies.
+  Handle missing/expired records and keep periodic full comparisons for coverage.
 
----
+Goal: reviewed changes reliably reach CaC. The initial full extraction/comparison
+is done; the recurring process is not automated. Continue comparisons for now.
 
-## Credential & Secret Handling
+### 8. Save generated MCP connection details securely for clients
 
-All secrets live in `myvars` (vault-encrypted, in the repo root). The playbook loads it via `vars_files: [myvars]`.
+Why: each installation issues its own token. Clients need its recoverable value,
+endpoint and trusted CA; API-masked credentials cannot return the value later.
 
-**Required variables in myvars** (same names as the current AAP inventory):
+- [ ] **8.1 Encrypted storage:** write whole-file Vault-encrypted per-instance
+  connection files to the private base repository. Use opaque filenames and
+  verify encryption before uploading.
+- [ ] **8.2 Access/client setup:** provide separate repository-scoped Git write
+  access, preserve read credentials, and decrypt only into protected local client
+  configuration with certificate verification enabled.
+- [ ] **8.3 Lifecycle:** define controlled rotation, revocation and recovery.
 
-| Variable | Purpose |
-|---|---|
-| `registry_username` | Red Hat registry service account |
-| `registry_password` | Registry service account token |
-| `postgresql_admin_password` | PostgreSQL admin password |
-| `gateway_admin_password` | Gateway admin password |
-| `gateway_pg_password` | Gateway PostgreSQL password |
-| `controller_admin_password` | Controller admin password |
-| `controller_pg_password` | Controller PostgreSQL password |
-| `hub_admin_password` | Hub admin password |
-| `hub_pg_password` | Hub PostgreSQL password |
-| `eda_admin_password` | EDA admin password |
-| `eda_pg_password` | EDA PostgreSQL password |
-| `automationmetrics_pg_password` | Metrics PostgreSQL password |
-| `automationmetrics_controller_read_pg_password` | Metrics controller read PG password |
-| `rhsm_activation_key` | RHEL subscription activation key |
-| `rhsm_org_id` | RHEL subscription org ID |
-| `godaddy_api_token` | GoDaddy API token for DNS records |
-| `domain` | Domain name |
-| `public_ip` | Hypervisor's public IP |
+Goal: clients can securely recover access to any new AAP. Target-side MCP token
+creation and root-owned recovery storage are already working.
 
-### `main.yml` (committed — non-sensitive defaults)
+### 9. Plan controlled production takeover
 
-```yaml
-# VM sizing
-aap_vcpus: 4
-aap_memory_mb: 20480
-aap_disk_size: "60G"
+Why: a replacement must not run duplicate schedules or process events twice.
 
-# AAP installer
-aap_version: "2.7-8"
-aap_version_short: "27"   # used in naming: aap27-test-N
-installer_extract_dir: "/opt/sources"
+- [ ] Define and test transfer of schedules, EDA activations and other automatic
+  triggers, including verification and rollback. Make external consumer/service
+  changes explicit prerequisites.
 
-# Golden image
-golden_image_path: "/opt/images/goldimg-vm-1.disk.qcow2"
+Goal: automatic work can move safely to the replacement and back.
 
-# Network
-vm_network: "internal"
-vm_dir: "/opt/vms"
-```
+### 10. Make inputs and authentication reusable
 
----
+Why: other operators need to run stages independently in their own environments.
 
-## Key Design Decisions
+- [ ] **10.1 Inputs:** standardize variable names, independent-stage parameters,
+  template defaults, surveys, override precedence and Boolean handling. Prefer
+  established collection input names where applicable.
+- [ ] **10.2 Authentication:** remove Stage 04's remaining `myvars` dependency by
+  making target login and required guest SSH/recovery access independently
+  configurable; preserve installer bootstrap and protected MCP storage.
+- [ ] **10.3 Naming/logging:** reconcile Vault/password names and logging controls.
+  Use `debug_logging`: false protects ordinary output; true enables diagnostics.
+  Credential and secret tasks remain protected in both modes.
 
-1. **KISS: Single playbook, multi-play** — not a role galaxy. One `deploy-test-aap.yml` with 4 plays. Post-install AAP configuration (projects, credentials, JTs) is handled separately.
+Goal: usable standalone jobs without our naming scheme or environment file.
+Explicit `aap_hostname`, Stage 04's debug survey and workflow handoff are done.
 
-2. **Bundle install, not online** — copy the existing 3.8G tarball rather than downloading from registry. Faster, no internet dependency, reproducible.
+### 11. Write the complete operator guide and review the design
 
-3. **Subdomain + nginx required for external access** — VMs are on internal libvirt network, only the hypervisor has a public IP. Nginx reverse proxy is mandatory, same as the existing AAP setup. Subdomain = VM name (e.g., `aap27-test-1`).
+Why: a new operator needs a verified route from checkout to configured AAP.
 
-4. **Vault for ALL secrets** — passwords, registry creds, hostnames, IPs. The repo contains zero environment-specific values.
+- [ ] **11.1 Step-by-step guide:** cover prerequisites, templates, ownership,
+  private repositories, seed credentials, Vault setup, subscription, base,
+  later PAH preparation, job inputs, verification, updates/deletions and manual
+  recovery. Test the instructions from a fresh checkout.
+- [ ] **11.2 Guidance review:** assess this project against
+  [Red Hat's Configuration as Code guidance](https://developers.redhat.com/articles/2025/05/27/how-start-configuration-code-ansible-instance).
+  Review accounts/token lifecycle, content supply, export completeness, secrets,
+  validation, drift/deletions and Git workflow. Account for the guide's different
+  example versions/collection before applying advice to AAP 2.7.
 
-5. **Golden image as base** — pre-updated RHEL 9.8 with the AAP service account (`vault_aap_install_user`; sudo, linger, hypervisor SSH key), and the AAP installer bundle unpacked under `/opt/sources/`. Subscribe only to enable AAP repo and install ansible-core, not for general updates.
+Goal: understandable, tested instructions and documented design improvements.
 
-6. **Installer pre-staged in golden image** — eliminates the slow SCP transfer step entirely. The unpacked bundle (~3.5 GiB) is baked into the golden image.
+### 12. Review historical cleanup candidates
 
-7. **Filesystem grow after clone** — golden image is small (~10G), resize to 60G at clone time, grow XFS on first boot.
+Why: older notes mention empty duplicate credentials, temporary hosts/templates
+and leftover test VMs. Old IDs/names do not establish current state or ownership.
 
-8. **Strict safety assertions on all destructive operations** — every task in `destroy-test-aap.yml` that deletes, removes, or undefines a resource MUST have an `assert` immediately before it that validates the target path/name against the allowed pattern (`^aap27-test-\d+$`). This applies to: virsh destroy, virsh undefine, disk removal, nginx config removal, certbot delete, and DNS record deletion. No destructive task may rely solely on an upfront validation — each must be individually guarded. Shell injection patterns (`;`, `&&`, `|`, `$`, `` ` ``) must also be rejected.
+- [ ] Recheck references/activity, identify genuinely obsolete objects and prepare
+  a scoped cleanup. Keep sensitive candidate details outside Git. This task does
+  not authorize destruction.
 
----
+Goal: remove confirmed leftovers without disturbing active environments.
 
-## Verification
+### 13. Back up secrets independently
 
-1. **VM boots**: `virsh list` on hypervisor shows new VM running
-2. **SSH works**: `ansible -m ping` against new VM succeeds
-3. **AAP accessible**: `curl -k https://<new-ip>` returns the AAP login page
-4. **API works**: `curl -k -u admin:<password> https://<new-ip>/api/controller/v2/ping/` returns 200
-5. **Post-install objects**: Job templates, credentials, projects exist in the new AAP
+Why: the first seed must be recoverable if AAP or private Git access is lost.
 
----
+- [ ] Implement and verify the planned Bitwarden backup/recovery mechanism for
+  bootstrap secrets and required credential inputs, without exposing values.
 
-## Decisions Made
+Goal: tested secret recovery independent of the running AAP. General Git backups
+and external workspace recreation remain umbrella-project work.
 
-1. **Separate installation access from AAP activation** — SCA and registry credentials cover RHEL/content access during installation. AAP activation is separate: Step 04 imports a complete subscription manifest from the private repository's Vault-encrypted `cac/manifest.zip.vault` before applying configuration.
+## Done:
 
-2. **Full stack** — deploy all components (Gateway, Controller, EDA, Hub, MCP, Metrics) to match the production setup and support AIOps demo testing.
+Implemented and verified to the extent stated below. Functional, rerun, workflow
+and takeover checks remain in the open list above.
 
-3. **Subdomain over path** — AAP's Envoy proxy owns the domain root, so path-based routing (`/test-vX`) won't work. Use a parameterized subdomain instead.
-
----
-
-## Resolved
-
-- **Subscription for AAP repo**: Subscribe using activation key + org ID from vault (`rhsm_activation_key`, `rhsm_org_id`), enable AAP repo, install ansible-core. System stays subscribed.
+- [x] **Reusable source/configuration separation:** public automation and empty
+  templates; private whole-file encrypted captures; plaintext working files and
+  Vault passwords outside Git; separate base and use-case ownership.
+- [x] **Fresh deployment stages:** VM, infrastructure, bundled install and base
+  succeeded (jobs 2201, 2208, 2211, 2233), including subscription, private Git,
+  decryption, temporary-token revocation and workspace cleanup.
+- [x] **Administrator password management:** encrypted base sets the desired
+  password and updates the installer record. Jobs 2125/2128 verified change and
+  rerun; 2233 verified fresh setup after the PAH authentication-order fix.
+- [x] **Replacement bootstrap credentials:** base creates four private Git-read
+  credentials and the CaC Vault credential; fresh-target presence/bindings were
+  checked. Recursive use and live rerun preservation remain open.
+- [x] **Persistent MCP access:** base creates/verifies a target-local administrator
+  token with write scope and a protected root-owned recovery copy. Fresh-target
+  MCP access is verified; client export, reruns and rotation remain open.
+- [x] **PAH base:** certified, validated and community sources, local download
+  credentials and ordered organization attachments are verified. Base performs
+  no synchronization; project downloads use PAH.
+- [x] **PAH retention implementation:** encrypted base declares remote selection
+  and repository snapshot limits; a separate preview/apply curator protects pins
+  and dependencies. One-time cleanup reduced 263 releases to 16 across 15
+  collections. Recurring operation still needs the audit above.
+- [x] **Workflow/handoff implementation:** stages 01-05 feed five parallel imports
+  using nonsecret VM/address/API URL artifacts. AutoDeploy restores that workflow
+  too. Full-workflow and recursive live proofs remain open.
+- [x] **Five use cases imported:** AIOps (2260), Windows (2248), Orchestrator (2246),
+  Assistant Team (2262), AutoDeploy (2247). Windows follow-up 2270 added the managed
+  update template, bringing Windows to 21 templates. Refreshed Assistant lifecycle
+  definitions and target-local access are imported; runtime tests remain open.
+- [x] **Orchestrator interpreter:** encrypted host definition preserves job-time
+  selection. Import 2273 and an independent verified-HTTPS read confirmed that
+  the literal expression is stored.
+- [x] **Initial full comparison:** CoP exports and raw supported APIs from both
+  instances were compared on 20 October 2026. Protected local evidence/report
+  identifies gaps, intended differences and masked-secret limits. The Windows
+  missing template and Gateway health-interval drift were resolved afterward.
+- [x] **Independent targeting/diagnostics:** explicit `aap_hostname`, Stage 04 debug
+  default/survey, manual stage retry and existing-installer observation are in
+  place. Automatic workflow recovery was dropped.

@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.15.6
+
+Document one current TODO list with numbered tasks, context, reasons and goals.
+Move completed implementation/import/comparison work to the final `Done:` section,
+keeping functional tests, reruns, full workflow and recursive proof open. Merge
+older duplicate lists, include unresolved comparison findings, and reconcile
+README/reference status with the verified fresh deployment.
+
+Validation: TODO structure, relative documentation links/anchors, version-helper
+tests, whitespace and staged sensitive-data checks passed. No runtime files changed.
+
 ## 0.15.5
 
 Document interpreter-preservation change `f23f1af` and encrypted capture `c141e1a`.

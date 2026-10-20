@@ -5,6 +5,11 @@ the [Red Hat Communities of Practice AAP Configuration Collection](https://githu
 CoP means Community of Practice. `04-aap-config.yml`, `deploy-aiops-demo.yml`,
 and `restore-windows-config.yml` use this role to apply AAP object definitions.
 
+[PLAN.md](PLAN.md#todo) is the single current work list; completed items are at
+[Done:](PLAN.md#done). [README.md](README.md#current-implementation) describes the
+verified deployment scope. Historical file inventories below are not an
+alternative TODO list.
+
 ## How dispatch works
 
 The `dispatch` role auto-merges suffixed variables into base variables. With `dispatch_include_wildcard_vars: true`, it discovers all variables matching a pattern (e.g., `controller_templates_*`), merges them into `controller_templates`, and applies them through the appropriate service collection, including `ansible.controller` and `ansible.platform`.
@@ -59,13 +64,11 @@ Controller API. Supply the target HTTPS URL
 explicitly as `aap_hostname`. Stage 04 does not use `vm_name`, `vm_ip`, or
 `vault_domain` to choose its target. Use an internally resolving hostname or an
 internal IP in that HTTPS URL to avoid the public reverse-proxy route. Password
-rotation, removing `myvars`, and automatic demo selection remain future work.
-See [README.md](README.md#stage-04-inputs) for inputs
-and execution-environment requirements. Live job 1985 successfully applied the
-shared base configuration, revoked its token, and removed its workspace. Earlier
-testing verified subscription import; the successful rerun preserved that license.
-The separate AIOps loader is prepared but has not been launched. AIOps deployment
-and full deployment-pipeline verification remain separate pending work.
+management now comes from encrypted base; removing `myvars` remains open.
+See [README.md](README.md#stage-04-inputs) for current authentication inputs,
+bootstrap credentials, persistent MCP access and execution-environment requirements.
+Fresh base and all five captured use-case imports have succeeded. Full workflow
+execution, recursive deployment and functional tests remain in the project TODO.
 
 ## AIOps deployment after base
 
@@ -134,10 +137,11 @@ only when an API lookup proves that no corresponding credential was saved.
 If that lookup fails, inspect the target before removing a potentially used
 token. Fatal Ansible role-loading errors or interruptions can skip cleanup.
 
-The new entry point and Job Template are prepared for later use, without a live
-deployment. They configure AAP objects only; they do not deploy the external
-monitoring, website, or assistant environment. Applying enabled EDA activations
-may start them. See [README.md](README.md#aiops-configuration-deployment) for inputs.
+The entry point has completed live configuration imports, including fresh-target
+job 2260. It configures AAP objects; it does not deploy the external monitoring,
+website or assistant environment. Applying enabled EDA activations may start them.
+Functional tests remain separate. See
+[README.md](README.md#aiops-configuration-deployment) for inputs.
 
 ## Collection sources
 
@@ -231,10 +235,11 @@ was preserved outside Git before separating platform and use-case definitions.
 
 ### base_CaC_vault.yml (platform only)
 
-The current private base retains the platform organization and one existing
-platform setting. It contains no use-case projects, inventories, hosts, SSH
-credentials, execution environments, job templates, or workflows. Destination
-PAH-source bootstrap remains pending valid local PAH credentials.
+The private base owns platform settings, the desired administrator password,
+bootstrap Git/Vault access, persistent MCP access and PAH source configuration.
+Fresh deployment and local PAH credentials have been verified. Use-case projects,
+inventories, hosts, execution environments, templates and workflows belong to
+separate encrypted captures; their credentials are owned by those use cases.
 
 ### aiops_demo.yml (current AIOps capture)
 
@@ -257,7 +262,10 @@ updates because API exports cannot reveal their stored values. These drift and
 restoration checks are planned, not yet automated. External environment
 configuration is deferred; this phase deploys AAP objects only.
 
-The following files are historical captures or skeletons needing refresh:
+The following inventory describes historical working files, not the current
+Orchestrator or AutoDeploy captures. Their dedicated imports are implemented and
+verified; see the current [README](README.md#current-implementation). Remaining
+scope decisions and incomplete use cases are tracked only in [PLAN.md](PLAN.md#todo).
 
 ### simroi.yml (5 JTs + 5 schedules)
 - Patch RHEL, Deploy App Updates, Security Scan, Database Backup, Firewall Rule Update
@@ -273,7 +281,7 @@ The following files are historical captures or skeletons needing refresh:
 - Various inventories and credentials per step
 - Most use Orchestrator EE
 
-### Skeletons (TODOs)
+### Historical skeletons
 - servicenow.yml — ServiceNow ITSM bootstrap playbooks
 - config_exceptions.yml — configuration drift detection
 - intelligent_assistant.yml — AI assistant features
@@ -292,7 +300,14 @@ Incomplete CaC files use `CHANGEME` placeholders. The working-copy workflow is:
 The Vault password file remains outside both repositories. Secret backup to
 Bitwarden remains a separate TODO.
 
-## Windows patching workflow restore
+## Legacy Windows local-file restore
+
+This section describes the earlier local-file utility and its four-node capture.
+The current encrypted Windows capture and dedicated importer have 21 templates
+and a 17-node workflow; see
+[Windows configuration deployment](README.md#disconnected-windows-configuration-deployment).
+The old object inventory below must not be treated as current base ownership or
+as an uncompleted task for that importer.
 
 The external `disconnected_windows_patching.yml` CaC file captures the Windows
 project, deployment Job Template, survey and `Deploy Windows + WSUS environment`

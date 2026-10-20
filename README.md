@@ -9,9 +9,10 @@ configurations.
 A production replacement needs the platform and use-case definitions, secret
 inputs, deployment automation, PAH content, execution environments and functional
 verification required for those tasks. The existing fresh-instance pipeline and
-selected use-case imports are parts of that goal. Complete production coverage,
-live verification of bootstrap credential provisioning and takeover verification
-remain pending.
+selected use-case imports are parts of that goal. Fresh-target bootstrap
+credential provisioning and persistent MCP access have been verified. Complete
+production coverage, live rerun preservation, recursive deployment and takeover
+verification remain pending.
 
 The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
@@ -34,9 +35,11 @@ the Controller content-source credentials and organization attachments that use
 those repositories. Base does not synchronize collection content. Each use case
 declares which collections its own PAH preparation needs.
 
-The [project TODO](PLAN.md#todo) includes a complete, step-by-step CaC setup guide.
-It also tracks a review against Red Hat's CaC guidance, covering access, exports,
-secret handling, validation, drift, deletions, and Git workflow for this stack.
+[PLAN.md](PLAN.md#todo) is the single project TODO list. Each open area explains
+its context, purpose and completion goal; completed work is collected at
+[Done:](PLAN.md#done). It includes the step-by-step operator guide and review
+against Red Hat's CaC guidance. Older plans and completion notes are preserved
+in Git and the decision history rather than duplicated as open work.
 Current drift review uses CaC comparisons. Incremental catch-up using AAP audit
 logs is planned: identify changed objects, retrieve their current configuration
 and dependencies, and review differences before updating encrypted captures.
@@ -70,23 +73,15 @@ stops configuration. A per-run Gateway token authenticates the subscription
 import and dispatch. It is revoked afterward, and the temporary checkout, ZIP,
 and authentication helper are removed after successful runs and ordinary task
 failures. Ansible role-loading errors or interruptions can prevent cleanup.
-The complete workflow described below provides automatic job handoff. On 2026-10-18, a fresh
-environment completed all four stages as individually launched jobs. VM creation
-succeeded, and infrastructure configuration succeeded after the missing DNS
-collection was curated in PAH and declared in project requirements. Installation
-needed a monitoring recovery after the Controller's overall timeout; the original
-installer completed successfully without being restarted.
-
-Step 04 job 2011 completed successfully in 22 seconds, applying the subscription
-and the reduced platform-only base. This verified private Git access, decryption,
-installer password retrieval, Gateway authentication, license import, and base
-dispatch. Token revocation and temporary workspace removal succeeded. Protected
-logging remained enabled. The separate `deploy-aiops-demo.yml` entry point loads
-only AIOps configuration after base. After correcting an Event Stream dispatch
-field mapping, live job 2018 completed successfully in 94 seconds. Independent
-API verification found all 29 expected AIOps objects, both Controller projects
-synchronized successfully, and both EDA activations running. Temporary token
-and checkout cleanup succeeded. Functional remediation tests remain pending.
+The complete workflow described below provides automatic job handoff. On
+20 October 2026 a fresh replacement completed stages 01-04, PAH prerequisite
+preparation and all five captured use-case imports as individually launched jobs.
+Base job 2233 verified administrator-password setup, bootstrap credential
+provisioning, persistent MCP access and PAH configuration. Independent CoP/API
+comparison confirmed the imported scope and identified remaining production gaps.
+This establishes stage/import success; a complete workflow launch, recursive
+creation of another AAP and functional demo tests remain open in the
+[project TODO](PLAN.md#todo).
 
 The separate `deploy-windows-demo.yml` imports the encrypted disconnected Windows
 configuration from its private repository. `restore-windows-config.yml` remains a
@@ -103,9 +98,11 @@ The CoP group role starts requests asynchronously, so a parent group can otherwi
 refer to children that do not yet exist on a clean target. A successful import
 does not establish runtime collection compatibility or functional demo readiness.
 The refreshed encrypted Windows capture includes patch-level assessment and
-WSUS patch-ceiling templates. Its 20 templates and 17 workflow nodes retain the
-existing owned dependencies; the new target templates receive the Windows label
-without changing the source templates.
+WSUS patch-ceiling templates and the managed Windows update template. Its 21
+templates and 17 workflow nodes retain the existing owned dependencies; target
+templates receive the Windows label without changing the source templates.
+Configuration import 2270 verified the latest capture; runtime compatibility and
+functional testing remain separate.
 
 ## Setup and secrets
 
@@ -538,10 +535,12 @@ revoked by ordinary run cleanup. Process termination or a lost token-creation
 response can still require manual inspection. Run this provisioning serially for
 each target; concurrent base jobs are not a token-rotation mechanism.
 
-This implements target-side token creation and recovery storage. It has been
-validated offline only. Vault-encrypted per-instance Git write-back, external
-client configuration and certificate trust, and controlled rotation remain in
-the [TODO](PLAN.md#todo). No additional repository write credential is required.
+This implements target-side token creation and recovery storage. Fresh base
+job 2233 and independent target checks verified live provisioning and MCP access;
+live rerun preservation remains in the [TODO](PLAN.md#todo). Vault-encrypted
+per-instance Git write-back, external client configuration and certificate trust,
+and controlled rotation are also pending. Current target-side storage needs no
+additional repository write credential.
 
 For AAP 2.7, dispatch excludes the legacy `controller_applications` role because
 `ansible.controller` 4.8.11 does not contain its application module. Dispatch's
@@ -597,10 +596,10 @@ Live resume job 2008 verified the original installer's successful exit and an
 HTTP 200 Controller ping; the installer-launch task was skipped.
 
 Administrator password management comes from the encrypted base configuration.
-Removing the remaining `myvars` dependency and automatic demo selection remain
-separate pending work.
-The four deployment stages and AIOps configuration deployment are verified.
-Automatic job handoff and functional remediation tests remain pending.
+Removing the remaining `myvars` dependency is separate pending work. Automatic
+job handoff and the five parallel configuration imports are implemented in the
+complete workflow; full-workflow execution and functional remediation tests
+remain open.
 
 ### AIOps configuration deployment
 
@@ -701,10 +700,11 @@ base, run the imported automation, or change Windows machines.
 survey choice as other import templates. Authentication, decryption, wildcard
 variable combination, and credential updates remain protected even when enabling
 diagnostics. Ordinary object operations follow the diagnostic choice. Syntax and
-seven focused readiness, secret-input, and execution guards have passed. The first
-live attempt stopped during the protected Git fetch, before target authentication
-or object changes; workspace cleanup succeeded. Import remains unverified until
-the fetch succeeds and the configuration job completes.
+seven focused readiness, secret-input, and execution guards have passed. Fresh
+configuration import 2248 succeeded, and follow-up 2270 imported the latest
+21-template capture. Independent API checks verified the added template and
+supporting configuration. Imported patching/deployment jobs were not run by those
+checks; runtime testing remains in the project TODO.
 
 ### Automation Orchestrator configuration deployment
 
@@ -992,6 +992,7 @@ No standalone formatter or linter dependency is required for the version helper.
 - `utils/`: existing controller-label utility.
 - `src/`: version-maintenance helper; `tests/`: version-tool and dispatch regressions.
 - `VERSION`, `RELEASE_NOTES.md`, and `AGENTS.md`: version and working rules.
-- `documentation.md`, `Configuration_as_Code.md`, and `PLAN.md`: detailed notes,
-  CaC reference, and original design; historical TODOs need reconciliation.
+- `documentation.md`: deployment overview; `Configuration_as_Code.md`: CaC reference.
+- `PLAN.md`: the single current TODO list, with context/goals and completed work
+  under `Done:`. Git and decision history preserve earlier plans.
 - `design_decisions_history.md`: documented decisions and implementation references.
