@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.10.8
+
+Document maintenance commit `67de471` and its rationale in the decision history:
+keep newest present releases plus explicit older project pins, apply the remote
+version cap independently from snapshot retention, and retain the encrypted CaC
+and recurring-enforcement TODOs. The live cleanup completed before this
+documentation commit; no additional PAH changes are introduced here.
+
+Validation: all 15 published collections were independently checked through MCP;
+the API audit verified 16 retained releases, unchanged project requirements and
+completed cleanup tasks. Documentation whitespace, version-header consistency
+and staged-file review passed.
+
 ## 0.10.7
 
 Document the reviewed one-time PAH cleanup: 263 collection releases reduced to

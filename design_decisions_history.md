@@ -4,6 +4,41 @@ This retrospective uses this repository's Git history and the project handoff.
 Where historical intent is not documented, it is identified as an inference.
 Source-baseline versioning begins after the historical commits below.
 
+## Limit PAH selection and remove obsolete collection releases
+
+Documentation and verified-maintenance commit: `67de471`, following the policy
+planned in `c547f68`. The live maintenance used supported Pulp API operations;
+this repository does not yet contain recurring cleanup automation.
+
+The operator requested the newest retained release for each collection while
+preserving older versions explicitly required by projects. The audit covered
+11 Controller projects, their available collection and execution-environment
+requirements, and the retained collections' dependency constraints. Keep the
+newest stable release already present for each collection, plus RHEL system
+roles 1.120.5 because two projects pin it; retain 2.4.2 alongside that exception.
+This avoids breaking exact project pins while removing unused release histories.
+
+The maintenance reduced 263 releases to 16 across 15 collections: certified
+244 to 10, community 18 to five, and validated one unchanged. Both removal tasks
+completed and the final content matched the reviewed set. Project requirements
+were unchanged, and independent MCP reads confirmed the published collections.
+Removing repository associations did not include global orphan cleanup or
+establish how much disk space was reclaimed.
+
+Set each collection remote's `sync_highest_versions` to one and use exact
+requirements with a complete dependency closure. Disable automatic dependency
+selection for those explicit lists to avoid downloading extra matching releases.
+Duplicate exact entries preserve the required older pin despite the per-entry
+version limit. Keep repository `retain_repo_versions` at one as a separate
+snapshot policy; it does not limit collection releases in the current snapshot.
+Upstream source, authentication and TLS settings were preserved.
+
+Updating the encrypted CaC source and implementing recurring enforcement remain
+TODOs. The installed collection-remote module lacks the sync-limit argument, so
+declarative management needs supported module or API integration. Use the current
+encrypted source with its matching Vault key rather than replacing it from an
+older plaintext export. No runtime automation jobs were launched for this work.
+
 ## Plan PAH version retention from project requirements
 
 Planning commit: `c547f68`. Automated selection, retention and cleanup remain
