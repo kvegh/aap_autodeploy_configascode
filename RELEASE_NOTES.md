@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.12.6
+
+Document a planned review against Red Hat's Configuration as Code guidance.
+The review covers access and tokens, content sources, export completeness,
+secrets, validation, drift, deletions, and Git workflow, with applicability
+checked against AAP 2.7 and the project's existing CoP collections.
+Clarify that target-side MCP token creation is implemented while encrypted
+repository storage and client setup remain planned.
+
+Validation: documentation whitespace, source link and version consistency checks.
+This planning change does not modify platform configuration.
+
 ## 0.12.5
 
 Document implementation `5f8c3e0` and the distinction between installer async

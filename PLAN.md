@@ -13,6 +13,12 @@ Selected demo deployments continue to use their separate configurations.
 
 ## TODO
 
+- [ ] Review this project against [Red Hat's Configuration as Code guidance](https://developers.redhat.com/articles/2025/05/27/how-start-configuration-code-ansible-instance).
+  Assess automation accounts and token lifecycle, content sources, export
+  completeness, secret handling, validation, drift and deletions, and Git
+  workflow. Document applicable improvements for AAP 2.7 and the existing CoP
+  collections, accounting for the guide's different versions and example
+  collection.
 - [ ] Define and verify the complete production configuration inventory across
   Gateway, Controller, EDA and PAH, including ownership, credentials, permissions,
   dependencies and deletions. Preserve separate base and use-case ownership.
