@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.15.7
+
+Document work-plan cleanup `591fc43`: one current numbered TODO list with reasons
+and goals, completed work at the bottom, and explicit separation of successful
+imports from pending functional, rerun and recursive-deployment proof.
+
+Validation: implementation documentation checks and four version-tool tests
+passed; decision-history, version and staged-content checks passed.
+
 ## 0.15.6
 
 Document one current TODO list with numbered tasks, context, reasons and goals.

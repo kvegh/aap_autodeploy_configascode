@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Consolidate the current work plan and separate completion from proof
+
+Documentation implementation: `591fc43`.
+
+The operator requested an understandable TODO list with context, reasons and
+completion goals, and completed work at the document bottom under `Done:`.
+Older lists mixed historical design, completed implementation and unverified
+behavior. PLAN.md is now the single task list, with numbered areas/subtasks;
+the overview and README link to it instead of maintaining competing checklists.
+Earlier plans remain recoverable in Git and this decision history.
+
+Completion was reconciled with the protected deployment handover and full
+production/replacement comparison, not inferred from source code alone. Fresh
+base, bootstrap/MCP provisioning, all five imports and initial comparison are
+marked done with their limits. Full-workflow execution, recursive deployment,
+functional tests, live rerun preservation and takeover remain open. Remaining
+comparison findings are explicit decisions/tasks. Historical cleanup candidates
+require current ownership review instead of action based on old IDs.
+
+Reference status was corrected where it still described working imports or
+password/PAH/MCP setup as pending. Four version-tool tests, TODO structure,
+relative links/anchors, whitespace and added-content sensitive-marker checks
+passed. This change modifies documentation/version metadata only.
+
 ## Preserve Orchestrator interpreter selection for job runtime
 
 Importer regression and documentation: `f23f1af`; encrypted capture: `c141e1a`.
