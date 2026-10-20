@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Keep CaC comparisons while planning incremental audit-log catch-up
+
+Planning commit: `cce0e28`.
+
+The user chose to continue the current configuration comparisons and defer
+audit-log analysis for catching CaC up with platform changes. The TODO now makes
+that future work explicit: preserve audit checkpoints, identify changed owned
+objects and relationships, retrieve current definitions and dependencies, then
+review differences before updating encrypted captures. Audit events identify
+what to examine; they do not replace the current object configuration.
+
+Git changes, deletions, audit retention and component coverage must also be
+handled. Periodic full comparisons remain part of the planned coverage checks.
+No log-based automation, daily schedule or automatic CaC update was implemented.
+Documentation whitespace, version consistency and staged-content checks passed.
+
 ## Use the successful login password until administrator rotation
 
 Implementation: `fb87a08`.

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.14.5
+
+Document planning commit `cce0e28` and the decision to retain current CaC
+comparisons while audit-log catch-up remains future work. Record the checkpoint,
+dependency, retention and coverage requirements without implementing automation.
+Documentation whitespace and version checks passed.
+
 ## 0.14.4
 
 Plan incremental CaC catch-up using component audit logs, durable checkpoints,
