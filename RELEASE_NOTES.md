@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.14.3
+
+Document fix `fb87a08`: fresh base setup uses the successful installer login for
+PAH token issuance until the declared administrator password is applied, while
+configured-password reruns preserve existing access. Documentation whitespace
+and version checks passed; live base rerun verification remains separate.
+
 ## 0.14.2
 
 Fix fresh base deployment when the desired administrator password is not active

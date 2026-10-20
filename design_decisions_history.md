@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Use the successful login password until administrator rotation
+
+Implementation: `fb87a08`.
+
+A fresh installation exposed an ordering error: bootstrap authenticated with
+the installer password, but PAH token creation then used the desired password
+before the Gateway user role applied it. That request failed authentication.
+The shared login task now retains its successful password in a protected,
+noncached fact, and pre-rotation PAH issuance uses that fact. The encrypted desired
+password remains unchanged and is still applied and verified later. A rerun
+selects the already-active configured password and preserves existing tokens.
+No password is added to workflow statistics, artifacts, or logs.
+
+Three focused regression tests passed, including actual login selection for
+fresh and configured-password cases and a PAH mock that rejects the inactive
+desired password. Token preservation and failure cleanup remain covered.
+Base, PAH preparation, AutoDeploy and curator syntax and whitespace checks passed.
+The installer had completed successfully; only the failed base stage needed a
+rerun. Live verification of that rerun is tracked separately from these checks.
+
 ## Manage PAH selection in base and require reviewed release curation
 
 Implementation: `768550d`; encrypted base policy: `cd4a4ab`.
