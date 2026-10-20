@@ -1,5 +1,41 @@
 # Design decisions history
 
+## Manage PAH selection in base and require reviewed release curation
+
+Implementation: `768550d`; encrypted base policy: `cd4a4ab`.
+
+The user requested one current collection version unless project requirements
+justify older versions, and clarified that the same collection may appear in
+multiple repositories. Retention is therefore local to each repository: preserve
+its newest installed release and actual project/playbook/EE requirements plus
+dependency closure. A repository's older latest does not preserve obsolete
+copies in another repository, and a newer release elsewhere does not remove a
+repository's own latest. The curator does not claim to discover newest upstream
+content or deduplicate collection names across repositories.
+
+Stage 04 applies and verifies the remote selection limit and repository snapshot
+limit independently. The installed remote collection module lacks the selection
+field, so a local API extension supplies it after CoP dispatch. Base still does
+not synchronize or prune collection content. The populated policy is encrypted
+with the existing CaC Vault identity; all other encrypted base values were
+verified unchanged.
+
+Actual pruning is separate and defaults to preview. It needs a reviewed source
+audit matching live projects and EE references, complete dependencies, an idle
+target and an unchanged approved preview. Apply removes only the reviewed
+repository associations and verifies retained content. Run externally or from
+another seed during a maintenance window that prevents concurrent target work;
+preflight checks do not provide a continuous lock. Mutable image references do
+not establish image content or build provenance. Production audit completion,
+recurring curation and target-side own-job exclusion remain future work.
+
+Nineteen focused retention tests passed, including repository-local latest
+selection, exact pins, dependency closure, unchanged settings and stale-preview
+rejection. The 52-test broad run passed all other tests; its PAH guard fixture
+needed the new required policy, and the corrected focused guard test passed.
+Stage 04 and curator syntax, whitespace, staged-sensitive-data review, and
+encrypted base round-trip checks passed. No live pruning was performed.
+
 ## Restore AutoDeploy as a use case and orchestrate complete deployments
 
 Implementation: `6c83591`; encrypted companion capture: `9020feb`.

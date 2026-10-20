@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.14.1
+
+Document implementation `768550d` and encrypted base policy `cd4a4ab`, including
+repository-local latest selection, independently configured PAH limits, reviewed
+pin/dependency exceptions and the external maintenance-window requirement.
+Preserve the distinction between tested source behavior and pending live rollout.
+Documentation whitespace and version consistency checks passed.
+
 ## 0.14.0
 
 - Declare latest-plus-required collection retention in encrypted base; Stage 04
