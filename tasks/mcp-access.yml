@@ -1,0 +1,272 @@
+---
+# The bearer value is returned once. Keep a recoverable copy on this target only.
+- name: Manage target-local persistent MCP access
+  no_log: true
+  vars:
+    cac_mcp_directory: /var/lib/aap-autodeploy
+    cac_mcp_file: "{{ cac_mcp_directory }}/mcp-token.json"
+    cac_mcp_description: MCP admin token
+  block:
+    - name: Reset persistent MCP token state
+      ansible.builtin.set_fact:
+        cac_mcp_created: {}
+        cac_mcp_saved: false
+        cac_mcp_manual: false
+
+    - name: Look up the administrator owning MCP access
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/users/?username=admin"
+        headers:
+          Authorization: "Bearer {{ aap_token }}"
+        status_code: 200
+        validate_certs: "{{ aap_validate_certs }}"
+      register: cac_mcp_admin
+
+    - name: Require the intended administrator account
+      ansible.builtin.assert:
+        that:
+          - cac_mcp_admin.json.count == 1
+          - cac_mcp_admin.json.results[0].username == 'admin'
+        fail_msg: Review the administrator account before provisioning MCP access.
+
+    - name: Look up existing administrator MCP tokens
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/?description={{ cac_mcp_description | urlencode }}&user={{ cac_mcp_admin.json.results[0].id }}"
+        headers:
+          Authorization: "Bearer {{ aap_token }}"
+        status_code: 200
+        validate_certs: "{{ aap_validate_certs }}"
+      register: cac_mcp_existing
+
+    - name: Preserve only an unambiguous administrator write token
+      ansible.builtin.assert:
+        that:
+          - cac_mcp_existing.json.count in [0, 1]
+          - >-
+            cac_mcp_existing.json.count == 0 or
+            (cac_mcp_existing.json.results[0].description == cac_mcp_description and
+             cac_mcp_existing.json.results[0].user == cac_mcp_admin.json.results[0].id and
+             cac_mcp_existing.json.results[0].scope == 'write' and
+             cac_mcp_existing.json.results[0].application is none)
+        fail_msg: Review duplicate MCP tokens or an unexpected owner, scope, or application; existing tokens are never replaced automatically.
+
+    - name: Require unexpired existing MCP token metadata
+      ansible.builtin.assert:
+        that:
+          - >-
+            (cac_mcp_existing.json.results[0].expires
+             | regex_replace('[.][0-9]+', '')
+             | regex_replace('Z$', '+00:00')
+             | to_datetime('%Y-%m-%dT%H:%M:%S%z')) >
+            (now(utc=true, fmt='%Y-%m-%dT%H:%M:%S+0000')
+             | to_datetime('%Y-%m-%dT%H:%M:%S%z'))
+        fail_msg: Review expired MCP access and plan explicit rotation; the existing token is preserved.
+      when:
+        - cac_mcp_existing.json.count == 1
+        - cac_mcp_existing.json.results[0].expires | default(none) is not none
+
+    - name: Inspect and preserve the target-side MCP token copy
+      delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
+        ansible_become: true
+      block:
+        - name: Inspect the private MCP token directory
+          ansible.builtin.stat:
+            path: "{{ cac_mcp_directory }}"
+            follow: false
+          register: cac_mcp_directory_stat
+
+        - name: Inspect the saved MCP token file
+          ansible.builtin.stat:
+            path: "{{ cac_mcp_file }}"
+            follow: false
+          register: cac_mcp_file_stat
+
+        - name: Require private root-owned regular storage
+          ansible.builtin.assert:
+            that:
+              - >-
+                not cac_mcp_directory_stat.stat.exists or
+                (cac_mcp_directory_stat.stat.isdir | default(false) and
+                 cac_mcp_directory_stat.stat.uid == 0 and
+                 cac_mcp_directory_stat.stat.mode == '0700')
+              - >-
+                not cac_mcp_file_stat.stat.exists or
+                (cac_mcp_file_stat.stat.isreg | default(false) and
+                 not cac_mcp_file_stat.stat.islnk | default(false) and
+                 cac_mcp_file_stat.stat.uid == 0 and
+                 cac_mcp_file_stat.stat.mode == '0600')
+            fail_msg: Review the saved MCP token path and permissions; require a root-owned private directory and regular file.
+
+        - name: Read the existing protected MCP token copy
+          ansible.builtin.slurp:
+            src: "{{ cac_mcp_file }}"
+          when: cac_mcp_file_stat.stat.exists
+          register: cac_mcp_stored_file
+
+    - name: Read the saved MCP connection values without exposing them
+      ansible.builtin.set_fact:
+        cac_mcp_record: "{{ cac_mcp_stored_file.content | b64decode | from_json }}"
+      when: cac_mcp_file_stat.stat.exists
+
+    - name: Validate saved MCP ownership and target before reuse
+      ansible.builtin.assert:
+        that:
+          - cac_mcp_existing.json.count == 1
+          - cac_mcp_record.target == (aap_hostname | regex_replace('/+$', ''))
+          - cac_mcp_record.username == 'admin'
+          - cac_mcp_record.scope == 'write'
+          - cac_mcp_record.id == cac_mcp_existing.json.results[0].id
+          - cac_mcp_record.token is string
+          - cac_mcp_record.token | length > 0
+        fail_msg: Review the saved MCP copy and target token; recovery or rotation requires an explicit operator decision.
+      when: cac_mcp_file_stat.stat.exists
+
+    - name: Verify the saved bearer token is still accepted
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/me/"
+        headers:
+          Authorization: "Bearer {{ cac_mcp_record.token }}"
+        status_code: 200
+        validate_certs: "{{ aap_validate_certs }}"
+      register: cac_mcp_identity
+      when: cac_mcp_file_stat.stat.exists
+
+    - name: Require that the saved bearer still identifies the administrator
+      ansible.builtin.assert:
+        that:
+          - (cac_mcp_identity.json.results | default([cac_mcp_identity.json])) | length == 1
+          - (cac_mcp_identity.json.results | default([cac_mcp_identity.json]))[0].username == 'admin'
+        fail_msg: Review the saved MCP token's owner; existing access is never rotated automatically.
+      when: cac_mcp_file_stat.stat.exists
+
+    - name: Preserve manually created MCP access without a recoverable copy
+      ansible.builtin.set_fact:
+        cac_mcp_manual: true
+      when:
+        - cac_mcp_existing.json.count == 1
+        - not cac_mcp_file_stat.stat.exists
+
+    - name: Create and save MCP access only when neither token nor saved copy exists
+      when:
+        - cac_mcp_existing.json.count == 0
+        - not cac_mcp_file_stat.stat.exists
+      block:
+        - name: Prepare the target's private token directory
+          ansible.builtin.file:
+            path: "{{ cac_mcp_directory }}"
+            state: directory
+            owner: root
+            group: root
+            mode: '0700'
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+
+        - name: Issue the persistent MCP token using the final administrator login
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
+            method: POST
+            url_username: admin
+            url_password: "{{ aap_password | default((cac_installer_admin.stdout | default('{}') | from_json).password) }}"
+            force_basic_auth: true
+            body_format: json
+            body:
+              description: "{{ cac_mcp_description }}"
+              scope: write
+              application: null
+            status_code: 201
+            validate_certs: "{{ aap_validate_certs }}"
+          register: cac_mcp_created
+
+        - name: Prepare the recoverable target-local connection record
+          ansible.builtin.set_fact:
+            cac_mcp_new_record: >-
+              {{ {'target': aap_hostname | regex_replace('/+$', ''),
+                  'username': 'admin', 'scope': 'write',
+                  'id': cac_mcp_created.json.id, 'token': cac_mcp_created.json.token,
+                  'expires': cac_mcp_created.json.expires | default(none)} | to_nice_json }}
+
+        - name: Save the MCP token atomically on its target
+          ansible.builtin.copy:
+            dest: "{{ cac_mcp_file }}"
+            content: "{{ cac_mcp_new_record }}"
+            owner: root
+            group: root
+            mode: '0600'
+            unsafe_writes: false
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+          diff: false
+
+        - name: Mark the persistent MCP token as saved
+          ansible.builtin.set_fact:
+            cac_mcp_saved: true
+      always:
+        - name: Check the target copy after an interrupted token save
+          ansible.builtin.slurp:
+            src: "{{ cac_mcp_file }}"
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+          when:
+            - cac_mcp_created.json.id is defined
+            - not cac_mcp_saved
+          register: cac_mcp_save_check
+          failed_when: false
+
+        - name: Inspect token storage when its saved contents could not be read
+          ansible.builtin.stat:
+            path: "{{ cac_mcp_file }}"
+            follow: false
+          delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+          vars:
+            ansible_connection: ssh
+            ansible_user: "{{ vault_ansible_user }}"
+            ansible_password: "{{ vault_ansible_password }}"
+            ansible_become: true
+          when:
+            - cac_mcp_created.json.id is defined
+            - not cac_mcp_saved
+            - cac_mcp_save_check.content is not defined
+          register: cac_mcp_save_stat
+          failed_when: false
+
+        - name: Revoke a new MCP token only when a recoverable copy was not saved
+          ansible.builtin.uri:
+            url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/{{ cac_mcp_created.json.id }}/"
+            method: DELETE
+            headers:
+              Authorization: "Bearer {{ aap_token }}"
+            status_code: [204, 404]
+            validate_certs: "{{ aap_validate_certs }}"
+          when:
+            - cac_mcp_created.json.id is defined
+            - not cac_mcp_saved
+            - >-
+              (cac_mcp_save_check.content is defined and
+               (cac_mcp_save_check.content | b64decode) != cac_mcp_new_record) or
+              (cac_mcp_save_stat.stat.exists is defined and not cac_mcp_save_stat.stat.exists)
+  rescue:
+    - name: Report MCP provisioning failure without exposing connection values
+      ansible.builtin.fail:
+        msg: MCP access needs review of its token metadata, validity and protected target storage. Existing access was not replaced. If a new token's save outcome could not be confirmed, inspect it before rerunning.
+      no_log: false
+
+- name: Report preserved manual MCP access without exposing its bearer value
+  ansible.builtin.debug:
+    msg: Existing administrator MCP access was preserved. Its token value cannot be recovered through the API; retain the operator's existing copy or plan explicit rotation.
+  when: cac_mcp_manual | default(false)

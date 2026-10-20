@@ -1,5 +1,25 @@
 # Release notes
 
+## 0.11.0
+
+Create persistent administrator MCP access during base configuration after the
+final administrator login is verified. Generate a target-specific write-scope
+token and atomically save its recoverable JSON copy in root-owned private storage
+on that target. Validate and preserve saved access on reruns; preserve existing
+manual access without issuing a duplicate or replacing its secret. Reject
+ambiguous metadata, mismatched or expired saved access and unsafe storage. Revoke
+a newly generated token after a failed save only when its copy is proven absent.
+
+Validation: seven offline tests exercised the real tasks against a
+local Gateway API fixture, including first creation, recovery-file permissions,
+reruns, manual-token preservation, rejected saved access and interrupted saves.
+Secrets stayed out of output with diagnostic logging enabled; an integration
+check verified provisioning follows final login verification and leaves ordinary
+temporary-token cleanup intact. Stage 04 passed its Ansible syntax check.
+The complete offline suite passed all 23 tests using the installed runtime collections.
+No live base job, VM operation, encrypted Git write-back or external client setup
+was performed.
+
 ## 0.10.8
 
 Document maintenance commit `67de471` and its rationale in the decision history:

@@ -20,10 +20,12 @@ Selected demo deployments continue to use their separate configurations.
   installer/service settings, LLM credentials, database and service passwords,
   and Gateway OAuth configuration. Vault sensitive inputs and independently
   verify a fresh rebuild.
-- [ ] Automate persistent MCP access in base: create an API token on each new
-  instance with the intended user permissions and scope, and reuse its securely
-  saved value on reruns. For now, the operator creates the target API token
-  manually; automated provisioning and storage are deferred.
+- [x] Implement persistent MCP access in base: create a target-local administrator
+  token with write scope after administrator-password verification. Save its
+  recoverable value in protected root-owned storage on the target, verify and
+  preserve it on reruns, and preserve existing manually created access.
+- [ ] Verify persistent MCP provisioning and reruns through a live base deployment.
+  Offline API tests establish task behavior; no live rollout is claimed.
 - [ ] Save generated per-instance MCP connection values, including the token,
   endpoint and CA trust material, as fully CaC-Vault-encrypted files in the private
   base configuration repository. Use opaque instance identifiers in filenames,
@@ -32,7 +34,9 @@ Selected demo deployments continue to use their separate configurations.
   with Contents read/write; preserve the existing read credentials. Allow trusted
   clients to decrypt the saved values into protected local configuration outside
   Git, with certificate verification enabled. An API-masked AAP credential alone
-  is not a recoverable token copy. Include rerun, recovery and rotation handling.
+  is not a recoverable token copy. The implemented interim copy is a private
+  root-owned file on its target; encrypted Git write-back, client setup and
+  controlled rotation remain pending.
 - [ ] Provision the trusted replacement's bootstrap Git and Vault credentials
   from the encrypted base. Stored credential inputs alone do not create those
   objects; the first seed still needs independently supplied access.

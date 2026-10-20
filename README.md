@@ -326,7 +326,7 @@ with a fresh login. After using installer bootstrap, it also updates that
 deployed inventory's Gateway password, so subsequent use-case importers can
 still read the current login there. Password operations remain protected even
 with diagnostic logging enabled. A rerun with the configured password already
-active does not require installer access. Existing targets can supply their
+active does not require reading the installer inventory. Existing targets can supply their
 current encrypted `aap_password` without a managed administrator entry.
 `aap_username` defaults to the administrator account and may be overridden.
 
@@ -345,6 +345,44 @@ token remains valid until configuration ends. Cleanup revokes the token after
 success or an ordinary task failure and removes the workspace even if revocation
 fails. Fatal role-loading errors or interruptions can skip Ansible's cleanup;
 such runs require checking for a leftover token.
+
+### Persistent MCP access from base
+
+After applying base and verifying the final administrator login, Step 04 creates
+an `MCP admin token` owned by the administrator account with API scope `write`,
+which allows both reads and writes within that account's permissions. This token
+belongs to the target installation and survives temporary run-token cleanup.
+
+The token value is returned only once by the API. Step 04 saves a recoverable JSON
+copy at `/var/lib/aap-autodeploy/mcp-token.json` on the target through the existing
+guest SSH/sudo credentials. The directory is root-owned with mode `0700`; the
+file is root-owned with mode `0600` and saved atomically. Its fields are `target`,
+`username`, `scope`, `id`, `token` and `expires`. An authorized operator can read
+this protected file on the target when configuring an external MCP client.
+The value is never printed or written to the checkout. Secret tasks stay protected
+even when `debug_logging` is enabled. Base reruns therefore require guest SSH/sudo
+access for this file even when installer-password bootstrap is unnecessary.
+
+Reruns check the saved target, owner, scope and token ID, then authenticate with
+the saved bearer to verify that it remains valid. Missing or mismatched API
+metadata, expired/revoked access, duplicate tokens or unsafe storage permissions
+stop for review without automatic rotation. If a manually created matching token
+exists without a saved copy, it is preserved and a non-secret notice explains
+that the API cannot recover its value. Its expiry metadata is checked, but the
+hidden bearer cannot be tested without a copy. Retain the operator's existing copy or
+plan explicit rotation. The playbook does not issue a duplicate token to replace it.
+
+If saving a newly generated token fails, cleanup revokes it only when inspection
+proves that its recoverable copy was not saved. An inconclusive storage check
+preserves the token for operator inspection; a saved persistent token is never
+revoked by ordinary run cleanup. Process termination or a lost token-creation
+response can still require manual inspection. Run this provisioning serially for
+each target; concurrent base jobs are not a token-rotation mechanism.
+
+This implements target-side token creation and recovery storage. It has been
+validated offline only. Vault-encrypted per-instance Git write-back, external
+client configuration and certificate trust, and controlled rotation remain in
+the [TODO](PLAN.md#todo). No additional repository write credential is required.
 
 For AAP 2.7, dispatch excludes the legacy `controller_applications` role because
 `ansible.controller` 4.8.11 does not contain its application module. Dispatch's
@@ -723,6 +761,9 @@ repository URL rejection, required token injection and cleanup after failed impo
 The Gateway login regression checks initial password bootstrap, reruns without
 installer access, legacy installer-only configuration, rejected passwords and
 server/access failures, while verifying that secrets stay out of output.
+The MCP regression exercises creation, protected recovery storage, rerun reuse,
+manual-token preservation, rejected saved access, and failed-save cleanup using
+a local HTTP fixture and a local substitute for the target-side filesystem.
 
 These checks do not run AAP jobs. Ansible syntax checks alone do not verify
 Vault-file loading, authentication, dependency readiness, or successful deployment.

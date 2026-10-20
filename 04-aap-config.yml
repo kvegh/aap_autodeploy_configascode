@@ -223,6 +223,9 @@
             - cac_installer_admin.stdout is defined
           diff: false
           no_log: true
+
+        - name: Prepare persistent administrator MCP access
+          ansible.builtin.include_tasks: tasks/mcp-access.yml
       always:
         - name: Revoke the run token and clean the private workspace
           block:
