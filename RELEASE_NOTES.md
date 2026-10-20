@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.12.0
+
+- Create the four private-configuration Git credentials and the CaC Vault
+  credential from encrypted base during Stage 04. Reuse the compatible Git
+  injector, reject conflicting object ownership/type/Vault identifiers, and
+  preserve existing hidden secret values on reruns.
+- Verified with four isolated tests running the real Ansible tasks against a
+  synthetic Controller API. No configuration deployment was launched for this
+  feature's validation.
+
 ## 0.11.1
 
 Document implementation `5542cbd` and its rationale: provision persistent

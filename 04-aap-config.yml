@@ -206,6 +206,9 @@
           when: aap_password is defined
           no_log: true
 
+        - name: Provision replacement Git and Vault bootstrap credentials
+          ansible.builtin.include_tasks: tasks/bootstrap-credentials.yml
+
         - name: Keep the deployed installer password current after bootstrap
           ansible.builtin.lineinfile:
             path: "{{ installer_extract_dir }}/ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64/inventory"

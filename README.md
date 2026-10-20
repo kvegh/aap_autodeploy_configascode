@@ -286,8 +286,19 @@ Vault password independently. Storing the Vault password inside the encrypted
 base supports provisioning another trusted instance; it cannot unlock the first
 seed or recover a lost decryption key by itself. Keep the initial recovery copy
 separately. Every instance receiving these credentials gains their configuration
-access and belongs to the same trust boundary. These stored inputs do not yet
-create the replacement's credentials or deployment Job Templates automatically.
+access and belongs to the same trust boundary. Step 04 now creates the four
+separate Git-token credentials and the Vault credential with identifier `cac`
+from these inputs, after applying shared base configuration. It creates or reuses
+the compatible `CAC_GIT_TOKEN` credential type. An existing name with another
+organization, credential type, Vault identifier, or Git injection schema stops
+the run for review. Existing hidden secret values are preserved on reruns;
+credential rotation remains a separate operation. Both bootstrap input mappings
+may be omitted for a base that does not provision replacement access; supplying
+only part of the set is rejected.
+
+This step provisions configuration access, not the deployment project's own
+inventories, environment credentials, projects, Job Templates or workflow. Those
+objects belong to the separate AutoDeploy use case.
 
 These tokens serve a different purpose from Source Control credentials created
 on the target AAP. Those credentials allow imported projects to synchronize

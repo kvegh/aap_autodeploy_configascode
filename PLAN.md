@@ -37,9 +37,13 @@ Selected demo deployments continue to use their separate configurations.
   is not a recoverable token copy. The implemented interim copy is a private
   root-owned file on its target; encrypted Git write-back, client setup and
   controlled rotation remain pending.
-- [ ] Provision the trusted replacement's bootstrap Git and Vault credentials
-  from the encrypted base. Stored credential inputs alone do not create those
-  objects; the first seed still needs independently supplied access.
+- [x] Implement provisioning of the trusted replacement's four bootstrap Git
+  credentials and CaC Vault credential from encrypted base. Reuse the compatible
+  Git injection type, reject ownership/type/identifier collisions, and preserve
+  existing secret values on reruns. The first seed still needs independently
+  supplied access.
+- [ ] Verify bootstrap credential provisioning on a fresh target and on a rerun;
+  the implementation has passed isolated Controller API tests only.
 - [ ] Restore this deployment project's own projects, inventories, credential
   types, credentials, Job Templates, surveys and workflows so the replacement
   can deploy and configure further AAP instances. Rebuild target-specific URLs,
