@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.15.1
+
+Document implementation `0b3910b` and encrypted capture commits `0146052` and
+`62d6647`: current lifecycle definitions, target-local service access, preserved
+secrets, empty new lifecycle groups, verified CA selection and safe reruns.
+Documentation whitespace, version consistency and staged-sensitive-data checks
+passed. Assistant rollout remains separate from the 70 offline checks.
+
+
 ## 0.15.0
 
 Refresh Assistant Team configuration import for seven ordinary templates,

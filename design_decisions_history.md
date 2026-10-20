@@ -1,5 +1,44 @@
 # Design decisions history
 
+## Capture current lifecycle definitions and issue access on each target
+
+Implementation: `0b3910b`; encrypted Assistant capture: `0146052`; encrypted
+Windows capture: `62d6647`.
+
+The configuration comparison found two uncaptured Windows templates and current
+Assistant lifecycle changes. Windows now includes patch assessment and WSUS
+patch-ceiling definitions without changing its prior objects or secret inputs.
+Assistant retains its current project branches, reviewed release pin and selected
+execution environment, controlled deployment/retirement surveys and Shutdown
+template. Dedicated lifecycle groups start empty instead of copying old source
+guest registrations. Both captures expose their existing exact PAH requirements
+in the common schema; optional authentication maintenance remains excluded.
+
+An inventory lifecycle bearer belongs to its target. The encrypted capture now
+contains a new service-account password and a dedicated inventory grant, while
+CoP creates the nonadministrator account and its objects. The importer issues a
+target-local token and binds the lifecycle credential to that target's URL,
+inventory and installed CA. It preserves a root-owned protected token record for
+reruns, verifies ownership, scope, privileges, schema and material checksums, and
+stops on ambiguous or missing recovery state. An existing account must authenticate
+before any updates, and its password is omitted from update payloads to prevent
+metadata changes from resetting it. Only this run's new token proved unsaved can
+be revoked after failure. No source password/token is copied or rotated.
+
+The CA default follows the installer account rather than the SSH login account.
+Verified HTTPS requires the supplied URL to match a certificate DNS or IP SAN;
+the encrypted contract may select another installed CA file. The target's internal
+URL and installed CA passed a separate read-only TLS inspection.
+
+The 67-test offline suite and three additional focused checks passed, including
+15 token behavior checks, account control before grants/updates, password omission
+and installer CA selection. Syntax, strict Ansible rendering, encryption round
+trips, preserved ciphertexts/literal injectors, object references and staged
+sensitive-data checks passed. Refreshed Assistant rollout and functional demo
+execution remain separate from these source checks. Production configuration and
+external demo environments were not changed by the capture refresh.
+
+
 ## Keep CaC comparisons while planning incremental audit-log catch-up
 
 Planning commit: `cce0e28`.
