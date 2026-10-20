@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Recover failed deployments through manual stage retries
+
+Planning and documentation change: `d7be1cc`.
+
+The operator chose to remove automatic workflow recovery from the TODO because
+individual Job Templates can already be retried manually. Operators retain the
+existing instance inputs, rerun failed stages and launch the remaining stages.
+A full workflow relaunch creates another instance and consumes another counter.
+Stage 03's existing installer observer remains available. This decision changes
+the plan and instructions only; deployment behavior is unchanged.
+
 ## Capture current lifecycle definitions and issue access on each target
 
 Implementation: `0b3910b`; encrypted Assistant capture: `0146052`; encrypted

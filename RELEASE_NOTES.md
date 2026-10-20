@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.15.3
+
+Document planning change `d7be1cc`: manual stage retries remain the selected
+recovery method, and automatic workflow recovery is removed from the TODO.
+Documentation diff, version and staged-content checks passed.
+
 ## 0.15.2
 
 Document manual stage retries as the deployment workflow recovery method and
