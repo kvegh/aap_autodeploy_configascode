@@ -1,0 +1,86 @@
+---
+- name: Read the target's matching PAH remote
+  ansible.builtin.uri:
+    url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/galaxy/pulp/api/v3/remotes/ansible/collection/?name={{ cac_required_repository.name | urlencode }}"
+    headers:
+      Authorization: "Bearer {{ aap_token }}"
+    validate_certs: "{{ aap_validate_certs }}"
+    status_code: 200
+  register: cac_required_remote
+
+- name: Refuse unknown or ambiguous content sources
+  ansible.builtin.assert:
+    that:
+      - cac_required_remote.json.count | int == 1
+      - cac_required_remote.json.results[0].tls_validation | bool
+      - cac_required_remote.json.results[0].pulp_href is match('^/api/galaxy/pulp/api/v3/remotes/ansible/collection/[a-f0-9-]+/$') or cac_required_remote.json.results[0].pulp_href is match('^/pulp/api/v3/remotes/ansible/collection/[a-f0-9-]+/$')
+    fail_msg: Prerequisite preparation needs exactly one TLS-validated base remote for each declared source.
+
+- name: Bound remote version selection while preserving explicit exact versions
+  ansible.builtin.uri:
+    url: "{{ aap_hostname | regex_replace('/+$', '') }}{{ cac_required_remote.json.results[0].pulp_href if cac_required_remote.json.results[0].pulp_href.startswith('/api/galaxy/') else '/api/galaxy' + cac_required_remote.json.results[0].pulp_href }}"
+    method: PATCH
+    headers:
+      Authorization: "Bearer {{ aap_token }}"
+    body_format: json
+    body:
+      sync_highest_versions: 1
+    validate_certs: "{{ aap_validate_certs }}"
+    status_code: [200, 202]
+  when: cac_required_remote.json.results[0].sync_highest_versions | default(0) | int != 1
+  register: cac_required_policy_update
+
+- name: Wait for an asynchronous remote-policy change before starting synchronization
+  ansible.builtin.include_tasks: use-case-pah-wait.yml
+  vars:
+    cac_pah_task_href: "{{ cac_required_policy_update.json.task | default('') }}"
+  when: cac_required_policy_update.status | default(0) | int == 202
+
+- name: Separate additional exact versions of the same collection
+  ansible.builtin.set_fact:
+    cac_required_sync_batches: "{{ cac_required_sync_batches_yaml | from_yaml }}"
+  vars:
+    cac_required_sync_batches_yaml: >-
+      {% set state = namespace(primary=[], extra=[]) %}
+      {% for group in cac_required_repository.collections | groupby('name') %}
+      {% set state.primary = state.primary + [group.list[0]] %}
+      {% for requirement in group.list[1:] %}
+      {% set state.extra = state.extra + [[requirement]] %}
+      {% endfor %}
+      {% endfor %}
+      {{ ([state.primary] + state.extra) | to_json }}
+
+- name: Synchronize exact batches and restore the complete declared requirement set
+  block:
+    - name: Synchronize exact batches so an older required version is not hidden by another pin
+      ansible.builtin.include_tasks: use-case-pah-sync.yml
+      loop: "{{ cac_required_sync_batches }}"
+      loop_control:
+        loop_var: cac_required_sync_batch
+  always:
+    - name: Restore the protected complete requirement file
+      ansible.builtin.copy:
+        dest: "{{ cac_workspace.path }}/requirements-{{ cac_required_repository.name }}.yml"
+        content: "{{ {'collections': cac_required_repository.collections} | to_nice_yaml }}"
+        mode: '0600'
+
+    - name: Restore the full requirements after successful or failed batch synchronization
+      ansible.hub.collection_remote:
+        name: "{{ cac_required_repository.name }}"
+        url: "{{ cac_required_remote.json.results[0].url }}"
+        requirements_file: "{{ cac_workspace.path }}/requirements-{{ cac_required_repository.name }}.yml"
+        sync_dependencies: false
+        tls_validation: true
+        ah_host: "{{ aap_hostname }}"
+        ah_token: "{{ aap_token }}"
+        validate_certs: "{{ aap_validate_certs }}"
+        state: present
+
+- name: Verify every declared version is available from this PAH distribution
+  ansible.builtin.uri:
+    url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/galaxy/v3/plugin/ansible/content/{{ cac_required_repository.name }}/collections/index/{{ item.name.split('.')[0] }}/{{ item.name.split('.')[1] }}/versions/{{ item.version }}/"
+    headers:
+      Authorization: "Bearer {{ aap_token }}"
+    validate_certs: "{{ aap_validate_certs }}"
+    status_code: 200
+  loop: "{{ cac_required_repository.collections }}"

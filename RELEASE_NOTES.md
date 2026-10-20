@@ -1,5 +1,26 @@
 # Release notes
 
+## 0.13.0
+
+- Add the complete deployment workflow: VM creation, infrastructure, installation,
+  base, explicit PAH/image preparation, then five parallel imports for AIOps,
+  Disconnected Windows, Orchestrator, Assistant Team and AutoDeploy itself.
+- Hand over only the generated VM identity, address and internal API URL. Keep
+  installer FQDN handling separate, retain credentials on each Job Template, and
+  exclude teardown and imported demo jobs from the workflow.
+- Add the AutoDeploy use-case importer and empty public schema. Its populated
+  capture, provisioning inputs, references, workflow repository mapping and exact
+  PAH requirement catalog are whole-file Vault encrypted in the existing private
+  companion. The approved dedicated hypervisor key has independent SSH/sudo
+  verification and is separate from the agent's GitHub identity.
+- Prepare exact collection versions in batches, preserve older explicit pins,
+  restore complete requirements after failures, observe asynchronous policy
+  changes, and clean temporary API authentication and private files.
+- Thirty existing/graph tests and three additional real-task mock-PAH tests passed.
+  Playbook syntax and private Vault round-trip/reference checks passed. Fresh
+  recursive execution, complete production coverage and Windows runtime
+  compatibility remain unverified. No workflow was launched for validation.
+
 ## 0.12.7
 
 Document planning commit `9dad713` and the reason for reviewing this AAP 2.7

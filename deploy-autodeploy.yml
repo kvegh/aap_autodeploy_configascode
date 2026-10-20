@@ -1,0 +1,59 @@
+---
+- name: Import the AAP AutoDeploy use case after shared base and prerequisites
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - myvars
+    - vars/main.yml
+  vars:
+    aap_username: admin
+    aap_validate_certs: false
+    debug_logging: false
+    aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
+    controller_configuration_credentials_secure_logging: true
+  tasks:
+    - name: Restore the deployment capability without launching its automation
+      block:
+        - name: Retrieve the encrypted AutoDeploy capture
+          ansible.builtin.include_tasks: tasks/private-config-checkout.yml
+
+        - name: Require a complete reviewed AutoDeploy capture
+          ansible.builtin.assert:
+            that:
+              - autodeploy_capture_readiness is mapping
+              - autodeploy_capture_readiness.aap_objects_complete | bool
+              - autodeploy_capture_readiness.required_secrets_available | bool
+              - autodeploy_capture_readiness.provisioning_key_access_verified | bool
+              - autodeploy_configuration is mapping
+              - autodeploy_configuration.credentials | length >= 2
+              - autodeploy_configuration.projects | length == 1
+              - autodeploy_configuration.inventories | length == 2
+              - autodeploy_configuration.job_templates | length >= 10
+            fail_msg: Complete and review the AutoDeploy object definitions and encrypted provisioning inputs before import.
+          no_log: true
+
+        - name: Reject masked provisioning secrets
+          ansible.builtin.assert:
+            that:
+              - item.inputs is mapping
+              - "'$encrypted$' not in (item.inputs | to_json)"
+              - "'CHANGEME' not in (item.inputs | to_json)"
+              - "'ASK' not in item.inputs.values()"
+            fail_msg: Supply recoverable encrypted provisioning inputs rather than API masks or launch-time password prompts.
+          loop: "{{ autodeploy_configuration.credentials }}"
+          no_log: true
+
+        - name: Authenticate to the configured target
+          ansible.builtin.include_tasks: tasks/gateway-base-login.yml
+
+        - name: Use the temporary Gateway token for the AutoDeploy import
+          ansible.builtin.set_fact:
+            aap_token: "{{ cac_gateway_token.json.token }}"
+          no_log: true
+
+        - name: Restore the AutoDeploy objects and repeatable deployment workflow
+          ansible.builtin.include_tasks: tasks/autodeploy-config.yml
+      always:
+        - name: Revoke the temporary token and remove the private checkout
+          ansible.builtin.include_tasks: tasks/private-config-cleanup.yml

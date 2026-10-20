@@ -1,0 +1,65 @@
+---
+- name: Require the complete workflow repository mapping
+  ansible.builtin.assert:
+    that:
+      - cac_workflow is defined
+      - cac_workflow is mapping
+      - cac_workflow.organization is string
+      - cac_workflow.organization | length > 0
+      - cac_workflow.repositories is mapping
+      - "['base', 'aiops', 'windows_disconnected', 'orchestrator', 'assistant_team'] | difference(cac_workflow.repositories.keys()) | length == 0"
+    fail_msg: Supply the workflow organization and the base plus four use-case configuration repository URLs.
+  no_log: true
+
+- name: Reject repository URLs containing credentials or redirects through query parameters
+  ansible.builtin.assert:
+    that:
+      - item is string
+      - (item | ansible.builtin.urlsplit('scheme')) == 'https'
+      - (item | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
+      - (item | ansible.builtin.urlsplit('username')) is none
+      - (item | ansible.builtin.urlsplit('password')) is none
+      - (item | ansible.builtin.urlsplit('path')) not in ['', '/']
+      - (item | ansible.builtin.urlsplit('query')) == ''
+      - (item | ansible.builtin.urlsplit('fragment')) == ''
+      - item is not search('\\s')
+    fail_msg: Every workflow configuration repository must be an HTTPS Git URL without embedded credentials.
+  loop: "{{ cac_workflow.repositories.values() | list }}"
+  no_log: true
+
+- name: Create the success-only deployment graph and parallel use-case imports
+  ansible.controller.workflow_job_template:
+    name: "{{ cac_workflow.name | default('Deploy Complete AAP') }}"
+    organization: "{{ cac_workflow.organization }}"
+    description: >-
+      Deploy a fresh AAP, configure base and prerequisites, then import the four
+      captured demos and AutoDeploy itself in parallel. No teardown or imported demo jobs run.
+    allow_simultaneous: false
+    labels:
+      - aap-autodeploy
+    ask_variables_on_launch: false
+    ask_inventory_on_launch: false
+    ask_limit_on_launch: false
+    ask_scm_branch_on_launch: false
+    extra_vars:
+      debug_logging: false
+    survey_enabled: true
+    survey_spec:
+      name: Deployment diagnostics
+      description: The VM name and internal target address are handed over automatically from Stage 01.
+      spec:
+        - question_name: Enable diagnostic logging
+          question_description: Credential and token tasks remain protected.
+          variable: debug_logging
+          type: multiplechoice
+          required: true
+          choices: "false\ntrue"
+          default: 'false'
+          min: 0
+          max: 1024
+    workflow_nodes: "{{ lookup('ansible.builtin.template', 'templates/deployment-workflow-nodes.yml.j2') | from_yaml }}"
+    controller_host: "{{ aap_hostname | default(omit) }}"
+    controller_oauthtoken: "{{ aap_token | default(omit) }}"
+    validate_certs: "{{ aap_validate_certs | default(true) }}"
+    state: present
+  no_log: true

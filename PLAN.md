@@ -50,12 +50,21 @@ Selected demo deployments continue to use their separate configurations.
   supplied access.
 - [ ] Verify bootstrap credential provisioning on a fresh target and on a rerun;
   the implementation has passed isolated Controller API tests only.
-- [ ] Restore this deployment project's own projects, inventories, credential
-  types, credentials, Job Templates, surveys and workflows so the replacement
-  can deploy and configure further AAP instances. Rebuild target-specific URLs,
-  references and generated access tokens for the new instance.
-- [ ] Automate variable handoff and ordering between deployment, base, PAH
-  preparation and use-case import jobs, including resumable failure handling.
+- [x] Implement AutoDeploy as a separate captured use case, with its encrypted
+  configuration in the existing private companion repository. Restore its
+  source project, dedicated inventories and execution environment, provisioning
+  and environment Vault credentials, deployment/import/teardown templates,
+  surveys, and repeatable workflow. Shared Git and CaC Vault access stays in base.
+- [x] Implement a success-only complete deployment workflow, passing the created
+  VM name, address and internal AAP URL through nonsecret artifacts, then applying
+  base, preparing exact PAH prerequisites, and importing the four captured demos
+  plus AutoDeploy itself in parallel. Teardown is not a workflow step.
+- [ ] Verify the new AutoDeploy importer and complete workflow on a fresh target,
+  then prove that replacement can deploy another instance. Offline tests and
+  configuration capture are not evidence of successful recursive deployment.
+- [ ] Extend resumable workflow failure handling. Individual Job Templates and
+  Stage 03's existing-job observer support manual recovery; relaunching the full
+  workflow currently creates a new instance and consumes another counter.
 - [ ] Verify production replacement with configuration comparison and functional
   platform/use-case tests, including its ability to deploy another AAP. Treat
   external environment services as explicit prerequisites until their separate
@@ -83,7 +92,14 @@ Selected demo deployments continue to use their separate configurations.
   token preservation on rerun, ordered local sources, and no content sync.
 - [ ] Populate and verify the PAH requirements component in each existing use-case
   configuration, including collection versions, dependencies, and compatibility
-  with its execution environment, before running the use case's automation.
+  with its execution environment, before running the use case's automation. The
+  AutoDeploy capture now consolidates exact requirements and ownership for the
+  five workflow use cases; separate per-use-case vault components and runtime
+  validation remain pending.
+- [ ] Resolve the Windows runtime version mismatch: the captured Chocolatey
+  collection requires Ansible Core 2.18 or newer while the current execution image
+  reports 2.16.19. Review a compatible execution image or requirement change, then
+  run meaningful functional tests.
 - [ ] Keep the number of retained PAH collection versions small for simplicity.
   Derive the exact versions to synchronize from project and execution-environment
   requirements and their dependency constraints, and declare that required set in

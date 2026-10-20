@@ -1,0 +1,89 @@
+---
+- identifier: create_vm
+  unified_job_template:
+    name: Deploy Test AAP - 01 Linux VM Setup
+    type: job_template
+    organization:
+      name: {{ cac_workflow.organization | to_json }}
+  related:
+    success_nodes:
+      - identifier: configure_infrastructure
+    failure_nodes: []
+    always_nodes: []
+
+- identifier: configure_infrastructure
+  unified_job_template:
+    name: Deploy Test AAP - 02 Infra Config
+    type: job_template
+    organization:
+      name: {{ cac_workflow.organization | to_json }}
+  related:
+    success_nodes:
+      - identifier: install_aap
+    failure_nodes: []
+    always_nodes: []
+
+- identifier: install_aap
+  unified_job_template:
+    name: Deploy Test AAP - 03 AAP Install
+    type: job_template
+    organization:
+      name: {{ cac_workflow.organization | to_json }}
+  related:
+    success_nodes:
+      - identifier: configure_base
+    failure_nodes: []
+    always_nodes: []
+
+- identifier: configure_base
+  unified_job_template:
+    name: Deploy Test AAP - 04 AAP Config
+    type: job_template
+    organization:
+      name: {{ cac_workflow.organization | to_json }}
+  extra_data:
+    aap_config_repo_url: {{ cac_workflow.repositories.base | to_json }}
+  related:
+    success_nodes:
+      - identifier: prepare_use_cases
+    failure_nodes: []
+    always_nodes: []
+
+- identifier: prepare_use_cases
+  unified_job_template:
+    name: Deploy Test AAP - 05 Prepare Use-Case Prerequisites
+    type: job_template
+    organization:
+      name: {{ cac_workflow.organization | to_json }}
+  extra_data:
+    aap_config_repo_url: {{ cac_workflow.repositories.base | to_json }}
+  related:
+    success_nodes:
+      - identifier: configure_aiops
+      - identifier: configure_windows
+      - identifier: configure_orchestrator
+      - identifier: configure_assistant_team
+      - identifier: configure_autodeploy
+    failure_nodes: []
+    always_nodes: []
+
+{% for identifier, job_name, repository in [
+  ('configure_aiops', 'Deploy AIOps Self-Healing Configuration', 'aiops'),
+  ('configure_windows', 'Deploy Disconnected Windows Configuration', 'windows_disconnected'),
+  ('configure_orchestrator', 'Deploy Automation Orchestrator Configuration', 'orchestrator'),
+  ('configure_assistant_team', 'Deploy Assistant Team Configuration', 'assistant_team'),
+  ('configure_autodeploy', 'Deploy AAP AutoDeploy Configuration', 'base')
+] %}
+- identifier: {{ identifier }}
+  unified_job_template:
+    name: {{ job_name | to_json }}
+    type: job_template
+    organization:
+      name: {{ cac_workflow.organization | to_json }}
+  extra_data:
+    aap_config_repo_url: {{ cac_workflow.repositories[repository] | to_json }}
+  related:
+    success_nodes: []
+    failure_nodes: []
+    always_nodes: []
+{% endfor %}

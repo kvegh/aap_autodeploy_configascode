@@ -1,0 +1,51 @@
+---
+- name: Restore provisioning credentials from the encrypted AutoDeploy use case
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_credentials
+    apply:
+      no_log: true
+  vars:
+    controller_credentials: "{{ autodeploy_configuration.credentials }}"
+
+- name: Restore the AutoDeploy execution environment
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_execution_environments
+  vars:
+    controller_execution_environments: "{{ autodeploy_configuration.execution_environments }}"
+
+- name: Restore the two AutoDeploy inventories
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_inventories
+  vars:
+    controller_inventories: "{{ autodeploy_configuration.inventories }}"
+
+- name: Restore only AutoDeploy's provisioning and local hosts
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_hosts
+    apply:
+      no_log: true
+  vars:
+    controller_hosts: "{{ autodeploy_configuration.hosts }}"
+
+- name: Restore AutoDeploy's object label
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_labels
+  vars:
+    controller_labels: "{{ autodeploy_configuration.labels }}"
+
+- name: Restore the deployment source project after PAH preparation
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_projects
+  vars:
+    controller_projects: "{{ autodeploy_configuration.projects }}"
+
+- name: Restore the deployment and use-case import templates and surveys
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_job_templates
+    apply:
+      no_log: true
+  vars:
+    controller_templates: "{{ autodeploy_configuration.job_templates }}"
+
+- name: Restore the complete workflow on the replacement so it can deploy another instance
+  ansible.builtin.include_tasks: deployment-workflow.yml

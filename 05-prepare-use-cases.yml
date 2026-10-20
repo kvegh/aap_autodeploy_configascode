@@ -1,0 +1,31 @@
+---
+- name: Prepare declared use-case PAH content before importing project definitions
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - myvars
+    - vars/main.yml
+  vars:
+    aap_username: admin
+    aap_validate_certs: false
+    debug_logging: false
+  tasks:
+    - name: Prepare this target using its encrypted deployment requirements
+      block:
+        - name: Retrieve the encrypted configuration inputs
+          ansible.builtin.include_tasks: tasks/private-config-checkout.yml
+
+        - name: Authenticate to the configured target
+          ansible.builtin.include_tasks: tasks/gateway-base-login.yml
+
+        - name: Use the temporary Gateway token for prerequisite preparation
+          ansible.builtin.set_fact:
+            aap_token: "{{ cac_gateway_token.json.token }}"
+          no_log: true
+
+        - name: Prepare the declared collections and execution image
+          ansible.builtin.include_tasks: tasks/use-case-prerequisites.yml
+      always:
+        - name: Revoke the temporary token and remove the private checkout
+          ansible.builtin.include_tasks: tasks/private-config-cleanup.yml

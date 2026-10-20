@@ -1,0 +1,34 @@
+---
+- name: Configure the complete AAP deployment workflow without launching it
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Require an encrypted workflow configuration file
+      ansible.builtin.assert:
+        that:
+          - cac_workflow_vars_file is defined
+          - cac_workflow_vars_file is string
+          - cac_workflow_vars_file | length > 0
+        fail_msg: Supply cac_workflow_vars_file pointing to the fully Vault-encrypted deployment configuration.
+
+    - name: Read the workflow configuration ciphertext
+      ansible.builtin.slurp:
+        src: "{{ cac_workflow_vars_file }}"
+      register: cac_workflow_ciphertext
+      no_log: true
+
+    - name: Require whole-file encryption before loading workflow configuration
+      ansible.builtin.assert:
+        that:
+          - (cac_workflow_ciphertext.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
+        fail_msg: Workflow configuration must be a whole-file Ansible Vault payload.
+      no_log: true
+
+    - name: Load the protected workflow configuration
+      ansible.builtin.include_vars:
+        file: "{{ cac_workflow_vars_file }}"
+      no_log: true
+
+    - name: Configure the workflow using the selected seed controller authentication
+      ansible.builtin.include_tasks: tasks/deployment-workflow.yml

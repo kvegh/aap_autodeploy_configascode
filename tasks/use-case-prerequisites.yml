@@ -1,0 +1,95 @@
+---
+- name: Require separately owned, reviewed use-case prerequisites
+  ansible.builtin.assert:
+    that:
+      - cac_workflow_pah is defined
+      - cac_workflow_pah is mapping
+      - cac_workflow_pah.reviewed | bool
+      - cac_workflow_pah.repositories is sequence
+      - cac_workflow_pah.repositories | length > 0
+      - cac_workflow_pah.repositories | map(attribute='name') | unique | length == (cac_workflow_pah.repositories | length)
+      - cac_workflow_execution_image is defined
+      - cac_workflow_execution_image is string
+      - cac_workflow_execution_image | length > 0
+    fail_msg: Supply the reviewed deployment/use-case PAH requirements and execution image in encrypted AutoDeploy configuration.
+  no_log: true
+
+- name: Require exact collection versions and explicit repository ownership
+  ansible.builtin.assert:
+    that:
+      - item.0.name in ['rh-certified', 'validated', 'community']
+      - item.1.name is match('^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$')
+      - item.1.version is match('^[0-9]+\.[0-9]+\.[0-9]+([.+-][a-zA-Z0-9.-]+)?$')
+    fail_msg: Prerequisite collections must use exact versions from the configured PAH sources.
+  loop: "{{ cac_workflow_pah.repositories | subelements('collections') }}"
+  no_log: true
+
+- name: Prepare each declared PAH repository in order without pruning content
+  ansible.builtin.include_tasks:
+    file: use-case-pah-repository.yml
+    apply:
+      no_log: true
+  loop: "{{ cac_workflow_pah.repositories }}"
+  loop_control:
+    loop_var: cac_required_repository
+    label: "{{ cac_required_repository.name }}"
+
+- name: Inspect the installed execution image in Controller's runtime store
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - automation-controller-task
+      - podman
+      - image
+      - exists
+      - "{{ cac_workflow_execution_image }}"
+    chdir: "/home/{{ vault_aap_install_user }}"
+  register: cac_runtime_image
+  failed_when: cac_runtime_image.rc not in [0, 1]
+  changed_when: false
+  delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+  become: true
+  become_user: "{{ vault_aap_install_user }}"
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ vault_ansible_user }}"
+    ansible_password: "{{ vault_ansible_password }}"
+
+- name: Copy the existing installer-bundle image into Controller's runtime store
+  ansible.builtin.shell:
+    cmd: >-
+      set -o pipefail;
+      podman save {{ cac_workflow_execution_image | quote }}
+      | podman exec -i automation-controller-task podman load
+    executable: /bin/bash
+    chdir: "/home/{{ vault_aap_install_user }}"
+  when: cac_runtime_image.rc == 1
+  changed_when: true
+  delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+  become: true
+  become_user: "{{ vault_aap_install_user }}"
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ vault_ansible_user }}"
+    ansible_password: "{{ vault_ansible_password }}"
+
+- name: Verify Controller can use the declared existing execution image
+  ansible.builtin.command:
+    argv:
+      - podman
+      - exec
+      - automation-controller-task
+      - podman
+      - image
+      - exists
+      - "{{ cac_workflow_execution_image }}"
+    chdir: "/home/{{ vault_aap_install_user }}"
+  changed_when: false
+  delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+  become: true
+  become_user: "{{ vault_aap_install_user }}"
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ vault_ansible_user }}"
+    ansible_password: "{{ vault_ansible_password }}"

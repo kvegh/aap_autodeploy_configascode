@@ -1,0 +1,19 @@
+---
+- name: Require a target-local PAH task reference
+  ansible.builtin.assert:
+    that:
+      - cac_pah_task_href is match('^/(api/galaxy/)?pulp/api/v3/tasks/[a-f0-9-]+/$')
+    fail_msg: PAH accepted an asynchronous change without a recognized local task reference.
+
+- name: Wait until the PAH task has ended
+  ansible.builtin.uri:
+    url: "{{ aap_hostname | regex_replace('/+$', '') }}{{ cac_pah_task_href if cac_pah_task_href.startswith('/api/galaxy/') else '/api/galaxy' + cac_pah_task_href }}"
+    headers:
+      Authorization: "Bearer {{ aap_token }}"
+    validate_certs: "{{ aap_validate_certs }}"
+    status_code: 200
+  register: cac_pah_task_status
+  until: cac_pah_task_status.json.state in ['completed', 'failed', 'canceled', 'skipped']
+  retries: 360
+  delay: 10
+  failed_when: cac_pah_task_status.json.state in ['failed', 'canceled', 'skipped']

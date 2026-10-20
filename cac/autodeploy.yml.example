@@ -1,0 +1,37 @@
+---
+# Empty structure only. Complete outside Git and encrypt the whole file before
+# storing populated cac/autodeploy.yml in the private configuration repository.
+autodeploy_capture_readiness:
+  aap_objects_complete: false
+  required_secrets_available: false
+  provisioning_key_access_verified: false
+  fresh_recursive_deployment_verified: false
+
+cac_workflow:
+  name: Deploy Complete AAP
+  organization: ORGANIZATION_PLACEHOLDER
+  repositories:
+    base: https://git.example.invalid/CONFIGURATION_OWNER/base-config.git
+    aiops: https://git.example.invalid/CONFIGURATION_OWNER/base-config.git
+    windows_disconnected: https://git.example.invalid/CONFIGURATION_OWNER/windows-config.git
+    orchestrator: https://git.example.invalid/CONFIGURATION_OWNER/orchestrator-config.git
+    assistant_team: https://git.example.invalid/CONFIGURATION_OWNER/assistant-config.git
+
+cac_workflow_execution_image: EXECUTION_IMAGE_PLACEHOLDER
+cac_workflow_pah:
+  reviewed: false
+  # Exact versions and their dependency closure, owned by the deployment/use cases.
+  # Keep multiple required versions as separate entries; preparation syncs them
+  # in separate batches so one pin cannot replace another.
+  repositories: []
+
+autodeploy_configuration:
+  # Provisioning Machine and default-ID environment Vault credentials.
+  # Base separately creates the four Git credentials and the cac-ID Vault.
+  credentials: []
+  execution_environments: []
+  inventories: []
+  hosts: []
+  labels: []
+  projects: []
+  job_templates: []

@@ -98,7 +98,7 @@
     - vars/main.yml
   vars:
     installer_dir_name: "ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64"
-    aap_hostname: "{{ vm_name }}.{{ vault_domain }}"
+    aap_installer_hostname: "{{ vm_name }}.{{ vault_domain }}"
     source_aap_fqdn: "aap.{{ vault_domain }}"
 
   tasks:
@@ -109,7 +109,7 @@
           ansible.builtin.replace:
             path: "{{ installer_extract_dir }}/{{ installer_dir_name }}/inventory"
             regexp: "{{ source_aap_fqdn }}"
-            replace: "{{ aap_hostname }}"
+            replace: "{{ aap_installer_hostname }}"
 
         - name: Set bundle install in inventory
           ansible.builtin.lineinfile:

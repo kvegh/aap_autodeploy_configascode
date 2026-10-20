@@ -1,0 +1,19 @@
+---
+- name: Remove temporary API authentication before deleting the checkout
+  block:
+    - name: Revoke this run's temporary Gateway token
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/{{ cac_gateway_token.json.id }}/"
+        method: DELETE
+        headers:
+          Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+        status_code: [204, 404]
+        validate_certs: "{{ aap_validate_certs }}"
+      when: cac_gateway_token.json.id is defined
+      no_log: true
+  always:
+    - name: Remove the private checkout and Git helper on success or failure
+      ansible.builtin.file:
+        path: "{{ cac_workspace.path }}"
+        state: absent
+      when: cac_workspace.path is defined

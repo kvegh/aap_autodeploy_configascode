@@ -1,0 +1,28 @@
+---
+- name: Write this exact batch to a private requirement file
+  ansible.builtin.copy:
+    dest: "{{ cac_workspace.path }}/requirements-{{ cac_required_repository.name }}.yml"
+    content: "{{ {'collections': cac_required_sync_batch} | to_nice_yaml }}"
+    mode: '0600'
+
+- name: Set exact batch requirements without automatic dependency downloads
+  ansible.hub.collection_remote:
+    name: "{{ cac_required_repository.name }}"
+    url: "{{ cac_required_remote.json.results[0].url }}"
+    requirements_file: "{{ cac_workspace.path }}/requirements-{{ cac_required_repository.name }}.yml"
+    sync_dependencies: false
+    tls_validation: true
+    ah_host: "{{ aap_hostname }}"
+    ah_token: "{{ aap_token }}"
+    validate_certs: "{{ aap_validate_certs }}"
+    state: present
+
+- name: Add this exact batch to PAH and wait for successful synchronization
+  ansible.hub.collection_repository_sync:
+    name: "{{ cac_required_repository.name }}"
+    ah_host: "{{ aap_hostname }}"
+    ah_token: "{{ aap_token }}"
+    validate_certs: "{{ aap_validate_certs }}"
+    wait: true
+    interval: 10
+    timeout: 3600

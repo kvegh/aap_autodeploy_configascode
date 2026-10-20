@@ -43,7 +43,7 @@ base repository, separate Git write access, client configuration and CA trust.
 
 ## Current implementation
 
-The repository contains four separate Ansible stages:
+The repository contains the deployment stages and separate use-case imports:
 
 | Stage | Playbook | Purpose |
 |---|---|---|
@@ -51,6 +51,7 @@ The repository contains four separate Ansible stages:
 | 02 | `02-infra-config.yml` | Configure DNS, certificates, and the reverse proxy. |
 | 03 | `03-aap-install.yml` | Prepare the VM and run the pre-staged AAP installer. |
 | 04 | `04-aap-config.yml` | Apply the subscription, PAH sources and local download credentials, then shared CaC through `infra.aap_configuration.dispatch`. |
+| 05 | `05-prepare-use-cases.yml` | Prepare the exact declared PAH collection versions and existing execution image before parallel imports. |
 
 Post-install configuration uses the `dispatch` role from the
 [Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
@@ -65,7 +66,7 @@ stops configuration. A per-run Gateway token authenticates the subscription
 import and dispatch. It is revoked afterward, and the temporary checkout, ZIP,
 and authentication helper are removed after successful runs and ordinary task
 failures. Ansible role-loading errors or interruptions can prevent cleanup.
-Automatic demo selection and job handoff remain planned. On 2026-10-18, a fresh
+The complete workflow described below provides automatic job handoff. On 2026-10-18, a fresh
 environment completed all four stages as individually launched jobs. VM creation
 succeeded, and infrastructure configuration succeeded after the missing DNS
 collection was curated in PAH and declared in project requirements. Installation
@@ -99,6 +100,83 @@ refer to children that do not yet exist on a clean target. A successful import
 does not establish runtime collection compatibility or functional demo readiness.
 
 ## Setup and secrets
+
+### Complete deployment workflow and the AutoDeploy use case
+
+The `Deploy Complete AAP` workflow runs the deployment stages on success only,
+then imports AIOps Self-Healing, Disconnected Windows, Automation Orchestrator,
+Assistant Team, and AutoDeploy itself in parallel. Teardown and imported demo
+jobs are not workflow nodes.
+
+```mermaid
+flowchart LR
+    VM[01 Create VM] --> Infra[02 Infrastructure]
+    Infra --> Install[03 Install AAP]
+    Install --> Base[04 Shared base]
+    Base --> Prepare[05 Use-case prerequisites]
+    Prepare --> AIOps[AIOps configuration]
+    Prepare --> Windows[Windows configuration]
+    Prepare --> Orchestrator[Orchestrator configuration]
+    Prepare --> Assistant[Assistant Team configuration]
+    Prepare --> AutoDeploy[AutoDeploy configuration]
+```
+
+Stage 01 consumes the hypervisor's next counter and publishes only `vm_name`,
+`vm_ip`, and `aap_hostname` through `set_stats` workflow artifacts. The API URL
+uses the discovered internal address. Stage 03 separately uses
+`aap_installer_hostname` for its installer FQDN, keeping the workflow's HTTPS API
+URL intact. No credentials, passwords or tokens are put in workflow artifacts.
+The workflow's only survey question is `debug_logging`; saved repository URLs
+are supplied on each appropriate node, and each existing Job Template keeps its
+own credentials. Concurrent runs of this workflow are disabled.
+Failure stops downstream success nodes. Inspect and resume an existing instance
+with its individual Job Templates; relaunching the entire workflow creates a
+new instance and consumes another counter value. Installer observation remains
+available through Stage 03's existing async-job identifier.
+
+AutoDeploy is a separate use case rather than platform base. Its whole-file
+Vault-encrypted `cac/autodeploy.yml` lives beside `cac/base_CaC_vault.yml` in the
+existing private companion repository. It contains the workflow repository
+mapping, exact deployment/use-case PAH requirements, deployment source project,
+execution environment, two dedicated inventories, provisioning and environment
+Vault credentials, and the deployment/import/teardown templates and surveys.
+It has a dedicated `deploy-autodeploy.yml` importer and Job Template. The
+importer restores the workflow on the target too, allowing that target to repeat
+the same deployment sequence. The empty public structure is
+[`cac/autodeploy.yml.example`](cac/autodeploy.yml.example). Populate it outside
+Git, verify provisioning access, and encrypt it with the same `cac` Vault
+credential before committing it privately. Provisioning keys must be dedicated
+to the intended environment; do not copy an agent's GitHub SSH identity.
+
+Stage 05 reads the separate AutoDeploy capture and shared base authentication
+inputs through the base repository's existing Git credential. It synchronizes
+only exact declared collection versions and their explicit dependency closure
+through PAH, with upstream TLS validation enabled and automatic dependency
+expansion disabled. Additional versions of one collection use separate batches,
+so an older required pin is not silently displaced by another pin. Repository
+requirements are restored to the complete declared set even after a failed
+batch, and asynchronous PAH policy changes finish before synchronization starts.
+Repository content is added rather than deliberately pruned. It then copies the execution
+image already supplied by the installer bundle into Controller's runtime store
+if absent; it does not pull a new image or install Python dependencies. Base
+itself continues to configure empty PAH sources without synchronization.
+
+`configure-deployment-workflow.yml` can create or reconcile the seed's workflow
+without launching it. Supply `cac_workflow_vars_file` as a fully Vault-encrypted
+configuration file and provide normal Controller authentication separately.
+The AutoDeploy importer uses that same workflow task on replacement instances.
+Existing external hypervisor, image, network, DNS and certificate services remain
+environment prerequisites. Complete production coverage, runtime collection and
+Python compatibility, and a fresh recursive deployment remain separate live
+verification tasks. Applying the existing AIOps capture can start enabled EDA
+activations; the workflow preserves that importer's existing activation policy.
+The current source execution image reports Ansible Core 2.16.19 and includes
+`dnspython`. The captured Windows requirement `chocolatey.chocolatey` 1.6.0
+declares Core 2.18 or newer, so Windows runtime compatibility still needs a
+reviewed image or requirement change and functional verification. Importing its
+configuration alone does not resolve that mismatch.
+
+### Execution environment and external prerequisites
 
 Use an execution environment with Ansible and the required collections, including
 `infra.aap_configuration`, `ansible.controller`, `redhat.rhel_system_roles`, and
@@ -437,9 +515,9 @@ API URL determines how the configuration job connects.
 ### Recover interrupted Stage 03 monitoring
 
 The Job Template's overall timeout must allow for host preparation as well as
-the installer's own 3,600-second async limit. A 3,600-second template timeout
-stopped a live run while its remote installer was still running; the template
-now allows 7,200 seconds. This timeout result does not establish an installer
+the installer's own 7,200-second async limit. A 3,600-second template timeout
+stopped an earlier live run while its remote installer was still running; the
+installation template now allows 10,800 seconds. A timeout does not establish an installer
 failure or justify starting another installer.
 
 To inspect that existing installation, launch Stage 03 with the same `vm_name`
