@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Preserve Orchestrator interpreter selection for job runtime
+
+Importer regression and documentation: `f23f1af`; encrypted capture: `c141e1a`.
+
+The production comparison found that the import process evaluated the localhost
+interpreter expression, storing its own Python path. The operator requested a
+portable result for imported Orchestrator jobs. The encrypted host definition
+now marks the expression `!unsafe`, so CoP preserves it literally while importing.
+The stored expression resolves normally when a later job runs. All other decoded
+capture values and secret inputs are unchanged; the fix belongs to the CaC
+inventory definition before the application playbooks execute.
+
+Three focused tests passed, including the installed CoP wildcard combination and
+host-parameter rendering with distinct import/job Python paths. Encryption header,
+roundtrip and actual Ansible loader checks passed. Live import job 2273 succeeded
+using `f23f1af`; a separate verified HTTPS read confirmed the target inventory
+stores the literal expression. Application deployment and cleanup were not run.
+
 ## Recover failed deployments through manual stage retries
 
 Planning and documentation change: `d7be1cc`.

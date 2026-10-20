@@ -743,6 +743,9 @@ The `!unsafe` YAML tag prevents the importer's Jinja evaluation from replacing
 the expression with its own Python path. AAP stores the expression as ordinary
 host-variable text, and each imported job evaluates it in its own execution
 environment. Use the tag for this deferred value inside the encrypted capture.
+Live configuration import 2273 succeeded; a separate verified HTTPS read confirmed
+the inventory retains the literal expression. The application templates were not
+launched for this verification.
 The importer does not apply base or the subscription, launch either imported
 template, deploy OpenShift resources, or perform cleanup operations.
 

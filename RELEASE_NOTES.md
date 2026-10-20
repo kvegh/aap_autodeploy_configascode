@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.15.5
+
+Document interpreter-preservation change `f23f1af` and encrypted capture `c141e1a`.
+Live Orchestrator configuration import 2273 succeeded, and a separate verified
+HTTPS read confirmed that the target inventory stores the job-time expression
+literally. Functional Orchestrator deployment and cleanup were not run.
+
+Validation: documentation, version and staged-content checks passed; the three
+focused importer tests passed with the implementation commit.
+
 ## 0.15.4
 
 Test and document deferred interpreter rendering for Orchestrator imports.
