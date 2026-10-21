@@ -34,7 +34,7 @@
     ansible_become: true
   register: windows_ad_public_trust
   changed_when: false
-  no_log: true
+  no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
 - name: Bind the encrypted AD target credential to this imported platform
   ansible.builtin.set_fact:

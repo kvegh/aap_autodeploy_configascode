@@ -708,6 +708,8 @@ its definitions still launches no jobs and enables no LDAP authenticator.
 The installed-platform bundle uses the existing containerized-installer trust
 path; a protected `windows_disconnected_ad_target_ca_path` can select another
 verified layout. Certificate and hostname validation remain required.
+Diagnostic logging can show this public-trust read command's error; passwords,
+decryption and credential updates remain protected.
 
 `debug_logging` defaults to `false`, with the same optional `"false"`/`"true"`
 survey choice as other import templates. Authentication, decryption, wildcard

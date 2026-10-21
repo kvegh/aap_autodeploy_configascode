@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.16.3
+
+Allow the existing diagnostic choice to expose errors from the public AD target
+trust read. Passwords, Vault loading and credential writes remain protected.
+This makes a failed read diagnosable without changing certificate validation.
+
+Validation: importer syntax and whitespace checks passed. The initial refreshed
+capture import stopped at the public-trust read before applying definitions.
+
 ## 0.16.2
 
 Document installed-platform trust implementation `1f75e14` and the refreshed
