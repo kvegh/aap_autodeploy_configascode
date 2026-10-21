@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Verify trust from certificate files with Unicode comments
+
+Implementation: `e9e892a`; encrypted project refresh: `e4f2d29`.
+
+The installed public bundle contains Unicode comments, which Python's inline
+PEM interface rejects. Loading the installed certificate files preserves the
+full bundle and required HTTPS chain/hostname verification. That check passed
+in the focused import, which subsequently succeeded after the Windows project
+was refreshed before template validation. Independent API reads confirmed all
+32 templates, 29 nodes, target binding and file injectors; the imported static
+verifier also passed all 48 regional grants. Infrastructure provisioning and
+LDAP login verification remain separate from configuration import.
+
 ## Diagnose the public trust read while protecting authentication
 
 Implementation: `4772b6b`.

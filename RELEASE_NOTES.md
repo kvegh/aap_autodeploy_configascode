@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.16.5
+
+Document Unicode-compatible trust verification `e9e892a` and the successful
+dedicated Windows capture import after project refresh `e4f2d29`. Independent
+API reads verified 32 templates, 29 nodes and target-specific file credentials;
+the imported verifier passed 48 scoped grants. AD deployment and LDAP login
+remain separate validation.
+
+Validation: version, documentation and whitespace consistency checks passed.
+
 ## 0.16.4
 
 Verify the AD target using certificate files so Unicode comments in installed

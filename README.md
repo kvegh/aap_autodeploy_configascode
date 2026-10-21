@@ -723,8 +723,11 @@ earlier 21-template capture. Independent API checks verified the added template 
 supporting configuration. Imported patching/deployment jobs were not run by those
 checks; runtime testing remains in the project TODO.
 The AD extension's refreshed encrypted capture contains 32 templates and a
-29-node workflow. Its Vault, reference and actual CoP rendering checks passed;
-live import and AD provisioning are separate validation.
+29-node workflow. Its dedicated test import passed after refreshing the existing
+Windows source project. Independent reads verified the template and node counts,
+target-specific credential binding and file injectors; the imported verifier
+passed all 48 scoped grants. AD promotion, LDAP login and complete fresh
+infrastructure provisioning remain separate validation.
 
 ### Automation Orchestrator configuration deployment
 
