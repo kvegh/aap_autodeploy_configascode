@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Bind Windows AD configuration to the receiving platform
+
+Implementation: `e6bf9bd`.
+
+Fresh Windows imports must configure their own platform rather than reusing a
+dedicated validation instance's API and SSH settings. An optional encrypted
+capture flag prepares a target-specific credential using the existing installer
+SSH connection, public trust and the current administrator identity. HTTPS
+hostname and chain validation precede credential creation. The importer still
+restores definitions only and rejects launches and schedules. Syntax, Windows
+configuration guards, group-ordering and version-policy tests passed; live
+AD deployment and a fresh-target import remain separate proof.
+
 ## Consolidate the current work plan and separate completion from proof
 
 Documentation implementation: `591fc43`.

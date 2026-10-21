@@ -698,12 +698,16 @@ base, run the imported automation, or change Windows machines.
 
 When the encrypted capture declares `windows_disconnected_ad_target_enabled`,
 the importer also prepares the AD extension's encrypted target credential for
-this platform. It reads public SSH host keys and the host CA bundle over the
+this platform. It reads public SSH host keys and the host and installed-platform
+CA bundles over the
 existing installer SSH connection and verifies the target HTTPS chain and
 hostname before saving the credential. Runtime AD configuration uses this
 platform's credentials and trust, rather than a previous validation instance.
 The imported Windows workflow contains the AD provisioning branch; importing
 its definitions still launches no jobs and enables no LDAP authenticator.
+The installed-platform bundle uses the existing containerized-installer trust
+path; a protected `windows_disconnected_ad_target_ca_path` can select another
+verified layout. Certificate and hostname validation remain required.
 
 `debug_logging` defaults to `false`, with the same optional `"false"`/`"true"`
 survey choice as other import templates. Authentication, decryption, wildcard

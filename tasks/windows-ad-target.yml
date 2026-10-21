@@ -10,6 +10,7 @@
         from urllib.parse import urlsplit
         target=urlsplit(sys.argv[1])
         bundle=Path('/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem').read_text()
+        bundle+='\n'+Path(sys.argv[2]).read_text()
         context=ssl.create_default_context(cadata=bundle)
         with socket.create_connection((target.hostname,target.port or 443),timeout=20) as tcp:
             with context.wrap_socket(tcp,server_hostname=target.hostname):
@@ -23,11 +24,13 @@
             raise RuntimeError('The selected platform has no readable public SSH host keys.')
         print(json.dumps({'ca':bundle,'known_hosts':'\n'.join(keys)+'\n'}))
       - "{{ aap_hostname }}"
+      - "{{ windows_disconnected_ad_target_ca_path | default('/home/' ~ vault_aap_install_user ~ '/aap/tls/extracted/pem/directory-hash/ca-bundle.crt') }}"
   delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
   vars:
     ansible_connection: ssh
     ansible_user: "{{ vault_ansible_user }}"
     ansible_password: "{{ vault_ansible_password }}"
+    ansible_become_password: "{{ vault_ansible_password }}"
     ansible_become: true
   register: windows_ad_public_trust
   changed_when: false

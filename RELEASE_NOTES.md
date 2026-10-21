@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.16.1
+
+Use the receiving platform's installed public CA bundle alongside host trust
+when preparing its AD target credential. Require valid HTTPS with both bundles
+and keep the existing installer SSH authentication, including sudo credentials.
+Document initial target-credential implementation `e6bf9bd`.
+
+Validation: changed Python/YAML parsing and importer syntax passed. Live import
+with the refreshed encrypted capture remains separate validation.
+
 ## 0.16.0
 
 Prepare a target-specific encrypted credential for the Windows AD extension when
