@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Reuse installed platform trust for the AD target credential
+
+Implementation: `1f75e14`; encrypted Windows capture: `6d2c9c4`.
+
+The platform's own issuing CA can live in its installer-generated trust bundle
+rather than host trust alone. Read both public bundles over the existing SSH
+connection and require normal HTTPS chain and hostname verification before
+storing the target credential. Reuse the established containerized-installer
+trust path, allow an explicit protected override for another verified layout,
+and supply existing sudo authentication. No certificate checks are disabled.
+Python/YAML parsing and importer syntax passed. The capture's actual CoP
+combination verified fresh target bindings and deferred credential injectors;
+live import and infrastructure deployment remain separate validation.
+
 ## Bind Windows AD configuration to the receiving platform
 
 Implementation: `e6bf9bd`.

@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.16.2
+
+Document installed-platform trust implementation `1f75e14` and the refreshed
+encrypted Windows capture `6d2c9c4`. Its 32 templates and 29-node workflow include
+guarded AD provisioning and target-specific runtime credentials. Distinguish
+successful capture/render checks from pending live import and deployment proof.
+
+Validation: documentation, version consistency and whitespace checks passed.
+
 ## 0.16.1
 
 Use the receiving platform's installed public CA bundle alongside host trust

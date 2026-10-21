@@ -715,9 +715,12 @@ variable combination, and credential updates remain protected even when enabling
 diagnostics. Ordinary object operations follow the diagnostic choice. Syntax and
 seven focused readiness, secret-input, and execution guards have passed. Fresh
 configuration import 2248 succeeded, and follow-up 2270 imported the latest
-21-template capture. Independent API checks verified the added template and
+earlier 21-template capture. Independent API checks verified the added template and
 supporting configuration. Imported patching/deployment jobs were not run by those
 checks; runtime testing remains in the project TODO.
+The AD extension's refreshed encrypted capture contains 32 templates and a
+29-node workflow. Its Vault, reference and actual CoP rendering checks passed;
+live import and AD provisioning are separate validation.
 
 ### Automation Orchestrator configuration deployment
 
