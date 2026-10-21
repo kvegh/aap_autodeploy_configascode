@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.16.0
+
+Prepare a target-specific encrypted credential for the Windows AD extension when
+declared by the private capture. Read public trust over the existing installer
+SSH connection and require valid target HTTPS before importing the credential.
+Configuration import continues to restore definitions without launching jobs.
+
+Validation: importer syntax, the Windows configuration guards, group ordering,
+four version-policy tests and whitespace checks passed. Fresh-target import and
+the AD provisioning workflow remain separate live validation.
+
 ## 0.15.7
 
 Document work-plan cleanup `591fc43`: one current numbered TODO list with reasons

@@ -217,6 +217,11 @@
           when: aap_password is not defined
           no_log: true
 
+        - name: Prepare this platform's protected AD target credential when declared
+          ansible.builtin.include_tasks: tasks/windows-ad-target.yml
+          when: windows_disconnected_ad_target_enabled | default(false) | bool
+          no_log: true
+
         - name: Create a Gateway token for this configuration run
           ansible.builtin.uri:
             url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"

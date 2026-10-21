@@ -1,0 +1,40 @@
+---
+- name: Read public platform trust over the existing installer SSH connection
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - |
+        import json,socket,ssl,sys
+        from pathlib import Path
+        from urllib.parse import urlsplit
+        target=urlsplit(sys.argv[1])
+        bundle=Path('/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem').read_text()
+        context=ssl.create_default_context(cadata=bundle)
+        with socket.create_connection((target.hostname,target.port or 443),timeout=20) as tcp:
+            with context.wrap_socket(tcp,server_hostname=target.hostname):
+                pass
+        keys=[]
+        for path in sorted(Path('/etc/ssh').glob('ssh_host_*_key.pub')):
+            parts=path.read_text().split()
+            if len(parts)>=2:
+                keys.append(target.hostname+' '+parts[0]+' '+parts[1])
+        if not keys:
+            raise RuntimeError('The selected platform has no readable public SSH host keys.')
+        print(json.dumps({'ca':bundle,'known_hosts':'\n'.join(keys)+'\n'}))
+      - "{{ aap_hostname }}"
+  delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+  vars:
+    ansible_connection: ssh
+    ansible_user: "{{ vault_ansible_user }}"
+    ansible_password: "{{ vault_ansible_password }}"
+    ansible_become: true
+  register: windows_ad_public_trust
+  changed_when: false
+  no_log: true
+
+- name: Bind the encrypted AD target credential to this imported platform
+  ansible.builtin.set_fact:
+    windows_disconnected_ad_target_ca: "{{ (windows_ad_public_trust.stdout | from_json).ca }}"
+    windows_disconnected_ad_target_known_hosts: "{{ (windows_ad_public_trust.stdout | from_json).known_hosts }}"
+  no_log: true

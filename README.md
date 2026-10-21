@@ -696,6 +696,15 @@ definitions through CoP dispatch. It rejects job-launch and schedule definitions
 and excludes dispatch's launch roles. It does not apply the subscription or shared
 base, run the imported automation, or change Windows machines.
 
+When the encrypted capture declares `windows_disconnected_ad_target_enabled`,
+the importer also prepares the AD extension's encrypted target credential for
+this platform. It reads public SSH host keys and the host CA bundle over the
+existing installer SSH connection and verifies the target HTTPS chain and
+hostname before saving the credential. Runtime AD configuration uses this
+platform's credentials and trust, rather than a previous validation instance.
+The imported Windows workflow contains the AD provisioning branch; importing
+its definitions still launches no jobs and enables no LDAP authenticator.
+
 `debug_logging` defaults to `false`, with the same optional `"false"`/`"true"`
 survey choice as other import templates. Authentication, decryption, wildcard
 variable combination, and credential updates remain protected even when enabling
