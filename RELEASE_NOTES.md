@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.16.4
+
+Verify the AD target using certificate files so Unicode comments in installed
+trust bundles do not fail Python's ASCII-only inline PEM interface. Preserve the
+full public bundle and required chain/hostname validation.
+
+Validation: Python/YAML parsing and importer syntax passed. The diagnostic retry
+identified the inline-PEM type error; the focused live retry follows this fix.
+
 ## 0.16.3
 
 Allow the existing diagnostic choice to expose errors from the public AD target

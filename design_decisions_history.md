@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Diagnose the public trust read while protecting authentication
+
+Implementation: `4772b6b`.
+
+The initial refreshed Windows import stopped during public trust collection.
+The existing diagnostic choice now exposes errors from that public-data command
+while passwords, decryption and credential writes remain protected. The retry
+identified Python's inline PEM interface rejecting non-ASCII comments in the
+installed CA bundle. A transient PAH service error also interrupted a source
+sync; the existing PAH endpoints recovered and remained the collection source.
+
 ## Reuse installed platform trust for the AD target credential
 
 Implementation: `1f75e14`; encrypted Windows capture: `6d2c9c4`.

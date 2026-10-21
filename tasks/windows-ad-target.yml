@@ -11,7 +11,8 @@
         target=urlsplit(sys.argv[1])
         bundle=Path('/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem').read_text()
         bundle+='\n'+Path(sys.argv[2]).read_text()
-        context=ssl.create_default_context(cadata=bundle)
+        context=ssl.create_default_context(cafile='/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem')
+        context.load_verify_locations(cafile=sys.argv[2])
         with socket.create_connection((target.hostname,target.port or 443),timeout=20) as tcp:
             with context.wrap_socket(tcp,server_hostname=target.hostname):
                 pass
