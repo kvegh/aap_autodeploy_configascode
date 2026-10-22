@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.16.6
+
+Document the Windows AD runtime validation and link its beginner presenter
+walkthrough. Separate deployment stages passed patch eligibility, promotion,
+identity nesting, time synchronization and LDAPS/gateway trust. The complete
+live verifier passed twelve LDAP logins, 48 scoped grants, 192 regional access
+checks and twelve mock jobs. Explain that AD selects AAP team membership while
+Ansible maintains object permissions. Fresh combined provisioning and live
+membership revocation remain separate validation; importer behavior is unchanged.
+
+Validation: documentation links, version and whitespace consistency checked.
+
 ## 0.16.5
 
 Document Unicode-compatible trust verification `e9e892a` and the successful

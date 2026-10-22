@@ -726,8 +726,17 @@ The AD extension's refreshed encrypted capture contains 32 templates and a
 29-node workflow. Its dedicated test import passed after refreshing the existing
 Windows source project. Independent reads verified the template and node counts,
 target-specific credential binding and file injectors; the imported verifier
-passed all 48 scoped grants. AD promotion, LDAP login and complete fresh
-infrastructure provisioning remain separate validation.
+passed all 48 scoped grants. Subsequent Windows/AD runtime stages also passed
+applicable Server patching, promotion and identity nesting, synchronized domain
+time and LDAPS/gateway trust. All twelve AD users received the expected regional
+teams on both services. The full live verifier passed 48 scoped grants, 192
+regional access checks and twelve completed mock jobs. Complete fresh combined
+infrastructure provisioning and live membership revocation remain separate
+validation. See the Windows repository's
+[presenter walkthrough](https://github.com/kvegh/disconnected-windows-patching/blob/main/docs/active-directory-demo-guide.md)
+for VNC/browser steps, narration, role comparisons and the setup reference.
+AD holds role groups and membership; Ansible configures their AAP team mappings
+and object permissions. The LDAP integration does not import Windows ACLs.
 
 ### Automation Orchestrator configuration deployment
 

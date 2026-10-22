@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Document the AD runtime proof separately from configuration import
+
+Windows presenter guide: `0b46f96`; service identity checks: `60a8531`.
+
+The receiving-platform import restored the definitions and target credential;
+separate runtime stages then verified applicable Server patching, directory
+promotion, identity nesting, synchronized time and LDAPS/gateway trust. The full
+live verifier passed all twelve logins, 48 scoped grants, 192 regional access
+checks and twelve completed mock jobs. Documentation now links the beginner
+VNC/browser presenter guide and explains that AD selects membership while
+Ansible maintains AAP resource grants. No importer behavior or encrypted capture
+changed for this documentation update. Complete fresh infrastructure deployment
+and live membership revocation remain separate proof.
+
 ## Verify trust from certificate files with Unicode comments
 
 Implementation: `e9e892a`; encrypted project refresh: `e4f2d29`.
