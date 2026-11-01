@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.16.7
+
+Document session restart instructions in RESTART_HERE.md and link them from the
+README. Identify the existing plan, setup and decision history to read, preserve
+the production-replacement goal and secret-handling boundary, and note that the
+existing Markdown backlog still needs migration to Beads.
+
+Validation: restart-document links, version consistency, whitespace and added
+content checks passed. Deployment behavior is unchanged.
+
 ## 0.16.6
 
 Document the Windows AD runtime validation and link its beginner presenter

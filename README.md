@@ -1,5 +1,7 @@
 # AAP AutoDeploy and Configuration as Code
 
+Resuming in a new session? Start with [RESTART_HERE.md](RESTART_HERE.md).
+
 Recreate Ansible Automation Platform from configuration as code so that a new
 instance can take over the production platform's tasks, including deploying and
 configuring further AAP instances. An existing trusted AAP acts as the initial
