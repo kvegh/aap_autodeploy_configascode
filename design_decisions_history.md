@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Keep a Git-tracked session restart entry point
+
+Documentation implementation: `fa10dfd`.
+
+The operator requested RESTART_HERE.md in Git so a new chat can recover this
+project's goal and find its plan, setup and decision history. The README links
+to that entry point. It documents that the existing backlog has not yet been
+migrated to Beads and directs subsequent tracking there; it does not create a
+second task list. It contains no secrets or environment-specific access values.
+
+Restart-document links, version consistency, whitespace and staged-content
+checks passed. No automation or deployed configuration changed.
+
 ## Document the AD runtime proof separately from configuration import
 
 Windows presenter guide: `0b46f96`; service identity checks: `60a8531`.

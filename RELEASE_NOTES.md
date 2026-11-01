@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.16.8
+
+Document restart-entry-point change `fa10dfd`, including its README link and
+explicit distinction between the existing plan and pending Beads migration.
+
+Validation: decision reference, version consistency, whitespace and staged
+content checks passed.
+
 ## 0.16.7
 
 Document session restart instructions in RESTART_HERE.md and link them from the
