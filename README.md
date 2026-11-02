@@ -61,6 +61,9 @@ categories using only the endpoint family, preserving query values and tokens.
 
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.
+Certbot and its nginx plugin belong to the shared Hactar baremetal base OS.
+Stage 02 checks their installed RPMs after the host pin, then requires the existing
+approved ACME account/certificate. It installs no packages or new account itself.
 
 Base means platform setup only. Use-case Git projects, inventories, hosts,
 credentials, execution environments, templates, workflows, and EDA integrations

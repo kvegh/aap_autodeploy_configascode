@@ -81,6 +81,9 @@ overlapping private guest networks cannot select a production guest directly.
 
 Stage 02 derives the DNS address from the verified hypervisor pin, reads the
 exact reserved A record and refuses any conflicting address before its PUT.
+It first checks that Hactar's shared baremetal base OS already provides certbot
+and its nginx plugin. Package ownership stays in that base rather than the AAP
+VM or this certificate consumer.
 Certificate/proxy paths are limited to the reserved VM hostname. An existing
 certificate or separately approved ACME account is required; this playbook does
 not accept certificate terms. Stage 04 checks that public DNS points exclusively

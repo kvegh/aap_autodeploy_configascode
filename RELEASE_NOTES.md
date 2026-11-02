@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.21.10
+
+Check shared certbot/nginx-plugin RPM readiness after the pinned hypervisor guard
+and before certificate/account checks. Package ownership stays in Hactar baremetal
+base OS; AutoDeploy installs no packages and preserves the existing ACME legal
+registration guard. Infrastructure syntax and scoped strict production lint pass.
+
 ## 0.21.9
 
 Document safe GET failure classification `b2c5366`, verified local source-reader

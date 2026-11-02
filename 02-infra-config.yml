@@ -32,6 +32,19 @@
     - name: Verify the pinned hypervisor before DNS, proxy or certificate changes
       ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
 
+    - name: Read certificate package readiness owned by the Hactar base OS
+      ansible.builtin.command:
+        argv: [rpm, -q, certbot, python3-certbot-nginx]
+      register: aap_certificate_package_readiness
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Require the shared baremetal certificate prerequisites
+      ansible.builtin.assert:
+        that: aap_certificate_package_readiness.rc == 0
+        fail_msg: Hactar base OS must provide certbot and python3-certbot-nginx before this infrastructure stage.
+
     - name: Inspect the exact reserved hostname's existing certificate
       ansible.builtin.stat:
         path: "/etc/letsencrypt/live/{{ vm_name }}.{{ vault_domain }}/{{ item }}"
