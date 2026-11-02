@@ -53,6 +53,9 @@ dependencies survive unrelated source removals. Lists inside user variables and
 credential inputs keep their original meaningful order.
 Source credential aliases resolve to the captured/base-bootstrap namespace;
 shared external definitions are recognized through those aliases as well.
+The protected action normalizes Boolean survey strings and returns bounded
+refusal categories to a separate failure task. Sensitive inputs/results remain
+under `no_log`; a preflight error still has an actionable reason.
 
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.

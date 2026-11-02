@@ -27,6 +27,58 @@ spec.loader.exec_module(capture)
 
 
 class CaptureActionTests(unittest.TestCase):
+    def test_real_entrypoint_normalizes_survey_booleans_and_exposes_only_safe_refusals(
+        self,
+    ):
+        import sys
+
+        with tempfile.TemporaryDirectory(prefix="aap-capture-entrypoint-") as temporary:
+            environment = dict(
+                os.environ,
+                ANSIBLE_ACTION_PLUGINS=str(ROOT / "action_plugins"),
+                ANSIBLE_LIBRARY=str(ROOT / "library"),
+                ANSIBLE_LOCAL_TEMP=str(Path(temporary) / "local"),
+                ANSIBLE_REMOTE_TEMP=str(Path(temporary) / "remote"),
+                AAP_CAC_CAPTURE_REPOSITORY="",
+                AAP_ALLOCATION_REPOSITORY="",
+                AAP_CAC_CAPTURE_GIT_TOKEN="fixture-protected-token-canary",
+            )
+            for commit, push, message in [
+                ("false", "false", "Attach the scoped CaC repository credential"),
+                ("false", "true", "Git publication requires explicit Boolean"),
+                ("true", "true", "Attach the scoped CaC repository credential"),
+            ]:
+                with self.subTest(commit=commit, push=push):
+                    extra = {
+                        "aap_cac_capture_scope": "fixture",
+                        "aap_cac_capture_mode": "preview",
+                        "aap_cac_capture_commit": commit,
+                        "aap_cac_capture_push": push,
+                    }
+                    process = subprocess.run(
+                        [
+                            sys.executable,
+                            "-m",
+                            "ansible.cli.playbook",
+                            "-i",
+                            "localhost,",
+                            str(ROOT / "capture-aap-cac.yml"),
+                            "-e",
+                            json.dumps(extra),
+                        ],
+                        env=environment,
+                        text=True,
+                        capture_output=True,
+                        timeout=40,
+                    )
+                    output = process.stdout + process.stderr
+                    self.assertNotEqual(process.returncode, 0, output)
+                    self.assertIn(
+                        "Explain a protected extraction or review refusal", output
+                    )
+                    self.assertIn(message, output)
+                    self.assertNotIn("fixture-protected-token-canary", output)
+
     def test_desired_yaml_and_json_variable_formatting_has_identical_meaning(self):
         first = {
             "name": "Fixture",
@@ -200,13 +252,16 @@ class CaptureActionTests(unittest.TestCase):
                         ]
                     )
                 )
-                return plugin.run(
+                response = plugin.run(
                     task_vars=(
                         {"awx_project_revision": project_revision}
                         if project_revision
                         else {}
                     )
                 )
+                if response.get("capture_failed"):
+                    raise AnsibleActionFail(response["msg"])
+                return response
 
             with mock.patch.object(
                 ActionBase, "run", side_effect=lambda *args, **kwargs: {}

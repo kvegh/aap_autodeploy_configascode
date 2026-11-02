@@ -80,6 +80,21 @@ class ActionModule(ActionBase):
     TRANSFERS_FILES = False
 
     def run(self, tmp=None, task_vars=None):
+        try:
+            return self._capture(tmp, task_vars)
+        except AnsibleActionFail as error:
+            # Core 2.16 bypasses failed_when for raised ActionFail, hiding even
+            # controlled errors under no_log. The entrypoint prints this bounded
+            # refusal separately while all protected inputs remain censored.
+            return {"changed": False, "capture_failed": True, "msg": str(error)}
+        except Exception:
+            return {
+                "changed": False,
+                "capture_failed": True,
+                "msg": "Protected capture preflight failed; inspect scoped inputs without logging secrets.",
+            }
+
+    def _capture(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
         args = self._task.args
         mode = args.get("mode", "preview")
@@ -90,8 +105,20 @@ class ActionModule(ActionBase):
             raise AnsibleActionFail(
                 "Choose a declared scope and preview, initialize or update mode."
             )
-        commit, push = args.get("commit", False), args.get("push", False)
-        if type(commit) is not bool or type(push) is not bool or (push and not commit):
+
+        def boolean(value):
+            if type(value) is bool:
+                return value
+            if isinstance(value, str) and value.lower() in ("true", "false"):
+                return value.lower() == "true"
+            raise AnsibleActionFail(
+                "Use explicit Boolean true/false Git publication choices."
+            )
+
+        commit, push = boolean(args.get("commit", False)), boolean(
+            args.get("push", False)
+        )
+        if push and not commit:
             raise AnsibleActionFail(
                 "Git publication requires explicit Boolean commit and push choices."
             )
@@ -123,6 +150,7 @@ class ActionModule(ActionBase):
         if self._task.check_mode:
             mode = "preview"
             commit = push = False
+        protected_stage = "private repository read"
         try:
             with tempfile.TemporaryDirectory(prefix="aap-cac-review-") as temporary:
                 private = Path(temporary)
@@ -206,6 +234,7 @@ class ActionModule(ActionBase):
                     )
                     return AnsibleLoader(plaintext).get_single_data(), vault_id, secret
 
+                protected_stage = "capture manifest Vault load"
                 manifest, _, _ = read_vault("cac/capture_scopes_vault.yml")
                 if manifest.get("schema_version") != 1 or scope_key not in manifest.get(
                     "scopes", {}
@@ -224,6 +253,7 @@ class ActionModule(ActionBase):
                         "Only the declared CaC file may be updated; allocator state is excluded."
                     )
                 baseline_file = "baselines/" + scope_key + "_vault.yml"
+                protected_stage = "CaC Vault load and normalization"
                 configuration, vault_id, secret = read_vault(configuration_file)
                 baseline_path = checkout / baseline_file
                 retained_baseline = (
@@ -267,6 +297,7 @@ class ActionModule(ActionBase):
                     .get("labels", {})
                     .values()
                 ]
+                protected_stage = "source API extraction"
                 live = snapshot.collect()
                 if any(
                     project.get("scm_url", "").rstrip("/").removesuffix(".git")
@@ -333,6 +364,7 @@ class ActionModule(ActionBase):
                     raise core.CaptureError(
                         "Captured own-project playbooks are missing from this code checkout; code adaptation is required."
                     )
+                protected_stage = "code ownership comparison"
                 code_current, code_live = {}, {}
                 for entry in scope.get("code_owned_workflows", []):
                     if (
@@ -369,6 +401,7 @@ class ActionModule(ActionBase):
                         if snapshot.objects["workflows"]
                         else {}
                     )
+                protected_stage = "accepted baseline comparison"
                 baseline_path = checkout / baseline_file
                 if baseline_path.exists():
                     baseline, _, _ = read_vault(baseline_file)
@@ -467,6 +500,8 @@ class ActionModule(ActionBase):
                     }
                 )
                 report["review_digest"] = digest
+
+                protected_stage = "encrypted review validation"
 
                 def encrypt(data):
                     encoded = yaml.dump(
@@ -571,6 +606,7 @@ class ActionModule(ActionBase):
                 files = [baseline_file] + (
                     [configuration_file] if capture_changed else []
                 )
+                protected_stage = "reviewed Git publication"
                 if commit:
                     git("add", "--", *files)
                     if set(git("diff", "--cached", "--name-only").splitlines()) - set(
@@ -607,7 +643,11 @@ class ActionModule(ActionBase):
                 return result
         except core.CaptureError as error:
             raise AnsibleActionFail(str(error)) from None
-        except Exception:
+        except Exception as error:
             raise AnsibleActionFail(
-                "Protected capture failed; inspect scoped access/schema/Vault inputs. No source-AAP mutation was attempted."
+                "Protected capture failed during "
+                + protected_stage
+                + " ("
+                + type(error).__name__
+                + "); inspect protected scoped inputs. No source-AAP mutation was attempted."
             ) from None

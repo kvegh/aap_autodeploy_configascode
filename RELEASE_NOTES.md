@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.21.6
+
+Normalize true/false survey strings inside the capture action and return safe
+refusals instead of raising before Ansible evaluates `failed_when`. Keep protected
+inputs under `no_log`, while a separate task reports controlled stage/error
+categories. Real entrypoint tests exercise false/false, false/true and true/true
+survey values with a secret canary; all 26 focused tests pass in both native
+modes. The first live preview failure is acknowledged; a new live run is required.
+
 ## 0.21.5
 
 Document portable namespace fix `e8ab5ac`, encrypted reference correction
