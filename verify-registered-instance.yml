@@ -1,0 +1,83 @@
+---
+# Read-only guest login/sudo and identity proof through its registered hypervisor.
+# This does not run host preparation, package installation, RHSM or AAP setup.
+- name: Resolve the selected guest's verified SSH route
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - myvars
+  tasks:
+    - name: Resolve only the exact completed instance registry entry
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
+    - name: Prepare strict SSH trust through its pinned hypervisor
+      ansible.builtin.include_tasks: tasks/aap-instance-ssh.yml
+
+    - name: Bind the read-only observer to this guest
+      ansible.builtin.add_host:
+        name: aap_instance_probe
+        ansible_host: "{{ vm_ip }}"
+        ansible_port: 22
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
+        ansible_ssh_common_args: "{{ aap_instance_ssh_args }}"
+        ansible_host_key_checking: true
+        ansible_ssh_host_key_checking: true
+        aap_instance_route: "{{ aap_instance_route }}"
+      no_log: true
+
+- name: Verify authenticated guest access without configuring the guest
+  hosts: aap_instance_probe
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Gather only the selected guest's minimal facts
+      ansible.builtin.setup:
+        gather_subset: [min]
+      no_log: true
+
+    - name: Read machine identities and prove sudo without changing them
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import json
+            import os
+            import re
+            from pathlib import Path
+            machine = Path('/etc/machine-id').read_text().strip()
+            dbus = Path('/var/lib/dbus/machine-id')
+            other = dbus.read_text().strip() if dbus.exists() else None
+            if not re.fullmatch('[a-f0-9]{32}', machine) or os.geteuid() != 0:
+                raise SystemExit('The guest identity or sudo proof is invalid.')
+            print(json.dumps({'machine_id': machine, 'dbus_machine_id': other,
+                              'dbus_is_symlink': dbus.is_symlink(), 'sudo_verified': True}))
+      register: aap_instance_probe_identity
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Require a consistent independently booted guest identity
+      ansible.builtin.assert:
+        that:
+          - aap_guest_identity.machine_id != aap_instance_route.hypervisor.machine_id
+          - aap_guest_identity.dbus_machine_id in [none, aap_guest_identity.machine_id]
+          - aap_guest_identity.sudo_verified | bool
+        fail_msg: Inspect the guest machine identity before installation.
+      vars:
+        aap_guest_identity: "{{ aap_instance_probe_identity.stdout | from_json }}"
+      no_log: true
+
+    - name: Retain bounded read-only verification evidence
+      ansible.builtin.set_stats:
+        data:
+          aap_instance_verification:
+            vm_name: "{{ aap_instance_route.vm_name }}"
+            authenticated_guest_login_verified: true
+            machine_identity: "{{ aap_instance_probe_identity.stdout | from_json }}"
+            distribution: "{{ ansible_facts.distribution }}"
+            distribution_major_version: "{{ ansible_facts.distribution_major_version }}"
+        aggregate: false
+        per_host: false

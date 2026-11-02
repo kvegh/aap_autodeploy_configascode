@@ -34,6 +34,13 @@ SSH uses the pinned hypervisor jump route and API access uses verified public
 DNS and trusted TLS. Provisioning is enabled one phase at a time; local checks
 alone do not establish a completed AAP build.
 
+`verify-registered-instance.yml` provides a separate read-only guest login/sudo
+probe through the registered jump route. It reads minimal OS facts and both
+machine-ID paths without running installation or subscription tasks. A verified
+SSH host-key handshake alone does not establish authenticated guest access;
+compare the retained probe identity with protected golden/source evidence before
+proceeding to installation.
+
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.
 

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.19.2
+
+Add a separate read-only registered-instance guest probe for authenticated SSH,
+sudo, minimal OS facts and both machine-ID paths. It uses the same strict pinned
+jump route and runs no preparation, installation or subscription tasks. Syntax
+and scoped strict production-lint validation pass; runtime guest login proof is
+separate from the earlier host-key handshake.
+
 ## 0.19.1
 
 Document registered-route implementation `b780524`, the separate reader
