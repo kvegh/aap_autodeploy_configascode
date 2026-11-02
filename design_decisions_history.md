@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Preserve protected diagnostics through actual Ansible task execution — 2026-11-02
+
+The first real extractor preview failed before its protected action could report
+an actionable reason. Raised `AnsibleActionFail` bypassed the task's
+`failed_when` handling, leaving only censored output. Implementation `09fe5a9`
+strictly normalizes Boolean survey strings inside the action and returns bounded
+refusals for the separate public failure task. Protected source/Vault/Git inputs
+remain under `no_log`; unexpected failures expose only a controlled stage and
+exception class. No access, checksum, TLS or Vault control is relaxed.
+
+A real entrypoint fixture runs through Ansible task templating in both native
+modes, covers false/false, false/true and true/true publication choices and proves
+the safe reason reaches the failure task without the secret canary. All twenty-six
+focused tests pass. A subsequent actual preview is required before declaring
+the installed extractor operational; no baseline initialization/update was run.
+
 ## Resolve portable credential namespaces before fresh import — 2026-11-02
 
 Implementation `e8ab5ac` and companion `0c1cc64` align shared external aliases and

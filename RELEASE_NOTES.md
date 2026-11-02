@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.21.7
+
+Document protected-refusal/runtime Boolean fix `09fe5a9`, the actual first-preview
+failure and real entrypoint/canary validation without weakening protected logging.
+
 ## 0.21.6
 
 Normalize true/false survey strings inside the capture action and return safe
