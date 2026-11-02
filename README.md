@@ -27,7 +27,10 @@ preparation and final health checks.
 
 Recovery Stage 01 now uses a [shared encrypted name reservation](docs/shared-instance-allocation.md)
 before any image write, with a pinned hypervisor and live isolation checks.
-Local counters are preserved as migration evidence. Fresh guest host keys and
+The isolation guard keeps its original bridge/DNS policy unless the inventory
+independently declares approved HTTPS clients and protected source addresses.
+Each exception binds an exact bridge, IPv4 and MAC; the registered hypervisor
+pin remains unchanged. Local counters are preserved as migration evidence. Fresh guest host keys and
 the exact instance route are retained for the following stages. Stages 02–04
 resolve an exact instance key from that registry before any target connection;
 SSH uses the pinned hypervisor jump route and API access uses verified public
@@ -61,6 +64,10 @@ categories using only the endpoint family, preserving query values and tokens.
 On TLS trust failure, credential-free DNS/host-file and verified-SNI connection
 evidence is retained only as a Vault-encrypted failure artifact. It accepts no
 untrusted certificate and sends no HTTP/API credentials during those probes.
+
+The encrypted environment DNS credential is maintained separately from the
+Vault password. Refreshing that one credential preserves every other environment
+input; infrastructure still reads existing records before any DNS write.
 
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.

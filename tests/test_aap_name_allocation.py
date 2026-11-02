@@ -326,6 +326,23 @@ class AllocationTests(unittest.TestCase):
 
 
 class RoutingTests(unittest.TestCase):
+    def test_optional_https_policy_is_independently_declared_and_preserves_pins(self):
+        pin = self.route()["hypervisor"]
+        before = copy.deepcopy(pin)
+        baseline = routing.isolation_policy(pin)
+        self.assertEqual(set(baseline), {"bridges", "dns_bridges"})
+        client = {"bridge": "virbr0", "ipv4": "192.0.2.15", "mac": "52:54:00:00:00:15"}
+        extended = routing.isolation_policy(pin, [client], ["198.51.100.5"])
+        self.assertEqual(extended["https_clients"], [client])
+        self.assertEqual(extended["protected_ipv4"], ["198.51.100.5"])
+        self.assertEqual(pin, before)
+        with self.assertRaises(routing.AnsibleFilterError):
+            routing.isolation_policy(pin, [client], [])
+        invalid = dict(client, bridge="unapproved")
+        with self.assertRaises(routing.AnsibleFilterError):
+            routing.isolation_policy(pin, [invalid], ["198.51.100.5"])
+        self.assertEqual(routing.isolation_policy(pin, [], ["198.51.100.5"]), baseline)
+
     def route(self):
         return {
             "vm_name": "aap27-test-15",

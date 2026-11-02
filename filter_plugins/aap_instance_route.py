@@ -146,6 +146,55 @@ def instance_route(route):
     return route
 
 
+def isolation_policy(pin, https_clients=None, protected_ipv4=None):
+    pin = hypervisor_pin(pin)
+    result = {
+        "bridges": list(pin["isolation_bridges"]),
+        "dns_bridges": list(pin["isolation_dns_bridges"]),
+    }
+    clients = [] if https_clients is None else https_clients
+    require(
+        isinstance(clients, list),
+        "Declare approved HTTPS clients explicitly as a list.",
+    )
+    if not clients:
+        return result
+    require(
+        isinstance(protected_ipv4, list) and protected_ipv4,
+        "Approved HTTPS clients require independently declared protected source IPv4 addresses.",
+    )
+    for address in protected_ipv4:
+        ipv4(address)
+    require(
+        len(set(protected_ipv4)) == len(protected_ipv4),
+        "Protected source addresses must be unique.",
+    )
+    approved = []
+    for client in clients:
+        require(
+            isinstance(client, Mapping) and set(client) == {"bridge", "ipv4", "mac"},
+            "Bind each approved HTTPS client to its exact bridge, IPv4 and MAC.",
+        )
+        require(
+            client["bridge"] in pin["isolation_bridges"],
+            "An HTTPS client escaped the pinned isolation bridges.",
+        )
+        ipv4(client["ipv4"])
+        require(
+            isinstance(client["mac"], str)
+            and re.fullmatch(r"[0-9a-f]{2}(?::[0-9a-f]{2}){5}", client["mac"])
+            and int(client["mac"][:2], 16) & 1 == 0,
+            "Use the approved normalized unicast MAC address.",
+        )
+        approved.append(dict(client))
+    require(
+        len({(x["bridge"], x["ipv4"], x["mac"]) for x in approved}) == len(approved),
+        "Duplicate HTTPS approvals are refused.",
+    )
+    result.update(https_clients=approved, protected_ipv4=list(protected_ipv4))
+    return result
+
+
 def safe_instance_dns(records, name, address):
     """Only an absent record or an exact existing binding can be updated."""
     ipv4(address)
@@ -244,6 +293,7 @@ class FilterModule:
         return {
             "aap_hypervisor_pin": hypervisor_pin,
             "aap_instance_route": instance_route,
+            "aap_hypervisor_isolation_policy": isolation_policy,
             "aap_instance_ssh_args": ssh_args,
             "aap_observed_allocation_floor": observed_floor,
             "aap_network_bridge": network_bridge,

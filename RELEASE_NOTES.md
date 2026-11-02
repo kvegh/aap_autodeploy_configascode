@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.22.2
+
+Validate explicitly approved per-guest public HTTPS isolation declarations without
+changing registered hypervisor pins or the default two-key policy. Refresh only
+the authorized encrypted DNS credential; all other environment inputs are
+preserved. Seventeen routing/allocation fixtures pass, and the rendered approved
+policy matches the independently verified host configuration.
+
 ## 0.22.1
 
 Document encrypted credential-free route evidence `3eb4edf` and the requirement
