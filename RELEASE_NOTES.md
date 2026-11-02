@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.23.20
+
+Document why labels cannot provide universal CaC object ownership. Add a
+Beads-backed TODO entry with the verified Controller API/UI capability table,
+inventory UI/CoP limitations and alternative ownership ideas for review. The
+design remains open; deployment logic and live AAP metadata are unchanged.
+
 ## 0.23.19
 
 Document actual base 3144 success after the literal-tag fix: independent TLS/admin

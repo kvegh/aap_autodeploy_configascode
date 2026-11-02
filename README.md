@@ -20,6 +20,12 @@ The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
 
+Complete CaC object ownership remains an open design task. Labels cannot cover
+every Controller resource, and API label support does not imply that the UI can
+edit or filter it. [The TODO backlog](TODO.md) mirrors Beads `bead-wd-72v`, with
+the verified API/UI table and alternative ownership approaches to evaluate.
+No universal ownership mechanism has been selected or deployed.
+
 Stage 03 allows the containerized installer up to two hours. Its existing-job
 observer waits for the same ceiling without starting another installer. Set the
 installation Job Template timeout to three hours to leave room for host
