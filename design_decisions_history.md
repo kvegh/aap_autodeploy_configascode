@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Verify authenticated guest access separately from installation — 2026-11-02
+
+Implementation `0079680` adds a read-only registered-instance observer. A strict
+host-key handshake establishes the peer key, while guest login and sudo require
+their own proof. The observer uses the same protected route and attached
+environment/Machine credentials, reads minimal facts and both machine-ID paths,
+and retains bounded identity evidence for comparison with protected golden/source
+records. It changes no machine identity, package, filesystem size or subscription.
+Syntax and scoped strict production lint pass; actual login results must be
+reported separately from this source validation.
+
 ## Bind later setup to registered routes — 2026-11-02
 
 Implementation `b780524` makes Stages 02–04 resolve one completed instance from

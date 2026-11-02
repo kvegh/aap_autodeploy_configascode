@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.19.3
+
+Document read-only guest-probe implementation `0079680` and distinguish peer
+host-key trust, authenticated login/sudo and completed installation evidence.
+
 ## 0.19.2
 
 Add a separate read-only registered-instance guest probe for authenticated SSH,
