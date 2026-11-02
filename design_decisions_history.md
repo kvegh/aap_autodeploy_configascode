@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Audit bundled installation readiness before guest changes — 2026-11-02
+
+Implementation `e53878f` extends the existing registered-instance observer,
+using its authenticated pinned jump route. It reads the configured installer
+bundle, nonroot installer permissions, root layout and capacities, tools, OS and
+resources, and tests credential-free verified Red Hat HTTPS handshakes. Protected
+subscription/login inputs must be present without disclosure. Sizing follows the
+local AAP 2.7 installation reference. Unsupported filesystem layout blocks the
+existing fixed growth commands; it is not guessed or changed. The observer does
+not benchmark IOPS, authenticate to Red Hat, register subscriptions, install
+packages, grow disks or start the installer. Three fixtures and strict production
+lint pass. Actual guest audit remains a separate parent-coordinated job.
+
 ## Declare narrowly approved installer HTTPS separately from target identity — 2026-11-02
 
 Implementation `c365298` validates explicitly approved bridge/IPv4/MAC clients and

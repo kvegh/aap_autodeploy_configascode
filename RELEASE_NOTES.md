@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.23.1
+
+Document guest prerequisite audit `e53878f`, its local reference sizing and
+the distinction between observed readiness and completed installation.
+
 ## 0.23.0
 
 Extend the registered guest observer with a read-only bundled-installation audit:
