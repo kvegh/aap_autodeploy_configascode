@@ -1,5 +1,41 @@
 # Design decisions history
 
+## Review complete owned state before updating encrypted CaC — 2026-11-02
+
+Implementation `055b9dc` adds `capture-aap-cac.yml` and bounded Controller API
+adapters. The existing exporter requires an additional dependency and does not
+provide the accepted-source/accepted-desired merge or complete-visibility deletion
+contract, so this path uses the existing Python/Ansible runtime and GET-only
+transport. Every source/related URL is pinned to the exact TLS origin and
+Controller prefix; redirects, incomplete pages and nonadministrator visibility
+are refused. Owned project/label families discover additions without an old ID
+list. Stable names and parsed YAML/JSON variables exclude runtime noise.
+
+Separate encrypted source and desired baselines preserve intentional namespace
+differences, exclusions and pending desired edits/deletions. Removals include
+resources and associations. Conflicting changes require review, and masked new
+secrets need recoverable inputs. Existing masked secrets and reordered password
+survey defaults keep their vaulted values; masked rotations remain unknowable.
+Accepted dependency names remain owned independently of job associations, so an
+unlinked but existing definition is not mistaken for a deleted resource.
+
+Reviews bind actual code revision/content and validate own playbook paths. The
+base graph is compared through its narrow code-owned adapter; changes requiring
+source adaptation block acceptance. No arbitrary playbook AST rewrite, source
+configuration apply or application job launch occurs. First initialization and
+updates require an exact fresh review digest. Encrypted Git publication is
+explicit, refuses unrelated staged work, never force-pushes and excludes the
+allocator-owned state file.
+
+Companion `77e7cf3` stores the initial encrypted AutoDeploy ownership adapter,
+source-reader/type and preview-default extractor definition, bringing its capture
+to nineteen templates. Other scopes state their missing adapter boundaries;
+saving those definitions does not prove live AAP installation. The 116-test
+regression passed and all 23 focused tests pass in both native modes. Scoped
+strict lint and syntax pass. Local production GET-only preview succeeded without
+publication or AAP mutation; accepted baseline initialization and actual AAP job
+availability remain separate runtime steps.
+
 ## Pin selector authentication origins — 2026-11-02
 
 Implementation `85e7307` and companion `4593bd6` require the orchestration seed

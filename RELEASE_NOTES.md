@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.21.1
+
+Document extraction/update implementation `055b9dc`, encrypted adapter/capability
+capture `77e7cf3`, complete-visibility and double-baseline rationale, source-code
+ownership and runtime proof boundaries.
+
 ## 0.21.0
 
 Add bounded GET-only Controller extraction, normalized three-way CaC comparison,
