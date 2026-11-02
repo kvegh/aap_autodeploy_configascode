@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.23.13
+
+Document custom-type serializer `04316b8`, separate CA dependency/secret
+fixtures and actual metadata-only Controller validation.
+
 ## 0.23.12
 
 Serialize custom credential types with stable name/description/kind/input/injector

@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Capture custom credential schemas with their retained dependencies — 2026-11-02
+
+The separate-CA fixture exposed a missing stable-field allowlist for custom
+credential types. Implementation `04316b8` serializes name, description, kind,
+inputs and injectors while omitting runtime IDs/management flags. The fixture
+proves alias resolution, retained CA/type after removed associations and preserved
+vaulted PEM input. Thirty-one generic fixtures pass. The actual separate CA-only
+type/credential was created successfully and attached beside the untouched used
+reader; no grant or global trust changed. Actual extraction preview is the next
+required proof, and no initialization/update is claimed.
+
 ## Preserve used credential schemas and attach source trust separately — 2026-11-02
 
 Actual Controller validation also refused input changes to the already-used
