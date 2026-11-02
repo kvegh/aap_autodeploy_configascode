@@ -12,11 +12,11 @@ name aliases, writable CaC sections and code-owned workflow adapter. Other
 captures remain intact and give explicit missing-adapter reasons. This is a
 reusable scoped mechanism, not a claim that every AAP component is exportable.
 
-The actual `Extract and Reconcile AAP CaC` Job Template158 is installed with
+The actual `Extract and Reconcile AAP CaC` Job Template 158 is installed with
 preview defaults and separate source reader/CA attachments. Default preview
-job3139 succeeded on source `f38517a` in44.042 seconds. Its Vault-encrypted
+job 3139 succeeded on source `f38517a` in 44.042 seconds. Its Vault-encrypted
 review decrypts correctly and reports zero conflicts/validation errors. No
-accepted baseline exists:373 initial live-versus-desired differences and seven
+accepted baseline exists: 373 initial live-versus-desired differences and seven
 initial code-graph differences still need review before explicit initialization.
 No initialization/update or Git publication ran.
 

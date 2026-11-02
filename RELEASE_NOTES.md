@@ -1,18 +1,22 @@
 # Release notes
 
+## 0.23.16
+
+Document clearly spaced runtime proof references and initial comparison counts.
+
 ## 0.23.15
 
-Document actual installed extractor158/defaultpreview3139 success on f38517a,
+Document actual installed extractor 158/default preview 3139 success on f38517a,
 zero conflicts/validation errors and independently decrypted protected review.
 No baseline acceptance, update or Git publication ran. Preserve initial review
 counts as initial comparisons. Document verified vendor ownership of Podman.
 
 ## 0.23.14
 
-Document actual infrastructure3133 and refined guest observer3135 success. The
+Document actual infrastructure job 3133 and refined guest observer job 3135 success. The
 observer proves preparation readiness and all three verified HTTPS handshakes;
 current installer/runtime preparation remains explicitly pending. Broader local
-regression suite passed122 tests with six collection-dependent skips; additional
+regression suite passed 122 tests with six collection-dependent skips; additional
 Orchestrator/Windows/AIOps/PAH collection fixtures passed using existing paths.
 
 ## 0.23.13

@@ -64,11 +64,11 @@ authenticate to Red Hat services. A verified
 SSH host-key handshake alone does not establish authenticated guest access;
 compare the retained probe identity with protected golden/source evidence before
 proceeding to installation.
-Actual observer job3135 passed with `preparation_ready=true`: supported expansion,
+Actual observer job 3135 passed with `preparation_ready=true`: supported expansion,
 bundle/account/resources/tools and all three strict HTTPS handshakes verified.
 The installed RHSM CA supplied the two Red Hat service authorities. Current
 installer readiness remains false until preparation expands root and the vendor
-runtime is present. Infrastructure job3133 also succeeded. Neither proof
+runtime is present. Infrastructure job 3133 also succeeded. Neither proof
 establishes a completed AAP installation.
 
 `capture-aap-cac.yml` provides [reviewed live extraction and CaC updates](docs/cac-reconciliation.md).
@@ -84,10 +84,10 @@ credential inputs keep their original meaningful order.
 Custom credential types retain stable input/injector schemas alongside their
 credentials; runtime IDs and management flags are excluded. Retained CA
 dependencies survive removed associations while vaulted PEM inputs are preserved.
-Actual Job Template158 (`Extract and Reconcile AAP CaC`) is installed. Default
-preview job3139 succeeded on `f38517a` in44.042 seconds, with zero conflicts or
+Actual Job Template 158 (`Extract and Reconcile AAP CaC`) is installed. Default
+preview job 3139 succeeded on `f38517a` in 44.042 seconds, with zero conflicts or
 validation errors. Its encrypted review decrypts correctly. With no accepted
-baseline yet, it reports373 initial differences and seven code-graph differences;
+baseline yet, it reports 373 initial differences and seven code-graph differences;
 these are not changes since a previous extraction. No initialization, update or
 Git publication ran.
 Source credential aliases resolve to the captured/base-bootstrap namespace;

@@ -2,7 +2,7 @@
 
 ## Verify the installed extractor with a real protected preview — 2026-11-02
 
-Actual template158 default preview job3139 on `f38517a` succeeded in44.042 seconds.
+Actual template 158 default preview job 3139 on `f38517a` succeeded in 44.042 seconds.
 It reported zero conflicts/validation errors, retained a decryptable Vault review,
 and performed no Git publication. The missing accepted baseline is explicit:
 373 initial source/desired differences and seven code-graph differences need
@@ -15,15 +15,15 @@ installer package setup, so its earlier absence does not require manual packages
 
 ## Verify refined preparation readiness on the actual guest — 2026-11-02
 
-Actual observer job3135 on source `6932ebf` succeeded in16.308 seconds:
+Actual observer job 3135 on source `6932ebf` succeeded in 16.308 seconds:
 preparation readiness passed, the supported expansion dry run proved available
 capacity, and bundle/account/resource/tool checks passed. Strict HTTPS handshakes
 verified all three declared endpoints; the two Red Hat services used already
 installed RHSM authorities and no client credentials. Current installer readiness
 remained false for unexpanded temporary space and the absent container runtime.
-Infrastructure job3133 independently succeeded. Implementations `3706770` and
+Infrastructure job 3133 independently succeeded. Implementations `3706770` and
 `ba20ce5` preserve the preparation boundary; no complete AAP installation is
-claimed. The broader local122-test suite and additional already-installed
+claimed. The broader local 122-test suite and additional already-installed
 collection fixtures passed as documented in release notes.
 
 ## Capture custom credential schemas with their retained dependencies — 2026-11-02
