@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Verify actual base configuration after protected tag repair — 2026-11-02
+
+Actual base retry 3144 on source `59aa985` and encrypted base `f38a8cf` succeeded
+in 125.097 seconds. Independent strict public-TLS administrator login, reserved
+node identity, expected organization/types/base credentials/PAH repositories and
+absence of advanced use-case objects were verified. Temporary run tokens were
+removed. The fix in `4af4121`/`bef8921` required only the base retry; VM creation
+and installation were not repeated. Follow-up optional captures restore 44
+injector tags (AutoDeploy 4, Hactar 3, Windows 8, Assistant 29); actual vendor-role
+local checks preserve every schema value and hide canaries without API calls.
+Companion implementations are `0f42c79`, `ef849c5` and `0954190`. No live optional
+import, credential refresh or AIOps change was performed.
+
 ## Preserve literal tags as part of encrypted YAML correctness — 2026-11-02
 
 Actual fresh base configuration failed in the exact CoP wildcard merge. The four

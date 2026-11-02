@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.23.19
+
+Document actual base 3144 success after the literal-tag fix: independent TLS/admin
+login, exact registered node and platform-only configuration verified. Installer
+and VM creation were not repeated. Document 44 optional injector-tag repairs with
+unchanged logical values and protected vendor-role checks; no live use case ran.
+
 ## 0.23.18
 
 Document literal-tag preservation `4af4121`, the exact protected before/after

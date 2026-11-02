@@ -36,6 +36,13 @@ resolve an exact instance key from that registry before any target connection;
 SSH uses the pinned hypervisor jump route and API access uses verified public
 DNS and trusted TLS. Provisioning is enabled one phase at a time; local checks
 alone do not establish a completed AAP build.
+The fresh registered deployment has now completed Stages 01–04: installer 3136
+succeeded and base retry 3144 completed in 125.097 seconds on source `59aa985`
+with encrypted base `f38a8cf`. Independent public-TLS administrator login, reserved
+node identity, expected platform objects and absence of advanced use cases were
+verified. Literal-injector tags fixed the earlier protected wildcard-merge failure;
+no VM creation or installation was repeated. Selected use-case setup and complete
+production takeover remain separate.
 
 `verify-registered-instance.yml` provides a separate read-only guest login/sudo
 probe through the registered jump route. It checks the exact configured bundle,
