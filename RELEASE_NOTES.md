@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.24.2
+
+Document verified AIOps companion cutover `30aecfd`: encrypted token/URL/name,
+unchanged published capture, dedicated seed credential and importer repository
+binding. Other scoped inputs and shared registry/catalog are preserved. No
+AIOps import ran; the runtime `myvars` migration is a separate question.
+
 ## 0.24.1
 
 Document optional AIOps bootstrap implementation `3b6d48f`, unchanged-ciphertext

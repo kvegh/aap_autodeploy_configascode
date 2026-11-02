@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Verify the AIOps companion cutover after scoped token input — 2026-11-02
+
+Companion implementation `30aecfd` moves AIOps platform CaC to its own private
+repository. The capture published in `2a22fbc` is byte-identical to its former
+shared copy, including the Vault identity and all configuration values. The
+operator supplied a dedicated read-only token; its verified repository read and
+inability to read shared base precede legacy-copy removal. Encrypted base stores
+that token, repository URL and independently named Git credential.
+
+The seed importer changed only its repository default and Git association.
+Its other survey/launch settings and Vault inputs, plus the separate preparation
+and selector templates, were verified unchanged. Five encrypted capture bindings
+and one external credential dependency changed; shared catalog/registry and
+allocator bytes were preserved. Bootstrap implementation `3b6d48f` supplies the
+optional credential on later base runs without replacing existing hidden secrets.
+
+No AIOps import, activation or application job ran. The separate runtime
+`myvars` remains in the public AIOps playbook repository; this verified split
+concerns platform CaC. The broader ownership architecture remains undecided.
+
 ## Provision independent AIOps configuration access — 2026-11-02
 
 Implementation `3b6d48f` adds optional `cac_bootstrap_git_credentials.aiops`

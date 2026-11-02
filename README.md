@@ -738,6 +738,12 @@ instance registry remain in their existing repository. It does not load base or 
 manifest, and it does not launch any of the imported demo Job Templates.
 Applying enabled EDA activation definitions can start those activations.
 
+The companion migration verified private publication, identical capture bytes
+and the dedicated reader before removing the former shared capture. The seed
+importer's repository default and Git credential are updated; its other scoped
+inputs remain unchanged. AIOps's separate runtime `myvars` is still in its public
+playbook repository and remains a separate migration question.
+
 The template uses the same execution environment, project, and three credentials
 as Step 04. Supply the target's explicit `aap_hostname` and
 `aap_config_repo_url`. `debug_logging` defaults to `false`; the optional survey
