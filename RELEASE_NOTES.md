@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.22.1
+
+Document encrypted credential-free route evidence `3eb4edf` and the requirement
+to prove source identity before any trust/routing repair.
+
 ## 0.22.0
 
 Retain encrypted, credential-free source connection evidence after a TLS trust

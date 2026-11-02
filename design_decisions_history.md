@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Collect encrypted TLS route evidence before changing trust — 2026-11-02
+
+Actual execution-environment preview confirmed certificate trust failure while
+the same source-reader inputs verified locally. Implementation `3eb4edf` retains
+only encrypted DNS/host-file/trust-path and verified-SNI peer evidence after that
+failure. Diagnostic probes send no HTTP/API credentials, accept no untrusted
+certificate and change no DNS or trust policy. Evidence must be compared with
+independently trusted source identity before choosing a repair. Tests prove zero
+diagnostic HTTP requests, unchanged certificate/hostname verification and Vault
+encryption of failure artifacts; all twenty-eight focused fixtures pass.
+
 ## Keep certificate package ownership in shared baremetal base — 2026-11-02
 
 The user clarified that certbot and its nginx plugin serve several hypervisor
