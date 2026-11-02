@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.20.1
+
+Document registered selection implementation `c1d60b7`, encrypted capture
+`cbe5b7a`, scoped credential/Vault boundaries, preserved allocator state and the
+distinction between verified guest access and pending AAP/use-case setup.
+
 ## 0.20.0
 
 Require a completed registered instance key for selected and standalone CaC

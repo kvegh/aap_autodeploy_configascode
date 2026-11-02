@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Select registered targets without replacing case credentials — 2026-11-02
+
+Implementation `c1d60b7` replaces free-form target URL surveys with an exact
+completed registry key in the selector and standalone configuration importers.
+Every importer derives its public API and private SSH route before connecting.
+The selector verifies the saved non-Machine credential names/organization,
+preserves their Git/Vault boundaries, adds only the fixed registry dependencies
+and registered Machine, and verifies actual completed job associations/results.
+A distinct `instance_registry` Vault identity avoids collisions with a case's
+`cac` secret. Credential prompting is limited to these validated setup launches;
+free variable prompts and application job execution remain disabled.
+
+Companion capture `cbe5b7a` retains eighteen templates, including separately
+bound recovery phases and a read-only observer, with their exact protected
+inventory/host/group and recoverable Machine dependency. Optional captured
+groups are restored without broad inventory rewriting. All template labels are
+defined. Allocator-owned runtime state is unchanged.
+
+API checks additionally reject alternate IPv6 records and disabled TLS overrides
+because either could send credentials outside the pinned IPv4 route. The full
+95-test regression passes; sixteen routing/allocation and nine selector tests
+pass in both native modes, including distinct Vault identity and credential
+removal/substitution refusal. Ten entrypoints pass syntax checks and scoped
+strict lint passes; broader prerequisite lint retains four older line-length
+findings. Actual isolated creation and read-only guest login/sudo succeeded,
+while certificate issuance, installation and selected setup remain unproved.
+
 ## Verify authenticated guest access separately from installation — 2026-11-02
 
 Implementation `0079680` adds a read-only registered-instance observer. A strict
