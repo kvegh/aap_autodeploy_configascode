@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.23.11
+
+Document immutable used-reader preservation `988d172` and separate scoped
+CA attachment without changing access grants or global trust.
+
 ## 0.23.10
 
 Preserve the in-use source reader schema and provide a separate existing-source

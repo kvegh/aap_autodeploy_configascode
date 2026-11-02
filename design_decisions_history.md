@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Preserve used credential schemas and attach source trust separately — 2026-11-02
+
+Actual Controller validation also refused input changes to the already-used
+reader type. No live type or credential changed. Implementation `988d172`
+retains that URL/token schema and provides a separate CA-only credential whose
+required PEM uses the supported single-file injector. The capture restores the
+original reader exactly, adds the separate credential/type and fourth extractor
+association, and retains its dependency/alias. No access grant, deletion, global
+trust or Controller constraint bypass is involved. Thirty generic fixtures pass;
+actual creation and preview remain parent coordinated.
+
 ## Verify preparation results before starting installation — 2026-11-02
 
 Implementation `ba20ce5` follows the observed copied-disk readiness gap: the
