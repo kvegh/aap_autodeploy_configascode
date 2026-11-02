@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.20.3
+
+Document complete-survey validation `17c5efb`, encrypted migration `729b3f2` and
+the correction for importers that previously exposed diagnostic logging only.
+
 ## 0.20.2
 
 Require instance-key/repository/debug prompts on every captured configuration

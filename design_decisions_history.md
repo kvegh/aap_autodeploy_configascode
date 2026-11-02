@@ -1,5 +1,15 @@
 # Design decisions history
 
+## Complete surveys that previously exposed diagnostics only — 2026-11-02
+
+Parent API preflight found three importer surveys that had only the logging
+question, so renaming an existing URL question did not add the required instance
+key. Implementation `17c5efb` adds a capture preflight for every fixed importer;
+companion `729b3f2` gives all six required key/repository/debug prompts and removes
+stale saved target URLs/addresses while preserving other scoped inputs.
+Nine selector/label tests pass, including real missing-prompt rejection and a
+complete-survey acceptance fixture. No use-case import was launched by the fix.
+
 ## Select registered targets without replacing case credentials — 2026-11-02
 
 Implementation `c1d60b7` replaces free-form target URL surveys with an exact
