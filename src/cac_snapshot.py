@@ -2,8 +2,11 @@
 
 from copy import deepcopy
 import json
+import os
 import ssl
 import socket
+import hashlib
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urljoin, urlsplit, unquote
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler
@@ -39,6 +42,63 @@ class ControllerReader:
         self.opener = build_opener(
             NoRedirect(), HTTPSHandler(context=ssl.create_default_context())
         )
+
+    def tls_diagnostic(self):
+        """No HTTP or credentials: verify TLS/SNI on resolved peers for diagnosis."""
+        parsed = urlsplit(self.origin)
+        hostname = parsed.hostname
+        port = parsed.port or 443
+        context = ssl.create_default_context()
+        report = {
+            "source_origin": self.origin,
+            "default_verify_paths": ssl.get_default_verify_paths()._asdict(),
+            "trust_store_counts": context.cert_store_stats(),
+            "http_requests_sent": 0,
+            "proxy_environment_present": any(
+                os.environ.get(name) for name in ("HTTPS_PROXY", "https_proxy")
+            ),
+        }
+        hosts = Path("/etc/hosts")
+        report["matching_hosts_entries"] = []
+        if hosts.is_file():
+            for line in hosts.read_text().splitlines():
+                parts = line.split("#", 1)[0].split()
+                if len(parts) > 1 and hostname in parts[1:]:
+                    report["matching_hosts_entries"].append(
+                        {"address": parts[0], "hostname": hostname}
+                    )
+        addresses = sorted(
+            {
+                record[4][0]
+                for record in socket.getaddrinfo(
+                    hostname, port, type=socket.SOCK_STREAM
+                )
+            }
+        )
+        report["resolved_addresses"] = addresses
+        report["verified_probes"] = []
+        for address in addresses[:8]:
+            proof = {"address": address, "tls_verified": False}
+            try:
+                with socket.create_connection((address, port), timeout=4) as raw:
+                    proof["peer_address"] = raw.getpeername()[0]
+                    with context.wrap_socket(raw, server_hostname=hostname) as secure:
+                        proof["tls_verified"] = True
+                        proof["certificate_sha256"] = hashlib.sha256(
+                            secure.getpeercert(binary_form=True)
+                        ).hexdigest()
+            except ssl.SSLCertVerificationError as error:
+                proof.update(
+                    error_type=type(error).__name__,
+                    verify_code=getattr(error, "verify_code", None),
+                    verify_message=getattr(
+                        error, "verify_message", "verification failed"
+                    ),
+                )
+            except Exception as error:
+                proof["error_type"] = type(error).__name__
+            report["verified_probes"].append(proof)
+        return report
 
     def get(self, path):
         absolute = urljoin(self.origin + API_PREFIX, path)
@@ -96,6 +156,14 @@ class ControllerReader:
             reason = error.reason
             if isinstance(reason, ssl.SSLCertVerificationError):
                 category = "TLS certificate trust verification"
+                try:
+                    self.diagnostic = self.tls_diagnostic()
+                except Exception as diagnostic_error:
+                    self.diagnostic = {
+                        "source_origin": self.origin,
+                        "diagnostic_error_type": type(diagnostic_error).__name__,
+                        "http_requests_sent": 0,
+                    }
             elif isinstance(reason, socket.gaierror):
                 category = "hostname resolution"
             elif isinstance(reason, (TimeoutError, socket.timeout)):

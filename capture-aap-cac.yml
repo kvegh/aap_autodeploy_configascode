@@ -31,6 +31,14 @@
       failed_when: false
       no_log: true
 
+    - name: Retain encrypted credential-free connection diagnostics on TLS failure
+      ansible.builtin.set_stats:
+        data:
+          cac_capture_failure_vault: "{{ aap_capture_result.encrypted_diagnostic }}"
+        aggregate: false
+        per_host: false
+      when: aap_capture_result.encrypted_diagnostic is defined
+
     - name: Explain a protected extraction or review refusal without logging data
       ansible.builtin.fail:
         msg: "{{ aap_capture_result.msg | default('The protected capture could not complete; inspect scoped inputs.') }}"

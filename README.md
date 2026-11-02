@@ -58,6 +58,9 @@ refusal categories to a separate failure task. Sensitive inputs/results remain
 under `no_log`; a preflight error still has an actionable reason.
 Controller GET failures distinguish HTTP status, TLS trust, DNS and connection
 categories using only the endpoint family, preserving query values and tokens.
+On TLS trust failure, credential-free DNS/host-file and verified-SNI connection
+evidence is retained only as a Vault-encrypted failure artifact. It accepts no
+untrusted certificate and sends no HTTP/API credentials during those probes.
 
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.

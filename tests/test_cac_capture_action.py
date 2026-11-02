@@ -231,6 +231,7 @@ class CaptureActionTests(unittest.TestCase):
                 commit=False,
                 push=False,
                 project_revision=None,
+                allow_failure=False,
             ):
                 plugin = capture.ActionModule.__new__(capture.ActionModule)
                 plugin._task = SimpleNamespace(
@@ -259,7 +260,7 @@ class CaptureActionTests(unittest.TestCase):
                         else {}
                     )
                 )
-                if response.get("capture_failed"):
+                if response.get("capture_failed") and not allow_failure:
                     raise AnsibleActionFail(response["msg"])
                 return response
 
@@ -279,6 +280,25 @@ class CaptureActionTests(unittest.TestCase):
                 },
             ):
                 preview = run()
+                with mock.patch.object(
+                    FakeSnapshot,
+                    "collect",
+                    side_effect=capture.core.CaptureError("Fixture TLS refusal"),
+                ), mock.patch.object(
+                    capture.extraction.ControllerReader,
+                    "diagnostic",
+                    {"resolved_addresses": ["192.0.2.17"], "http_requests_sent": 0},
+                    create=True,
+                ):
+                    refused = run(allow_failure=True)
+                self.assertTrue(refused["capture_failed"])
+                diagnostic = AnsibleLoader(
+                    vault.decrypt(refused["encrypted_diagnostic"])
+                ).get_single_data()
+                self.assertEqual(
+                    diagnostic["source_network_diagnostic"]["http_requests_sent"], 0
+                )
+                self.assertNotIn("192.0.2.17", json.dumps(refused))
                 missing_code_metadata[0] = True
                 fallback = run(project_revision="a" * 40)
                 fallback_report = AnsibleLoader(

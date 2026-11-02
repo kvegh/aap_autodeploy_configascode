@@ -43,8 +43,8 @@ class ReadTransportTests(unittest.TestCase):
         ]
         for error, reason in cases:
             with self.subTest(reason=reason), mock.patch.object(
-                reader.opener, "open", side_effect=error
-            ):
+                reader, "tls_diagnostic", return_value={"fixture": True}
+            ), mock.patch.object(reader.opener, "open", side_effect=error):
                 with self.assertRaises(core.CaptureError) as failure:
                     reader.get("credentials/?name=fixture-secret-canary")
                 message = str(failure.exception)
@@ -52,6 +52,48 @@ class ReadTransportTests(unittest.TestCase):
                 self.assertIn("credentials", message)
                 self.assertNotIn("fixture-secret-canary", message)
                 self.assertNotIn("private", message)
+
+    def test_tls_failure_diagnostic_uses_no_http_or_credentials_and_keeps_sni_verification(
+        self,
+    ):
+        import ssl
+
+        reader = self.reader()
+        context = mock.MagicMock()
+        context.check_hostname = True
+        context.verify_mode = ssl.CERT_REQUIRED
+        context.cert_store_stats.return_value = {"x509_ca": 1}
+        context.wrap_socket.side_effect = ssl.SSLCertVerificationError(
+            1, "fixture verification failure"
+        )
+        raw = mock.MagicMock()
+        raw.__enter__.return_value = raw
+        raw.getpeername.return_value = ("192.0.2.17", 443)
+        with mock.patch.object(
+            snapshot.socket,
+            "getaddrinfo",
+            return_value=[(2, 1, 6, "", ("192.0.2.17", 443))],
+        ), mock.patch.object(
+            snapshot.socket, "create_connection", return_value=raw
+        ), mock.patch.object(
+            snapshot.ssl, "create_default_context", return_value=context
+        ), mock.patch.object(
+            reader.opener, "open"
+        ) as opened:
+            report = reader.tls_diagnostic()
+        self.assertEqual(report["http_requests_sent"], 0)
+        self.assertEqual(report["resolved_addresses"], ["192.0.2.17"])
+        self.assertFalse(report["verified_probes"][0]["tls_verified"])
+        context.wrap_socket.assert_called_once_with(
+            raw, server_hostname="source.example.invalid"
+        )
+        self.assertTrue(context.check_hostname)
+        self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+        opened.assert_not_called()
+        raw.sendall.assert_not_called()
+        import json
+
+        self.assertNotIn("fixture-token-canary", json.dumps(report))
 
     def reader(self):
         return snapshot.ControllerReader(

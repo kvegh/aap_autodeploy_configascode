@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.22.0
+
+Retain encrypted, credential-free source connection evidence after a TLS trust
+failure: resolution, matching host-file entries, trust paths and verified-SNI
+peer probes. No HTTP credentials, unverified TLS, DNS changes or trust-policy
+changes are used. Twenty-eight focused fixtures verify preserved TLS/SNI controls,
+zero diagnostic HTTP requests and encrypted failure-artifact contents.
+
 ## 0.21.11
 
 Document shared certificate prerequisite readiness `a184012`, Hactar base package

@@ -642,6 +642,23 @@ class ActionModule(ActionBase):
                 )
                 return result
         except core.CaptureError as error:
+            if (
+                "api" in locals()
+                and getattr(api, "diagnostic", None) is not None
+                and "secret" in locals()
+            ):
+                failure = {"changed": False, "capture_failed": True, "msg": str(error)}
+                diagnostic = {
+                    "source_network_diagnostic": api.diagnostic,
+                    "source_aap_mutations": 0,
+                }
+                sealed = self._loader._vault.encrypt(
+                    yaml.dump(diagnostic, Dumper=AnsibleDumper).encode(),
+                    secret=secret,
+                    vault_id=vault_id,
+                )
+                failure["encrypted_diagnostic"] = sealed.rstrip(b"\n").decode() + "\n"
+                return failure
             raise AnsibleActionFail(str(error)) from None
         except Exception as error:
             raise AnsibleActionFail(

@@ -68,6 +68,12 @@ Its `encrypted_review` is whole-file Vault ciphertext in AAP artifacts. Retrieve
 and decrypt only in a protected local workspace using the capture Vault secret.
 Initial-difference counts must not be confused with changes since a baseline.
 
+After a TLS trust failure, `cac_capture_failure_vault` retains encrypted source
+resolution, matching host-file entries, trust-store paths and verified-SNI peer
+probe results. Those probes send no HTTP request or API credentials and never
+disable certificate/hostname checks. Compare the evidence with independently
+trusted source identity before changing a credential trust bundle or route.
+
 ## Invocation and publication
 
 Attach the source-reader credential (`AAP_CAC_SOURCE_URL/TOKEN`), scoped Git
