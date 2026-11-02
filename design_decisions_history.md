@@ -1,5 +1,17 @@
 # Design decisions history
 
+## Declare narrowly approved installer HTTPS separately from target identity — 2026-11-02
+
+Implementation `c365298` validates explicitly approved bridge/IPv4/MAC clients and
+protected source addresses independently of the immutable registered hypervisor
+pin. The default bridge/DNS policy remains unchanged; persisted host exceptions
+are never treated as approval. The encrypted inventory capture retains the same
+explicit declaration, verified against the approved host configuration. Seventeen
+routing/allocation fixtures and scoped production lint pass. The same checkpoint
+refreshes only the authorized DNS credential from its maintained encrypted record;
+Vault roundtrip comparison proves every other environment input unchanged. This
+is deployment readiness, not proof that infrastructure or installation ran.
+
 ## Collect encrypted TLS route evidence before changing trust — 2026-11-02
 
 Actual execution-environment preview confirmed certificate trust failure while

@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.22.3
+
+Document approved isolation declarations and field-only DNS refresh `c365298`,
+including unchanged registered pins and protected source-address exclusions.
+
 ## 0.22.2
 
 Validate explicitly approved per-guest public HTTPS isolation declarations without
