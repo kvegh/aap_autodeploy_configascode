@@ -51,6 +51,8 @@ components need explicit adapters. It never applies configuration to source AAP.
 Association updates apply membership deltas so accepted desired-only bootstrap
 dependencies survive unrelated source removals. Lists inside user variables and
 credential inputs keep their original meaningful order.
+Source credential aliases resolve to the captured/base-bootstrap namespace;
+shared external definitions are recognized through those aliases as well.
 
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.

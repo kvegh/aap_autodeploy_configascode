@@ -189,6 +189,16 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(
             snapshot.Snapshot(api, scope, json.loads).collect()["credentials"], {}
         )
+        api.exists = True
+        api.associated = True
+        scope["aliases"]["credentials"] = {"Owned credential": "Portable credential"}
+        scope["external_dependencies"] = {"credentials": ["Portable credential"]}
+        projected = snapshot.Snapshot(api, scope, json.loads).collect()
+        self.assertEqual(projected["credentials"], {})
+        self.assertEqual(
+            next(iter(projected["job_templates"].values()))["credentials"],
+            ["Portable credential"],
+        )
 
     def scope(self):
         return {

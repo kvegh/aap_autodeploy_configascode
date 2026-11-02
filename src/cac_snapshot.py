@@ -339,7 +339,9 @@ class Snapshot:
             self.source_dependency_names[kind] = []
             for identifier in sorted(identifiers):
                 raw = self.detail(kind, identifier)
-                if raw["name"] in external.get(kind, []):
+                if raw["name"] in external.get(kind, []) or self.alias(
+                    kind, raw["name"]
+                ) in external.get(kind, []):
                     continue
                 self.source_dependency_names[kind].append(raw["name"])
                 value = self.fields(kind, raw)

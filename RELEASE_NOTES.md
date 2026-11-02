@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.21.4
+
+Resolve shared external dependencies through their portable aliases. Align the
+five isolated recovery/observer definitions with the captured environment Vault
+name. Validate every captured template credential reference against actual
+captured and base-bootstrap definitions; live source associations are unchanged.
+
 ## 0.21.3
 
 Document accepted-association delta fix `5583f42`, preservation of desired-only
