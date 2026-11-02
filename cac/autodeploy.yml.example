@@ -22,6 +22,7 @@ cac_workflow_execution_image: EXECUTION_IMAGE_PLACEHOLDER
 # Populate all reviewed umbrella module URLs and supported private capture URLs.
 # Eligibility/importer names are fixed in vars/use-case-catalog.yml.
 cac_use_case_selector:
+  seed_hostname: https://seed.example.invalid
   organization: ORGANIZATION_PLACEHOLDER
   umbrella_modules: {}
   configuration_repositories: {}

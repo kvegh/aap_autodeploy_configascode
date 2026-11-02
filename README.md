@@ -848,6 +848,8 @@ other scoped inputs are preserved. The AutoDeploy capture preflight checks this
 survey coverage before restoring definitions.
 Arbitrary variable prompts are disabled on those fixed importers; their required
 surveys define the accepted target/repository/logging inputs.
+The selector's seed origin must match its protected catalog and the catalog Git
+URL must match its registry credential binding before authentication.
 Git uses a temporary askpass helper with HTTPS certificate verification enabled;
 the token stays out of URLs, command arguments and the helper's stored contents.
 For public code projects, omit the source-control credential field. An empty

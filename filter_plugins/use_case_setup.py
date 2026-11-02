@@ -57,6 +57,9 @@ def git_url(value):
 
 
 def setup_plan(selected, catalog, protected, seed, target):
+    require(isinstance(protected, Mapping)
+            and https_origin(seed) == https_origin(protected.get('seed_hostname')),
+            'The orchestration seed must match the reviewed protected controller origin.')
     require(
         https_origin(seed) != https_origin(target),
         "The fresh target must differ from the seed AAP.",

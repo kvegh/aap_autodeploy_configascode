@@ -15,6 +15,12 @@
     aap_validate_certs: true
     debug_logging: false
   pre_tasks:
+    - name: Keep catalog authentication on its credential-bound repository
+      ansible.builtin.assert:
+        that: aap_use_case_catalog_repo_url == lookup('ansible.builtin.env', 'AAP_INSTANCE_REGISTRY_REPOSITORY')
+        fail_msg: Use the reviewed repository bound to the registry-reader credential.
+      no_log: true
+
     - name: Resolve the explicit instance key before any setup orchestration
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml
 

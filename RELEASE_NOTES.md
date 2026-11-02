@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.20.6
+
+Pin selector seed authentication to the reviewed encrypted origin and catalog
+Git access to the registry credential's repository before authentication. Keep
+the bounded target/credential behavior unchanged; selector fixtures pass.
+
 ## 0.20.5
 
 Document bounded-survey prompt implementation `70b1661` and encrypted alignment

@@ -25,6 +25,7 @@ class UseCaseSetupTests(unittest.TestCase):
             "aap_use_case_catalog"
         ]
         self.protected = {
+            "seed_hostname": "https://seed.example.invalid",
             "organization": "Fixture organization",
             "umbrella_modules": {
                 key: "https://git.example.invalid/team/" + key + ".git"
