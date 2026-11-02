@@ -132,6 +132,8 @@ def instance_route(route):
     require(
         parsed.scheme == "https"
         and parsed.hostname
+        and re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", parsed.hostname)
+        and ".." not in parsed.hostname
         and parsed.hostname.startswith(route["vm_name"] + ".")
         and not parsed.username
         and not parsed.password
@@ -142,6 +144,23 @@ def instance_route(route):
         "Use this VM's unique public HTTPS hostname for its API.",
     )
     return route
+
+
+def safe_instance_dns(records, name, address):
+    """Only an absent record or an exact existing binding can be updated."""
+    ipv4(address)
+    require(
+        isinstance(records, list)
+        and all(
+            isinstance(record, Mapping)
+            and record.get("data") == address
+            and record.get("name", name) == name
+            and record.get("type", "A") == "A"
+            for record in records
+        ),
+        "The reserved hostname has a conflicting or incomplete DNS record.",
+    )
+    return True
 
 
 def ssh_args(route, known_hosts):
@@ -219,4 +238,5 @@ class FilterModule:
             "aap_public_host_key": public_host_key,
             "aap_registered_instance": registered_instance,
             "aap_guest_ipv4": guest_ipv4,
+            "aap_safe_instance_dns": safe_instance_dns,
         }

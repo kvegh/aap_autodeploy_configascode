@@ -397,6 +397,175 @@ class RoutingTests(unittest.TestCase):
         with self.assertRaises(routing.AnsibleFilterError):
             routing.network_bridge("<network/>")
 
+    def test_dns_preflight_accepts_only_absent_or_exact_existing_bindings(self):
+        self.assertTrue(routing.safe_instance_dns([], "aap27-test-15", "192.0.2.200"))
+        existing = [{"name": "aap27-test-15", "type": "A", "data": "192.0.2.200"}]
+        self.assertTrue(
+            routing.safe_instance_dns(existing, "aap27-test-15", "192.0.2.200")
+        )
+        for invalid in (
+            [{"data": "192.0.2.201"}],
+            [{"name": "other", "data": "192.0.2.200"}],
+            [{"data": None}],
+            {"error": "not a complete record list"},
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(
+                routing.AnsibleFilterError
+            ):
+                routing.safe_instance_dns(invalid, "aap27-test-15", "192.0.2.200")
+
+    def test_real_reader_and_delegated_inventory_use_registered_jump_route(self):
+        import sys
+
+        with tempfile.TemporaryDirectory(prefix="aap-native-instance-") as temporary:
+            directory = Path(temporary)
+            remote = directory / "remote.git"
+            seed = directory / "seed"
+            seed.mkdir()
+
+            def git(path, *args):
+                return subprocess.run(
+                    ["git", "-C", str(path), *args],
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+
+            subprocess.run(
+                ["git", "init", "--bare", "--initial-branch=main", str(remote)],
+                capture_output=True,
+                check=True,
+            )
+            git(seed, "init", "--initial-branch=main")
+            (seed / "state").mkdir()
+            vault = VaultLib([("cac", VaultSecret(b"fixture-password"))])
+            state = {
+                "schema_version": 1,
+                "next_number": 16,
+                "reservations": {
+                    "fixture": {
+                        "vm_name": "aap27-test-15",
+                        "instance_route": self.route(),
+                    }
+                },
+            }
+            (seed / "state/aap_vm_allocations_vault.yml").write_bytes(
+                vault.encrypt(
+                    yaml.safe_dump({"aap_vm_allocation": state}).encode(),
+                    vault_id="cac",
+                )
+            )
+            git(seed, "add", ".")
+            git(
+                seed,
+                "-c",
+                "user.name=Fixture",
+                "-c",
+                "user.email=fixture@example.invalid",
+                "commit",
+                "-m",
+                "Initialize",
+            )
+            git(seed, "remote", "add", "origin", str(remote))
+            git(seed, "push", "origin", "main")
+            binaries = directory / "bin"
+            binaries.mkdir()
+            wrapper = binaries / "git"
+            wrapper.write_text(
+                "#!"
+                + sys.executable
+                + '\nimport os,sys\na=[os.environ["FIXTURE_GIT_REMOTE"] if x=="https://git.example.invalid/registry.git" else x for x in sys.argv[1:]]\nos.execv("/usr/bin/git",["git"]+a)\n'
+            )
+            wrapper.chmod(0o700)
+            password = directory / "password"
+            password.write_text("fixture-password")
+            password.chmod(0o600)
+            fixture = directory / "play.yml"
+            fixture.write_text(
+                yaml.safe_dump(
+                    [
+                        {
+                            "hosts": "localhost",
+                            "connection": "local",
+                            "gather_facts": False,
+                            "tasks": [
+                                {
+                                    "ansible.builtin.include_tasks": str(
+                                        ROOT / "tasks/aap-instance-select.yml"
+                                    )
+                                },
+                                {
+                                    "ansible.builtin.include_tasks": str(
+                                        ROOT / "tasks/aap-instance-ssh.yml"
+                                    )
+                                },
+                                {
+                                    "ansible.builtin.assert": {
+                                        "that": [
+                                            "aap_hostname == 'https://aap27-test-15.example.invalid'",
+                                            "hostvars['aap27-test-15.example.invalid'].ansible_host == '192.0.2.15'",
+                                            "'fixture@192.0.2.200' in hostvars['aap27-test-15.example.invalid'].ansible_ssh_common_args",
+                                            "hostvars['aap27-test-15.example.invalid'].ansible_ssh_host_key_checking | bool",
+                                        ]
+                                    }
+                                },
+                            ],
+                        }
+                    ]
+                )
+            )
+            env = dict(
+                os.environ,
+                PATH=str(binaries) + os.pathsep + os.environ["PATH"],
+                AAP_INSTANCE_REGISTRY_TOKEN="fixture-reader-canary",
+                AAP_INSTANCE_REGISTRY_REPOSITORY="https://git.example.invalid/registry.git",
+                FIXTURE_GIT_REMOTE=str(remote),
+                ANSIBLE_ACTION_PLUGINS=str(ROOT / "action_plugins"),
+                ANSIBLE_LIBRARY=str(ROOT / "library"),
+                ANSIBLE_FILTER_PLUGINS=str(ROOT / "filter_plugins"),
+                ANSIBLE_LOCAL_TEMP=str(directory / "local"),
+                ANSIBLE_REMOTE_TEMP=str(directory / "remote"),
+            )
+            base = [
+                sys.executable,
+                "-m",
+                "ansible.cli.playbook",
+                "-i",
+                "localhost,",
+                "--vault-id",
+                "cac@" + str(password),
+                str(fixture),
+            ]
+            for extra, success in (
+                ({"aap_instance_key": "aap27-test-15"}, True),
+                ({"aap_instance_key": "unknown"}, False),
+                ({"aap_instance_key": "aap27-test-15", "vm_ip": "192.0.2.99"}, False),
+                (
+                    {
+                        "aap_instance_key": "aap27-test-15",
+                        "aap_hostname": "https://old.example.invalid",
+                    },
+                    False,
+                ),
+            ):
+                with self.subTest(extra=extra):
+                    result = subprocess.run(
+                        base + ["-e", json.dumps(extra)],
+                        env=env,
+                        text=True,
+                        capture_output=True,
+                        timeout=45,
+                    )
+                    self.assertEqual(
+                        result.returncode == 0, success, result.stdout + result.stderr
+                    )
+                    self.assertNotIn(
+                        "fixture-reader-canary", result.stdout + result.stderr
+                    )
+            self.assertEqual(
+                git(remote, "rev-list", "--count", "main").stdout.strip(), "1"
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

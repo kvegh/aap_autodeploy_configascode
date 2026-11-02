@@ -22,6 +22,9 @@
     aap_username: admin
     aap_validate_certs: false
   pre_tasks:
+    - name: Select the registered instance before any base configuration
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
     - name: Require a Boolean debug logging choice
       ansible.builtin.assert:
         that:
@@ -37,7 +40,7 @@
           - (aap_hostname | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
           - (aap_hostname | ansible.builtin.urlsplit('username')) is none
           - (aap_hostname | ansible.builtin.urlsplit('password')) is none
-        fail_msg: Supply aap_hostname as the target AAP HTTPS URL, using the intended internal hostname or IP address.
+        fail_msg: Select the registered instance whose public HTTPS hostname is the intended target.
 
     - name: Require a private configuration repository URL without embedded credentials
       ansible.builtin.assert:
@@ -122,6 +125,12 @@
 
         - name: Validate the base PAH setup before changing the target
           ansible.builtin.include_tasks: tasks/pah-base-validate.yml
+
+        - name: Validate public API DNS and TLS for the actual created instance
+          ansible.builtin.include_tasks: tasks/aap-instance-api.yml
+
+        - name: Route installer and MCP observers through the pinned hypervisor
+          ansible.builtin.include_tasks: tasks/aap-instance-ssh.yml
 
         - name: Read the encrypted AAP subscription manifest
           ansible.builtin.slurp:

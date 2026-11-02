@@ -1,0 +1,37 @@
+---
+- name: Require the verified instance and its exact public API URL
+  ansible.builtin.assert:
+    that:
+      - aap_instance_route | aap_instance_route is mapping
+      - aap_hostname == aap_instance_route.aap_hostname
+      - aap_hypervisor_pin is not defined or aap_instance_route.hypervisor == aap_hypervisor_pin
+    fail_msg: Use the selected instance's verified public API hostname, never a bare private subnet address.
+  no_log: true
+
+- name: Require public DNS to identify only the pinned hypervisor
+  ansible.builtin.assert:
+    that: >-
+      query('community.general.dig', aap_hostname | urlsplit('hostname'), qtype='A') |
+      unique | list == [aap_instance_route.hypervisor.public_ip]
+    fail_msg: The instance API hostname does not resolve exclusively to its pinned hypervisor.
+  no_log: true
+
+- name: Verify trusted TLS on the exact instance API before sending credentials
+  ansible.builtin.uri:
+    url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/controller/v2/ping/"
+    validate_certs: true
+    follow_redirects: none
+    status_code: 200
+  register: aap_instance_ping
+  no_log: true
+
+- name: Require an actual Controller response from the verified instance
+  ansible.builtin.assert:
+    that:
+      - aap_instance_ping.json.version is defined
+      - aap_instance_ping.json.version | length > 0
+  no_log: true
+
+- name: Keep API authentication on the verified TLS path
+  ansible.builtin.set_fact:
+    aap_validate_certs: true

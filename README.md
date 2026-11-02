@@ -28,8 +28,11 @@ preparation and final health checks.
 Recovery Stage 01 now uses a [shared encrypted name reservation](docs/shared-instance-allocation.md)
 before any image write, with a pinned hypervisor and live isolation checks.
 Local counters are preserved as migration evidence. Fresh guest host keys and
-the exact instance route are retained for the following stages. Provisioning is
-enabled one phase at a time; this checkpoint alone is not a completed AAP build.
+the exact instance route are retained for the following stages. Stages 02–04
+resolve an exact instance key from that registry before any target connection;
+SSH uses the pinned hypervisor jump route and API access uses verified public
+DNS and trusted TLS. Provisioning is enabled one phase at a time; local checks
+alone do not establish a completed AAP build.
 
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.
@@ -131,11 +134,17 @@ flowchart LR
     Install --> Base[04 Shared base]
 ```
 
-Stage 01 consumes the hypervisor's next counter and publishes only `vm_name`,
-`vm_ip`, and `aap_hostname` through `set_stats` workflow artifacts. The API URL
-uses the discovered internal address. Stage 03 separately uses
-`aap_installer_hostname` for its installer FQDN, keeping the workflow's HTTPS API
-URL intact. No credentials, passwords or tokens are put in workflow artifacts.
+Stage 01 consumes the shared encrypted counter and publishes `vm_name`, `vm_ip`,
+`aap_hostname` and the public-key-only `aap_instance_route` through `set_stats`
+workflow artifacts. The API URL uses this reserved VM's unique public hostname.
+Stages 02–04 reread the completed registry entry, reject conflicting inputs and
+route private guest SSH through its exact hypervisor with both host keys checked.
+Attach the separate registry-reader credential and named CaC Vault to those
+stages; guest stages also need the pinned hypervisor's Machine credential.
+Stage 02 refuses a conflicting existing A record and requires either an existing
+certificate for this hostname or a separately approved ACME registration; it
+never accepts new certificate terms. No credentials, passwords or tokens are put
+in workflow artifacts.
 The workflow's only survey question is `debug_logging`; saved repository URLs
 are supplied on each appropriate node, and each existing Job Template keeps its
 own credentials. Concurrent runs of this workflow are disabled.

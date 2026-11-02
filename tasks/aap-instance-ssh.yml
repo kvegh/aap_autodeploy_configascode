@@ -1,0 +1,45 @@
+---
+- name: Require the verified new-instance routing handoff
+  ansible.builtin.assert:
+    that:
+      - aap_instance_route | aap_instance_route is mapping
+      - aap_hypervisor_pin is not defined or aap_instance_route.hypervisor == aap_hypervisor_pin
+    fail_msg: Supply the verified instance handoff; no direct overlapping-private-network connection is allowed.
+  no_log: true
+
+- name: Allocate the job-local instance trust file
+  ansible.builtin.tempfile:
+    state: file
+    prefix: aap-instance-known-hosts-
+  register: aap_instance_trust
+  no_log: true
+
+- name: Install hypervisor and fresh guest public keys in the private trust file
+  ansible.builtin.copy:
+    dest: "{{ aap_instance_trust.path }}"
+    content: |
+      {% for key in aap_instance_route.hypervisor.host_keys %}
+      {{ aap_instance_route.hypervisor.address }} {{ key }}
+      [{{ aap_instance_route.hypervisor.address }}]:{{ aap_instance_route.hypervisor.port }} {{ key }}
+      {% endfor %}
+      {% for key in aap_instance_route.guest_host_keys %}
+      {{ aap_instance_route.aap_hostname | urlsplit('hostname') }} {{ key }}
+      {% endfor %}
+    mode: '0600'
+  no_log: true
+
+- name: Bind guest SSH to the exact verified hypervisor jump route
+  ansible.builtin.set_fact:
+    aap_instance_ssh_args: "{{ aap_instance_route | aap_instance_ssh_args(aap_instance_trust.path) }}"
+  no_log: true
+
+- name: Bind delegated installer observers to the guest through the same hypervisor
+  ansible.builtin.add_host:
+    name: "{{ aap_instance_route.aap_hostname | urlsplit('hostname') }}"
+    ansible_host: "{{ aap_instance_route.vm_ip }}"
+    ansible_connection: ssh
+    ansible_port: 22
+    ansible_ssh_common_args: "{{ aap_instance_ssh_args }}"
+    ansible_host_key_checking: true
+    ansible_ssh_host_key_checking: true
+  no_log: true

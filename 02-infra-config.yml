@@ -2,6 +2,7 @@
 - name: "Configure DNS, certificate, and nginx reverse proxy"
   hosts: hypervisor
   become: true
+  gather_facts: false
   vars_files:
     - myvars
     - vars/main.yml
@@ -9,14 +10,74 @@
     aap_test_subdomain: "{{ vm_name }}"
 
   pre_tasks:
+    - name: Select the registered instance before any infrastructure connection
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
     - name: Validate required variables
       ansible.builtin.assert:
         that:
           - vm_ip is defined
           - vm_name is defined
+          - aap_instance_route | aap_instance_route is mapping
+          - vm_name == aap_instance_route.vm_name
+          - vm_ip == aap_instance_route.vm_ip
+          - aap_hostname == 'https://' + vm_name + '.' + vault_domain
         fail_msg: "Required extra_vars: vm_ip, vm_name"
 
+    - name: Bind infrastructure changes to the instance's own hypervisor
+      ansible.builtin.set_fact:
+        aap_hypervisor_pin: "{{ aap_instance_route.hypervisor }}"
+      no_log: true
+
+    - name: Verify the pinned hypervisor before DNS, proxy or certificate changes
+      ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
+
+    - name: Inspect the exact reserved hostname's existing certificate
+      ansible.builtin.stat:
+        path: "/etc/letsencrypt/live/{{ vm_name }}.{{ vault_domain }}/{{ item }}"
+      loop: [fullchain.pem, privkey.pem]
+      register: aap_existing_instance_certificate
+      no_log: true
+
+    - name: Require an existing ACME registration rather than accepting new terms
+      ansible.builtin.find:
+        paths: /etc/letsencrypt/accounts
+        patterns: regr.json
+        recurse: true
+        file_type: file
+      register: aap_existing_acme_accounts
+      no_log: true
+
+    - name: Stop before certificate registration without explicit separate approval
+      ansible.builtin.assert:
+        that: >-
+          aap_existing_acme_accounts.matched | int > 0 or
+          (aap_existing_instance_certificate.results | selectattr('stat.exists') | list | length == 2)
+        fail_msg: Register an approved ACME account separately before this infrastructure stage.
+
   tasks:
+    - name: Read the exact reserved hostname's existing A record before changing DNS
+      ansible.builtin.uri:
+        url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/A/{{ aap_test_subdomain }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_godaddy_api_token }}"
+        status_code: 200
+        follow_redirects: none
+        validate_certs: true
+      delegate_to: localhost
+      become: false
+      register: aap_existing_instance_dns
+      no_log: true
+
+    - name: Refuse a hostname already bound to a different address
+      ansible.builtin.assert:
+        that: >-
+          aap_existing_instance_dns.json | aap_safe_instance_dns(
+            aap_test_subdomain, aap_instance_route.hypervisor.public_ip)
+        fail_msg: The reserved hostname already has a conflicting DNS record; inspect it before continuing.
+      no_log: true
+
     - name: Create GoDaddy DNS A record
       ansible.builtin.uri:
         url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/A/{{ aap_test_subdomain }}"
@@ -25,9 +86,12 @@
           Authorization: "Bearer {{ vault_godaddy_api_token }}"
         body_format: json
         body:
-          - data: "{{ vault_public_ip }}"
+          - data: "{{ aap_instance_route.hypervisor.public_ip }}"
             ttl: 600
         status_code: 200
+        follow_redirects: none
+        validate_certs: true
+      delegate_to: localhost
       become: false
       no_log: true
 
@@ -45,7 +109,9 @@
     - name: Wait for DNS propagation
       ansible.builtin.assert:
         that:
-          - vault_public_ip in query('community.general.dig', aap_test_subdomain + '.' + vault_domain, '@8.8.8.8', qtype='A')
+          - >-
+            query('community.general.dig', aap_test_subdomain + '.' + vault_domain, '@8.8.8.8', qtype='A') |
+            unique | list == [aap_instance_route.hypervisor.public_ip]
         fail_msg: "DNS has not propagated to the expected public address for {{ aap_test_subdomain }}.{{ vault_domain }}"
       register: dns_check
       until: dns_check is not failed
@@ -57,7 +123,7 @@
         cmd: >-
           certbot certonly --nginx
           -d {{ aap_test_subdomain }}.{{ vault_domain }}
-          --non-interactive --agree-tos
+          --non-interactive
         creates: "/etc/letsencrypt/live/{{ aap_test_subdomain }}.{{ vault_domain }}/fullchain.pem"
 
     - name: Deploy full SSL nginx reverse proxy config
@@ -65,10 +131,10 @@
         src: templates/nginx-aap-test.conf.j2
         dest: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
         mode: "0644"
-      notify: reload nginx
+      notify: Reload nginx
 
   handlers:
-    - name: reload nginx
+    - name: Reload nginx
       ansible.builtin.systemd:
         name: nginx
         state: reloaded

@@ -1,0 +1,27 @@
+---
+- name: Resolve the exact registered target before making any instance connection
+  aap_read_instance:
+    instance_key: "{{ aap_instance_key | default(aap_instance_route.vm_name | default('')) }}"
+    expected_route: "{{ aap_instance_route | default(omit) }}"
+  register: aap_registered_target
+  no_log: true
+
+- name: Refuse conflicting caller-supplied target names, addresses or URLs
+  ansible.builtin.assert:
+    that:
+      - vm_name is not defined or vm_name == aap_registered_target.instance_route.vm_name
+      - vm_ip is not defined or vm_ip == aap_registered_target.instance_route.vm_ip
+      - aap_hostname is not defined or aap_hostname == aap_registered_target.instance_route.aap_hostname
+      - aap_target_hostname is not defined or aap_target_hostname == aap_registered_target.instance_route.aap_hostname
+    fail_msg: Select the registered instance key; its protected route determines all connection targets.
+  no_log: true
+
+- name: Use only the registered instance's complete connection handoff
+  ansible.builtin.set_fact:
+    aap_instance_route: "{{ aap_registered_target.instance_route }}"
+    aap_instance_key: "{{ aap_registered_target.instance_route.vm_name }}"
+    vm_name: "{{ aap_registered_target.instance_route.vm_name }}"
+    vm_ip: "{{ aap_registered_target.instance_route.vm_ip }}"
+    aap_hostname: "{{ aap_registered_target.instance_route.aap_hostname }}"
+    aap_target_hostname: "{{ aap_registered_target.instance_route.aap_hostname }}"
+  no_log: true

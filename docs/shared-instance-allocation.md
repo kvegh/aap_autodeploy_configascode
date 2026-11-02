@@ -51,10 +51,39 @@ public HTTPS hostname. Passwords, private keys and tokens are excluded.
 Provisioning is enabled one phase at a time. A successful isolated Stage 01
 proves neither AAP installation nor later API routing. Installation observers
 must use the pinned hypervisor jump route for overlapping private subnets, and
-configuration must use the matching public proxy/DNS/TLS path. Those later phase
-checks and actual deployment proof remain separate gates.
+configuration must use the matching public proxy/DNS/TLS path. Actual deployment
+proof remains a separate gate.
+
+## Selecting an existing reserved instance
+
+Stages 02–04 accept `aap_instance_key`, the exact reserved VM name. A workflow may
+instead supply its Stage 01 route; it must equal the registry's completed entry.
+The read-only `aap_read_instance` controller action retrieves current `main` and
+decrypts only the shared state file with the attached CaC Vault secret. Unknown
+keys, incomplete reservations and conflicting caller URLs/private addresses fail
+before target connections. There is no free-form URL or old-host fallback.
+
+Attach `AAP AutoDeploy instance registry reader`, which injects the separately
+scoped `AAP_INSTANCE_REGISTRY_TOKEN` and `AAP_INSTANCE_REGISTRY_REPOSITORY`, plus
+the named CaC Vault and environment Vault. This avoids replacing a use-case's
+own `CAC_GIT_TOKEN`. Guest stages also require the selected hypervisor's Machine
+credential. Their private job-local known-hosts file trusts the registered
+hypervisor and newly generated guest public keys. Both SSH hops require strict
+host-key checking, and the guest connection always traverses that hypervisor;
+overlapping private guest networks cannot select a production guest directly.
+
+Stage 02 derives the DNS address from the verified hypervisor pin, reads the
+exact reserved A record and refuses any conflicting address before its PUT.
+Certificate/proxy paths are limited to the reserved VM hostname. An existing
+certificate or separately approved ACME account is required; this playbook does
+not accept certificate terms. Stage 04 checks that public DNS points exclusively
+to this hypervisor and validates the instance's public TLS endpoint before
+sending AAP credentials. Installer-password/MCP observers use the same pinned
+SSH jump route. Legal approval, permitted installer egress and live proof remain
+operator-controlled prerequisites.
 
 Local tests exercise real competing Git writers, active named-Vault decryption,
-check mode, lost-number retention and routing validation. They do not establish
+check mode, lost-number retention, a real read-only registry lookup, refusal of
+unknown/stale targets, delegated SSH routing and conflicting DNS refusal. They do not establish
 real VM boot, guest SSH, certificate issuance or AAP installation. Check mode
 checks access without consuming a number or provisioning a VM.

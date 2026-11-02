@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.19.0
+
+Bind infrastructure, installation and base imports to one completed encrypted
+instance-registry entry. Refuse stale names/addresses/URLs, route guest SSH and
+installer observers through the pinned hypervisor with strict host-key checks,
+and require verified public DNS/TLS before AAP API authentication. Check the exact
+new DNS record before changing it and require existing certificate/account
+approval instead of accepting new ACME terms.
+
+Validation: all 15 allocation/routing tests pass in both Jinja native modes,
+including a real read-only registry action and refusal cases. Stages 02–04 pass
+syntax checks; Stage 02 and the three route helpers pass strict production lint.
+Actual certificate issuance, installation and base import remain separate runtime
+proofs; a Stage 01 success alone does not establish them.
+
 ## 0.18.1
 
 Document shared-allocation implementation `98f491a`, encrypted state/writer
