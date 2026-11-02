@@ -22,7 +22,7 @@ class NoRedirect(HTTPRedirectHandler):
 
 
 class ControllerReader:
-    def __init__(self, origin, token):
+    def __init__(self, origin, token, source_ca_file=None):
         parsed = urlsplit(origin)
         if (
             parsed.scheme != "https"
@@ -39,18 +39,35 @@ class ControllerReader:
             )
         self.origin = origin.rstrip("/")
         self.token = token
+        self.source_ca_file = source_ca_file
         self.opener = build_opener(
-            NoRedirect(), HTTPSHandler(context=ssl.create_default_context())
+            NoRedirect(), HTTPSHandler(context=self.tls_context())
         )
+
+    def tls_context(self):
+        """Keep default roots; add only this credential-bound source CA file."""
+        context = ssl.create_default_context()
+        if self.source_ca_file:
+            try:
+                path = Path(self.source_ca_file)
+                if not path.is_file() or not 0 < path.stat().st_size <= 1024 * 1024:
+                    raise ValueError("invalid scoped CA file")
+                context.load_verify_locations(cafile=str(path))
+            except (OSError, ValueError, ssl.SSLError):
+                raise CaptureError(
+                    "The endpoint-specific Controller CA credential file is invalid."
+                ) from None
+        return context
 
     def tls_diagnostic(self):
         """No HTTP or credentials: verify TLS/SNI on resolved peers for diagnosis."""
         parsed = urlsplit(self.origin)
         hostname = parsed.hostname
         port = parsed.port or 443
-        context = ssl.create_default_context()
+        context = self.tls_context()
         report = {
             "source_origin": self.origin,
+            "endpoint_specific_ca_supplied": bool(self.source_ca_file),
             "default_verify_paths": ssl.get_default_verify_paths()._asdict(),
             "trust_store_counts": context.cert_store_stats(),
             "http_requests_sent": 0,

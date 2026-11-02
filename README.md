@@ -73,6 +73,10 @@ categories using only the endpoint family, preserving query values and tokens.
 On TLS trust failure, credential-free DNS/host-file and verified-SNI connection
 evidence is retained only as a Vault-encrypted failure artifact. It accepts no
 untrusted certificate and sends no HTTP/API credentials during those probes.
+An optional credential-bound source CA file can add an independently verified
+existing authority only to the collector HTTPS context. Default trust, hostname
+checks, exact source origin and redirect refusal remain enforced; global EE trust
+and DNS are unchanged.
 
 The encrypted environment DNS credential is maintained separately from the
 Vault password. Refreshing that one credential preserves every other environment

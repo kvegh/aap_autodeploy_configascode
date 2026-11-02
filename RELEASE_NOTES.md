@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.23.2
+
+Support an optional credential-bound existing source CA file only in the
+collector HTTPS context. Preserve default trust, certificate/hostname checks,
+exact Controller origin and redirect refusal. Invalid scoped trust input blocks
+collection without exposing file paths. Twenty-nine generic fixtures and strict
+entrypoint production lint pass; no global EE trust or DNS changes are made.
+
 ## 0.23.1
 
 Document guest prerequisite audit `e53878f`, its local reference sizing and

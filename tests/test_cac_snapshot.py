@@ -95,6 +95,40 @@ class ReadTransportTests(unittest.TestCase):
 
         self.assertNotIn("fixture-token-canary", json.dumps(report))
 
+    def test_endpoint_ca_adds_only_scoped_trust_and_keeps_default_controls(self):
+        import ssl
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "source-ca.pem"
+            path.write_text("fixture-existing-trusted-ca")
+            context = ssl.create_default_context()
+            with mock.patch.object(
+                snapshot.ssl, "create_default_context", return_value=context
+            ):
+                with mock.patch.object(context, "load_verify_locations") as loaded:
+                    reader = snapshot.ControllerReader(
+                        "https://source.example.invalid",
+                        "fixture-token-canary",
+                        str(path),
+                    )
+            loaded.assert_called_once_with(cafile=str(path))
+            self.assertTrue(context.check_hostname)
+            self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+            with mock.patch.object(reader.opener, "open") as opened:
+                with self.assertRaises(core.CaptureError):
+                    reader.get(
+                        "https://elsewhere.example.invalid/api/controller/v2/me/"
+                    )
+                opened.assert_not_called()
+            path.write_text("not a certificate")
+            with self.assertRaises(core.CaptureError) as failure:
+                snapshot.ControllerReader(
+                    "https://source.example.invalid", "fixture-token-canary", str(path)
+                )
+            self.assertNotIn(str(path), str(failure.exception))
+            self.assertNotIn("fixture-token-canary", str(failure.exception))
+
     def reader(self):
         return snapshot.ControllerReader(
             "https://source.example.invalid", "fixture-token-canary"

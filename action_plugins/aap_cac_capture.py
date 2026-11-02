@@ -275,7 +275,9 @@ class ActionModule(ActionBase):
                         "The API credential origin differs from the encrypted scope pin."
                     )
                 api = extraction.ControllerReader(
-                    source_origin, os.environ.get("AAP_CAC_SOURCE_TOKEN", "")
+                    source_origin,
+                    os.environ.get("AAP_CAC_SOURCE_TOKEN", ""),
+                    os.environ.get("AAP_CAC_SOURCE_CA_FILE") or None,
                 )
                 snapshot = extraction.Snapshot(
                     api, scope, lambda value: AnsibleLoader(value).get_single_data()
