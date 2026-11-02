@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.23.4
+
+Correct the source-reader injector to Controller's single-file string schema and
+`tower.filename`, after actual API validation rejected the named-file mapping.
+Provide the canonical portable credential schema and a regression covering
+missing, empty and populated optional CA inputs.
+
 ## 0.23.3
 
 Document endpoint-scoped existing CA support `1cfb86b` and the independently

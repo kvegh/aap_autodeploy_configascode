@@ -80,7 +80,10 @@ Attach the source-reader credential (`AAP_CAC_SOURCE_URL/TOKEN`), scoped Git
 credential (`AAP_CAC_CAPTURE_REPOSITORY/GIT_TOKEN`) and capture Vault credential.
 An optional source-reader CA PEM is injected as `AAP_CAC_SOURCE_CA_FILE`. The
 collector adds that independently verified existing source authority only to its
-own HTTPS context, retaining default roots, certificate/hostname verification,
+own HTTPS context. `src/cac_source_credential.py` defines the portable custom
+credential schema: `file.template` is a single string and its path is
+`tower.filename`; the optional empty PEM produces no extra trust path. The
+collector retains default roots, certificate/hostname verification,
 exact origin and redirect refusal. An invalid supplied file blocks collection;
 no global EE trust, host-file or DNS setting changes. Never trust a certificate
 merely because the failing endpoint presented it.
