@@ -37,7 +37,8 @@ the Controller content-source credentials and organization attachments that use
 those repositories. Base does not synchronize collection content. Each use case
 declares which collections its own PAH preparation needs.
 
-[PLAN.md](PLAN.md#todo) is the single project TODO list. Each open area explains
+[Beads](PLAN.md) tracks current work; the older plan retains its historical
+backlog pending migration. Each open area explains
 its context, purpose and completion goal; completed work is collected at
 [Done:](PLAN.md#done). It includes the step-by-step operator guide and review
 against Red Hat's CaC guidance. Older plans and completion notes are preserved
@@ -60,7 +61,8 @@ The repository contains the deployment stages and separate use-case imports:
 | 02 | `02-infra-config.yml` | Configure DNS, certificates, and the reverse proxy. |
 | 03 | `03-aap-install.yml` | Prepare the VM and run the pre-staged AAP installer. |
 | 04 | `04-aap-config.yml` | Apply the subscription, PAH sources and local download credentials, then shared CaC through `infra.aap_configuration.dispatch`. |
-| 05 | `05-prepare-use-cases.yml` | Prepare the exact declared PAH collection versions and existing execution image before parallel imports. |
+| Separate | `05-prepare-use-cases.yml` | Prepare exact PAH requirements for explicitly selected use cases; outside base deployment. |
+| Separate | `deploy-selected-use-cases.yml` | Install only chosen umbrella Projects and saved CaC through the seed's scoped configuration importers. |
 
 Post-install configuration uses the `dispatch` role from the
 [Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
@@ -108,24 +110,19 @@ functional testing remain separate.
 
 ## Setup and secrets
 
-### Complete deployment workflow and the AutoDeploy use case
+### Base deployment and explicitly selected use cases
 
-The `Deploy Complete AAP` workflow runs the deployment stages on success only,
-then imports AIOps Self-Healing, Disconnected Windows, Automation Orchestrator,
-Assistant Team, and AutoDeploy itself in parallel. Teardown and imported demo
-jobs are not workflow nodes.
+The `Deploy Complete AAP` workflow runs stages 01–04 on success only and stops
+after shared base configuration. It creates no use-case projects or imports.
+The separate [use-case selector](docs/selected-use-cases.md) installs only the
+operator's selected umbrella submodules and their reviewed saved CaC. Application,
+deployment and demo jobs are not launched by configuration selection.
 
 ```mermaid
 flowchart LR
     VM[01 Create VM] --> Infra[02 Infrastructure]
     Infra --> Install[03 Install AAP]
     Install --> Base[04 Shared base]
-    Base --> Prepare[05 Use-case prerequisites]
-    Prepare --> AIOps[AIOps configuration]
-    Prepare --> Windows[Windows configuration]
-    Prepare --> Orchestrator[Orchestrator configuration]
-    Prepare --> Assistant[Assistant Team configuration]
-    Prepare --> AutoDeploy[AutoDeploy configuration]
 ```
 
 Stage 01 consumes the hypervisor's next counter and publishes only `vm_name`,
@@ -156,9 +153,9 @@ Git, verify provisioning access, and encrypt it with the same `cac` Vault
 credential before committing it privately. Provisioning keys must be dedicated
 to the intended environment; do not copy an agent's GitHub SSH identity.
 
-Stage 05 reads the separate AutoDeploy capture and shared base authentication
-inputs through the base repository's existing Git credential. It synchronizes
-only exact declared collection versions and their explicit dependency closure
+Stage 05 is separate from base. It reads the AutoDeploy capture and shared base
+authentication through the base repository's existing Git credential. It requires
+an explicit supported selection and synchronizes only its exact reviewed pins
 through PAH, with upstream TLS validation enabled and automatic dependency
 expansion disabled. Additional versions of one collection use separate batches,
 so an older required pin is not silently displaced by another pin. Repository
@@ -176,13 +173,14 @@ The AutoDeploy importer uses that same workflow task on replacement instances.
 Existing external hypervisor, image, network, DNS and certificate services remain
 environment prerequisites. Complete production coverage, runtime collection and
 Python compatibility, and a fresh recursive deployment remain separate live
-verification tasks. Applying the existing AIOps capture can start enabled EDA
-activations; the workflow preserves that importer's existing activation policy.
+verification tasks. AIOps configuration now restores rulebooks disabled; enabling
+them is a separate explicit operation. Every importer requires its project label
+on every Job Template and matching-organization definitions for every label.
 The current source execution image reports Ansible Core 2.16.19 and includes
-`dnspython`. The captured Windows requirement `chocolatey.chocolatey` 1.6.0
-declares Core 2.18 or newer, so Windows runtime compatibility still needs a
-reviewed image or requirement change and functional verification. Importing its
-configuration alone does not resolve that mismatch.
+`dnspython`. Selected Windows prerequisites now match the source's exact
+requirements, including its Chocolatey pin and Microsoft collections. Source PAH
+availability was checked without installation. Runtime compatibility and actual
+fresh-target setup remain separate validation; metadata import is not proof.
 
 ### Execution environment and external prerequisites
 
@@ -599,9 +597,9 @@ HTTP 200 Controller ping; the installer-launch task was skipped.
 
 Administrator password management comes from the encrypted base configuration.
 Removing the remaining `myvars` dependency is separate pending work. Automatic
-job handoff and the five parallel configuration imports are implemented in the
-complete workflow; full-workflow execution and functional remediation tests
-remain open.
+job handoff is implemented for the base-only workflow. Project/CaC selection is
+separate; full workflow/selector execution and functional remediation tests remain
+open.
 
 ### AIOps configuration deployment
 

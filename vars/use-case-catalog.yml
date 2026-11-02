@@ -1,0 +1,31 @@
+---
+# Keys match reviewed AAP-advanced-features submodule paths. URLs stay in Vault.
+aap_use_case_catalog:
+  aap_autodeploy_configascode:
+    template: Deploy AAP AutoDeploy Configuration
+    playbook: deploy-autodeploy.yml
+    configuration: base
+  AIOps_selfhealing_demo:
+    template: Deploy AIOps Self-Healing Configuration
+    playbook: deploy-aiops-demo.yml
+    configuration: aiops
+  automation-orchestrator:
+    template: Deploy Automation Orchestrator Configuration
+    playbook: deploy-orchestrator-demo.yml
+    configuration: orchestrator
+  disconnected-windows-patching:
+    template: Deploy Disconnected Windows Configuration
+    playbook: deploy-windows-demo.yml
+    configuration: windows_disconnected
+  ServiceNow-ITSM-Integration:
+    unavailable: No reviewed encrypted CaC capture and standalone importer is registered.
+  intelligent-assistant:
+    unavailable: No reviewed encrypted CaC capture and standalone importer is registered.
+  config_exceptions_ng:
+    unavailable: No reviewed encrypted CaC capture and standalone importer is registered.
+  automation_portal_setup:
+    unavailable: No reviewed encrypted CaC capture and standalone importer is registered.
+  Agent_generated_code_review:
+    unavailable: No reviewed encrypted CaC capture and standalone importer is registered.
+  Automation_Dashboard:
+    unavailable: No reviewed encrypted CaC capture and standalone importer is registered.

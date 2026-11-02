@@ -141,6 +141,13 @@
               - eda_rulebook_activations_aiops_demo | length > 0
             fail_msg: Complete and review the AIOps vault and its required secrets before deployment.
 
+        - name: Validate AIOps template label coverage before any target changes
+          ansible.builtin.include_tasks: tasks/cac-template-labels.yml
+          vars:
+            cac_label_templates: "{{ controller_templates_aiops_demo }}"
+            cac_label_definitions: "{{ controller_labels_aiops_demo }}"
+            cac_required_template_label: aiops_selfhealing
+
         - name: Require named Event Streams with their target dependencies
           ansible.builtin.assert:
             that:
@@ -404,9 +411,9 @@
           loop: "{{ eda_event_streams_aiops_demo }}"
           no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
-        - name: Select the AIOps activations after Event Stream creation
+        - name: Keep imported AIOps rulebooks disabled for separate explicit activation
           ansible.builtin.set_fact:
-            eda_rulebook_activations: "{{ eda_rulebook_activations_aiops_demo }}"
+            eda_rulebook_activations: "{{ eda_rulebook_activations_aiops_demo | map('combine', {'state': 'present', 'enabled': false}) | list }}"
           no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Apply AIOps activations with target Event Stream mappings

@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.17.0
+
+Stop base deployment after shared platform configuration. Add an explicit bounded
+umbrella use-case selector for Projects and saved CaC, retaining the seed
+importers' scoped credentials and verifying a distinct target and completed
+configuration jobs. Selected PAH prerequisites are separate; imported AIOps
+activations stay disabled. Every importer validates template label coverage and
+same-organization label definitions. Refresh encrypted companion captures with
+missing labels, the Windows regression verifier and the standalone recovery set.
+
+Validation: all 79 repository tests pass; the eight selector/label/safety tests
+also pass with native templating enabled. Strict offline production lint passes
+for new YAML with zero findings. Vault roundtrips, unrelated secret preservation
+and changed plaintext privacy checks pass. No live selector, configuration import
+or fresh deployment was launched.
+
 ## 0.16.8
 
 Document restart-entry-point change `fa10dfd`, including its README link and

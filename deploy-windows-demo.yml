@@ -159,6 +159,13 @@
               - windows_disconnected_required_secret_variables is not mapping
             fail_msg: Complete and review the Windows vault and its required secrets before deployment.
 
+        - name: Validate Windows template label coverage before any target changes
+          ansible.builtin.include_tasks: tasks/cac-template-labels.yml
+          vars:
+            cac_label_templates: "{{ controller_templates_windows_disconnected }}"
+            cac_label_definitions: "{{ controller_labels_windows_disconnected }}"
+            cac_required_template_label: disconnected_windows
+
         - name: Require the secret inputs listed by the Windows configuration
           ansible.builtin.assert:
             that:

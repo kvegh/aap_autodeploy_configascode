@@ -1,5 +1,5 @@
 ---
-- name: Require the complete workflow repository mapping
+- name: Require the base deployment repository mapping
   ansible.builtin.assert:
     that:
       - cac_workflow is defined
@@ -7,8 +7,8 @@
       - cac_workflow.organization is string
       - cac_workflow.organization | length > 0
       - cac_workflow.repositories is mapping
-      - "['base', 'aiops', 'windows_disconnected', 'orchestrator', 'assistant_team'] | difference(cac_workflow.repositories.keys()) | length == 0"
-    fail_msg: Supply the workflow organization and the base plus four use-case configuration repository URLs.
+      - "'base' in cac_workflow.repositories"
+    fail_msg: Supply the workflow organization and shared base configuration repository URL.
   no_log: true
 
 - name: Reject repository URLs containing credentials or redirects through query parameters
@@ -24,16 +24,16 @@
       - (item | ansible.builtin.urlsplit('fragment')) == ''
       - item is not search('\\s')
     fail_msg: Every workflow configuration repository must be an HTTPS Git URL without embedded credentials.
-  loop: "{{ cac_workflow.repositories.values() | list }}"
+  loop: "{{ [cac_workflow.repositories.base] }}"
   no_log: true
 
-- name: Create the success-only deployment graph and parallel use-case imports
+- name: Create the success-only base AAP deployment graph
   ansible.controller.workflow_job_template:
     name: "{{ cac_workflow.name | default('Deploy Complete AAP') }}"
     organization: "{{ cac_workflow.organization }}"
     description: >-
-      Deploy a fresh AAP, configure base and prerequisites, then import the four
-      captured demos and AutoDeploy itself in parallel. No teardown or imported demo jobs run.
+      Deploy a fresh AAP and configure its shared base only. Use the separate
+      explicit selector to install reviewed project and use-case CaC afterward.
     allow_simultaneous: false
     labels:
       - aap-autodeploy

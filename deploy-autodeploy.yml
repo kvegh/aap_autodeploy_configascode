@@ -33,6 +33,13 @@
             fail_msg: Complete and review the AutoDeploy object definitions and encrypted provisioning inputs before import.
           no_log: true
 
+        - name: Validate AutoDeploy template label coverage before any target changes
+          ansible.builtin.include_tasks: tasks/cac-template-labels.yml
+          vars:
+            cac_label_templates: "{{ autodeploy_configuration.job_templates }}"
+            cac_label_definitions: "{{ autodeploy_configuration.labels }}"
+            cac_required_template_label: aap-autodeploy
+
         - name: Reject masked provisioning secrets
           ansible.builtin.assert:
             that:

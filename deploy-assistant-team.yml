@@ -171,6 +171,13 @@
             fail_msg: Complete the seven ordinary Assistant Team definitions and secrets; keep authentication maintenance outside default dispatch.
           no_log: true
 
+        - name: Validate Assistant Team template label coverage before any target changes
+          ansible.builtin.include_tasks: tasks/cac-template-labels.yml
+          vars:
+            cac_label_templates: "{{ controller_templates_assistant_team }}"
+            cac_label_definitions: "{{ controller_labels_assistant_team }}"
+            cac_required_template_label: assistant_team
+
         - name: Require protected ordinary deployment credentials
           ansible.builtin.assert:
             that:

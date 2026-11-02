@@ -18,6 +18,16 @@ cac_workflow:
     assistant_team: https://git.example.invalid/CONFIGURATION_OWNER/assistant-config.git
 
 cac_workflow_execution_image: EXECUTION_IMAGE_PLACEHOLDER
+
+# Populate all reviewed umbrella module URLs and supported private capture URLs.
+# Eligibility/importer names are fixed in vars/use-case-catalog.yml.
+cac_use_case_selector:
+  organization: ORGANIZATION_PLACEHOLDER
+  umbrella_modules: {}
+  configuration_repositories: {}
+# One reviewed exact-version repository list per supported selected module.
+cac_use_case_prerequisites: {}
+
 cac_workflow_pah:
   reviewed: false
   # Exact versions and their dependency closure, owned by the deployment/use cases.

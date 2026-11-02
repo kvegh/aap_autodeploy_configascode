@@ -30,11 +30,11 @@ class DeploymentWorkflowTests(unittest.TestCase):
         return yaml.safe_load(template.render(cac_workflow={"organization": "Synthetic organization",
                                                            "repositories": mapping})), mapping
 
-    def test_all_five_imports_fork_only_after_successful_base_and_prerequisites(self):
+    def test_base_deployment_stops_after_shared_configuration(self):
         nodes, mapping = self.graph()
         by_id = {node["identifier"]: node for node in nodes}
         self.assertEqual(len(nodes), len(by_id))
-        self.assertEqual(len(nodes), 10)
+        self.assertEqual(len(nodes), 4)
         parents = {identifier: [] for identifier in by_id}
         for node in nodes:
             self.assertEqual(node["related"]["always_nodes"], [])
@@ -43,17 +43,12 @@ class DeploymentWorkflowTests(unittest.TestCase):
             for child in node["related"]["success_nodes"]:
                 self.assertIn(child["identifier"], by_id)
                 parents[child["identifier"]].append(node["identifier"])
-        expected_chain = ["create_vm", "configure_infrastructure", "install_aap", "configure_base", "prepare_use_cases"]
+        expected_chain = ["create_vm", "configure_infrastructure", "install_aap", "configure_base"]
         self.assertEqual(parents[expected_chain[0]], [])
         for parent, child in zip(expected_chain, expected_chain[1:]):
             self.assertEqual(parents[child], [parent])
-        branches = {"configure_aiops", "configure_windows", "configure_orchestrator",
-                    "configure_assistant_team", "configure_autodeploy"}
-        self.assertEqual({item["identifier"] for item in by_id["prepare_use_cases"]["related"]["success_nodes"]}, branches)
-        for branch in branches:
-            self.assertEqual(parents[branch], ["prepare_use_cases"])
-            self.assertEqual(by_id[branch]["related"]["success_nodes"], [])
-        self.assertEqual(by_id["configure_autodeploy"]["extra_data"]["aap_config_repo_url"], mapping["base"])
+        self.assertEqual(by_id["configure_base"]["related"]["success_nodes"], [])
+        self.assertEqual(by_id["configure_base"]["extra_data"]["aap_config_repo_url"], mapping["base"])
 
     def test_nodes_do_not_pin_an_old_target_or_pass_secrets_as_artifacts(self):
         nodes, _ = self.graph()

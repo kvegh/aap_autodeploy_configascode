@@ -1,14 +1,15 @@
 # AAP AutoDeploy: deployment overview
 
 [README.md](README.md) contains setup instructions, inputs and current behavior.
-[PLAN.md](PLAN.md#todo) is the single project TODO list: each open area explains
+[PLAN.md](PLAN.md#todo) retains the older backlog; Beads tracks current work. Each open area explains
 why it matters and the intended result; completed work is at [Done:](PLAN.md#done).
 [design_decisions_history.md](design_decisions_history.md) preserves past decisions.
 
 ## Deployment sequence
 
-Each stage is a separate AAP Job Template. The complete workflow runs stages
-01-05 on success, then applies the five captured use cases in parallel.
+Each stage is a separate AAP Job Template. Base deployment runs stages 01–04
+on success and stops. The [separate selector](docs/selected-use-cases.md) prepares
+only explicitly selected prerequisites and imports the selected Projects and CaC.
 
 | Stage | Playbook | Purpose |
 |---|---|---|
@@ -16,13 +17,13 @@ Each stage is a separate AAP Job Template. The complete workflow runs stages
 | 02 | `02-infra-config.yml` | Configure DNS, certificates and reverse-proxy routing. |
 | 03 | `03-aap-install.yml` | Prepare the guest and run the bundled AAP installer. |
 | 04 | `04-aap-config.yml` | Apply subscription and platform-only base configuration. |
-| 05 | `05-prepare-use-cases.yml` | Prepare the declared PAH collections and existing execution image. |
+| Separate | `05-prepare-use-cases.yml` | Prepare the selected PAH collections and existing execution image. |
 
 The five importers are `deploy-aiops-demo.yml`, `deploy-windows-demo.yml`,
 `deploy-orchestrator-demo.yml`, `deploy-assistant-team.yml` and
 `deploy-autodeploy.yml`. AutoDeploy restores the deployment templates and workflow
 on the replacement. Importing definitions does not establish functional demo
-readiness; applying enabled EDA activations can start them.
+readiness. Imported AIOps activations remain disabled for separate activation.
 
 Stage 01 publishes only `vm_name`, `vm_ip` and `aap_hostname` as workflow artifacts.
 Stage 03 uses a separate installer hostname. Stage 04 and the use-case importers

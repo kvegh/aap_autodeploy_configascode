@@ -1,0 +1,46 @@
+---
+- name: Require captured templates and their project label definitions
+  ansible.builtin.assert:
+    that:
+      - cac_label_templates is sequence
+      - cac_label_templates is not string
+      - cac_label_templates is not mapping
+      - cac_label_templates | length > 0
+      - cac_label_definitions is sequence
+      - cac_label_definitions is not string
+      - cac_label_definitions is not mapping
+      - cac_required_template_label is string
+      - cac_required_template_label | length > 0
+    fail_msg: Supply the captured templates, label definitions and required project label.
+  no_log: true
+
+- name: Require named labels with their owning organizations
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - item.name is string
+      - item.name | length > 0
+      - item.organization is string
+      - item.organization | length > 0
+    fail_msg: Every captured label must name its owning organization.
+  loop: "{{ cac_label_definitions }}"
+  no_log: true
+
+- name: Require each template's project label and all referenced label definitions
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - item.organization is string
+      - item.labels is defined
+      - item.labels is sequence
+      - item.labels is not string
+      - item.labels is not mapping
+      - item.labels | select('string') | list | length == item.labels | length
+      - cac_required_template_label in item.labels
+      - >-
+        item.labels | difference(cac_label_definitions |
+          selectattr('organization', 'equalto', item.organization) |
+          map(attribute='name') | list) | length == 0
+    fail_msg: Every template needs its project label and matching-organization label definitions.
+  loop: "{{ cac_label_templates }}"
+  no_log: true

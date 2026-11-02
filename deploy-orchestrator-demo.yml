@@ -162,6 +162,13 @@
               - orchestrator_capture_readiness.remaining_review | length == 0
             fail_msg: Complete and review the Orchestrator vault before importing it.
 
+        - name: Validate Orchestrator template label coverage before any target changes
+          ansible.builtin.include_tasks: tasks/cac-template-labels.yml
+          vars:
+            cac_label_templates: "{{ controller_templates_orchestrator }}"
+            cac_label_definitions: "{{ controller_labels_orchestrator }}"
+            cac_required_template_label: orchestrator-autodeploy
+
         - name: Require the protected Orchestrator registry inputs
           ansible.builtin.assert:
             that:

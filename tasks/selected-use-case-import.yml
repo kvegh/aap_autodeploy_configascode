@@ -1,0 +1,31 @@
+---
+- name: Run only the just-validated configuration template with its existing credentials
+  ansible.controller.job_launch:
+    job_template: "{{ aap_selected_importer.json.results[0].id | string }}"
+    extra_vars: >-
+      {{ {'aap_hostname': aap_target_hostname,
+          'aap_config_repo_url': aap_selected_importer.item.repository,
+          'debug_logging': 'false'} | combine(aap_selected_importer_extra) }}
+    wait: true
+    interval: 10
+    timeout: 10800
+    controller_host: "{{ aap_seed_hostname }}"
+    controller_oauthtoken: "{{ cac_gateway_token.json.token }}"
+    validate_certs: "{{ aap_validate_certs }}"
+  register: aap_selected_import_job
+  no_log: true
+
+- name: Require actual successful configuration-job completion
+  ansible.builtin.assert:
+    that:
+      - aap_selected_import_job.id is integer
+      - aap_selected_import_job.status == 'successful'
+    fail_msg: The selected configuration import did not complete successfully.
+  no_log: true
+
+- name: Retain only the completed setup key and job result
+  ansible.builtin.set_fact:
+    aap_selected_setup_results: >-
+      {{ aap_selected_setup_results + [{'selection': aap_selected_importer_key,
+          'job_id': aap_selected_import_job.id, 'status': aap_selected_import_job.status}] }}
+  no_log: true

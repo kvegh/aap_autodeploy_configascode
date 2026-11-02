@@ -18,7 +18,11 @@ Orchestrator, Assistant Team and AutoDeploy. Independent configuration compariso
 is complete. Imports prove that definitions were restored; functional tests,
 complete production coverage and recursive deployment remain open.
 
-This is the single project TODO list. See [README.md](README.md) for setup and
+Beads is authoritative for new work; this older backlog remains pending migration.
+Current work is `bead-wd-9yq` (base-only deployment, selected use cases and capture
+labels) and `bead-wd-8lc` (three-way CaC extraction/update automation). Future
+`bead-wd-x9a` asks whether AAP updates should be automated; it authorizes evaluation
+only, with no update implementation or live update. See [README.md](README.md) for setup and
 [design_decisions_history.md](design_decisions_history.md) for past decisions.
 Protected comparison reports, exports and plaintext working files stay outside Git.
 
@@ -81,7 +85,8 @@ Why: stages and imports succeeded individually; one complete workflow run and
 use of the replacement as the next seed are not yet proven.
 
 - [ ] **4.1 Full workflow:** deploy a fresh target through the complete workflow;
-  verify artifact handoff, PAH preparation and all five parallel import branches.
+  verify base-only artifact handoff, then independently select supported use
+  cases and prove their prerequisite preparation and configuration imports.
 - [ ] **4.2 Next generation:** use that replacement's imported workflow and
   credentials to deploy and configure another complete AAP.
 
@@ -247,9 +252,10 @@ and takeover checks remain in the open list above.
   and repository snapshot limits; a separate preview/apply curator protects pins
   and dependencies. One-time cleanup reduced 263 releases to 16 across 15
   collections. Recurring operation still needs the audit above.
-- [x] **Workflow/handoff implementation:** stages 01-05 feed five parallel imports
-  using nonsecret VM/address/API URL artifacts. AutoDeploy restores that workflow
-  too. Full-workflow and recursive live proofs remain open.
+- [x] **Workflow/handoff implementation:** stages 01–04 use nonsecret
+  VM/address/API URL artifacts and stop at base. This supersedes the earlier
+  automatic five-import graph. Explicit selected setup is separate; full workflow,
+  selector and recursive live proofs remain open.
 - [x] **Five use cases imported:** AIOps (2260), Windows (2248), Orchestrator (2246),
   Assistant Team (2262), AutoDeploy (2247). Windows follow-up 2270 added the managed
   update template, bringing Windows to 21 templates. Refreshed Assistant lifecycle

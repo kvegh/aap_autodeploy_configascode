@@ -16,6 +16,13 @@
         - name: Retrieve the encrypted configuration inputs
           ansible.builtin.include_tasks: tasks/private-config-checkout.yml
 
+        - name: Resolve prerequisites only for explicitly selected supported use cases
+          ansible.builtin.set_fact:
+            cac_workflow_pah: >-
+              {{ cac_use_case_prerequisites |
+                 aap_selected_use_case_prerequisites(aap_selected_use_cases) }}
+          no_log: true
+
         - name: Authenticate to the configured target
           ansible.builtin.include_tasks: tasks/gateway-base-login.yml
 
