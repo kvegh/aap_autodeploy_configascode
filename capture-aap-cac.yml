@@ -1,0 +1,57 @@
+---
+# Extract only the explicitly owned scope; preview by default. Never applies to AAP.
+# First baseline initialization and later encrypted updates need a fresh review digest.
+- name: Extract compare and review an owned AAP configuration scope
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Require explicit bounded capture choices
+      ansible.builtin.assert:
+        that:
+          - aap_cac_capture_scope is defined
+          - aap_cac_capture_mode | default('preview') in ['preview', 'initialize', 'update']
+          - >-
+            aap_cac_capture_commit | default(false) is boolean or
+            aap_cac_capture_commit | default(false) | string | lower in ['true', 'false']
+          - >-
+            aap_cac_capture_push | default(false) is boolean or
+            aap_cac_capture_push | default(false) | string | lower in ['true', 'false']
+        fail_msg: Choose a declared scope, capture mode and Boolean Git publication flags.
+
+    - name: Extract and compare through protected Vault API and Git inputs
+      aap_cac_capture:
+        scope: "{{ aap_cac_capture_scope }}"
+        mode: "{{ aap_cac_capture_mode | default('preview') }}"
+        review_digest: "{{ aap_cac_capture_review_digest | default('') }}"
+        commit: "{{ aap_cac_capture_commit | default(false) | bool }}"
+        push: "{{ aap_cac_capture_push | default(false) | bool }}"
+        working_copy: "{{ aap_cac_capture_working_copy | default(omit) }}"
+      register: aap_capture_result
+      failed_when: false
+      no_log: true
+
+    - name: Explain a protected extraction or review refusal without logging data
+      ansible.builtin.fail:
+        msg: "{{ aap_capture_result.msg | default('The protected capture could not complete; inspect scoped inputs.') }}"
+      when: aap_capture_result.msg is defined or aap_capture_result.review_digest is not defined
+
+    - name: Retain the encrypted review and bounded comparison summary
+      ansible.builtin.set_stats:
+        data:
+          cac_capture_review:
+            scope: "{{ aap_cac_capture_scope }}"
+            mode: "{{ aap_capture_result.mode }}"
+            review_digest: "{{ aap_capture_result.review_digest }}"
+            source_change_counts: "{{ aap_capture_result.source_change_counts }}"
+            desired_change_count: "{{ aap_capture_result.desired_change_count }}"
+            conflict_count: "{{ aap_capture_result.conflict_count }}"
+            validation_error_count: "{{ aap_capture_result.validation_error_count }}"
+            initialization_required: "{{ aap_capture_result.initialization_required }}"
+            initial_difference_count: "{{ aap_capture_result.initial_difference_count }}"
+            initial_code_difference_count: "{{ aap_capture_result.initial_code_difference_count }}"
+            code_adaptation_required: "{{ aap_capture_result.code_adaptation_required }}"
+            pushed: "{{ aap_capture_result.pushed | default(false) }}"
+            encrypted_review: "{{ aap_capture_result.encrypted_review }}"
+        aggregate: false
+        per_host: false

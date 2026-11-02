@@ -19,8 +19,9 @@ is complete. Imports prove that definitions were restored; functional tests,
 complete production coverage and recursive deployment remain open.
 
 Beads is authoritative for new work; this older backlog remains pending migration.
-Current work is `bead-wd-9yq` (base-only deployment, selected use cases and capture
-labels) and `bead-wd-8lc` (three-way CaC extraction/update automation). Future
+Completed work includes `bead-wd-9yq` (base-only deployment, selected use cases and
+capture labels) and `bead-wd-c65` (shared allocation and registered routes).
+Current work is `bead-wd-8lc` (three-way CaC extraction/update automation). Future
 `bead-wd-x9a` asks whether AAP updates should be automated; it authorizes evaluation
 only, with no update implementation or live update. See [README.md](README.md) for setup and
 [design_decisions_history.md](design_decisions_history.md) for past decisions.
@@ -143,7 +144,10 @@ Why: UI/API edits, such as a changed timeout, can disappear on rebuild.
   Handle missing/expired records and keep periodic full comparisons for coverage.
 
 Goal: reviewed changes reliably reach CaC. The initial full extraction/comparison
-is done; the recurring process is not automated. Continue comparisons for now.
+is done. `capture-aap-cac.yml` now provides bounded reviewed extraction/update
+with an initial AutoDeploy adapter; first accepted-baseline/live-template proof
+and additional component adapters remain explicit gates. See
+[the reconciliation guide](docs/cac-reconciliation.md).
 
 ### 8. Save generated MCP connection details securely for clients
 

@@ -1,5 +1,32 @@
 # Release notes
 
+## 0.21.0
+
+Add bounded GET-only Controller extraction, normalized three-way CaC comparison,
+explicit reviewed baseline initialization and encrypted updates with optional
+non-force Git publication. Preserve repo-only edits/deletions, accepted source/
+desired exclusions and existing masked secrets; detect additions, semantic
+changes and confirmed resource/association removals. Prove administrator
+visibility, complete pagination and managed relationships before deletion
+decisions. Keep retained owned dependency definitions separate from their job
+associations, and validate references before accepting updates.
+
+Bind reviews to the actual source revision/content and owned playbook paths,
+compare the code-owned base workflow separately, and refuse unsupported/incomplete
+adapters. Default previews retain whole-file encrypted review artifacts. The
+initial encrypted adapter supports AutoDeploy; other scopes declare missing
+adapter boundaries. Capture the preview-default extractor template and its
+recoverable source-reader/type in the optional AutoDeploy case; actual AAP
+installation is a separate step.
+
+Validation: the 116-test regression passed; 23 focused fixtures cover real
+encrypted Git preview/initialization/update/removal, conflicts, dependency
+retention, URL/visibility refusal, semantic YAML/JSON equivalence and reordered
+survey secret preservation. Focused tests pass in both native modes; entrypoint
+syntax and scoped strict production lint pass. Local production GET-only preview
+succeeds without Git publication or AAP mutation. No accepted production baseline
+or live update is claimed; API-masked secret rotation remains unobservable.
+
 ## 0.20.7
 
 Document selector authentication-origin checks `85e7307` and encrypted seed pin

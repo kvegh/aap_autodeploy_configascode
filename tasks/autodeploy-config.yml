@@ -1,4 +1,13 @@
 ---
+- name: Restore optional AutoDeploy-owned capture credential types
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_credential_types
+    apply:
+      no_log: true
+  vars:
+    controller_credential_types: "{{ autodeploy_configuration.credential_types }}"
+  when: autodeploy_configuration.credential_types | default([]) | length > 0
+
 - name: Restore provisioning credentials from the encrypted AutoDeploy use case
   ansible.builtin.include_role:
     name: infra.aap_configuration.controller_credentials

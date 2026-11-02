@@ -41,6 +41,14 @@ SSH host-key handshake alone does not establish authenticated guest access;
 compare the retained probe identity with protected golden/source evidence before
 proceeding to installation.
 
+`capture-aap-cac.yml` provides [reviewed live extraction and CaC updates](docs/cac-reconciliation.md).
+It discovers owned project/label definitions, proves complete read visibility,
+compares separate source/desired baselines, preserves secrets and pending repo
+edits, and detects additions, changes and removals. Preview is the default;
+initialization and encrypted updates require a fresh reviewed digest. The first
+adapter covers AutoDeploy and reports its code-owned workflow separately; other
+components need explicit adapters. It never applies configuration to source AAP.
+
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.
 

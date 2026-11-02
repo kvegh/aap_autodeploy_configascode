@@ -39,6 +39,7 @@ cac_workflow_pah:
   repositories: []
 
 autodeploy_configuration:
+  credential_types: []
   # Provisioning Machine and default-ID environment Vault credentials.
   # Base separately creates the four Git credentials and the cac-ID Vault.
   credentials: []
