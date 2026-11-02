@@ -52,7 +52,9 @@ partition/XFS preparation may provide temporary space, and the installer may
 provide its own runtime packages. The observer proves proposed growth using
 `growpart -N`, never writes a partition table, and reports missing runtime tools
 plus vendor package-task references for review. Its success gates preparation;
-current installer failures remain visible. Stage03 rechecks the exact root
+current installer failures remain visible. The verified bundle's common role
+installs `podman_packages` (including Podman); its absence before that role runs
+is reported rather than assigned to manual preparation. Stage03 rechecks the exact root
 layout before growth, refuses growth failures, and verifies actual temporary
 capacity before subscription or installer work. Red Hat TLS probes may reuse the
 guest's already configured RHSM CA in a local verified context and retain bounded
@@ -82,6 +84,12 @@ credential inputs keep their original meaningful order.
 Custom credential types retain stable input/injector schemas alongside their
 credentials; runtime IDs and management flags are excluded. Retained CA
 dependencies survive removed associations while vaulted PEM inputs are preserved.
+Actual Job Template158 (`Extract and Reconcile AAP CaC`) is installed. Default
+preview job3139 succeeded on `f38517a` in44.042 seconds, with zero conflicts or
+validation errors. Its encrypted review decrypts correctly. With no accepted
+baseline yet, it reports373 initial differences and seven code-graph differences;
+these are not changes since a previous extraction. No initialization, update or
+Git publication ran.
 Source credential aliases resolve to the captured/base-bootstrap namespace;
 shared external definitions are recognized through those aliases as well.
 The protected action normalizes Boolean survey strings and returns bounded

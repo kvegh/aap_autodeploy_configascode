@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.23.15
+
+Document actual installed extractor158/defaultpreview3139 success on f38517a,
+zero conflicts/validation errors and independently decrypted protected review.
+No baseline acceptance, update or Git publication ran. Preserve initial review
+counts as initial comparisons. Document verified vendor ownership of Podman.
+
 ## 0.23.14
 
 Document actual infrastructure3133 and refined guest observer3135 success. The

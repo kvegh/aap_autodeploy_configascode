@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Verify the installed extractor with a real protected preview — 2026-11-02
+
+Actual template158 default preview job3139 on `f38517a` succeeded in44.042 seconds.
+It reported zero conflicts/validation errors, retained a decryptable Vault review,
+and performed no Git publication. The missing accepted baseline is explicit:
+373 initial source/desired differences and seven code-graph differences need
+review before initialization; they are not changes since a previous extraction.
+The used reader remains intact beside the separately installed CA attachment.
+The implementation and meaningful merge/deletion/secret fixtures are verified;
+no actual baseline acceptance or update was authorized or run. Independently
+read vendor common-role tasks/defaults also confirm Podman belongs to bundled
+installer package setup, so its earlier absence does not require manual packages.
+
 ## Verify refined preparation readiness on the actual guest — 2026-11-02
 
 Actual observer job3135 on source `6932ebf` succeeded in16.308 seconds:
