@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.24.0
+
+Support an optional dedicated AIOps Git-read credential from encrypted base while
+preserving the four required legacy Git inputs, existing hidden secrets and the
+shared Vault credential. Six real bootstrap/API fixtures pass in each native
+mode, including new-credential creation, unchanged reruns and masked-token refusal.
+Stage 04 syntax and scoped production lint pass. Update the AIOps companion
+repository documentation and examples; the private capture is published with
+identical ciphertext. Live binding cutover waits for the operator-supplied
+repository-scoped token to pass its read check; no use case is deployed here.
+
 ## 0.23.21
 
 Document the ownership audit rationale and backlog commit `1846f71` in the

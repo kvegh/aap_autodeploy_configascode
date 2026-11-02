@@ -541,8 +541,9 @@ Vault password independently. Storing the Vault password inside the encrypted
 base supports provisioning another trusted instance; it cannot unlock the first
 seed or recover a lost decryption key by itself. Keep the initial recovery copy
 separately. Every instance receiving these credentials gains their configuration
-access and belongs to the same trust boundary. Step 04 now creates the four
-separate Git-token credentials and the Vault credential with identifier `cac`
+access and belongs to the same trust boundary. Step 04 creates the four
+required Git-token credentials, the optional dedicated AIOps credential and the
+Vault credential with identifier `cac`
 from these inputs, after applying shared base configuration. It creates or reuses
 the compatible `CAC_GIT_TOKEN` credential type. An existing name with another
 organization, credential type, Vault identifier, or Git injection schema stops
@@ -550,6 +551,14 @@ the run for review. Existing hidden secret values are preserved on reruns;
 credential rotation remains a separate operation. Both bootstrap input mappings
 may be omitted for a base that does not provision replacement access; supplying
 only part of the set is rejected.
+
+For AIOps's separate private companion repository, add
+`cac_bootstrap_git_credentials.aiops.token` to encrypted base. Its default
+credential name is `AIOps CaC Git Read`; `aap_credential_name` can override that
+name consistently with the reviewed importer capture. Give this token read-only
+Contents access to the AIOps companion repository. Keep the existing base token
+and other use-case tokens unchanged. Older base configurations without `aiops`
+retain their previous bootstrap with four Git credentials.
 
 This step provisions configuration access, not the deployment project's own
 inventories, environment credentials, projects, Job Templates or workflow. Those
@@ -721,8 +730,11 @@ open.
 ### AIOps configuration deployment
 
 Run `deploy-aiops-demo.yml` through its own Job Template only after Step 04 has
-finished on the chosen target. This job loads `cac/aiops_demo.yml` from the
-private repository's `main` branch. It does not load base or the subscription
+finished on the chosen target. This job loads `cac/aiops_demo.yml` from AIOps's
+dedicated private companion repository's `main` branch. The public playbook
+repository remains separate and needs no private-repository token. Use the
+dedicated AIOps Git-read credential for this checkout; the shared catalog and
+instance registry remain in their existing repository. It does not load base or the subscription
 manifest, and it does not launch any of the imported demo Job Templates.
 Applying enabled EDA activation definitions can start those activations.
 

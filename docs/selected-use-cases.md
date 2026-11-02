@@ -26,6 +26,13 @@ URLs and prerequisite pins remain in encrypted `cac/autodeploy.yml`, under
 `cac_use_case_selector` and `cac_use_case_prerequisites`. Refresh that reviewed
 catalog when umbrella membership changes.
 
+AIOps has a dedicated private configuration companion containing
+`cac/aiops_demo.yml` and uses its own Git-read credential provisioned from
+`cac_bootstrap_git_credentials.aiops` in encrypted base. Its public automation
+source remains separate. The shared catalog and completed-instance registry
+continue to use the base configuration repository; changing the AIOps capture
+repository must not retarget either shared input.
+
 ## Invocation
 
 ```sh

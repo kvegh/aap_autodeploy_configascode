@@ -32,6 +32,23 @@ hub_collection_remotes_base: []
 hub_collection_repositories_base: []
 pah_base: {}
 
+# Optional replacement-access bootstrap: retain the complete required base,
+# assistant_team, windows_disconnected and orchestrator entries plus the cac-ID
+# Vault input when using this feature. Add aiops for its private companion repo.
+# cac_bootstrap_git_credentials:
+#   base: {token: BASE_REPOSITORY_READ_TOKEN_PLACEHOLDER}
+#   assistant_team: {token: ASSISTANT_REPOSITORY_READ_TOKEN_PLACEHOLDER}
+#   windows_disconnected: {token: WINDOWS_REPOSITORY_READ_TOKEN_PLACEHOLDER}
+#   orchestrator: {token: ORCHESTRATOR_REPOSITORY_READ_TOKEN_PLACEHOLDER}
+#   aiops:
+#     aap_credential_name: AIOps CaC Git Read
+#     token: AIOPS_REPOSITORY_READ_TOKEN_PLACEHOLDER
+# cac_bootstrap_vault_credentials:
+#   cac:
+#     name: CAC_VAULT_CREDENTIAL_PLACEHOLDER
+#     vault_id: cac
+#     vault_password: CAC_VAULT_PASSWORD_PLACEHOLDER
+
 # Base sets selection/snapshot limits without synchronizing or deleting content.
 # Release pruning separately preserves the newest installed release and audited
 # project/playbook/execution-environment requirements plus dependency closure.

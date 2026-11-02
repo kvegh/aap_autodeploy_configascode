@@ -12,7 +12,7 @@ cac_workflow:
   organization: ORGANIZATION_PLACEHOLDER
   repositories:
     base: https://git.example.invalid/CONFIGURATION_OWNER/base-config.git
-    aiops: https://git.example.invalid/CONFIGURATION_OWNER/base-config.git
+    aiops: https://git.example.invalid/CONFIGURATION_OWNER/aiops-config.git
     windows_disconnected: https://git.example.invalid/CONFIGURATION_OWNER/windows-config.git
     orchestrator: https://git.example.invalid/CONFIGURATION_OWNER/orchestrator-config.git
     assistant_team: https://git.example.invalid/CONFIGURATION_OWNER/assistant-config.git
@@ -41,7 +41,7 @@ cac_workflow_pah:
 autodeploy_configuration:
   credential_types: []
   # Provisioning Machine and default-ID environment Vault credentials.
-  # Base separately creates the four Git credentials and the cac-ID Vault.
+  # Base creates four legacy Git credentials, optional AIOps Git access and the cac-ID Vault.
   credentials: []
   execution_environments: []
   inventories: []

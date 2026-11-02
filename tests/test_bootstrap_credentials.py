@@ -149,6 +149,30 @@ class BootstrapCredentialTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, output)
         self.assertEqual(self.state["writes"], [])
 
+    def test_optional_aiops_credential_is_independent_and_rerun_preserves_it(self):
+        self.variables["cac_bootstrap_git_credentials"]["aiops"] = {
+            "token": "synthetic-aiops-only-secret",
+        }
+        result, output = self.run_tasks()
+        self.assertEqual(result.returncode, 0, output)
+        created = [body for kind, body in self.state["writes"] if kind == "credentials"]
+        self.assertEqual(len(created), 6)
+        aiops = next(body for body in created if body["name"] == "AIOps CaC Git Read")
+        self.assertEqual(aiops["inputs"], {"token": "synthetic-aiops-only-secret"})
+        base = next(body for body in created if body["name"] == "Cac_git_token")
+        self.assertEqual(base["inputs"], {"token": "synthetic-base-secret"})
+        self.state["writes"].clear()
+        result, output = self.run_tasks()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertEqual(self.state["writes"], [])
+        self.assertFalse(self.state["unexpected_patch"])
+
+    def test_invalid_optional_aiops_token_is_rejected_before_api_mutation(self):
+        self.variables["cac_bootstrap_git_credentials"]["aiops"] = {"token": "$encrypted$"}
+        result, output = self.run_tasks()
+        self.assertNotEqual(result.returncode, 0, output)
+        self.assertEqual(self.state["writes"], [])
+
     def test_unrelated_existing_type_is_preserved_and_rejected(self):
         self.state["credential_types"].append({"id": 12, "name": "Cac_git_token_type", "kind": "cloud",
                                                 "managed": False, "inputs": {}, "injectors": {"env": {"UNRELATED": "value"}}})
