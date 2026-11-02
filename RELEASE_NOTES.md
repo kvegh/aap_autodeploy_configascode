@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.23.8
+
+Guard Stage03 partition preparation with the exact root layout, refuse growth
+errors, accept only explicit growpart NOCHANGE on an unchanged partition, and
+verify real temporary capacity before subscription or installation.
+
 ## 0.23.7
 
 Document phase-aware read-only audit `3706770`, actual initial probe findings

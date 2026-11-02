@@ -52,7 +52,9 @@ partition/XFS preparation may provide temporary space, and the installer may
 provide its own runtime packages. The observer proves proposed growth using
 `growpart -N`, never writes a partition table, and reports missing runtime tools
 plus vendor package-task references for review. Its success gates preparation;
-current installer failures remain visible. Red Hat TLS probes may reuse the
+current installer failures remain visible. Stage03 rechecks the exact root
+layout before growth, refuses growth failures, and verifies actual temporary
+capacity before subscription or installer work. Red Hat TLS probes may reuse the
 guest's already configured RHSM CA in a local verified context and retain bounded
 failure categories. They send no client credentials. The artifact reports
 observed capacities and failed check names; it does not benchmark disk IOPS or

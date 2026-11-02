@@ -69,17 +69,55 @@
     - name: Gather facts
       ansible.builtin.setup:
 
+    - name: Inspect the supported root layout before partition preparation
+      ansible.builtin.command:
+        argv: [findmnt, --json, --output, 'SOURCE,FSTYPE', /]
+      register: aap_prepare_root_mount
+      changed_when: false
+      check_mode: false
+
+    - name: Require the exact root partition and filesystem used by preparation
+      ansible.builtin.assert:
+        that:
+          - aap_prepare_mounts | length == 1
+          - aap_prepare_mounts[0].source == '/dev/sda4'
+          - aap_prepare_mounts[0].fstype == 'xfs'
+        fail_msg: Review this guest's root layout before filesystem preparation.
+      vars:
+        aap_prepare_mounts: "{{ (aap_prepare_root_mount.stdout | from_json).filesystems }}"
+
     - name: Grow root filesystem
       block:
         - name: Grow partition
           ansible.builtin.command:
-            cmd: growpart /dev/sda 4
-          failed_when: false
+            argv: [growpart, /dev/sda, '4']
+          register: aap_partition_growth
+          changed_when: aap_partition_growth.rc == 0
+          failed_when: >-
+            aap_partition_growth.rc != 0 and
+            not (aap_partition_growth.rc == 1 and
+                 'NOCHANGE:' in aap_partition_growth.stdout)
 
         - name: Grow XFS filesystem
           ansible.builtin.command:
-            cmd: xfs_growfs /
-          failed_when: false
+            argv: [xfs_growfs, /]
+          register: aap_xfs_growth
+          changed_when: "'data blocks changed' in aap_xfs_growth.stdout"
+
+    - name: Verify actual temporary capacity after filesystem preparation
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - |
+            import os
+            limits = {'/tmp': 10 * 1024**3, '/var/tmp': 3 * 1024**3}
+            for path, needed in limits.items():
+                values = os.statvfs(path)
+                if values.f_bavail * values.f_frsize < needed:
+                    raise SystemExit('Insufficient installation temporary space after preparation.')
+      changed_when: false
+      check_mode: false
 
     - name: Subscribe to RHEL and enable AAP repository
       ansible.builtin.include_role:
@@ -145,6 +183,7 @@
             chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"
           async: 7200
           poll: 30
+          changed_when: true
 
     - name: Observe the existing AAP installer without launching another
       when: aap_installer_resume_job_id is defined
