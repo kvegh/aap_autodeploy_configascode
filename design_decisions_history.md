@@ -1,5 +1,14 @@
 # Design decisions history
 
+## Match captured prompt policy to the guarded selector — 2026-11-02
+
+Implementation `70b1661` and companion capture `3daa17e` disable arbitrary
+variable prompts on all six existing configuration importers. The bounded
+surveys stay enabled and credential prompting is retained for the selector's
+validated scoped associations. Parent API readback found the earlier live/capture
+setting was permissive and would fail the selector's existing guard. A real
+preflight fixture now rejects that mismatch as well as missing target questions.
+
 ## Complete surveys that previously exposed diagnostics only — 2026-11-02
 
 Parent API preflight found three importer surveys that had only the logging

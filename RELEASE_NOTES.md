@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.20.5
+
+Document bounded-survey prompt implementation `70b1661` and encrypted alignment
+`3daa17e`; add a real regression that refuses arbitrary importer variable prompts.
+
 ## 0.20.4
 
 Align captured importer prompt policy with the selector guard: disable arbitrary

@@ -239,6 +239,10 @@ class UseCaseSetupTests(unittest.TestCase):
             cases.append(
                 ("registered target prompts " + str(include_target), value, expected)
             )
+            if include_target:
+                permissive = copy.deepcopy(value)
+                permissive["cac_label_templates"][0]["ask_variables_on_launch"] = True
+                cases.append(("arbitrary importer variables", permissive, False))
         for default, expected in (([], False), ("", True)):
             value = copy.deepcopy(complete)
             value["cac_label_templates"][0]["survey_spec"] = {
