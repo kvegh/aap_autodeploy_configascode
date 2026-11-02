@@ -20,7 +20,7 @@
     hub_configuration_collection_remote_secure_logging: true
     gateway_users_secure_logging: true
     aap_username: admin
-    aap_validate_certs: false
+    aap_validate_certs: true
   pre_tasks:
     - name: Select the registered instance before any base configuration
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml

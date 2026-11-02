@@ -31,13 +31,17 @@ catalog when umbrella membership changes.
 ```sh
 ansible-playbook -i localhost, deploy-selected-use-cases.yml \
   -e aap_seed_hostname=https://seed.example.invalid \
-  -e aap_target_hostname=https://fresh.example.invalid \
+  -e aap_instance_key="$INSTANCE_KEY" \
   -e aap_use_case_catalog_repo_url=https://git.example.invalid/team/configuration.git \
   -e '{"aap_selected_use_cases":["AIOps_selfhealing_demo","disconnected-windows-patching"]}'
 ```
 
-Supply the existing CaC Git-token credential, `cac` Vault credential and environment
-Vault credential. Both HTTPS origins must be trusted. The seed must have the
+Supply the existing CaC Git-token credential, `cac` Vault credential, environment
+Vault and separate registry-reader credential. The exact instance key must have
+a completed route in the latest encrypted registry; it determines the target's
+public URL and both SSH peer keys. There is no free-form target URL fallback.
+Both HTTPS origins must be trusted, public A records must identify only the
+pinned hypervisor, and unpinned AAAA records are refused. The seed must have the
 updated labelled configuration importers and the bounded Stage 05 selection
 survey. The fresh target must already have received base configuration and its
 configured administrator login. Distinct instance UUIDs are read from both APIs,
@@ -45,14 +49,20 @@ preventing a different URL for the seed from passing as a fresh target.
 
 Before launching, the selector verifies unique fixed importer names, expected
 playbooks, organization, project source URL, labels and bounded target/repository
-surveys. It uses each just-validated template ID and preserves its credential
-associations. Each setup job must finish successfully before proceeding. Bounded
+surveys. It uses each just-validated template ID, verifies its exact captured
+non-Machine credential associations and retains their scoped Git/Vault inputs.
+Credential prompting adds only the fixed registry-reader, the distinct
+`instance_registry` Vault identity and the route's named Machine credential.
+Case Vault identities must remain unique. Standalone importer runs require the
+same explicit key and scoped route credentials; wrong Machine access fails the
+pinned jump authentication. Completed jobs' actual credential associations are
+also verified. Each setup job must finish successfully before proceeding. Bounded
 job IDs/statuses are published after successful completion; launch acceptance
 alone does not establish setup success.
 
 The encrypted AutoDeploy capture defines `Configure Selected AAP Use Cases`
 with the same scoped credentials as its existing importer, a bounded multiselect,
-explicit seed/target/repository prompts and a twelve-hour overall timeout.
+explicit seed/registered-instance/repository prompts and a twelve-hour overall timeout.
 Importing that capture creates the template; a local declaration alone does not
 make it available in AAP. The base workflow and selector are not launched by
 configuration import. No live selector run or new fresh deployment is claimed.

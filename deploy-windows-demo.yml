@@ -21,8 +21,17 @@
     # Credential values remain protected even during diagnostic logging.
     controller_configuration_credentials_secure_logging: true
     aap_username: admin
-    aap_validate_certs: false
+    aap_validate_certs: true
   pre_tasks:
+    - name: Select the exact registered target for configuration setup
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
+    - name: Verify the selected public API before setup authentication
+      ansible.builtin.include_tasks: tasks/aap-instance-api.yml
+
+    - name: Route selected instance observers through its pinned hypervisor
+      ansible.builtin.include_tasks: tasks/aap-instance-ssh.yml
+
     - name: Require a Boolean debug logging choice
       ansible.builtin.assert:
         that:

@@ -163,6 +163,18 @@ def safe_instance_dns(records, name, address):
     return True
 
 
+def instance_api_dns(route, addresses, ipv6_addresses, validate_certs=True):
+    route = instance_route(route)
+    require(
+        validate_certs in (True, "true")
+        and isinstance(addresses, list)
+        and set(addresses) == {route["hypervisor"]["public_ip"]}
+        and ipv6_addresses == [],
+        "Require trusted TLS and exclusive DNS to the pinned IPv4 hypervisor; alternate IPv6 is refused.",
+    )
+    return True
+
+
 def ssh_args(route, known_hosts):
     route = instance_route(route)
     require(
@@ -239,4 +251,5 @@ class FilterModule:
             "aap_registered_instance": registered_instance,
             "aap_guest_ipv4": guest_ipv4,
             "aap_safe_instance_dns": safe_instance_dns,
+            "aap_instance_api_dns": instance_api_dns,
         }

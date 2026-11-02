@@ -1,5 +1,24 @@
 # Release notes
 
+## 0.20.0
+
+Require a completed registered instance key for selected and standalone CaC
+setup. Preserve each importer's exact saved Git/Vault associations, add only
+the fixed registry dependencies and registered Machine credential, and verify
+actual completed job credentials/results. A distinct registry Vault identity
+avoids collisions with case credentials. Restore explicitly captured host groups
+for isolated deployment definitions. Refuse alternate IPv6 DNS routes and TLS
+disable overrides before target authentication.
+
+Validation: the 95-test regression passes; the added DNS/TLS test and all 16
+allocation/routing tests pass in both native modes, including a wrong case Vault
+plus the correct distinct registry Vault. Nine selector/label tests pass in both
+modes. Ten entrypoints pass syntax checks; scoped strict lint passes for the
+selector, launcher and routing changes. Broader prerequisite lint still reports
+four existing line-length findings. Actual isolated VM creation and read-only
+guest login/sudo succeeded; no selected use-case setup or AAP installation is
+claimed by these checks.
+
 ## 0.19.3
 
 Document read-only guest-probe implementation `0079680` and distinguish peer

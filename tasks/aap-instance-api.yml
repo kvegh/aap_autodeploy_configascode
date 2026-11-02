@@ -5,14 +5,17 @@
       - aap_instance_route | aap_instance_route is mapping
       - aap_hostname == aap_instance_route.aap_hostname
       - aap_hypervisor_pin is not defined or aap_instance_route.hypervisor == aap_hypervisor_pin
+      - aap_validate_certs | default(true) | bool
     fail_msg: Use the selected instance's verified public API hostname, never a bare private subnet address.
   no_log: true
 
 - name: Require public DNS to identify only the pinned hypervisor
   ansible.builtin.assert:
     that: >-
-      query('community.general.dig', aap_hostname | urlsplit('hostname'), qtype='A') |
-      unique | list == [aap_instance_route.hypervisor.public_ip]
+      aap_instance_route | aap_instance_api_dns(
+        query('community.general.dig', aap_hostname | urlsplit('hostname'), qtype='A', real_empty=true),
+        query('community.general.dig', aap_hostname | urlsplit('hostname'), qtype='AAAA', real_empty=true),
+        aap_validate_certs | default(true))
     fail_msg: The instance API hostname does not resolve exclusively to its pinned hypervisor.
   no_log: true
 

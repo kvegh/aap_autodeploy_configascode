@@ -13,7 +13,7 @@
   vars:
     controller_execution_environments: "{{ autodeploy_configuration.execution_environments }}"
 
-- name: Restore the two AutoDeploy inventories
+- name: Restore the explicitly captured AutoDeploy inventories
   ansible.builtin.include_role:
     name: infra.aap_configuration.controller_inventories
   vars:
@@ -26,6 +26,15 @@
       no_log: true
   vars:
     controller_hosts: "{{ autodeploy_configuration.hosts }}"
+
+- name: Restore only explicitly captured AutoDeploy host groups
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_host_groups
+    apply:
+      no_log: true
+  vars:
+    controller_groups: "{{ autodeploy_configuration.groups }}"
+  when: autodeploy_configuration.groups | default([]) | length > 0
 
 - name: Restore AutoDeploy's object label
   ansible.builtin.include_role:

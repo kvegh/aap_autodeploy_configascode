@@ -78,6 +78,26 @@
         fail_msg: The reserved hostname already has a conflicting DNS record; inspect it before continuing.
       no_log: true
 
+    - name: Read the exact reserved hostname's IPv6 records
+      ansible.builtin.uri:
+        url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/AAAA/{{ aap_test_subdomain }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_godaddy_api_token }}"
+        status_code: 200
+        follow_redirects: none
+        validate_certs: true
+      delegate_to: localhost
+      become: false
+      register: aap_existing_instance_ipv6_dns
+      no_log: true
+
+    - name: Refuse an unpinned alternate IPv6 route
+      ansible.builtin.assert:
+        that: aap_existing_instance_ipv6_dns.json == []
+        fail_msg: The selected IPv4-only instance hostname has an unexpected IPv6 record.
+      no_log: true
+
     - name: Create GoDaddy DNS A record
       ansible.builtin.uri:
         url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/A/{{ aap_test_subdomain }}"

@@ -8,8 +8,18 @@
     - vars/main.yml
   vars:
     aap_username: admin
-    aap_validate_certs: false
+    aap_validate_certs: true
     debug_logging: false
+  pre_tasks:
+    - name: Select the exact registered target for configuration setup
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
+    - name: Verify the selected public API before setup authentication
+      ansible.builtin.include_tasks: tasks/aap-instance-api.yml
+
+    - name: Route selected instance observers through its pinned hypervisor
+      ansible.builtin.include_tasks: tasks/aap-instance-ssh.yml
+
   tasks:
     - name: Prepare this target using its encrypted deployment requirements
       block:

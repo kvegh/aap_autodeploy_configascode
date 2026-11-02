@@ -415,12 +415,12 @@ by this base extension. Sensitive tasks stay protected even with ordinary
 
 ### Stage 04 inputs
 
-Supply `aap_hostname` as the full HTTPS URL of the target AAP. Use an internal
-hostname that resolves to the internal IP, or the internal IP itself, to keep
-configuration traffic on the internal network. The execution environment must
-be able to reach that address. Stage 04 requires this explicit URL and has no
-fallback based on `vm_name` or `vault_domain`; it does not require `vm_name`
-or `vm_ip`.
+Supply `aap_instance_key` as the exact completed registered VM name, or carry
+the matching Stage 01 workflow handoff. The registry derives the public HTTPS
+API URL and private guest SSH jump route. Caller-supplied conflicting URLs or
+addresses, bare private-API fallbacks, alternate AAAA routes and disabled TLS
+validation are refused. Attach the registry-reader, named CaC Vault, environment
+Vault, scoped base Git credential and the pinned hypervisor Machine credential.
 
 Supply `aap_config_repo_url` as the HTTPS Git URL of the private configuration
 repository. Stage 04 always uses `main`; it requires these Vault-encrypted files:
@@ -691,7 +691,7 @@ are a convenience; inspect staged files before committing.
 ### Disconnected Windows configuration deployment
 
 Run `deploy-windows-demo.yml` through its own Job Template after shared base has
-been applied. Supply `aap_hostname` as the explicit target HTTPS URL and
+been applied. Supply `aap_instance_key` as the registered target name and
 `aap_config_repo_url` as the private Windows configuration repository's HTTPS Git
 URL. It reads only the fully Vault-encrypted `cac/windows_disconnected.yml` from
 `main`. The attached Git token must have read access to this repository; access
@@ -765,7 +765,7 @@ and object permissions. The LDAP integration does not import Windows ACLs.
 ### Automation Orchestrator configuration deployment
 
 Use `deploy-orchestrator-demo.yml` after shared base to import the Orchestrator's
-AAP objects. Supply `aap_hostname` as the explicit target HTTPS URL and
+AAP objects. Supply `aap_instance_key` as the registered target name and
 `aap_config_repo_url` as its private configuration repository's HTTPS Git URL.
 The importer downloads `main` and loads only the whole-file Vault-encrypted
 `cac/orchestrator.yml`. Attach the custom Git credential with read access to
@@ -827,8 +827,8 @@ inventory stay outside Git. The code repository is public, so its projects no
 longer require an SCM credential for private code. Access to the private companion
 repository remains a separate bootstrap requirement.
 
-Use `deploy-assistant-team.yml` after shared base. Supply `aap_hostname` as the
-explicit target AAP HTTPS URL and `aap_config_repo_url` in the form
+Use `deploy-assistant-team.yml` after shared base. Supply `aap_instance_key` as the
+registered target name and `aap_config_repo_url` in the form
 `https://GIT_HOST/OWNER/REPOSITORY.git`. The importer downloads `main` and loads
 only `vaults/cac/assistant_team_vault.yml`. Use the existing custom CaC Git-token
 credential type, which injects `CAC_GIT_TOKEN`, with read access to this private
@@ -836,6 +836,11 @@ repository. Attach that credential, the `cac` Vault credential, and the existing
 Vault credential for `myvars`. Reusing the type does not grant repository access;
 the attached token must authorize this repository. A separate credential of the
 same type can hold a different token without changing other use cases' access.
+
+All standalone use-case imports additionally need the registry reader, distinct
+`instance_registry` Vault identity and the registered hypervisor Machine
+credential. The [selected setup entrypoint](docs/selected-use-cases.md) validates
+and supplies these alongside the exact saved case credential set.
 Git uses a temporary askpass helper with HTTPS certificate verification enabled;
 the token stays out of URLs, command arguments and the helper's stored contents.
 For public code projects, omit the source-control credential field. An empty

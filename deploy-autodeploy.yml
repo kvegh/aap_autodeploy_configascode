@@ -8,10 +8,20 @@
     - vars/main.yml
   vars:
     aap_username: admin
-    aap_validate_certs: false
+    aap_validate_certs: true
     debug_logging: false
     aap_configuration_secure_logging: "{{ not (debug_logging | bool) }}"
     controller_configuration_credentials_secure_logging: true
+  pre_tasks:
+    - name: Select the exact registered target for configuration setup
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
+    - name: Verify the selected public API before setup authentication
+      ansible.builtin.include_tasks: tasks/aap-instance-api.yml
+
+    - name: Route selected instance observers through its pinned hypervisor
+      ansible.builtin.include_tasks: tasks/aap-instance-ssh.yml
+
   tasks:
     - name: Restore the deployment capability without launching its automation
       block:
@@ -28,7 +38,7 @@
               - autodeploy_configuration is mapping
               - autodeploy_configuration.credentials | length >= 2
               - autodeploy_configuration.projects | length == 1
-              - autodeploy_configuration.inventories | length == 2
+              - autodeploy_configuration.inventories | length >= 2
               - autodeploy_configuration.job_templates | length >= 10
             fail_msg: Complete and review the AutoDeploy object definitions and encrypted provisioning inputs before import.
           no_log: true

@@ -54,6 +54,13 @@ must use the pinned hypervisor jump route for overlapping private subnets, and
 configuration must use the matching public proxy/DNS/TLS path. Actual deployment
 proof remains a separate gate.
 
+An isolated Stage 01 and the separate authenticated read-only observer have now
+completed successfully on the recovery host. Independent protected checks proved
+the guest identity differs from both the golden image and hypervisor; the source
+host's domains and local counter were preserved. This proves VM creation and
+guest login/sudo through the pinned route. It does not prove certificate issuance,
+permitted installer egress, AAP installation or base configuration.
+
 ## Selecting an existing reserved instance
 
 Stages 02–04 accept `aap_instance_key`, the exact reserved VM name. A workflow may

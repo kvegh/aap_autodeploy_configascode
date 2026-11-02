@@ -1,11 +1,22 @@
 ---
+- name: Bind the exact scoped credentials plus registered route dependencies
+  ansible.builtin.set_fact:
+    aap_selected_launch_credential_ids: >-
+      {{ aap_selected_saved_credentials | aap_scoped_launch_credentials(
+           cac_use_case_selector.importer_credentials[aap_selected_importer.item.name],
+           aap_selected_route_credentials.results | map(attribute='json.results') | flatten | list,
+           aap_selected_setup_plan.organization,
+           aap_instance_route.hypervisor.machine_credential_name) }}
+  no_log: true
+
 - name: Run only the just-validated configuration template with its existing credentials
   ansible.controller.job_launch:
     job_template: "{{ aap_selected_importer.json.results[0].id | string }}"
     extra_vars: >-
-      {{ {'aap_hostname': aap_target_hostname,
+      {{ {'aap_instance_key': aap_instance_key,
           'aap_config_repo_url': aap_selected_importer.item.repository,
           'debug_logging': 'false'} | combine(aap_selected_importer_extra) }}
+    credentials: "{{ aap_selected_launch_credential_ids | map('string') | list }}"
     wait: true
     interval: 10
     timeout: 10800
@@ -13,6 +24,26 @@
     controller_oauthtoken: "{{ cac_gateway_token.json.token }}"
     validate_certs: "{{ aap_validate_certs }}"
   register: aap_selected_import_job
+  no_log: true
+
+- name: Read the completed job's actual credential associations
+  ansible.builtin.uri:
+    url: >-
+      {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ aap_selected_import_job.id }}/credentials/?page_size=200
+    headers:
+      Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+    validate_certs: true
+    follow_redirects: none
+  register: aap_selected_completed_credentials
+  no_log: true
+
+- name: Require the completed job to have used exactly the bounded credential set
+  ansible.builtin.assert:
+    that:
+      - aap_selected_completed_credentials.json.next is none
+      - >-
+        (aap_selected_completed_credentials.json.results | map(attribute='id') | sort | list) ==
+        (aap_selected_launch_credential_ids | sort | list)
   no_log: true
 
 - name: Require actual successful configuration-job completion

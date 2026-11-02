@@ -14,6 +14,13 @@
     aap_username: admin
     aap_validate_certs: true
     debug_logging: false
+  pre_tasks:
+    - name: Resolve the explicit instance key before any setup orchestration
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
+    - name: Verify the registered target public API before sending credentials
+      ansible.builtin.include_tasks: tasks/aap-instance-api.yml
+
   tasks:
     - name: Configure only the selected use cases through owned seed importers
       block:
@@ -88,6 +95,7 @@
               - item.json.results[0].summary_fields.organization.name == aap_selected_setup_plan.organization
               - "'aap-autodeploy' in (item.json.results[0].summary_fields.labels.results | map(attribute='name') | list)"
               - not item.json.results[0].ask_variables_on_launch
+              - item.json.results[0].ask_credential_on_launch
               - item.json.results[0].survey_enabled
               - item.json.results[0].inventory is not none
               - item.json.results[0].project == aap_selected_importer_lookups.results[0].json.results[0].project
@@ -131,7 +139,7 @@
         - name: Require explicit target and repository prompts on every importer
           ansible.builtin.assert:
             that:
-              - "['aap_hostname', 'aap_config_repo_url', 'debug_logging'] | difference(item.json.spec | map(attribute='variable') | list) | length == 0"
+              - "['aap_instance_key', 'aap_config_repo_url', 'debug_logging'] | difference(item.json.spec | map(attribute='variable') | list) | length == 0"
               - >-
                 item.item.item.playbook != '05-prepare-use-cases.yml' or
                 'aap_selected_use_cases' in (item.json.spec | map(attribute='variable') | list)
@@ -139,11 +147,76 @@
           loop: "{{ aap_selected_importer_surveys.results }}"
           no_log: true
 
+        - name: Read the actual scoped credential associations on each importer
+          ansible.builtin.uri:
+            url: >-
+              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/job_templates/{{ item.json.results[0].id }}/credentials/?page_size=200
+            headers:
+              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+            validate_certs: true
+            follow_redirects: none
+          loop: "{{ aap_selected_importer_lookups.results }}"
+          register: aap_selected_importer_credentials
+          no_log: true
+
+        - name: Verify the exact saved non-Machine credential boundaries
+          ansible.builtin.assert:
+            that:
+              - item.json.next is none
+              - >-
+                (item.json.results | rejectattr('kind', 'equalto', 'ssh') | map(attribute='name') | sort | list) ==
+                (cac_use_case_selector.importer_credentials[item.item.item.name] | sort | list)
+            fail_msg: Reconcile the saved importer credential associations before selected setup.
+          loop: "{{ aap_selected_importer_credentials.results }}"
+          no_log: true
+
+        - name: Require the registry's bound Machine credential identity
+          ansible.builtin.assert:
+            that:
+              - aap_instance_route.hypervisor.machine_credential_name is string
+              - aap_instance_route.hypervisor.machine_credential_name | length > 0
+          no_log: true
+
+        - name: Resolve only the registry reader, distinct registry Vault and bound Machine
+          ansible.builtin.uri:
+            url: >-
+              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/credentials/?name={{ item | urlencode }}&page_size=200
+            headers:
+              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+            validate_certs: true
+            follow_redirects: none
+          loop:
+            - AAP AutoDeploy instance registry reader
+            - AAP AutoDeploy instance registry vault
+            - "{{ aap_instance_route.hypervisor.machine_credential_name }}"
+          register: aap_selected_route_credentials
+          no_log: true
+
+        - name: Require exact unique route credential identities and types
+          ansible.builtin.assert:
+            that:
+              - item.json.count == 1
+              - item.json.next is none
+              - item.json.results[0].name == item.item
+              - item.json.results[0].summary_fields.organization.name == aap_selected_setup_plan.organization
+          loop: "{{ aap_selected_route_credentials.results }}"
+          no_log: true
+
+        - name: Verify the Machine and distinct registry Vault bindings
+          ansible.builtin.assert:
+            that:
+              - aap_selected_route_credentials.results[0].json.results[0].summary_fields.credential_type.name == 'AAP AutoDeploy instance registry reader'
+              - aap_selected_route_credentials.results[1].json.results[0].kind == 'vault'
+              - aap_selected_route_credentials.results[1].json.results[0].inputs.vault_id == 'instance_registry'
+              - aap_selected_route_credentials.results[2].json.results[0].kind == 'ssh'
+          no_log: true
+
         - name: Prepare only the selected use-case prerequisites and verify completion
           ansible.builtin.include_tasks: tasks/selected-use-case-import.yml
           vars:
             aap_selected_importer: "{{ aap_selected_importer_lookups.results[0] }}"
             aap_selected_importer_key: prerequisites
+            aap_selected_saved_credentials: "{{ aap_selected_importer_credentials.results[0].json.results }}"
             aap_selected_importer_extra:
               aap_selected_use_cases: "{{ aap_selected_use_cases }}"
 
@@ -152,8 +225,10 @@
           loop: "{{ aap_selected_importer_lookups.results[1:] }}"
           loop_control:
             loop_var: aap_selected_importer
+            index_var: aap_selected_importer_index
           vars:
             aap_selected_importer_key: "{{ aap_selected_importer.item.key }}"
+            aap_selected_saved_credentials: "{{ aap_selected_importer_credentials.results[aap_selected_importer_index + 1].json.results }}"
             aap_selected_importer_extra: {}
 
         - name: Publish bounded completed configuration job results

@@ -362,6 +362,19 @@ class RoutingTests(unittest.TestCase):
         with self.assertRaises(routing.AnsibleFilterError):
             routing.instance_route(route)
 
+    def test_public_api_refuses_stale_dns_ipv6_alternatives_and_disabled_tls(self):
+        self.assertTrue(routing.instance_api_dns(self.route(), ["192.0.2.200"], []))
+        for addresses, ipv6, tls in (
+            (["192.0.2.201"], [], True),
+            (["192.0.2.200", "192.0.2.201"], [], True),
+            (["192.0.2.200"], ["2001:db8::1"], True),
+            (["192.0.2.200"], [], False),
+        ):
+            with self.subTest(
+                addresses=addresses, ipv6=ipv6, tls=tls
+            ), self.assertRaises(routing.AnsibleFilterError):
+                routing.instance_api_dns(self.route(), addresses, ipv6, tls)
+
     def test_instance_selection_uses_only_published_routes(self):
         state = {
             "schema_version": 1,
@@ -480,6 +493,9 @@ class RoutingTests(unittest.TestCase):
             password = directory / "password"
             password.write_text("fixture-password")
             password.chmod(0o600)
+            other_password = directory / "other-password"
+            other_password.write_text("unrelated-case-password")
+            other_password.chmod(0o600)
             fixture = directory / "play.yml"
             fixture.write_text(
                 yaml.safe_dump(
@@ -533,7 +549,9 @@ class RoutingTests(unittest.TestCase):
                 "-i",
                 "localhost,",
                 "--vault-id",
-                "cac@" + str(password),
+                "cac@" + str(other_password),
+                "--vault-id",
+                "instance_registry@" + str(password),
                 str(fixture),
             ]
             for extra, success in (

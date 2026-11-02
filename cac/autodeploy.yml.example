@@ -25,6 +25,8 @@ cac_use_case_selector:
   organization: ORGANIZATION_PLACEHOLDER
   umbrella_modules: {}
   configuration_repositories: {}
+  # Exact non-Machine credential names per fixed importer template.
+  importer_credentials: {}
 # One reviewed exact-version repository list per supported selected module.
 cac_use_case_prerequisites: {}
 
@@ -42,6 +44,7 @@ autodeploy_configuration:
   execution_environments: []
   inventories: []
   hosts: []
+  groups: []
   labels: []
   projects: []
   job_templates: []
