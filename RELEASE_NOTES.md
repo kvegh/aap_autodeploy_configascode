@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.19.1
+
+Document registered-route implementation `b780524`, the separate reader
+credential, overlapping-subnet SSH policy, DNS collision refusal and certificate
+approval boundary. Distinguish local validation from live installation proof.
+
 ## 0.19.0
 
 Bind infrastructure, installation and base imports to one completed encrypted

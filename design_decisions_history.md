@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Bind later setup to registered routes — 2026-11-02
+
+Implementation `b780524` makes Stages 02–04 resolve one completed instance from
+the latest encrypted allocation registry before target connections. A separate
+read-only credential avoids replacing a use-case's scoped configuration token.
+The instance key determines the VM name, private address, public API URL, SSH
+public keys and hypervisor; conflicting workflow/caller values stop execution.
+
+Private subnets may overlap across hypervisors, so guest installation and
+installer-password/MCP observers always jump through the pinned hypervisor with
+strict host-key checks on both hops. API authentication uses this VM's public
+hostname only after exclusive DNS and trusted TLS checks. Infrastructure reads
+the exact reserved DNS record and refuses an existing conflicting address. It
+uses the pinned hypervisor public address and limits proxy/certificate paths to
+the reserved hostname. Existing certificates or separately approved ACME
+registration are prerequisites; this stage never accepts new terms.
+
+Fifteen allocation/routing tests pass in both Jinja native modes, including real
+Git-backed read-only lookup, stale/unknown-target refusal and delegated inventory
+routing. Stages 02–04 pass syntax checks; Stage 02 and route tasks pass scoped
+strict production lint. These local checks do not prove certificate issuance,
+installation or base configuration on a real target.
+
 ## Reserve shared names before isolated recovery provisioning — 2026-11-02
 
 Implementation `98f491a` replaces independent local allocation with normal
