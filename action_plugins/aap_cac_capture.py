@@ -14,14 +14,13 @@ import tempfile
 
 import yaml
 from ansible.errors import AnsibleActionFail
-from ansible.parsing.yaml.dumper import AnsibleDumper
 from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
 from ansible.template import Templar
 from ansible.utils.unsafe_proxy import wrap_var
 
 ROOT = Path(__file__).resolve().parents[1]
-for module_name in ("cac_compare", "cac_snapshot"):
+for module_name in ("cac_compare", "cac_snapshot", "cac_yaml"):
     spec = importlib.util.spec_from_file_location(
         module_name, ROOT / "src" / (module_name + ".py")
     )
@@ -29,6 +28,7 @@ for module_name in ("cac_compare", "cac_snapshot"):
     sys.modules[module_name] = module
     spec.loader.exec_module(module)
 core, extraction = sys.modules["cac_compare"], sys.modules["cac_snapshot"]
+vault_yaml = sys.modules["cac_yaml"]
 
 
 def select_path(data, path):
@@ -506,21 +506,22 @@ class ActionModule(ActionBase):
                 protected_stage = "encrypted review validation"
 
                 def encrypt(data):
+                    protected = protected_strings(data)
                     encoded = yaml.dump(
-                        protected_strings(data),
-                        Dumper=AnsibleDumper,
+                        protected,
+                        Dumper=vault_yaml.VaultDumper,
                         sort_keys=False,
                         width=110,
                     ).encode()
                     sealed = self._loader._vault.encrypt(
                         encoded, secret=secret, vault_id=vault_id
                     )
-                    if (
-                        AnsibleLoader(
-                            self._loader._vault.decrypt(sealed)
-                        ).get_single_data()
-                        != data
-                    ):
+                    loaded = AnsibleLoader(
+                        self._loader._vault.decrypt(sealed)
+                    ).get_single_data()
+                    if loaded != data or vault_yaml.literal_paths(
+                        loaded
+                    ) != vault_yaml.literal_paths(protected):
                         raise core.CaptureError(
                             "Vault roundtrip validation failed before any publication."
                         )
@@ -655,7 +656,7 @@ class ActionModule(ActionBase):
                     "source_aap_mutations": 0,
                 }
                 sealed = self._loader._vault.encrypt(
-                    yaml.dump(diagnostic, Dumper=AnsibleDumper).encode(),
+                    yaml.dump(diagnostic, Dumper=vault_yaml.VaultDumper).encode(),
                     secret=secret,
                     vault_id=vault_id,
                 )

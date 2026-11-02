@@ -42,6 +42,9 @@ removing a credential/EE/inventory association does not declare the still-existi
 definition deleted. Declared shared inventory members remain bounded; unrelated
 shared hosts are excluded. YAML and JSON variable fields compare as mappings,
 including literal unsafe Jinja values, so formatting does not create false drift.
+The protected writer uses `src/cac_yaml.py` to preserve literal-template tags; its
+Vault roundtrip validates tag paths as well as values. AnsibleDumper alone drops
+those tags, which would make AAP injector code evaluate during a later import.
 
 Existing API-masked credential inputs and password survey defaults retain their
 vaulted values, following survey variable identities across reordering. New

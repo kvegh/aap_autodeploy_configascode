@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.23.17
+
+Preserve explicit literal-template tags in protected YAML and validate their
+paths after Vault roundtrip. Repair four base injector tags separately from
+ordinary dynamic inputs. The exact4.10.0 wildcard merge fails before and passes
+after with the actual encrypted inputs and zero API calls. Two canary/tag
+fixtures cover both native modes; all31 generic capture fixtures pass. Actual
+Stage04 retry remains required. Broader lint retains four existing line lengths.
+
 ## 0.23.16
 
 Document clearly spaced runtime proof references and initial comparison counts.

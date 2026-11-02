@@ -81,6 +81,11 @@ components need explicit adapters. It never applies configuration to source AAP.
 Association updates apply membership deltas so accepted desired-only bootstrap
 dependencies survive unrelated source removals. Lists inside user variables and
 credential inputs keep their original meaningful order.
+Protected CaC YAML serialization preserves explicit `!unsafe` literal tags.
+AAP injector templates must remain literal during CoP wildcard merging, while
+ordinary environment references still resolve. Logical string equality alone
+cannot validate this boundary: tests check tags after decrypt/reload. The exact
+vendor merge is tested with protected canaries in both templating modes.
 Custom credential types retain stable input/injector schemas alongside their
 credentials; runtime IDs and management flags are excluded. Retained CA
 dependencies survive removed associations while vaulted PEM inputs are preserved.
