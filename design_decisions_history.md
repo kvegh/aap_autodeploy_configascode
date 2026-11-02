@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Provision independent AIOps configuration access — 2026-11-02
+
+Implementation `3b6d48f` adds optional `cac_bootstrap_git_credentials.aiops`
+support to base bootstrap. It creates the independently named AIOps Git-read
+credential while preserving the four existing Git inputs, the shared Vault
+identity and existing hidden secrets on reruns. The CoP roles themselves are
+unchanged. Six real local Controller/API fixtures pass in each native mode,
+including the legacy path, the new credential and refusal of a masked input.
+Stage 04 syntax and scoped production lint pass.
+
+The owner requested a separate private companion repository for AIOps. Its initial
+capture publication `2a22fbc` preserves the exact ciphertext and configuration
+values from the existing shared file. The public playbook repository needs no
+private Git token. The existing fine-grained base token can read its original
+repository but cannot read the new companion, so a new repository-scoped read-only
+token must be supplied through encrypted base. No broader credential is used as
+a substitute and no existing token is replaced.
+
+At this checkpoint the live importer and legacy capture are retained until the
+new token is verified. Prepared repository/name bindings preserve the shared
+catalog and allocator registry and pass encrypted roundtrip/literal-tag checks.
+No AIOps import or application execution is claimed by these source changes.
+
 ## Keep complete object ownership open after the label audit — 2026-11-02
 
 Documentation commit `1846f71` adds the requested TODO entry and API/UI label

@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.24.1
+
+Document optional AIOps bootstrap implementation `3b6d48f`, unchanged-ciphertext
+private capture publication and the pending token-gated binding cutover. The
+shared catalog/registry and existing credentials remain unchanged at this stage.
+
 ## 0.24.0
 
 Support an optional dedicated AIOps Git-read credential from encrypted base while
