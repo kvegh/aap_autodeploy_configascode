@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Reserve shared names before isolated recovery provisioning — 2026-11-02
+
+Implementation `98f491a` replaces independent local allocation with normal
+conditional Git publication into a separate encrypted allocation-state file.
+The owner requires globally unique test names across hypervisors and no reuse
+after failed provisioning. Old counters remain migration evidence. The state
+file is separate from ordinary CaC so later capture updates cannot reset it.
+Encrypted companion change `8bebb0a` seeds the reviewed floor and defines the
+portable writer in shared base without an optional recovery-case dependency.
+
+The isolated Stage 01 verifies SSH keys, physical identity and live persistent
+isolation before reservation and again before startup. It changes only a newly
+copied disk, generates fresh guest SSH/machine identities, cleans only its local
+copied RHSM identity with appliance networking disabled, and observes its exact
+local libvirt domain. Public trust/routing artifacts survive later job failure;
+the complete route is retained in the encrypted registry.
+
+Thirteen tests pass in both native modes, including competing real Git writers
+and the native action with distinct default/cac Vault passwords and check mode.
+Workflow artifacts, Stage 01 syntax and scoped strict production lint pass.
+This checkpoint permits only independently bound isolated Stage 01 execution.
+Later installation/API routing and live provisioning proof remain separate;
+older unbound downstream stages must not be chained automatically.
+
 ## Match Controller survey default types — 2026-11-02
 
 Implementation `725e33d` fixes empty multiselect defaults to strings after the

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.18.1
+
+Document shared-allocation implementation `98f491a`, encrypted state/writer
+revision `8bebb0a`, migration/retention policy and isolated Stage 01 proof limits.
+
+Validation: decision references, version policy and whitespace checks passed.
+
 ## 0.18.0
 
 Reserve test-VM names in shared encrypted Git state before provisioning, with
