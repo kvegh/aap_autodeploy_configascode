@@ -82,6 +82,11 @@ class UseCaseSetupTests(unittest.TestCase):
             "cac_label_templates": [{"name": "Fixture job", "organization": "Fixture organization",
                                       "labels": ["fixture-use-case"]}]}
         cases = [("complete", complete, True)]
+        for default, expected in (([], False), ('', True)):
+            value = copy.deepcopy(complete)
+            value["cac_label_templates"][0]["survey_spec"] = {"spec": [
+                {"type": "multiselect", "variable": "fixture_selection", "default": default}]}
+            cases.append(("multiselect default " + repr(default), value, expected))
         for label, change in (("missing assignment", {"labels": []}),
                               ("undefined label", {"labels": ["fixture-use-case", "unknown"]}),
                               ("wrong organization", {"organization": "Other organization"})):

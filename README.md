@@ -176,6 +176,8 @@ Python compatibility, and a fresh recursive deployment remain separate live
 verification tasks. AIOps configuration now restores rulebooks disabled; enabling
 them is a separate explicit operation. Every importer requires its project label
 on every Job Template and matching-organization definitions for every label.
+Multiselect survey defaults must be strings, including `''` for no default;
+the API rejects a YAML/JSON empty list before creating a survey.
 The current source execution image reports Ansible Core 2.16.19 and includes
 `dnspython`. Selected Windows prerequisites now match the source's exact
 requirements, including its Chocolatey pin and Microsoft collections. Source PAH

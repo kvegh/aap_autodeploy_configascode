@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.17.2
+
+Correct selector and prerequisite multiselect defaults to API-required strings.
+Production API validation rejected an empty list; importer preflight and real
+Ansible fixtures now reject that shape before configuration.
+
+Validation: focused selector/label fixtures and production API survey readback;
+no use-case job was launched.
+
 ## 0.17.1
 
 Document implementation `2338422`, its base-only/selected-use-case rationale,

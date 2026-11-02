@@ -44,3 +44,10 @@
     fail_msg: Every template needs its project label and matching-organization label definitions.
   loop: "{{ cac_label_templates }}"
   no_log: true
+
+- name: Require the Controller API string type for multiselect survey defaults
+  ansible.builtin.assert:
+    that: item.1.type != 'multiselect' or item.1.default is string
+    fail_msg: Multiselect survey defaults must be strings; use an empty string for no default selection.
+  loop: "{{ cac_label_templates | subelements('survey_spec.spec', skip_missing=True) }}"
+  no_log: true
