@@ -1,5 +1,14 @@
 # Design decisions history
 
+## Follow the actual Controller single-file injector contract — 2026-11-02
+
+The actual credential-type PATCH rejected a named-file mapping before any
+credential changed. Implementation `652ca05` supplies the supported single
+string `file.template` and `tower.filename`. A canonical portable schema and
+strict Jinja rendering fixture cover missing, empty and populated optional PEM
+inputs. The encrypted capture/private migration payload use the same definition.
+This corrects API compatibility without changing trust or source identity.
+
 ## Reuse the existing source authority within the collector context — 2026-11-02
 
 Encrypted execution-environment evidence proved the same source peer as the

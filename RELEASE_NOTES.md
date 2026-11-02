@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.23.5
+
+Document actual Controller injector schema correction `652ca05` and optional
+credential rendering regression.
+
 ## 0.23.4
 
 Correct the source-reader injector to Controller's single-file string schema and
