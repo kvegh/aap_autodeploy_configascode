@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Keep complete object ownership open after the label audit — 2026-11-02
+
+Documentation commit `1846f71` adds the requested TODO entry and API/UI label
+capability table. The original idea was to use labels to map all CaC objects to
+their owning project. Read-only API responses and the served UI code establish
+that several resource types have no labels at all, while some API-supported
+labels have no overview filter or only conditional launch controls. Labels
+therefore cannot be the universal ownership mechanism; existing useful labels
+are retained.
+
+The owner requested new ownership ideas. Beads `bead-wd-72v` remains open and is
+mirrored in TODO.md. It asks for comparison of an encrypted registry, supported
+description markers, existing project/parent relationships and a hybrid approach.
+The eventual design must handle shared resources, uncaptured manual additions,
+renames, removals and changed runtime IDs across deployments, while preserving
+CoP compatibility and secrets. No alternative has been selected or implemented.
+
+The README links the backlog. Four existing version-tool tests, whitespace checks,
+mirror equality and a changed-plaintext identity scan passed. These are
+documentation and version changes; no deployment, extraction update or live
+metadata modification was performed.
+
 ## Verify actual base configuration after protected tag repair — 2026-11-02
 
 Actual base retry 3144 on source `59aa985` and encrypted base `f38a8cf` succeeded

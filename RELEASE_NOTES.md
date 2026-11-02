@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.23.21
+
+Document the ownership audit rationale and backlog commit `1846f71` in the
+decision history. Labels remain useful for supported resources; a universal
+ownership design is still an open task requiring review of alternative ideas.
+
 ## 0.23.20
 
 Document why labels cannot provide universal CaC object ownership. Add a
