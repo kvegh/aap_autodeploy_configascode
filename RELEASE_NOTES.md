@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.20.7
+
+Document selector authentication-origin checks `85e7307` and encrypted seed pin
+`4593bd6`, preserving registered target and credential selection behavior.
+
 ## 0.20.6
 
 Pin selector seed authentication to the reviewed encrypted origin and catalog

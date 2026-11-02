@@ -1,5 +1,13 @@
 # Design decisions history
 
+## Pin selector authentication origins — 2026-11-02
+
+Implementation `85e7307` and companion `4593bd6` require the orchestration seed
+to match the encrypted reviewed origin and require catalog access to match the
+registry-reader credential's repository before authentication. This keeps
+operator survey values from redirecting protected seed/Git inputs. Nine selector
+tests pass; target instance and scoped credential selection remain unchanged.
+
 ## Match captured prompt policy to the guarded selector — 2026-11-02
 
 Implementation `70b1661` and companion capture `3daa17e` disable arbitrary
