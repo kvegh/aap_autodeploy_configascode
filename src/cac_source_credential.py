@@ -1,7 +1,8 @@
-"""Portable source-reader credential schema using Controller's single-file injector."""
+"""Portable independent source API and existing-authority credentials."""
 
 
 def definition():
+    """Preserve the already-used URL/token schema without adding inputs."""
     return {
         "name": "AAP CaC source reader",
         "kind": "cloud",
@@ -18,13 +19,6 @@ def definition():
                     "type": "string",
                     "secret": True,
                 },
-                {
-                    "id": "source_ca_pem",
-                    "label": "Existing trusted source CA PEM (optional)",
-                    "type": "string",
-                    "secret": True,
-                    "multiline": True,
-                },
             ],
             "required": ["source_url", "api_token"],
         },
@@ -32,8 +26,30 @@ def definition():
             "env": {
                 "AAP_CAC_SOURCE_URL": "{{ source_url }}",
                 "AAP_CAC_SOURCE_TOKEN": "{{ api_token }}",
-                "AAP_CAC_SOURCE_CA_FILE": "{{ tower.filename if (source_ca_pem | default('') | trim) else '' }}",
-            },
-            "file": {"template": "{{ source_ca_pem | default('') }}"},
+            }
+        },
+    }
+
+
+def ca_definition():
+    """Optional separate attachment; its sole CA input is required when attached."""
+    return {
+        "name": "AAP CaC source CA",
+        "kind": "cloud",
+        "inputs": {
+            "fields": [
+                {
+                    "id": "source_ca_pem",
+                    "label": "Existing trusted source CA PEM",
+                    "type": "string",
+                    "secret": True,
+                    "multiline": True,
+                }
+            ],
+            "required": ["source_ca_pem"],
+        },
+        "injectors": {
+            "env": {"AAP_CAC_SOURCE_CA_FILE": "{{ tower.filename }}"},
+            "file": {"template": "{{ source_ca_pem }}"},
         },
     }

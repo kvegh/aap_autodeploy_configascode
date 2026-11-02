@@ -86,9 +86,11 @@ untrusted certificate and sends no HTTP/API credentials during those probes.
 An optional credential-bound source CA file can add an independently verified
 existing authority only to the collector HTTPS context. Default trust, hostname
 checks, exact source origin and redirect refusal remain enforced; global EE trust
-and DNS are unchanged. The portable schema in
-`src/cac_source_credential.py` uses Controller's single-file string template and
-`tower.filename`; optional missing/empty CA inputs retain default trust.
+and DNS are unchanged. The portable schema in `src/cac_source_credential.py`
+preserves the used URL/token reader and provides a separate optional CA credential
+attachment. Its required PEM uses Controller's single-file string template and
+`tower.filename`. Existing in-use credential schemas are never rewritten; no CA
+attachment means ordinary default trust.
 
 The encrypted environment DNS credential is maintained separately from the
 Vault password. Refreshing that one credential preserves every other environment

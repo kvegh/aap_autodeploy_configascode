@@ -78,11 +78,14 @@ trusted source identity before changing a credential trust bundle or route.
 
 Attach the source-reader credential (`AAP_CAC_SOURCE_URL/TOKEN`), scoped Git
 credential (`AAP_CAC_CAPTURE_REPOSITORY/GIT_TOKEN`) and capture Vault credential.
-An optional source-reader CA PEM is injected as `AAP_CAC_SOURCE_CA_FILE`. The
+An optional separate source CA credential injects `AAP_CAC_SOURCE_CA_FILE`. The
 collector adds that independently verified existing source authority only to its
-own HTTPS context. `src/cac_source_credential.py` defines the portable custom
-credential schema: `file.template` is a single string and its path is
-`tower.filename`; the optional empty PEM produces no extra trust path. The
+own HTTPS context. `src/cac_source_credential.py` preserves the in-use URL/token
+reader schema and defines a separate CA credential: `file.template` is a single
+string and its path is `tower.filename`. The CA PEM is required when that
+credential is attached; omitting the attachment keeps default trust. Controller
+forbids input-schema edits once a credential type is used, so the existing reader
+and its credential remain intact. The
 collector retains default roots, certificate/hostname verification,
 exact origin and redirect refusal. An invalid supplied file blocks collection;
 no global EE trust, host-file or DNS setting changes. Never trust a certificate

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.23.10
+
+Preserve the in-use source reader schema and provide a separate existing-source
+CA credential attachment. Controller forbids input edits on used credential types;
+no removal or constraint bypass is attempted. Thirty generic fixtures pass,
+including independent injectors and the required single-file CA rendering.
+
 ## 0.23.9
 
 Document filesystem preparation guard `ba20ce5` and actual-capacity validation
