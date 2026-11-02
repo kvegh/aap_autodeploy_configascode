@@ -56,6 +56,8 @@ shared external definitions are recognized through those aliases as well.
 The protected action normalizes Boolean survey strings and returns bounded
 refusal categories to a separate failure task. Sensitive inputs/results remain
 under `no_log`; a preflight error still has an actionable reason.
+Controller GET failures distinguish HTTP status, TLS trust, DNS and connection
+categories using only the endpoint family, preserving query values and tokens.
 
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.

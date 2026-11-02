@@ -18,6 +18,41 @@ core, snapshot = sys.modules["cac_compare"], sys.modules["cac_snapshot"]
 
 
 class ReadTransportTests(unittest.TestCase):
+    def test_http_and_tls_failures_report_only_safe_endpoint_categories(self):
+        import ssl
+        from urllib.error import HTTPError, URLError
+
+        reader = self.reader()
+        cases = [
+            (
+                HTTPError(
+                    "https://source.example.invalid/?fixture-secret-canary",
+                    401,
+                    "private-details",
+                    {},
+                    None,
+                ),
+                "HTTP 401",
+            ),
+            (
+                URLError(
+                    ssl.SSLCertVerificationError(1, "private certificate details")
+                ),
+                "TLS certificate trust verification",
+            ),
+        ]
+        for error, reason in cases:
+            with self.subTest(reason=reason), mock.patch.object(
+                reader.opener, "open", side_effect=error
+            ):
+                with self.assertRaises(core.CaptureError) as failure:
+                    reader.get("credentials/?name=fixture-secret-canary")
+                message = str(failure.exception)
+                self.assertIn(reason, message)
+                self.assertIn("credentials", message)
+                self.assertNotIn("fixture-secret-canary", message)
+                self.assertNotIn("private", message)
+
     def reader(self):
         return snapshot.ControllerReader(
             "https://source.example.invalid", "fixture-token-canary"

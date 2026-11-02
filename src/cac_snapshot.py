@@ -3,6 +3,8 @@
 from copy import deepcopy
 import json
 import ssl
+import socket
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urljoin, urlsplit, unquote
 from urllib.request import Request, build_opener, HTTPSHandler, HTTPRedirectHandler
 
@@ -65,6 +67,16 @@ class ControllerReader:
             },
             method="GET",
         )
+        family = parsed.path[len(API_PREFIX) :].split("/", 1)[0]
+        allowed_families = set(FIELDS) | {
+            "me",
+            "organizations",
+            "workflow_job_templates",
+            "workflow_job_template_nodes",
+            "credential_types",
+        }
+        if family not in allowed_families:
+            family = "relationship"
         try:
             with self.opener.open(request, timeout=60) as response:
                 if response.status != 200:
@@ -72,9 +84,40 @@ class ControllerReader:
                 return json.load(response)
         except CaptureError:
             raise
-        except Exception:
+        except HTTPError as error:
             raise CaptureError(
-                "A required Controller GET failed; absence is not deletion evidence."
+                "Controller GET "
+                + family
+                + " failed with HTTP "
+                + str(error.code)
+                + "; absence is not deletion evidence."
+            ) from None
+        except URLError as error:
+            reason = error.reason
+            if isinstance(reason, ssl.SSLCertVerificationError):
+                category = "TLS certificate trust verification"
+            elif isinstance(reason, socket.gaierror):
+                category = "hostname resolution"
+            elif isinstance(reason, (TimeoutError, socket.timeout)):
+                category = "connection timeout"
+            elif isinstance(reason, ConnectionRefusedError):
+                category = "connection refused"
+            else:
+                category = "connection transport (" + type(reason).__name__ + ")"
+            raise CaptureError(
+                "Controller GET "
+                + family
+                + " failed during "
+                + category
+                + "; existing TLS and access controls remain enforced."
+            ) from None
+        except Exception as error:
+            raise CaptureError(
+                "Controller GET "
+                + family
+                + " returned an unreadable response ("
+                + type(error).__name__
+                + "); absence is not deletion evidence."
             ) from None
 
     def all(self, path):

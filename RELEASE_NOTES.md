@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.21.8
+
+Classify failed Controller GETs by safe endpoint family and HTTP/TLS/DNS/transport
+category without disclosing URLs, query values, server error bodies or tokens.
+The local exact source-reader inputs verify successfully; the second actual AAP
+preview failed at a Controller GET and needs runtime classification. Twenty-seven
+focused tests pass, including secret-canary HTTP/TLS error fixtures.
+
 ## 0.21.7
 
 Document protected-refusal/runtime Boolean fix `09fe5a9`, the actual first-preview
