@@ -1,5 +1,15 @@
 # Design decisions history
 
+## Verify preparation results before starting installation — 2026-11-02
+
+Implementation `ba20ce5` follows the observed copied-disk readiness gap: the
+existing growth steps now validate the exact supported layout, refuse actual
+errors, accept only explicit growpart NOCHANGE for idempotence, and require real
+temporary capacity before subscription or installer tasks. The installer observer
+path still skips preparation and starts no second installer. Starting a new async
+installer is explicitly marked changed. Strict Stage03 production lint passes;
+live preparation remains parent coordinated.
+
 ## Assess work at the phase that owns it — 2026-11-02
 
 Actual guest verification found a correct bundle, supported root layout and

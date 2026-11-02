@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.23.9
+
+Document filesystem preparation guard `ba20ce5` and actual-capacity validation
+before installation; strict Stage03 production lint passes.
+
 ## 0.23.8
 
 Guard Stage03 partition preparation with the exact root layout, refuse growth
