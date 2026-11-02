@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.23.3
+
+Document endpoint-scoped existing CA support `1cfb86b` and the independently
+verified issuer/peer evidence behind the credential refresh.
+
 ## 0.23.2
 
 Support an optional credential-bound existing source CA file only in the

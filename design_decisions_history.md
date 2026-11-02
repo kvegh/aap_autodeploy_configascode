@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Reuse the existing source authority within the collector context — 2026-11-02
+
+Encrypted execution-environment evidence proved the same source peer as the
+trusted local route and missing issuer trust. An independently located issuer
+already trusted by the workspace verified the same leaf with hostname checking
+and no HTTP credentials. Implementation `1cfb86b` accepts that existing
+authority through an optional credential file, added only to the collector SSL
+context alongside default roots. Global EE trust, DNS and host files remain
+unchanged; origin, redirects, certificate/hostname checks and invalid-input
+refusal remain enforced. Twenty-nine generic fixtures and strict entrypoint lint
+pass. A subsequent actual preview must prove extraction; no baseline acceptance
+or repository update was performed by this change.
+
 ## Audit bundled installation readiness before guest changes — 2026-11-02
 
 Implementation `e53878f` extends the existing registered-instance observer,
