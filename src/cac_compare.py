@@ -38,16 +38,22 @@ class CaptureError(ValueError):
     pass
 
 
-def canonical(value, field=""):
+VARIABLE_FIELDS = {"extra_vars", "variables", "extra_data", "inputs"}
+
+
+def canonical(value, field="", variable_context=False):
     if isinstance(value, Mapping):
         return {
-            str(key): canonical(item, str(key)) for key, item in sorted(value.items())
+            str(key): canonical(
+                item, str(key), variable_context or key in VARIABLE_FIELDS
+            )
+            for key, item in sorted(value.items())
         }
     if isinstance(value, (list, tuple)):
-        result = [canonical(item) for item in value]
-        if field in UNORDERED:
+        result = [canonical(item, variable_context=variable_context) for item in value]
+        if not variable_context and field in UNORDERED:
             result.sort(key=lambda item: json.dumps(item, sort_keys=True))
-        if field == "workflow_nodes":
+        if not variable_context and field == "workflow_nodes":
             result.sort(key=lambda item: item["identifier"])
         return result
     if isinstance(value, str):
@@ -168,7 +174,15 @@ def semantic_diff(before, after, path=()):
         }
         if len(first) == len(before) and len(second) == len(after):
             result = semantic_diff(first, second, path)
-            if not result and path and path[-1] not in UNORDERED and before != after:
+            if (
+                not result
+                and path
+                and (
+                    path[-1] not in UNORDERED
+                    or any(key in VARIABLE_FIELDS for key in path)
+                )
+                and before != after
+            ):
                 result.append({"path": list(path) + ["$order"], "operation": "change"})
             return result
     change = (
@@ -194,6 +208,37 @@ def merge_value(
         return merge_value({}, {}, current, live, conflicts, excluded, path)
     if current == live:
         return deepcopy(current) if current is not MISSING else MISSING
+    # Apply association membership deltas to desired state; accepted desired-only
+    # bootstrap dependencies must survive unrelated source removals/additions.
+    if (
+        path
+        and not any(key in VARIABLE_FIELDS for key in path)
+        and path[-1] in (UNORDERED | {"workflow_nodes"})
+        and all(
+            isinstance(value, list)
+            for value in (source_before, desired_before, current, live)
+        )
+    ):
+
+        def member_key(item):
+            return (
+                item["identifier"]
+                if path[-1] == "workflow_nodes"
+                else json.dumps(item, sort_keys=True)
+            )
+
+        models = [
+            {member_key(item): item for item in value}
+            for value in (source_before, desired_before, current, live)
+        ]
+        if all(
+            len(model) == len(value)
+            for model, value in zip(
+                models, (source_before, desired_before, current, live)
+            )
+        ):
+            merged = merge_value(*models, conflicts, excluded, path)
+            return [merged[key] for key in sorted(merged)]
     # The accepted desired baseline explicitly excluded this source resource/field.
     if (
         source_before is not MISSING

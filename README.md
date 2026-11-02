@@ -48,6 +48,9 @@ edits, and detects additions, changes and removals. Preview is the default;
 initialization and encrypted updates require a fresh reviewed digest. The first
 adapter covers AutoDeploy and reports its code-owned workflow separately; other
 components need explicit adapters. It never applies configuration to source AAP.
+Association updates apply membership deltas so accepted desired-only bootstrap
+dependencies survive unrelated source removals. Lists inside user variables and
+credential inputs keep their original meaningful order.
 
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.

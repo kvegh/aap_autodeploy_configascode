@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.21.2
+
+Merge unordered association/workflow-node membership deltas into desired state
+instead of replacing accepted desired-only bootstrap dependencies. Preserve order
+inside arbitrary user variables/credential inputs, including lists named like
+Controller associations. Sort retained dependency metadata by name. Twenty-five
+focused fixtures pass, including these accepted-baseline intent regressions.
+
 ## 0.21.1
 
 Document extraction/update implementation `055b9dc`, encrypted adapter/capability

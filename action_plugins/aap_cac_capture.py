@@ -554,9 +554,12 @@ class ActionModule(ActionBase):
                     "code_desired": code_current,
                     "source_code_revision": code_revision,
                     "source_code_content_fingerprint": code_content_fingerprint,
-                    "source_dependency_names": getattr(
-                        snapshot, "source_dependency_names", {}
-                    ),
+                    "source_dependency_names": {
+                        kind: sorted(set(names))
+                        for kind, names in getattr(
+                            snapshot, "source_dependency_names", {}
+                        ).items()
+                    },
                 }
                 if not initialization and accepted == baseline:
                     return result

@@ -56,6 +56,11 @@ modification and changed source versus pending repo deletion conflict. Accepted
 desired exclusions remain excluded. A fresh review digest binds all models,
 scope and actual code revision/content; any intervening meaningful change
 requires another preview.
+Unordered relationship lists apply source membership deltas to desired state,
+preserving accepted desired-only bootstrap credentials and excluded workflow
+nodes. Arbitrary lists inside variables/credential inputs remain ordered and are
+never treated as Controller associations merely because their keys have similar
+names.
 
 The protected review artifact includes source/current/proposed models, explicit
 addition/change/removal paths, conflicts, visibility evidence and code ownership.

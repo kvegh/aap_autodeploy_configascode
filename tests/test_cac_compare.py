@@ -14,6 +14,49 @@ spec.loader.exec_module(cac)
 
 
 class CaptureComparisonTests(unittest.TestCase):
+    def test_user_variable_lists_keep_meaningful_order_even_when_named_like_associations(
+        self,
+    ):
+        before = {
+            "job_templates": {
+                "fixture": {
+                    "name": "Fixture",
+                    "extra_vars": {"credentials": ["first", "second"]},
+                }
+            }
+        }
+        live = deepcopy(before)
+        live["job_templates"]["fixture"]["extra_vars"]["credentials"].reverse()
+        result = cac.compare(before, before, before, live, True)
+        self.assertEqual(result["merged"], live)
+        self.assertEqual(len(result["source_changes"]), 1)
+        self.assertEqual(result["source_changes"][0]["operation"], "change")
+
+    def test_source_association_removal_preserves_accepted_desired_only_dependencies(
+        self,
+    ):
+        source = {
+            "job_templates": {
+                "fixture": {
+                    "name": "Fixture",
+                    "credentials": ["Machine", "Environment"],
+                }
+            }
+        }
+        desired = deepcopy(source)
+        desired["job_templates"]["fixture"]["credentials"] += [
+            "Portable writer",
+            "Registry Vault",
+        ]
+        live = deepcopy(source)
+        live["job_templates"]["fixture"]["credentials"].remove("Machine")
+        result = cac.compare(source, desired, desired, live, True)
+        self.assertFalse(result["conflicts"])
+        self.assertEqual(
+            set(result["merged"]["job_templates"]["fixture"]["credentials"]),
+            {"Environment", "Portable writer", "Registry Vault"},
+        )
+
     def test_dangling_template_and_inventory_membership_dependencies_are_refused(self):
         model = {
             "job_templates": {
