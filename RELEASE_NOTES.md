@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.21.11
+
+Document shared certificate prerequisite readiness `a184012`, Hactar base package
+ownership and the unchanged existing-account/legal boundary.
+
 ## 0.21.10
 
 Check shared certbot/nginx-plugin RPM readiness after the pinned hypervisor guard

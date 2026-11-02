@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Keep certificate package ownership in shared baremetal base — 2026-11-02
+
+The user clarified that certbot and its nginx plugin serve several hypervisor
+applications and belong in Hactar's shared base OS. Implementation `a184012`
+therefore adds only a read-only installed-RPM readiness check to infrastructure,
+after exact hypervisor validation and before certificate/account checks. Missing
+packages produce a clear base prerequisite failure. AutoDeploy installs no
+packages, registers no new account and preserves the legal approval guard.
+Infrastructure syntax/scoped strict production lint pass; live installation and
+certificate proof remain parent-coordinated.
+
 ## Classify actual Controller GET failures without exposing requests — 2026-11-02
 
 The next real preview reached a controlled Controller-read refusal. Exact source
