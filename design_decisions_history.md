@@ -1,5 +1,15 @@
 # Design decisions history
 
+## Classify actual Controller GET failures without exposing requests — 2026-11-02
+
+The next real preview reached a controlled Controller-read refusal. Exact source
+reader inputs verified successfully through local trusted TLS, so implementation
+`b2c5366` distinguishes endpoint family and HTTP status from TLS trust, DNS and
+connection failures in the execution environment. URLs, query values, server
+error bodies and authentication headers remain protected. Twenty-seven focused
+tests pass, including HTTP/TLS secret-canary failures. Runtime extraction remains
+unproved until a later actual preview succeeds; no baseline/update was run.
+
 ## Preserve protected diagnostics through actual Ansible task execution — 2026-11-02
 
 The first real extractor preview failed before its protected action could report

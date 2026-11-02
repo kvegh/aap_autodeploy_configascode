@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.21.9
+
+Document safe GET failure classification `b2c5366`, verified local source-reader
+inputs and the remaining execution-environment preview proof.
+
 ## 0.21.8
 
 Classify failed Controller GETs by safe endpoint family and HTTP/TLS/DNS/transport
