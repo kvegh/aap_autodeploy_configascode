@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Verify refined preparation readiness on the actual guest — 2026-11-02
+
+Actual observer job3135 on source `6932ebf` succeeded in16.308 seconds:
+preparation readiness passed, the supported expansion dry run proved available
+capacity, and bundle/account/resource/tool checks passed. Strict HTTPS handshakes
+verified all three declared endpoints; the two Red Hat services used already
+installed RHSM authorities and no client credentials. Current installer readiness
+remained false for unexpanded temporary space and the absent container runtime.
+Infrastructure job3133 independently succeeded. Implementations `3706770` and
+`ba20ce5` preserve the preparation boundary; no complete AAP installation is
+claimed. The broader local122-test suite and additional already-installed
+collection fixtures passed as documented in release notes.
+
 ## Capture custom credential schemas with their retained dependencies — 2026-11-02
 
 The separate-CA fixture exposed a missing stable-field allowlist for custom

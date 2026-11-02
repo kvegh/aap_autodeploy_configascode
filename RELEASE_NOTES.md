@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.23.14
+
+Document actual infrastructure3133 and refined guest observer3135 success. The
+observer proves preparation readiness and all three verified HTTPS handshakes;
+current installer/runtime preparation remains explicitly pending. Broader local
+regression suite passed122 tests with six collection-dependent skips; additional
+Orchestrator/Windows/AIOps/PAH collection fixtures passed using existing paths.
+
 ## 0.23.13
 
 Document custom-type serializer `04316b8`, separate CA dependency/secret

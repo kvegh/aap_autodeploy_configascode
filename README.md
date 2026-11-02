@@ -62,6 +62,12 @@ authenticate to Red Hat services. A verified
 SSH host-key handshake alone does not establish authenticated guest access;
 compare the retained probe identity with protected golden/source evidence before
 proceeding to installation.
+Actual observer job3135 passed with `preparation_ready=true`: supported expansion,
+bundle/account/resources/tools and all three strict HTTPS handshakes verified.
+The installed RHSM CA supplied the two Red Hat service authorities. Current
+installer readiness remains false until preparation expands root and the vendor
+runtime is present. Infrastructure job3133 also succeeded. Neither proof
+establishes a completed AAP installation.
 
 `capture-aap-cac.yml` provides [reviewed live extraction and CaC updates](docs/cac-reconciliation.md).
 It discovers owned project/label definitions, proves complete read visibility,
