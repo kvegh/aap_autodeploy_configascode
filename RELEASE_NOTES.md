@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.23.7
+
+Document phase-aware read-only audit `3706770`, actual initial probe findings
+and unchanged ownership of preparation/runtime tasks.
+
 ## 0.23.6
 
 Separate current installer readiness from starting preparation readiness. Prove

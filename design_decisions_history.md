@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Assess work at the phase that owns it — 2026-11-02
+
+Actual guest verification found a correct bundle, supported root layout and
+sufficient virtual disk, while the copied root partition remained small and a
+container runtime was absent. Implementation `3706770` separates preparation
+readiness from current installer readiness. A read-only growth dry run proves
+whether existing preparation can supply temporary capacity; missing runtime tools
+and vendor package-task references remain explicit. Red Hat probe retries use
+only already installed configured RHSM authorities, with certificate/hostname
+checks, bounded errors and no client credentials. Five audit fixtures and strict
+production lint pass. This change neither installs packages nor grows filesystems,
+and the subsequent actual audit must still verify preparation readiness.
+
 ## Follow the actual Controller single-file injector contract — 2026-11-02
 
 The actual credential-type PATCH rejected a named-file mapping before any
