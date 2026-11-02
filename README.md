@@ -47,8 +47,16 @@ reflects the existing preparation commands (root XFS on the fourth disk partitio
 a different layout requires a reviewed preparation change. Sizing follows the
 local AAP installation reference: four CPUs, 16 GB RAM (32 GB with collection
 seeding), 60 GB disk, 10 GiB temporary and 3 GiB variable temporary free space.
-The artifact reports observed capacities and failed check names; it does not
-benchmark disk IOPS or authenticate to Red Hat services. A verified
+The artifact separates `preparation_ready` from `installer_ready`: existing
+partition/XFS preparation may provide temporary space, and the installer may
+provide its own runtime packages. The observer proves proposed growth using
+`growpart -N`, never writes a partition table, and reports missing runtime tools
+plus vendor package-task references for review. Its success gates preparation;
+current installer failures remain visible. Red Hat TLS probes may reuse the
+guest's already configured RHSM CA in a local verified context and retain bounded
+failure categories. They send no client credentials. The artifact reports
+observed capacities and failed check names; it does not benchmark disk IOPS or
+authenticate to Red Hat services. A verified
 SSH host-key handshake alone does not establish authenticated guest access;
 compare the retained probe identity with protected golden/source evidence before
 proceeding to installation.

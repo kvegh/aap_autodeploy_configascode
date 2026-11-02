@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only checks for the existing bundled installer preparation path."""
 
+import configparser
 import json
 import os
 from pathlib import Path
@@ -35,6 +36,11 @@ def root_layout(mount, devices):
         and partition.get("type") == "part",
         "disk_bytes": int(disk.get("size") or 0),
         "partition_bytes": int(partition.get("size") or 0),
+        "unallocated_bytes": max(
+            0,
+            int(disk.get("size") or 0)
+            - sum(int(p.get("size") or 0) for p in disk.get("children", [])),
+        ),
         "filesystem": root.get("fstype"),
         "root_source": root.get("source"),
     }
@@ -45,17 +51,100 @@ def filesystem(path):
     return {
         "total_bytes": values.f_blocks * values.f_frsize,
         "available_bytes": values.f_bavail * values.f_frsize,
+        "shares_root": os.stat(path).st_dev == os.stat("/").st_dev,
     }
 
 
-def trusted_https(host):
-    try:
+def trusted_https(host, rhsm_ca_dir=None):
+    if rhsm_ca_dir is None:
+        configuration = configparser.ConfigParser()
+        configuration.read("/etc/rhsm/rhsm.conf")
+        rhsm_ca_dir = configuration.get("rhsm", "ca_cert_dir", fallback="/etc/rhsm/ca")
+    attempts = []
+    for trust in ("system", "installed_rhsm_ca"):
+        ca_paths = (
+            sorted(Path(rhsm_ca_dir).glob("*.pem"))
+            if trust == "installed_rhsm_ca"
+            else []
+        )
+        if trust == "installed_rhsm_ca" and not ca_paths:
+            break
         context = ssl.create_default_context()
-        with socket.create_connection((host, 443), timeout=10) as connection:
-            with context.wrap_socket(connection, server_hostname=host):
-                return {"verified": True}
-    except (OSError, ssl.SSLError):
-        return {"verified": False}
+        if trust == "installed_rhsm_ca":
+            loaded = 0
+            for path in ca_paths:
+                try:
+                    context.load_verify_locations(cafile=str(path))
+                    loaded += 1
+                except (OSError, ssl.SSLError):
+                    continue
+            if not loaded:
+                break
+        try:
+            with socket.create_connection((host, 443), timeout=10) as connection:
+                with context.wrap_socket(connection, server_hostname=host):
+                    return {
+                        "verified": True,
+                        "trust": trust,
+                        "failed_attempts": attempts,
+                    }
+        except (OSError, ssl.SSLError) as error:
+            result = {"trust": trust, "error_type": type(error).__name__}
+            if isinstance(error, ssl.SSLCertVerificationError):
+                result["verify_code"] = getattr(error, "verify_code", None)
+            elif isinstance(error, ssl.SSLError):
+                result["ssl_reason"] = getattr(error, "reason", None)
+            attempts.append(result)
+    return {"verified": False, "failed_attempts": attempts}
+
+
+def phase_assessment(checks, tools, storage, filesystems, growth_dry_run):
+    """Distinguish the starting conditions from work owned by preparation."""
+    preparation = {
+        k: v
+        for k, v in checks.items()
+        if k
+        not in (
+            "required_tools",
+            "bundle_temporary_space",
+            "bundle_var_temporary_space",
+        )
+    }
+    preparation["preparation_tools"] = all(v for k, v in tools.items() if k != "podman")
+    storage_ready = (
+        checks["bundle_temporary_space"] and checks["bundle_var_temporary_space"]
+    )
+    expansion = max(0, storage["unallocated_bytes"] - GIB)
+    if storage["supported"] and growth_dry_run == 0:
+        storage_ready = all(
+            filesystems[path]["available_bytes"]
+            + (expansion if filesystems[path]["shares_root"] else 0)
+            >= needed
+            for path, needed in (("/tmp", 10 * GIB), ("/var/tmp", 3 * GIB))
+        )
+    preparation["preparable_temporary_space"] = storage_ready
+    return {
+        "preparation_checks": preparation,
+        "preparation_failed_checks": sorted(k for k, v in preparation.items() if not v),
+        "preparation_ready": all(preparation.values()),
+        "installer_ready": all(checks.values()),
+        "pending_installer_tools": sorted(k for k, v in tools.items() if not v),
+    }
+
+
+def package_evidence(collection):
+    """Report vendor ownership evidence; never infer installed packages from text."""
+    result = {"podman_references": [], "package_task_paths": []}
+    for path in sorted((collection / "roles").rglob("*.yml")):
+        if not path.is_file() or path.stat().st_size > 256 * 1024:
+            continue
+        text = path.read_text()
+        relative = str(path.relative_to(collection))
+        if re.search(r"(?m)^[^#\n]*\bpodman\b", text):
+            result["podman_references"].append(relative)
+        if re.search(r"(?m)^\s*(ansible\.builtin\.)?(dnf|package):", text):
+            result["package_task_paths"].append(relative)
+    return result
 
 
 def read_json(command):
@@ -120,6 +209,17 @@ def inspect(extract_dir, version, install_user):
     report["storage"] = layout
     checks["supported_root_growth_layout"] = layout["supported"]
     checks["minimum_disk_capacity"] = layout["disk_bytes"] >= 60 * 1000**3
+    report["root_growth_dry_run_rc"] = None
+    if layout["supported"] and report["tools"]["growpart"]:
+        dry_run = subprocess.run(
+            ["growpart", "-N", "/dev/sda", "4"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+        report["root_growth_dry_run_rc"] = dry_run.returncode
+
     report["filesystems"] = {
         p: filesystem(p) for p in ["/", "/tmp", "/var/tmp", extract_dir]
     }
@@ -161,7 +261,17 @@ def inspect(extract_dir, version, install_user):
         v["verified"] for v in report["https"].values()
     )
     report["failed_checks"] = sorted(k for k, passed in checks.items() if not passed)
-    report["ready"] = not report["failed_checks"]
+    report["vendor_package_evidence"] = package_evidence(collection)
+    report.update(
+        phase_assessment(
+            checks,
+            report["tools"],
+            layout,
+            report["filesystems"],
+            report["root_growth_dry_run_rc"],
+        )
+    )
+    report["ready"] = report["preparation_ready"]
     return report
 
 

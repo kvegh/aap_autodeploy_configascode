@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.23.6
+
+Separate current installer readiness from starting preparation readiness. Prove
+existing root expansion with read-only growpart dry run and retain missing
+runtime/vendor package evidence. Retry verified Red Hat TLS only with the guest's
+already configured RHSM CA and report bounded error categories. Five guest audit
+fixtures cover phase distinctions, storage isolation and unchanged TLS/SNI.
+
 ## 0.23.5
 
 Document actual Controller injector schema correction `652ca05` and optional

@@ -116,8 +116,8 @@
 
     - name: Require the read-only installation prerequisite audit to pass
       ansible.builtin.assert:
-        that: (aap_guest_prerequisites.stdout | from_json).ready | bool
+        that: (aap_guest_prerequisites.stdout | from_json).preparation_ready | bool
         fail_msg: >-
-          Installation prerequisite checks failed:
-          {{ (aap_guest_prerequisites.stdout | from_json).failed_checks | join(', ') }}.
+          Preparation prerequisite checks failed:
+          {{ (aap_guest_prerequisites.stdout | from_json).preparation_failed_checks | join(', ') }}.
           Inspect the protected verification artifact before installation.
