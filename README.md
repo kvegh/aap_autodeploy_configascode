@@ -73,6 +73,9 @@ components need explicit adapters. It never applies configuration to source AAP.
 Association updates apply membership deltas so accepted desired-only bootstrap
 dependencies survive unrelated source removals. Lists inside user variables and
 credential inputs keep their original meaningful order.
+Custom credential types retain stable input/injector schemas alongside their
+credentials; runtime IDs and management flags are excluded. Retained CA
+dependencies survive removed associations while vaulted PEM inputs are preserved.
 Source credential aliases resolve to the captured/base-bootstrap namespace;
 shared external definitions are recognized through those aliases as well.
 The protected action normalizes Boolean survey strings and returns bounded

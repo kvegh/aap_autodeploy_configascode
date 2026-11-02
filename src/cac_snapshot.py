@@ -242,6 +242,7 @@ class ControllerReader:
 
 FIELDS = {
     "credential_types": "name description kind inputs injectors",
+    "credential_types": "name description kind inputs injectors",
     "projects": "name description scm_type scm_url scm_branch scm_refspec scm_clean scm_delete_on_update scm_track_submodules scm_update_on_launch scm_update_cache_timeout allow_override timeout",
     "job_templates": "name description playbook job_type timeout verbosity forks limit job_tags skip_tags start_at_task scm_branch become_enabled allow_simultaneous use_fact_cache diff_mode force_handlers job_slice_count prevent_instance_group_fallback survey_enabled webhook_service",
     "credentials": "name description inputs",

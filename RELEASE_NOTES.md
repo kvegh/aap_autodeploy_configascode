@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.23.12
+
+Serialize custom credential types with stable name/description/kind/input/injector
+fields. A separate-CA fixture proves aliasing, retained definition after removed
+association, ID omission and preserved vaulted PEM. Thirty-one generic fixtures
+pass; actual CA-only type creation accepted the supported injector schema.
+
 ## 0.23.11
 
 Document immutable used-reader preservation `988d172` and separate scoped

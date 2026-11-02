@@ -247,6 +247,85 @@ class FakeAPI:
 
 
 class SnapshotTests(unittest.TestCase):
+    def test_separate_ca_custom_type_alias_and_retained_dependency_are_complete(self):
+        import json
+
+        class CAAPI(FakeAPI):
+            associated = True
+
+            def credential(self):
+                return {
+                    "id": 81,
+                    "name": "Source CA",
+                    "organization": 1,
+                    "credential_type": 45,
+                    "inputs": {"source_ca_pem": "$encrypted$"},
+                }
+
+            def all(self, path):
+                endpoint = (
+                    urlsplit(path).path.removeprefix("/api/controller/v2/").strip("/")
+                )
+                if endpoint == "credentials":
+                    return [self.credential()]
+                if endpoint.startswith("job_templates/") and endpoint.endswith(
+                    "/credentials"
+                ):
+                    return [self.credential()] if self.associated else []
+                return super().all(path)
+
+            def get(self, path):
+                if path.startswith("credentials/"):
+                    return self.credential()
+                if path.startswith("credential_types/"):
+                    return {
+                        "id": 45,
+                        "name": "Existing source authority",
+                        "managed": False,
+                        "kind": "cloud",
+                        "inputs": {"fields": [{"id": "source_ca_pem", "secret": True}]},
+                        "injectors": {
+                            "env": {"AAP_CAC_SOURCE_CA_FILE": "{{ tower.filename }}"},
+                            "file": {"template": "{{ source_ca_pem }}"},
+                        },
+                    }
+                return super().get(path)
+
+        scope = self.scope()
+        scope["sections"]["credential_types"] = []
+        scope["aliases"]["credentials"] = {"Source CA": "Portable source CA"}
+        scope["dependency_names"] = {"credentials": ["Source CA"]}
+        api = CAAPI()
+        captured = snapshot.Snapshot(api, scope, json.loads).collect()
+        credential = next(iter(captured["credentials"].values()))
+        self.assertEqual(credential["name"], "Portable source CA")
+        self.assertEqual(credential["inputs"]["source_ca_pem"], core.MASK)
+        self.assertEqual(credential["credential_type"], "Existing source authority")
+        custom_type = next(iter(captured["credential_types"].values()))
+        self.assertNotIn("id", custom_type)
+        self.assertNotIn("managed", custom_type)
+        self.assertIsInstance(custom_type["injectors"]["file"]["template"], str)
+        self.assertEqual(
+            next(iter(captured["job_templates"].values()))["credentials"],
+            ["Portable source CA"],
+        )
+        api.associated = False
+        retained = snapshot.Snapshot(api, scope, json.loads).collect()
+        self.assertEqual(retained["credentials"], captured["credentials"])
+        self.assertEqual(retained["credential_types"], captured["credential_types"])
+        self.assertEqual(
+            next(iter(retained["job_templates"].values()))["credentials"], []
+        )
+        desired = deepcopy(captured)
+        next(iter(desired["credentials"].values()))["inputs"][
+            "source_ca_pem"
+        ] = "fixture-existing-ca"
+        merged = core.compare(captured, desired, desired, retained, True)["merged"]
+        self.assertEqual(
+            next(iter(merged["credentials"].values()))["inputs"]["source_ca_pem"],
+            "fixture-existing-ca",
+        )
+
     def test_removed_association_does_not_imply_deleted_owned_credential(self):
         import json
 
