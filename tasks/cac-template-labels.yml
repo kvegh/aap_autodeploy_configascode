@@ -51,3 +51,19 @@
     fail_msg: Multiselect survey defaults must be strings; use an empty string for no default selection.
   loop: "{{ cac_label_templates | subelements('survey_spec.spec', skip_missing=True) }}"
   no_log: true
+
+- name: Require complete registered-instance prompts on configuration importers
+  ansible.builtin.assert:
+    that:
+      - item.survey_enabled | bool
+      - >-
+        ['aap_instance_key', 'aap_config_repo_url', 'debug_logging'] |
+        difference(item.survey_spec.spec | map(attribute='variable') | list) | length == 0
+      - >-
+        item.survey_spec.spec | selectattr('variable', 'equalto', 'aap_instance_key') |
+        selectattr('required', 'equalto', true) | list | length == 1
+      - "'aap_hostname' not in (item.survey_spec.spec | map(attribute='variable') | list)"
+    fail_msg: Each configuration importer needs required registered-instance and repository prompts.
+  loop: "{{ cac_label_templates }}"
+  when: item.playbook | default('') in (cac_registered_setup_playbooks | default([]))
+  no_log: true

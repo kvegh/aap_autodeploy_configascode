@@ -49,6 +49,13 @@
             cac_label_templates: "{{ autodeploy_configuration.job_templates }}"
             cac_label_definitions: "{{ autodeploy_configuration.labels }}"
             cac_required_template_label: aap-autodeploy
+            cac_registered_setup_playbooks:
+              - 05-prepare-use-cases.yml
+              - deploy-autodeploy.yml
+              - deploy-aiops-demo.yml
+              - deploy-windows-demo.yml
+              - deploy-orchestrator-demo.yml
+              - deploy-assistant-team.yml
 
         - name: Reject masked provisioning secrets
           ansible.builtin.assert:

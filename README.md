@@ -841,6 +841,11 @@ All standalone use-case imports additionally need the registry reader, distinct
 `instance_registry` Vault identity and the registered hypervisor Machine
 credential. The [selected setup entrypoint](docs/selected-use-cases.md) validates
 and supplies these alongside the exact saved case credential set.
+Every captured configuration importer must expose required instance-key and
+repository prompts, including templates whose earlier survey contained only
+diagnostic logging. Saved stale target URLs/addresses are removed during migration;
+other scoped inputs are preserved. The AutoDeploy capture preflight checks this
+survey coverage before restoring definitions.
 Git uses a temporary askpass helper with HTTPS certificate verification enabled;
 the token stays out of URLs, command arguments and the helper's stored contents.
 For public code projects, omit the source-control credential field. An empty

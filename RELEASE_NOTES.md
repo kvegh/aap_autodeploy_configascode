@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.20.2
+
+Require instance-key/repository/debug prompts on every captured configuration
+importer, including earlier debug-only surveys. Remove saved stale target
+overrides while retaining scoped repositories and other inputs. Add a real
+capture-preflight regression that rejects missing registered-instance questions.
+
 ## 0.20.1
 
 Document registered selection implementation `c1d60b7`, encrypted capture

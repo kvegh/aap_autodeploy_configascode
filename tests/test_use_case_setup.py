@@ -208,6 +208,37 @@ class UseCaseSetupTests(unittest.TestCase):
             ],
         }
         cases = [("complete", complete, True)]
+        for include_target, expected in ((False, False), (True, True)):
+            value = copy.deepcopy(complete)
+            value["cac_registered_setup_playbooks"] = ["fixture-import.yml"]
+            template = value["cac_label_templates"][0]
+            template.update(
+                playbook="fixture-import.yml",
+                survey_enabled=True,
+                survey_spec={
+                    "spec": [
+                        {"type": "text", "variable": "debug_logging", "required": True}
+                    ]
+                },
+            )
+            if include_target:
+                template["survey_spec"]["spec"].extend(
+                    [
+                        {
+                            "type": "text",
+                            "variable": "aap_instance_key",
+                            "required": True,
+                        },
+                        {
+                            "type": "text",
+                            "variable": "aap_config_repo_url",
+                            "required": True,
+                        },
+                    ]
+                )
+            cases.append(
+                ("registered target prompts " + str(include_target), value, expected)
+            )
         for default, expected in (([], False), ("", True)):
             value = copy.deepcopy(complete)
             value["cac_label_templates"][0]["survey_spec"] = {
