@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.20.4
+
+Align captured importer prompt policy with the selector guard: disable arbitrary
+variable prompts while retaining required bounded surveys and credential
+prompting for the validated registry route. Reject permissive captured importers.
+
 ## 0.20.3
 
 Document complete-survey validation `17c5efb`, encrypted migration `729b3f2` and

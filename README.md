@@ -846,6 +846,8 @@ repository prompts, including templates whose earlier survey contained only
 diagnostic logging. Saved stale target URLs/addresses are removed during migration;
 other scoped inputs are preserved. The AutoDeploy capture preflight checks this
 survey coverage before restoring definitions.
+Arbitrary variable prompts are disabled on those fixed importers; their required
+surveys define the accepted target/repository/logging inputs.
 Git uses a temporary askpass helper with HTTPS certificate verification enabled;
 the token stays out of URLs, command arguments and the helper's stored contents.
 For public code projects, omit the source-control credential field. An empty
