@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Keep base deployment separate from selected use cases — 2026-11-02
+
+Implementation `2338422` stops the deployment workflow after stages 01–04.
+The owner explicitly chose platform base first, followed by an operator-selected
+mechanism that installs selected umbrella Projects and their Job Templates/
+related CaC. The selector uses only fixed owned configuration importers, preserving
+each importer's scoped Git/Vault credentials. It verifies separate seed/target
+instance identities and actual child-job completion. Four umbrella modules have
+reviewed captures/importers; six report their missing capture/importer explicitly.
+The two standalone projects outside umbrella membership are not silently added.
+
+Every importer now checks project label assignments and organization-scoped
+label definitions. Selected prerequisite preparation remains outside base;
+AIOps imports leave activations disabled. Encrypted central capture `205e2da`
+adds the selector definition and standalone recovery objects; Windows `57ca87e`
+adds its regression verifier and labels. Assistant changes `ae00634` and
+`4962934` complete ordinary and separately gated maintenance labels.
+
+All 79 repository tests pass. Eight new safety/label tests pass in both native
+modes, the modified entrypoints pass syntax and new YAML passes strict offline
+production lint with zero findings. Private roundtrips/comparisons preserve
+unrelated secret inputs. These are local code/capture changes; no live selector,
+configuration import, application job or fresh deployment ran.
+
 ## Keep a Git-tracked session restart entry point
 
 Documentation implementation: `fa10dfd`.

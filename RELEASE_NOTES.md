@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.17.1
+
+Document implementation `2338422`, its base-only/selected-use-case rationale,
+companion encrypted capture revisions and validation limits. Publication and
+actual AAP template creation remain separate from local definitions.
+
+Validation: version policy, decision references and whitespace checks passed.
+
 ## 0.17.0
 
 Stop base deployment after shared platform configuration. Add an explicit bounded
