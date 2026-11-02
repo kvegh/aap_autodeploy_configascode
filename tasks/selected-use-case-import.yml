@@ -6,7 +6,8 @@
            cac_use_case_selector.importer_credentials[aap_selected_importer.item.name],
            aap_selected_route_credentials.results | map(attribute='json.results') | flatten | list,
            aap_selected_setup_plan.organization,
-           aap_instance_route.hypervisor.machine_credential_name) }}
+           aap_instance_route.hypervisor.machine_credential_name,
+           cac_use_case_selector.shared_seed_credentials | default({})) }}
   no_log: true
 
 - name: Run only the just-validated configuration template with its existing credentials
@@ -23,6 +24,7 @@
     controller_host: "{{ aap_seed_hostname }}"
     controller_oauthtoken: "{{ cac_gateway_token.json.token }}"
     validate_certs: "{{ aap_validate_certs }}"
+  environment: "{{ {'SSL_CERT_FILE': aap_seed_ca_path} if aap_seed_ca_path | default('') | length > 0 else {} }}"
   register: aap_selected_import_job
   no_log: true
 
@@ -33,6 +35,7 @@
     headers:
       Authorization: "Bearer {{ cac_gateway_token.json.token }}"
     validate_certs: true
+    ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
     follow_redirects: none
   register: aap_selected_completed_credentials
   no_log: true

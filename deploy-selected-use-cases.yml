@@ -14,6 +14,7 @@
     aap_username: admin
     aap_validate_certs: true
     debug_logging: false
+    aap_seed_ca_path: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_CA_FILE') }}"
   pre_tasks:
     - name: Keep catalog authentication on its credential-bound repository
       ansible.builtin.assert:
@@ -45,10 +46,25 @@
             aap_selected_setup_results: []
           no_log: true
 
+        - name: Require explicit seed credentials separately from target base
+          ansible.builtin.assert:
+            that:
+              - cac_use_case_selector.seed_username is string
+              - cac_use_case_selector.seed_username | length > 0
+              - cac_use_case_selector.seed_password is string
+              - cac_use_case_selector.seed_password | length > 0
+            fail_msg: Supply the source seed login in the encrypted selector catalog; target base credentials are separate.
+          no_log: true
+
         - name: Authenticate only the seed controller for importer orchestration
+          # The target administrator password from base is a separate identity.
           ansible.builtin.include_tasks: tasks/gateway-base-login.yml
           vars:
             aap_hostname: "{{ aap_seed_hostname }}"
+            aap_username: "{{ cac_use_case_selector.seed_username }}"
+            aap_password: "{{ cac_use_case_selector.seed_password }}"
+            cac_gateway_ca_path: "{{ aap_seed_ca_path }}"
+          no_log: true
 
         - name: Read the seed controller's current instance identities
           ansible.builtin.uri:
@@ -56,6 +72,7 @@
             headers:
               Authorization: "Bearer {{ cac_gateway_token.json.token }}"
             validate_certs: "{{ aap_validate_certs }}"
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           register: aap_seed_instances
           no_log: true
@@ -87,6 +104,7 @@
             headers:
               Authorization: "Bearer {{ cac_gateway_token.json.token }}"
             validate_certs: "{{ aap_validate_certs }}"
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           loop: "{{ [aap_selected_setup_plan.preparation] + aap_selected_setup_plan.importers }}"
           register: aap_selected_importer_lookups
@@ -118,6 +136,7 @@
             headers:
               Authorization: "Bearer {{ cac_gateway_token.json.token }}"
             validate_certs: "{{ aap_validate_certs }}"
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           register: aap_selected_source_project
           no_log: true
@@ -137,6 +156,7 @@
             headers:
               Authorization: "Bearer {{ cac_gateway_token.json.token }}"
             validate_certs: "{{ aap_validate_certs }}"
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           loop: "{{ aap_selected_importer_lookups.results }}"
           register: aap_selected_importer_surveys
@@ -160,6 +180,7 @@
             headers:
               Authorization: "Bearer {{ cac_gateway_token.json.token }}"
             validate_certs: true
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           loop: "{{ aap_selected_importer_lookups.results }}"
           register: aap_selected_importer_credentials
@@ -190,6 +211,7 @@
             headers:
               Authorization: "Bearer {{ cac_gateway_token.json.token }}"
             validate_certs: true
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           loop:
             - AAP AutoDeploy instance registry reader
@@ -248,3 +270,4 @@
           ansible.builtin.include_tasks: tasks/private-config-cleanup.yml
           vars:
             aap_hostname: "{{ aap_seed_hostname }}"
+            cac_cleanup_ca_path: "{{ aap_seed_ca_path }}"

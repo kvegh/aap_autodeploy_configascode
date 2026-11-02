@@ -135,7 +135,8 @@ def distinct_controllers(seed_instances, target_instances):
 
 
 def scoped_launch_credentials(
-    original, expected_names, route_credentials, organization, machine_name
+    original, expected_names, route_credentials, organization, machine_name,
+    shared_seed_credentials=None,
 ):
     require(
         isinstance(original, list)
@@ -161,14 +162,38 @@ def scoped_launch_credentials(
         "The selected route requires its fixed reader, distinct registry Vault and bound Machine.",
     )
     combined = preserved + route_credentials
+    pins = {} if shared_seed_credentials is None else shared_seed_credentials
+    require(isinstance(pins, Mapping), "Declare shared seed credential pins as a mapping.")
+
+    def in_organization(entry):
+        owner = entry.get("summary_fields", {}).get("organization") or {}
+        return owner.get("name") == organization
+
+    def pinned_source_entry(entry):
+        pin = pins.get(entry.get("name"))
+        return (
+            isinstance(pin, Mapping)
+            and type(pin.get("id")) is int
+            and type(pin.get("credential_type")) is int
+            and isinstance(pin.get("credential_type_name"), str)
+            and bool(pin["credential_type_name"])
+            and "organization" in entry
+            and entry["organization"] is None
+            and entry.get("summary_fields", {}).get("organization") is None
+            and entry.get("id") == pin.get("id")
+            and entry.get("credential_type") == pin.get("credential_type")
+            and entry.get("summary_fields", {}).get("credential_type", {}).get("name")
+            == pin.get("credential_type_name")
+        )
+
     require(
         all(
-            entry.get("summary_fields", {}).get("organization", {}).get("name")
-            == organization
-            and type(entry.get("id")) is int
-            for entry in combined
-        ),
-        "Credential ownership and identities must match the reviewed organization.",
+            type(entry.get("id")) is int
+            and (in_organization(entry) or pinned_source_entry(entry))
+            for entry in preserved
+        ) and all(type(entry.get("id")) is int and in_organization(entry)
+                  for entry in route_credentials),
+        "Credential ownership must match the organization or exact reviewed source-only pins.",
     )
     vault_ids = [
         entry.get("inputs", {}).get("vault_id", "")

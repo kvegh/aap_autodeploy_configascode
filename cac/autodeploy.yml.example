@@ -23,6 +23,12 @@ cac_workflow_execution_image: EXECUTION_IMAGE_PLACEHOLDER
 # Eligibility/importer names are fixed in vars/use-case-catalog.yml.
 cac_use_case_selector:
   seed_hostname: https://seed.example.invalid
+  # Source orchestration login, separate from the target password in base.
+  seed_username: SEED_USERNAME_PLACEHOLDER
+  seed_password: SEED_PASSWORD_PLACEHOLDER
+  # Optional exact name -> id/type/type-name pins for existing seed credentials
+  # without an organization. Route credentials still require organization ownership.
+  shared_seed_credentials: {}
   organization: ORGANIZATION_PLACEHOLDER
   umbrella_modules: {}
   configuration_repositories: {}

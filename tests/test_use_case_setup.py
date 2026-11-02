@@ -137,16 +137,46 @@ class UseCaseSetupTests(unittest.TestCase):
         ]
         expected = [entry["name"] for entry in original]
 
-        def resolve(source, dependencies):
+        def resolve(source, dependencies, pins=None):
             return setup.scoped_launch_credentials(
                 source,
                 expected,
                 dependencies,
                 "Fixture organization",
                 "Registered Machine",
+                pins,
             )
 
         self.assertEqual(resolve(original, route), [1, 2, 3, 4, 5, 6])
+        shared = copy.deepcopy(original)
+        shared[0].update(organization=None, credential_type=17)
+        shared[0]["summary_fields"]["organization"] = None
+        pins = {"Case Git": {"id": 1, "credential_type": 17, "credential_type_name": "Case Git"}}
+        with self.assertRaises(AnsibleFilterError):
+            resolve(shared, route)
+        self.assertEqual(resolve(shared, route, pins), [1, 2, 3, 4, 5, 6])
+        for changed_id in (True, "1"):
+            changed_pins = copy.deepcopy(pins)
+            changed_pins["Case Git"]["id"] = changed_id
+            with self.assertRaises(AnsibleFilterError):
+                resolve(shared, route, changed_pins)
+        for change in ({"id": 99}, {"credential_type": 99}):
+            changed = copy.deepcopy(shared)
+            changed[0].update(change)
+            with self.assertRaises(AnsibleFilterError):
+                resolve(changed, route, pins)
+        changed = copy.deepcopy(shared)
+        changed[0]["summary_fields"]["organization"] = {"name": "Other organization"}
+        with self.assertRaises(AnsibleFilterError):
+            resolve(changed, route, pins)
+        # A source-only pin cannot authorize an unowned route credential.
+        changed_route = copy.deepcopy(route)
+        changed_route[0].update(organization=None, credential_type=18)
+        changed_route[0]["summary_fields"]["organization"] = None
+        reader_pin = {route[0]["name"]: {"id": 4, "credential_type": 18,
+                                       "credential_type_name": route[0]["name"]}}
+        with self.assertRaises(AnsibleFilterError):
+            resolve(original, changed_route, reader_pin)
         # A previous Machine is replaced only with the exact registry-bound one.
         self.assertEqual(
             resolve(original + [credential(7, "Previous Machine", "ssh")], route),

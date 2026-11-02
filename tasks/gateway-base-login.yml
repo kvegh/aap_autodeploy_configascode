@@ -22,6 +22,7 @@
       application: null
     status_code: [201, 401]
     validate_certs: "{{ aap_validate_certs }}"
+    ca_path: "{{ cac_gateway_ca_path | default(omit, true) }}"
   when: aap_password is defined
   changed_when: cac_configured_gateway_token.status == 201
   register: cac_configured_gateway_token
@@ -75,6 +76,7 @@
           application: null
         status_code: 201
         validate_certs: "{{ aap_validate_certs }}"
+        ca_path: "{{ cac_gateway_ca_path | default(omit, true) }}"
       register: cac_installer_gateway_token
 
 - name: Select the successful Gateway login token

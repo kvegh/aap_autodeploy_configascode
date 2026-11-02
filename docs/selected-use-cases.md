@@ -54,10 +54,29 @@ survey. The fresh target must already have received base configuration and its
 configured administrator login. Distinct instance UUIDs are read from both APIs,
 preventing a different URL for the seed from passing as a fresh target.
 
+The encrypted catalog must supply `cac_use_case_selector.seed_username` and
+`seed_password` for orchestration on the seed. The target's administrator password
+from base is a separate identity and is never used as a seed-login fallback.
+Keep literal passwords tagged `!unsafe` when serializing the catalog.
+
+When the seed uses a private issuer, attach the existing source CA credential to
+the selector. Its private file injector supplies `AAP_CAC_SOURCE_CA_FILE`.
+Source authentication, API reads and token cleanup use that file explicitly;
+only the source job-launch/wait task receives `SSL_CERT_FILE`. Missing input
+retains default trust. Certificate and hostname checks remain enabled, and target
+API requests retain their normal trust context. No global trust-store change is
+needed. A locally declared credential alone does not attach it to the live selector.
+
 Before launching, the selector verifies unique fixed importer names, expected
 playbooks, organization, project source URL, labels and bounded target/repository
 surveys. It uses each just-validated template ID, verifies its exact captured
 non-Machine credential associations and retains their scoped Git/Vault inputs.
+Existing source credentials without an organization require exact reviewed
+name, numeric ID, credential-type ID and type-name pins in the encrypted
+`cac_use_case_selector.shared_seed_credentials` mapping. Pins cover only the
+already-associated source credentials; all route credentials still require the
+reviewed organization. This preserves existing ACLs and is not a general resource
+ownership scheme. Re-review source-local pins when moving to another seed.
 Credential prompting adds only the fixed registry-reader, the distinct
 `instance_registry` Vault identity and the route's named Machine credential.
 Case Vault identities must remain unique. Standalone importer runs require the

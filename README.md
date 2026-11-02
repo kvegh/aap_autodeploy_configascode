@@ -226,6 +226,12 @@ after shared base configuration. It creates no use-case projects or imports.
 The separate [use-case selector](docs/selected-use-cases.md) installs only the
 operator's selected umbrella submodules and their reviewed saved CaC. Application,
 deployment and demo jobs are not launched by configuration selection.
+The selector uses a separate encrypted seed login and, when required, the
+existing source CA file only for seed API operations. Target base login and
+normal target TLS trust remain separate. Exact reviewed source-only credential
+pins preserve existing global associations; route credentials still require
+organization ownership. Source/target API prechecks and temporary-token cleanup
+have passed; a live selected-use-case import remains unperformed.
 
 ```mermaid
 flowchart LR

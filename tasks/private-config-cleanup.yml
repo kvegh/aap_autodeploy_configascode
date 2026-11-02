@@ -9,6 +9,7 @@
           Authorization: "Bearer {{ cac_gateway_token.json.token }}"
         status_code: [204, 404]
         validate_certs: "{{ aap_validate_certs }}"
+        ca_path: "{{ cac_cleanup_ca_path | default(omit, true) }}"
       when: cac_gateway_token.json.id is defined
       no_log: true
   always:

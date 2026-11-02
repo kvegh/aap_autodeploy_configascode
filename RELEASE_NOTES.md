@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.24.3
+
+Fix selected setup's seed API connections by reusing the existing scoped CA
+file for authentication, reads, job launch/wait and cleanup. Require explicit
+encrypted seed credentials separately from target base login. Preserve existing
+global source credential associations through exact encrypted identity pins;
+route credentials still require organization ownership. Four real-module TLS
+fixtures pass in both native modes, including missing-CA, wrong-hostname and
+login separation failures; selector/login regressions, syntax and production lint
+pass. Actual source/target API prechecks and temporary-token revocation pass.
+No prerequisite, configuration-import or application job was launched.
+
 ## 0.24.2
 
 Document verified AIOps companion cutover `30aecfd`: encrypted token/URL/name,
