@@ -1,13 +1,18 @@
 # Release notes
 
+## 0.23.18
+
+Document literal-tag preservation `4af4121`, the exact protected before/after
+reproduction and companion encrypted base repair `bef8921`.
+
 ## 0.23.17
 
 Preserve explicit literal-template tags in protected YAML and validate their
 paths after Vault roundtrip. Repair four base injector tags separately from
-ordinary dynamic inputs. The exact4.10.0 wildcard merge fails before and passes
+ordinary dynamic inputs. The exact 4.10.0 wildcard merge fails before and passes
 after with the actual encrypted inputs and zero API calls. Two canary/tag
-fixtures cover both native modes; all31 generic capture fixtures pass. Actual
-Stage04 retry remains required. Broader lint retains four existing line lengths.
+fixtures cover both native modes; all 31 generic capture fixtures pass. Actual
+Stage 04 retry remains required. Broader lint retains four existing line lengths.
 
 ## 0.23.16
 

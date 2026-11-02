@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Preserve literal tags as part of encrypted YAML correctness — 2026-11-02
+
+Actual fresh base configuration failed in the exact CoP wildcard merge. The four
+new credential injectors were evaluated as playbook variables because ordinary
+AnsibleDumper discards `!unsafe` markers, even though string equality survives.
+Implementation `4af4121` adds a protected dumper and validates literal-tag paths
+after Vault roundtrip; companion `bef8921` protects only the four base injector
+scalars. Ordinary environment references and all logical values remain unchanged.
+The actual encrypted base/myvars merge fails before and passes after locally
+without APIs. Canary fixtures cover both native modes, and all 31 generic capture
+fixtures pass. Protected logging remains enabled. Broader lint retains four
+existing line-length findings in unchanged tasks; actual Stage 04 retry is pending.
+
 ## Verify the installed extractor with a real protected preview — 2026-11-02
 
 Actual template 158 default preview job 3139 on `f38517a` succeeded in 44.042 seconds.
