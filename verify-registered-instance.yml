@@ -8,6 +8,20 @@
   vars_files:
     - myvars
   tasks:
+    - name: Require protected installation inputs without disclosing them
+      ansible.builtin.assert:
+        that:
+          - item is string
+          - item | trim | length > 0
+        fail_msg: Required installation inputs must be nonempty in the environment Vault.
+      loop:
+        - "{{ vault_ansible_user }}"
+        - "{{ vault_ansible_password }}"
+        - "{{ vault_aap_install_user }}"
+        - "{{ vault_rhsm_activation_key }}"
+        - "{{ vault_rhsm_org_id }}"
+      no_log: true
+
     - name: Resolve only the exact completed instance registry entry
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml
 
@@ -31,6 +45,9 @@
   hosts: aap_instance_probe
   gather_facts: false
   become: true
+  vars_files:
+    - myvars
+    - vars/main.yml
   tasks:
     - name: Gather only the selected guest's minimal facts
       ansible.builtin.setup:
@@ -70,6 +87,20 @@
         aap_guest_identity: "{{ aap_instance_probe_identity.stdout | from_json }}"
       no_log: true
 
+    - name: Inspect bundle storage account tools and verified outbound TLS without changes
+      ansible.builtin.command:
+        argv:
+          - python3
+          - '-'
+          - "{{ installer_extract_dir }}"
+          - "{{ aap_version }}"
+          - "{{ vault_aap_install_user }}"
+        stdin: "{{ lookup('ansible.builtin.file', 'src/aap_guest_prerequisites.py') }}"
+      register: aap_guest_prerequisites
+      changed_when: false
+      check_mode: false
+      no_log: true
+
     - name: Retain bounded read-only verification evidence
       ansible.builtin.set_stats:
         data:
@@ -79,5 +110,14 @@
             machine_identity: "{{ aap_instance_probe_identity.stdout | from_json }}"
             distribution: "{{ ansible_facts.distribution }}"
             distribution_major_version: "{{ ansible_facts.distribution_major_version }}"
+            prerequisites: "{{ aap_guest_prerequisites.stdout | from_json }}"
         aggregate: false
         per_host: false
+
+    - name: Require the read-only installation prerequisite audit to pass
+      ansible.builtin.assert:
+        that: (aap_guest_prerequisites.stdout | from_json).ready | bool
+        fail_msg: >-
+          Installation prerequisite checks failed:
+          {{ (aap_guest_prerequisites.stdout | from_json).failed_checks | join(', ') }}.
+          Inspect the protected verification artifact before installation.

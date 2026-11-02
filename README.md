@@ -38,8 +38,17 @@ DNS and trusted TLS. Provisioning is enabled one phase at a time; local checks
 alone do not establish a completed AAP build.
 
 `verify-registered-instance.yml` provides a separate read-only guest login/sudo
-probe through the registered jump route. It reads minimal OS facts and both
-machine-ID paths without running installation or subscription tasks. A verified
+probe through the registered jump route. It checks the exact configured bundle,
+installer account access, RHEL/tools, disk layout/capacity, temporary free space,
+CPU/memory and credential-free verified Red Hat HTTPS handshakes. Protected
+installation inputs must be nonempty. It reads both machine-ID paths without
+running installation, growth, package or subscription tasks. The layout guard
+reflects the existing preparation commands (root XFS on the fourth disk partition);
+a different layout requires a reviewed preparation change. Sizing follows the
+local AAP installation reference: four CPUs, 16 GB RAM (32 GB with collection
+seeding), 60 GB disk, 10 GiB temporary and 3 GiB variable temporary free space.
+The artifact reports observed capacities and failed check names; it does not
+benchmark disk IOPS or authenticate to Red Hat services. A verified
 SSH host-key handshake alone does not establish authenticated guest access;
 compare the retained probe identity with protected golden/source evidence before
 proceeding to installation.

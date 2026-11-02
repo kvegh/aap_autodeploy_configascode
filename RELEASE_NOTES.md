@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.23.0
+
+Extend the registered guest observer with a read-only bundled-installation audit:
+configured bundle/collection, installer permissions, supported root growth layout,
+disk and temporary capacity, CPU/memory, OS/tools, nonempty vaulted inputs and
+credential-free verified Red Hat HTTPS handshakes. Keep installation, RHSM, package
+and filesystem changes out of the observer. Three focused fixtures verify layout
+refusals and TLS/SNI behavior with no application bytes.
+
 ## 0.22.3
 
 Document approved isolation declarations and field-only DNS refresh `c365298`,
