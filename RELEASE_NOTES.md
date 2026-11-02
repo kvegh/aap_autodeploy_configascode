@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.18.0
+
+Reserve test-VM names in shared encrypted Git state before provisioning, with
+non-force compare-and-swap publication and consumed-name retention on failure.
+Stage 01 requires the pinned recovery hypervisor, live persistent isolation and
+a published golden image. It generates fresh guest host keys, observes only the
+new domain's lease and stores the verified route for later deployment phases.
+Local counters and existing domains/disks are preserved. Shared base captures
+the portable allocation writer independently of optional use cases.
+
+Validation: thirteen allocation/routing tests include real competing Git writers,
+the native Ansible action with named Vault and check mode. Workflow artifact,
+Stage 01 syntax and strict scoped production-lint checks pass. Actual VM creation
+and later installation/public-API routing remain separately gated runtime proof.
+
 ## 0.17.2
 
 Correct selector and prerequisite multiselect defaults to API-required strings.

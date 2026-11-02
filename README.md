@@ -25,6 +25,12 @@ observer waits for the same ceiling without starting another installer. Set the
 installation Job Template timeout to three hours to leave room for host
 preparation and final health checks.
 
+Recovery Stage 01 now uses a [shared encrypted name reservation](docs/shared-instance-allocation.md)
+before any image write, with a pinned hypervisor and live isolation checks.
+Local counters are preserved as migration evidence. Fresh guest host keys and
+the exact instance route are retained for the following stages. Provisioning is
+enabled one phase at a time; this checkpoint alone is not a completed AAP build.
+
 DNS creation and removal keep their API requests and responses protected with
 `no_log`, including when diagnostic logging is enabled for other tasks.
 

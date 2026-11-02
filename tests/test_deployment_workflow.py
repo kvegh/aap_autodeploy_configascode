@@ -57,9 +57,9 @@ class DeploymentWorkflowTests(unittest.TestCase):
             self.assertNotIn("credentials", node["related"])
         provision = yaml.safe_load((ROOT / "01-linux-vm-setup.yml").read_text())[0]
         artifact = next(task["ansible.builtin.set_stats"] for task in provision["tasks"]
-                        if "ansible.builtin.set_stats" in task)
-        self.assertEqual(set(artifact["data"]), {"vm_name", "vm_ip", "aap_hostname"})
-        self.assertEqual(artifact["data"]["aap_hostname"], "https://{{ new_vm_ip }}")
+                        if task.get("name") == "Pass only the verified new instance handoff to downstream jobs")
+        self.assertEqual(set(artifact["data"]), {"vm_name", "vm_ip", "aap_hostname", "aap_instance_route"})
+        self.assertEqual(artifact["data"]["aap_hostname"], "{{ aap_instance_route.aap_hostname }}")
         self.assertFalse(artifact["per_host"])
         self.assertFalse(artifact["aggregate"])
         installer = yaml.safe_load((ROOT / "03-aap-install.yml").read_text())[-1]

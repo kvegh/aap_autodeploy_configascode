@@ -1,5 +1,13 @@
 # Design decisions history
 
+## Match Controller survey default types — 2026-11-02
+
+Implementation `725e33d` fixes empty multiselect defaults to strings after the
+actual Controller API rejected an empty list. The shared importer preflight now
+refuses that invalid shape, with real Ansible regression fixtures. Encrypted
+capture correction `e5d61b3` matches the accepted/read-back selector and
+prerequisite surveys. This metadata correction launched no configuration jobs.
+
 ## Keep base deployment separate from selected use cases — 2026-11-02
 
 Implementation `2338422` stops the deployment workflow after stages 01–04.

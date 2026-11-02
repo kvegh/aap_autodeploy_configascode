@@ -1,89 +1,294 @@
 ---
-- name: "Create VM from golden image"
+- name: Create a test VM only after shared name reservation and pinned recovery preflight
   hosts: hypervisor
   become: true
+  gather_facts: false
   vars_files:
     - myvars
     - vars/main.yml
   vars:
     vm_suffix: test
     vmcounter_file: /opt/vms/vmcounter
+  pre_tasks:
+    - name: Prove the selected recovery hypervisor and persistent isolation
+      ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
 
-  tasks:
-    - name: Read VM counter
+    - name: Read existing domain names without changing them
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', list, --all, --name]
+      register: aap_existing_domains
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Inspect the preserved local migration counter
+      ansible.builtin.stat:
+        path: "{{ vmcounter_file }}"
+      register: aap_legacy_counter
+      no_log: true
+
+    - name: Read but never rewrite the old per-hypervisor counter
       ansible.builtin.slurp:
         src: "{{ vmcounter_file }}"
-      register: vmcounter_raw
+      when: aap_legacy_counter.stat.exists
+      register: aap_legacy_counter_value
+      no_log: true
 
-    - name: Set VM name from counter
+    - name: Require the selected guest network to use an enforced bridge
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', net-dumpxml, "{{ vm_network }}"]
+      register: aap_guest_network
+      changed_when: false
+      check_mode: false
+      failed_when: aap_guest_network.stdout | aap_network_bridge not in aap_hypervisor_pin.isolation_bridges
+      no_log: true
+
+    - name: Inspect the already published golden image before reservation
+      ansible.builtin.stat:
+        path: "{{ aap_golden_image_path }}"
+        follow: false
+        get_checksum: false
+      register: aap_golden_source
+      no_log: true
+
+    - name: Require the verified golden image before reserving a name
+      ansible.builtin.assert:
+        that: aap_golden_source.stat.isreg | default(false) and not (aap_golden_source.stat.islnk | default(false))
+        fail_msg: Publish and verify the selected golden image before reserving a VM name.
+      no_log: true
+
+    - name: Reserve and publish one global encrypted name before any image write
+      aap_reserve_vm_name:
+        repository: "{{ lookup('ansible.builtin.env', 'AAP_ALLOCATION_REPOSITORY') }}"
+        prefix: "aap{{ aap_version_short }}-{{ vm_suffix }}"
+        hypervisor_id: "{{ aap_hypervisor_pin.machine_id }}"
+        observed_floor: >-
+          {{ aap_existing_domains.stdout_lines | aap_observed_allocation_floor(
+               aap_legacy_counter_value.content | default('') | b64decode) }}
+      delegate_to: localhost
+      become: false
+      register: aap_vm_reservation
+      no_log: true
+
+    - name: Stop check mode without provisioning or consuming a name
+      ansible.builtin.meta: end_play
+      when: ansible_check_mode
+
+    - name: Use only the published reservation
       ansible.builtin.set_fact:
-        vm_counter: "{{ (vmcounter_raw.content | b64decode | trim) | int }}"
-        vm_name: "aap{{ aap_version_short }}-{{ vm_suffix }}-{{ (vmcounter_raw.content | b64decode | trim) | int }}"
+        vm_name: "{{ aap_vm_reservation.vm_name }}"
+      no_log: true
 
-    - name: Copy golden image for VM
+    - name: Refuse stale caller overrides of the globally reserved name
+      ansible.builtin.assert:
+        that:
+          - aap_vm_reservation.reserved
+          - vm_name == aap_vm_reservation.vm_name
+        fail_msg: The provisioning name must be the just-published shared reservation.
+      no_log: true
+
+    - name: Preserve the consumed reservation even if provisioning later fails
+      ansible.builtin.set_stats:
+        data:
+          aap_allocation_request_id: "{{ aap_vm_reservation.request_id }}"
+          vm_name: "{{ vm_name }}"
+        aggregate: false
+        per_host: false
+      no_log: false
+
+    - name: Inspect the destination before copying
+      ansible.builtin.stat:
+        path: "{{ vm_dir }}/{{ vm_name }}.disk.qcow2"
+      register: aap_new_disk
+      no_log: true
+
+    - name: Refuse existing domain or disk collisions without replacement
+      ansible.builtin.assert:
+        that:
+          - vm_name not in aap_existing_domains.stdout_lines
+          - not aap_new_disk.stat.exists
+        fail_msg: A reserved name collides with existing data; preserve it and allocate another name.
+      no_log: true
+
+  tasks:
+    - name: Copy the saved golden image only to this new disk
       ansible.builtin.copy:
-        src: "{{ golden_image_path }}"
+        src: "{{ aap_golden_image_path }}"
         dest: "{{ vm_dir }}/{{ vm_name }}.disk.qcow2"
         remote_src: true
         force: false
+        mode: preserve
+      register: aap_created_disk
 
-    - name: Resize VM disk
-      ansible.builtin.command:
-        cmd: "qemu-img resize {{ vm_dir }}/{{ vm_name }}.disk.qcow2 {{ aap_disk_size }}"
+    - name: Refuse to modify a disk that this job did not copy
+      ansible.builtin.assert:
+        that: aap_created_disk.changed
+        fail_msg: The destination appeared before copying; preserve it and investigate the collision.
 
-    - name: Customize VM image
+    - name: Resize only the newly created disk
       ansible.builtin.command:
-        cmd: >-
-          virt-customize -a {{ vm_dir }}/{{ vm_name }}.disk.qcow2
-          --hostname {{ vm_name }}.{{ vault_domain }}
-          --selinux-relabel
+        argv: [qemu-img, resize, "{{ vm_dir }}/{{ vm_name }}.disk.qcow2", "{{ aap_disk_size }}"]
+      changed_when: true
 
-    - name: Create and start VM
-      ansible.builtin.command:
-        cmd: >-
-          virt-install
-          --name {{ vm_name }}
-          --vcpus {{ aap_vcpus }}
-          --memory {{ aap_memory_mb }}
-          --import
-          --graphics none
-          --osinfo detect=on,require=off
-          --disk path={{ vm_dir }}/{{ vm_name }}.disk.qcow2,format=qcow2
-          --network network={{ vm_network }}
-          --noautoconsole
+    - name: Provision fresh guest identity and pinned public host keys
+      block:
+        - name: Allocate a private temporary guest-key workspace on the selected hypervisor
+          ansible.builtin.tempfile:
+            state: directory
+            path: /tmp
+            prefix: aap-guest-hostkeys-
+          register: aap_guest_key_workspace
 
-    - name: Wait for VM to get DHCP lease
+        - name: Generate unique keys for this new guest
+          ansible.builtin.command:
+            argv: [ssh-keygen, -q, -t, "{{ item }}", -N, '', -f, "{{ aap_guest_key_workspace.path }}/ssh_host_{{ item }}_key"]
+          loop: [ed25519, ecdsa, rsa]
+          changed_when: true
+          no_log: true
+
+        - name: Retain only the generated public guest keys for later trust
+          ansible.builtin.slurp:
+            src: "{{ aap_guest_key_workspace.path }}/ssh_host_{{ item }}_key.pub"
+          loop: [ed25519, ecdsa, rsa]
+          register: aap_guest_public_keys
+          no_log: true
+
+        - name: Preserve those explicitly provisioned keys during first boot
+          ansible.builtin.copy:
+            dest: "{{ aap_guest_key_workspace.path }}/hostkeys.cfg"
+            content: "ssh_deletekeys: false\n"
+            mode: '0600'
+
+        - name: Customize only the new guest and install its fresh pinned keys
+          ansible.builtin.command:
+            argv:
+              - virt-customize
+              - -a
+              - "{{ vm_dir }}/{{ vm_name }}.disk.qcow2"
+              - --no-network
+              - --hostname
+              - "{{ vm_name }}.{{ vault_domain }}"
+              - --upload
+              - "{{ aap_guest_key_workspace.path }}/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key"
+              - --upload
+              - "{{ aap_guest_key_workspace.path }}/ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub"
+              - --upload
+              - "{{ aap_guest_key_workspace.path }}/ssh_host_ecdsa_key:/etc/ssh/ssh_host_ecdsa_key"
+              - --upload
+              - "{{ aap_guest_key_workspace.path }}/ssh_host_ecdsa_key.pub:/etc/ssh/ssh_host_ecdsa_key.pub"
+              - --upload
+              - "{{ aap_guest_key_workspace.path }}/ssh_host_rsa_key:/etc/ssh/ssh_host_rsa_key"
+              - --upload
+              - "{{ aap_guest_key_workspace.path }}/ssh_host_rsa_key.pub:/etc/ssh/ssh_host_rsa_key.pub"
+              - --mkdir
+              - /etc/cloud/cloud.cfg.d
+              - --upload
+              - "{{ aap_guest_key_workspace.path }}/hostkeys.cfg:/etc/cloud/cloud.cfg.d/99-aap-hostkeys.cfg"
+              - --selinux-relabel
+              - --run-command
+              - truncate -s 0 /etc/machine-id
+              - --run-command
+              - if command -v subscription-manager >/dev/null 2>&1; then subscription-manager clean; fi
+          changed_when: true
+          no_log: true
+      always:
+        - name: Remove only this run's private temporary guest-key workspace
+          ansible.builtin.file:
+            path: "{{ aap_guest_key_workspace.path }}"
+            state: absent
+          when:
+            - aap_guest_key_workspace.path is defined
+            - aap_guest_key_workspace.path is match('^/tmp/aap-guest-hostkeys-[A-Za-z0-9_-]+$')
+          no_log: true
+
+    - name: Retain public trust evidence before the guest can start
+      ansible.builtin.set_stats:
+        data:
+          aap_instance_trust:
+            vm_name: "{{ vm_name }}"
+            allocation_request_id: "{{ aap_vm_reservation.request_id }}"
+            hypervisor: "{{ aap_hypervisor_pin }}"
+            guest_host_keys: >-
+              {{ aap_guest_public_keys.results | map(attribute='content') | map('b64decode') |
+                 map('aap_public_host_key') | list }}
+        aggregate: false
+        per_host: false
+      no_log: false
+
+    - name: Reverify the pinned hypervisor and live isolation immediately before guest startup
+      ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
+
+    - name: Create and start only the new guest on the verified isolated network
       ansible.builtin.command:
-        cmd: "virsh net-dhcp-leases {{ vm_network }}"
+        argv:
+          - virt-install
+          - --connect
+          - qemu:///system
+          - --name
+          - "{{ vm_name }}"
+          - --vcpus
+          - "{{ aap_vcpus | string }}"
+          - --memory
+          - "{{ aap_memory_mb | string }}"
+          - --import
+          - --graphics
+          - none
+          - --osinfo
+          - detect=on,require=off
+          - --disk
+          - "path={{ vm_dir }}/{{ vm_name }}.disk.qcow2,format=qcow2"
+          - --network
+          - "network={{ vm_network }}"
+          - --noautoconsole
+      changed_when: true
+      no_log: true
+
+    - name: Observe DHCP only on this hypervisor's selected network
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', domifaddr, "{{ vm_name }}", --source, lease]
       register: dhcp_leases
-      until: dhcp_leases.stdout is search(vm_name)
+      until: dhcp_leases.stdout is search('ipv4')
       retries: 30
       delay: 5
+      changed_when: false
+      no_log: true
 
-    - name: Extract VM IP from DHCP leases
+    - name: Build the new instance's hypervisor-bound route
       ansible.builtin.set_fact:
-        new_vm_ip: >-
-          {{ dhcp_leases.stdout_lines
-             | select('search', vm_name)
-             | first
-             | regex_search('(\d+\.\d+\.\d+\.\d+)')
-          }}
+        new_vm_ip: "{{ dhcp_leases.stdout | aap_guest_ipv4 }}"
+        aap_fresh_guest_keys: >-
+          {{ aap_guest_public_keys.results | map(attribute='content') | map('b64decode') |
+             map('aap_public_host_key') | list }}
+      no_log: true
 
-    - name: Display VM details
-      ansible.builtin.debug:
-        msg: "VM {{ vm_name }} is at {{ new_vm_ip }}. Pass these as extra_vars: -e vm_name={{ vm_name }} -e vm_ip={{ new_vm_ip }}"
+    - name: Bind guest SSH and public APIs to the same newly created instance
+      ansible.builtin.set_fact:
+        aap_instance_route:
+          vm_name: "{{ vm_name }}"
+          vm_ip: "{{ new_vm_ip }}"
+          aap_hostname: "https://{{ vm_name }}.{{ vault_domain }}"
+          hypervisor: "{{ aap_hypervisor_pin }}"
+          guest_host_keys: "{{ aap_fresh_guest_keys }}"
+      no_log: true
 
-    - name: Increment VM counter
-      ansible.builtin.copy:
-        content: "{{ (vm_counter | int) + 1 }}"
-        dest: "{{ vmcounter_file }}"
-        mode: "0644"
+    - name: Publish the verified route into the shared encrypted instance registry
+      aap_reserve_vm_name:
+        repository: "{{ lookup('ansible.builtin.env', 'AAP_ALLOCATION_REPOSITORY') }}"
+        prefix: "aap{{ aap_version_short }}-{{ vm_suffix }}"
+        hypervisor_id: "{{ aap_hypervisor_pin.machine_id }}"
+        request_id: "{{ aap_vm_reservation.request_id }}"
+        instance_route: "{{ aap_instance_route | aap_instance_route }}"
+      delegate_to: localhost
+      become: false
+      no_log: true
 
-    - name: Pass the new instance identity to downstream workflow jobs
+    - name: Pass only the verified new instance handoff to downstream jobs
       ansible.builtin.set_stats:
         data:
           vm_name: "{{ vm_name }}"
           vm_ip: "{{ new_vm_ip }}"
-          aap_hostname: "https://{{ new_vm_ip }}"
+          aap_hostname: "{{ aap_instance_route.aap_hostname }}"
+          aap_instance_route: "{{ aap_instance_route }}"
         per_host: false
         aggregate: false
+      no_log: false
