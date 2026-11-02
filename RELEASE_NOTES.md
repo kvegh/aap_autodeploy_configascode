@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.21.5
+
+Document portable namespace fix `e8ab5ac`, encrypted reference correction
+`0c1cc64` and complete nineteen-template credential dependency validation.
+
 ## 0.21.4
 
 Resolve shared external dependencies through their portable aliases. Align the

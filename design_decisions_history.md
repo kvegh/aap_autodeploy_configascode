@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Resolve portable credential namespaces before fresh import — 2026-11-02
+
+Implementation `e8ab5ac` and companion `0c1cc64` align shared external aliases and
+the five new isolated recovery/observer definitions with the environment Vault
+name actually created by the captured use case. The earlier manual capture kept
+the source-only name for those references, which would be unavailable on a fresh
+controller. Actual seed credential IDs/scopes are preserved; only encrypted
+blueprint references change. Every one of nineteen templates now resolves its
+credentials against actual captured or base-bootstrap definitions. Twenty-five
+focused fixtures pass, including portable external-alias recognition.
+
 ## Preserve accepted association intent when source membership changes — 2026-11-02
 
 Implementation `5583f42` applies unordered association and workflow-node deltas
