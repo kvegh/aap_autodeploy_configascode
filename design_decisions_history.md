@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Keep selected setup's seed identity and trust separate from its target — 2026-11-02
+
+Implementation `0684007` fixes readiness failures found before the first selected
+AIOps import. The execution environment lacked the seed's existing private
+issuer, and source authentication inherited the fresh target's base password.
+The selector now requires an explicit encrypted seed login. It reuses the
+existing source CA file for source authentication, reads, job launch/wait and
+temporary-token cleanup. Certificate/hostname validation stays enabled; the
+target retains its normal trust and login. No global trust or DNS change is made.
+
+Two existing source credential associations have no organization. Exact
+encrypted source-local name/ID/type pins permit those already-reviewed inputs
+without changing ACLs or moving credentials. Registered route credentials still
+require the expected organization, and case Git/Vault boundaries are preserved.
+These narrow source pins do not resolve the separate universal ownership design.
+
+Four real-module TLS fixtures pass in both templating modes, covering verified
+launch/wait/cleanup and secure refusal paths. Selector and login regressions,
+syntax and production lint pass. Actual source/target API prechecks and scoped
+credential calculation pass, with temporary-token revocation verified. The local
+preflight used protected captures/route state and independently verified DNS
+answers; it did not run registry Git fetch, private clone or child jobs. No
+prerequisite, AIOps configuration import or application execution is claimed.
+
 ## Verify the AIOps companion cutover after scoped token input — 2026-11-02
 
 Companion implementation `30aecfd` moves AIOps platform CaC to its own private

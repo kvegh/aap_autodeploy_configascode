@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.24.4
+
+Document selected setup readiness implementation `0684007`, its scoped seed
+trust/login, exact preserved source-credential pins, successful API preflight
+and validation limits. A live configuration import remains a separate action.
+
 ## 0.24.3
 
 Fix selected setup's seed API connections by reusing the existing scoped CA
