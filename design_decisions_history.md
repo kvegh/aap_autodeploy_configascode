@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Preserve accepted association intent when source membership changes — 2026-11-02
+
+Implementation `5583f42` applies unordered association and workflow-node deltas
+to accepted desired state. A source credential removal must not discard portable
+writer/Vault associations that intentionally exist only in CaC. Desired-only
+members and excluded source nodes retain their baseline intent. Arbitrary lists
+inside variable/input mappings keep meaningful order even when their keys are
+named like Controller associations. Retained dependency metadata is name-sorted.
+All twenty-five focused fixtures pass, including both regressions and real
+encrypted Git update/removal behavior. No production baseline/update was run.
+
 ## Review complete owned state before updating encrypted CaC — 2026-11-02
 
 Implementation `055b9dc` adds `capture-aap-cac.yml` and bounded Controller API

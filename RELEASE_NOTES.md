@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.21.3
+
+Document accepted-association delta fix `5583f42`, preservation of desired-only
+bootstrap dependencies and meaningful user-variable list order.
+
 ## 0.21.2
 
 Merge unordered association/workflow-node membership deltas into desired state
