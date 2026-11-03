@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.28.1
+
+Document shared importer implementation `305b0cd`, its explicit native API
+authentication boundary and data-driven resource/lifecycle decisions. Full
+offline regression passes170tests, with real-capture native-mode rendering,
+version-matched activation transport, TLS source trust and selector forwarding.
+Impacted production lint and staged public-data review pass. Publication and
+template metadata updates remain separate from executing configuration imports.
+
 ## 0.28.0
 
 Consolidate five project imports into `deploy-cac-project.yml`, with fixed project

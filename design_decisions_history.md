@@ -1799,3 +1799,37 @@ canonical path and a narrow declared per-template shared-inventory reference,
 while retaining older portable inventory aliases. This ordering avoids breaking
 saved jobs during private publication. The implementation was validated offline;
 SCM synchronization3165 completed at the same commit without running an import.
+
+## One project importer and explicit API credentials — 305b0cd
+
+Commit305b0cd replaces five import engines with one resource-driven playbook.
+Separate Job Templates keep their fixed human-readable project IDs and saved
+repository-specific read token/Vault pair. The ID derives the private repository
+and canonical capture; protected environment data supplies its owner namespace.
+Old playbook names are only fixed-ID aliases. Capture metadata maps existing
+resource lists rather than introducing project-specific task branches or arbitrary
+includes, preserving nested data and literal runtime templates.
+
+The operator selects the inventory instance and an explicit native destination
+API credential at launch. Its endpoint must match stored ansible_fqdn, and TLS
+verification is mandatory. All AAP API requests run in the source execution
+environment; installer-password scraping, SSH API delegation and source bearer
+fallback are excluded from project import, selector authentication and prerequisite
+API login. Existing infrastructure custom types are unchanged; their review was
+explicitly deferred. Standalone import may target its source AAP, while the
+optional preparation selector retains its separate fresh-target checks.
+
+Shared resource handlers establish group skeletons before relationships, apply
+EDA project settings completely, normalize Event Stream organization aliases,
+and preserve existing activation states while creating new definitions disabled.
+Persistent EDA and dedicated inventory-service access have explicit API-only
+creation/reuse and proved-unsaved-token cleanup. Existing masked or ambiguous
+access is preserved for explicit recovery. Windows public trust must be prepared
+as encrypted input; missing trust never triggers an SSH workaround.
+
+The actual source requirements cache matches the native-module fixtures. Full
+offline regression passes170tests; focused real-capture rendering runs both
+Ansible native modes, and impacted production lint passes. These checks establish
+source behavior without importing a use case or running application/activation
+operations. SCM publication and preserved-ID template metadata migration are
+verified separately; functional use-case tests remain outside this change.
