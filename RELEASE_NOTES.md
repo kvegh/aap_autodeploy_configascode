@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.26.0
+
+Bootstrap five repository-specific Git/Vault pairs with canonical names and
+independent protected Vault inputs. Reject missing/crossed pairs and preserve
+existing secrets on reruns. Selector fixtures verify exact source-only Vault
+pins for every repository and refuse duplicate cac-ID Vaults on children.
+Seven bootstrap and ten selector tests pass in both native modes; impacted
+playbook/task production lint passes. Runtime and registry Vaults remain separate.
+
 ## 0.25.3
 
 Document the explicit inventory FQDN decision and companion capture, including

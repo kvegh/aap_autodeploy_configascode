@@ -117,3 +117,10 @@ explicit seed/registered-instance/repository prompts and a twelve-hour overall t
 Importing that capture creates the template; a local declaration alone does not
 make it available in AAP. The base workflow and selector are not launched by
 configuration import. No live selector run or new fresh deployment is claimed.
+
+Each selected importer retains the read token and CaC Vault credential named
+for its own secrets repository. The selector validates captured source-only
+name/ID/type pins for organization-null credentials, then adds the existing
+registry dependencies and selected Machine credential. It rejects multiple
+`cac` Vaults on a child. This naming/scope maintenance does not implement the
+pending inventory-based destination lookup or target API-credential redesign.

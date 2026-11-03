@@ -556,31 +556,36 @@ checkout. A token stored only inside the repository it unlocks cannot bootstrap
 its own download. Different tokens can use the same custom credential type;
 changing one use case's token must not replace another use case's credential.
 
-The encrypted base can also hold bootstrap credential inputs for a trusted
-replacement AAP: its base-repository Git token, CaC Vault credential, and
-use-case repository tokens. The seed must already have the initial Git token and
-Vault password independently. Storing the Vault password inside the encrypted
-base supports provisioning another trusted instance; it cannot unlock the first
-seed or recover a lost decryption key by itself. Keep the initial recovery copy
-separately. Every instance receiving these credentials gains their configuration
-access and belongs to the same trust boundary. Step 04 creates the four
-required Git-token credentials, the optional dedicated AIOps credential and the
-Vault credential with identifier `cac`
-from these inputs, after applying shared base configuration. It creates or reuses
-the compatible `CAC_GIT_TOKEN` credential type. An existing name with another
-organization, credential type, Vault identifier, or Git injection schema stops
-the run for review. Existing hidden secret values are preserved on reruns;
-credential rotation remains a separate operation. Both bootstrap input mappings
-may be omitted for a base that does not provision replacement access; supplying
-only part of the set is rejected.
+The encrypted base holds five independent repository credential pairs for a
+trusted replacement AAP. Each pair has a repository read-token credential and a
+CaC Vault credential. The seed needs the initial base pair independently; a
+password or token stored only inside the repository it unlocks cannot bootstrap
+that download. Keep the initial recovery copy separately.
 
-For AIOps's separate private companion repository, add
-`cac_bootstrap_git_credentials.aiops.token` to encrypted base. Its default
-credential name is `AIOps CaC Git Read`; `aap_credential_name` can override that
-name consistently with the reviewed importer capture. Give this token read-only
-Contents access to the AIOps companion repository. Keep the existing base token
-and other use-case tokens unchanged. Older base configurations without `aiops`
-retain their previous bootstrap with four Git credentials.
+| Secrets repository | Read-token credential | CaC Vault credential |
+| --- | --- | --- |
+| `aap_autodeploy_configascode-secrets` | `aap_autodeploy_configascode-secrets CaC repo read token` | `aap_autodeploy_configascode-secrets CaC vault cred` |
+| `assistant-team-secrets` | `assistant-team-secrets CaC repo read token` | `assistant-team-secrets CaC vault cred` |
+| `disconnected-windows-patching-secrets` | `disconnected-windows-patching-secrets CaC repo read token` | `disconnected-windows-patching-secrets CaC vault cred` |
+| `automation-orchestrator-secrets` | `automation-orchestrator-secrets CaC repo read token` | `automation-orchestrator-secrets CaC vault cred` |
+| `aiops-selfhealing-demo-secrets` | `aiops-selfhealing-demo-secrets CaC repo read token` | `aiops-selfhealing-demo-secrets CaC vault cred` |
+
+Bootstrap inputs use the same keys (`base`, `assistant_team`,
+`windows_disconnected`, `orchestrator`, `aiops`) in
+`cac_bootstrap_git_credentials` and `cac_bootstrap_vault_credentials`.
+Each Vault entry supplies its name, `vault_id: cac`, and protected password.
+When bootstrap is configured, all five pairs are required. Existing hidden
+secrets are preserved on reruns; rotation and rekeying are separate operations.
+Both mappings may be omitted when replacement-access bootstrap is not wanted.
+
+`Cac_git_token_type` is the reusable custom schema, not a credential containing a
+token. Its `CAC_GIT_TOKEN` injector lets playbooks download private encrypted CaC.
+Normal Source Control credentials handle AAP's SCM checkout of playbook projects;
+they are not automatically available for arbitrary playbook downloads. Public
+playbook checkout, private CaC read/decrypt, and target AAP API authentication are
+separate purposes. Runtime environment Vaults and the instance-registry Vault
+keep their own bindings. Each child receives exactly its repository's CaC pair,
+never several Vault credentials with the same `cac` identifier.
 
 This step provisions configuration access, not the deployment project's own
 inventories, environment credentials, projects, Job Templates or workflow. Those

@@ -107,6 +107,124 @@ class UseCaseSetupTests(unittest.TestCase):
             setup.distinct_controllers([{"uuid": "seed"}], [{"uuid": "fresh"}])
         )
 
+    def test_each_repository_uses_only_its_pinned_source_vault(self):
+        repositories = [
+            "aap_autodeploy_configascode-secrets",
+            "assistant-team-secrets",
+            "disconnected-windows-patching-secrets",
+            "automation-orchestrator-secrets",
+            "aiops-selfhealing-demo-secrets",
+        ]
+        organization = "Fixture organization"
+
+        def cred(identity, name, kind, owner, type_id, type_name, vault_id=None):
+            return {
+                "id": identity,
+                "name": name,
+                "kind": kind,
+                "organization": owner,
+                "credential_type": type_id,
+                "inputs": {} if vault_id is None else {"vault_id": vault_id},
+                "summary_fields": {
+                    "organization": None if owner is None else {"name": organization},
+                    "credential_type": {"name": type_name},
+                },
+            }
+
+        route = [
+            cred(
+                90,
+                "AAP AutoDeploy instance registry reader",
+                "cloud",
+                1,
+                43,
+                "AAP AutoDeploy instance registry reader",
+            ),
+            cred(
+                91,
+                "AAP AutoDeploy instance registry vault",
+                "vault",
+                1,
+                8,
+                "Vault",
+                "instance_registry",
+            ),
+            cred(92, "Registered machine", "ssh", 1, 1, "Machine"),
+        ]
+        pins = {
+            repo
+            + " CaC vault cred": {
+                "id": 200 + index,
+                "credential_type": 8,
+                "credential_type_name": "Vault",
+            }
+            for index, repo in enumerate(repositories)
+        }
+        base_git = repositories[0] + " CaC repo read token"
+        pins[base_git] = {
+            "id": 100,
+            "credential_type": 33,
+            "credential_type_name": "Cac_git_token_type",
+        }
+        for index, repo in enumerate(repositories):
+            with self.subTest(repository=repo):
+                git = cred(
+                    100 + index,
+                    repo + " CaC repo read token",
+                    "cloud",
+                    None if index == 0 else 1,
+                    33,
+                    "Cac_git_token_type",
+                )
+                vault = cred(
+                    200 + index,
+                    repo + " CaC vault cred",
+                    "vault",
+                    None,
+                    8,
+                    "Vault",
+                    "cac",
+                )
+                environment = cred(93, "Environment Vault", "vault", 1, 8, "Vault", "")
+                original = [git, vault, environment]
+                expected = [x["name"] for x in original]
+                selected = setup.scoped_launch_credentials(
+                    original, expected, route, organization, "Registered machine", pins
+                )
+                self.assertEqual(
+                    set(selected), {100 + index, 200 + index, 93, 90, 91, 92}
+                )
+                bad = copy.deepcopy(pins)
+                bad[vault["name"]]["id"] += 50
+                with self.assertRaises(AnsibleFilterError):
+                    setup.scoped_launch_credentials(
+                        original,
+                        expected,
+                        route,
+                        organization,
+                        "Registered machine",
+                        bad,
+                    )
+                other_index = (index + 1) % len(repositories)
+                other = cred(
+                    200 + other_index,
+                    repositories[other_index] + " CaC vault cred",
+                    "vault",
+                    None,
+                    8,
+                    "Vault",
+                    "cac",
+                )
+                with self.assertRaises(AnsibleFilterError):
+                    setup.scoped_launch_credentials(
+                        original + [other],
+                        expected + [other["name"]],
+                        route,
+                        organization,
+                        "Registered machine",
+                        pins,
+                    )
+
     def test_scoped_credentials_are_preserved_and_machine_is_bound_to_registry(self):
         def credential(identity, name, kind=None, vault_id=None):
             return {
@@ -151,7 +269,13 @@ class UseCaseSetupTests(unittest.TestCase):
         shared = copy.deepcopy(original)
         shared[0].update(organization=None, credential_type=17)
         shared[0]["summary_fields"]["organization"] = None
-        pins = {"Case Git": {"id": 1, "credential_type": 17, "credential_type_name": "Case Git"}}
+        pins = {
+            "Case Git": {
+                "id": 1,
+                "credential_type": 17,
+                "credential_type_name": "Case Git",
+            }
+        }
         with self.assertRaises(AnsibleFilterError):
             resolve(shared, route)
         self.assertEqual(resolve(shared, route, pins), [1, 2, 3, 4, 5, 6])
@@ -173,8 +297,13 @@ class UseCaseSetupTests(unittest.TestCase):
         changed_route = copy.deepcopy(route)
         changed_route[0].update(organization=None, credential_type=18)
         changed_route[0]["summary_fields"]["organization"] = None
-        reader_pin = {route[0]["name"]: {"id": 4, "credential_type": 18,
-                                       "credential_type_name": route[0]["name"]}}
+        reader_pin = {
+            route[0]["name"]: {
+                "id": 4,
+                "credential_type": 18,
+                "credential_type_name": route[0]["name"],
+            }
+        }
         with self.assertRaises(AnsibleFilterError):
             resolve(original, changed_route, reader_pin)
         # A previous Machine is replaced only with the exact registry-bound one.

@@ -147,3 +147,10 @@ Local tests exercise semantic/removal/conflict fixtures, URL/visibility failures
 and real encrypted Git preview, initialization, update and removal. Runtime AAP
 template installation and a successful real preview must be reported separately
 from a YAML declaration or local fixture.
+
+The current AutoDeploy adapter reads and encrypts the base configuration
+repository with its own named read token and CaC Vault credential. Other
+repository adapters and independent rekey routing remain future work in Beads
+`bead-wd-72f.2`; new credential names alone do not add those capabilities. A fresh
+preview is required after credential/capture maintenance before accepting any
+baseline.
