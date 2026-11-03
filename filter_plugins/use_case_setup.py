@@ -200,7 +200,7 @@ def scoped_launch_credentials(
         isinstance(original, list)
         and isinstance(expected_names, list)
         and isinstance(route_credentials, list)
-        and len(route_credentials) == 3,
+        and len(route_credentials) == 2,
         "Resolve the exact saved and registered route credential identities.",
     )
     preserved = [entry for entry in original if entry.get("kind") != "ssh"]
@@ -208,16 +208,19 @@ def scoped_launch_credentials(
         sorted(entry.get("name", "") for entry in preserved) == sorted(expected_names),
         "The importer credential associations differ from the reviewed capture.",
     )
-    reader, registry_vault, machine = route_credentials
+    reader, machine = route_credentials
     require(
         reader.get("name") == "AAP AutoDeploy instance registry reader"
         and reader.get("summary_fields", {}).get("credential_type", {}).get("name")
         == reader["name"]
-        and registry_vault.get("kind") == "vault"
-        and registry_vault.get("inputs", {}).get("vault_id") == "instance_registry"
         and machine.get("kind") == "ssh"
         and machine.get("name") == machine_name,
-        "The selected route requires its fixed reader, distinct registry Vault and bound Machine.",
+        "The selected route requires its fixed reader and bound Machine.",
+    )
+    require(
+        len([entry for entry in preserved if entry.get("kind") == "vault"
+             and entry.get("inputs", {}).get("vault_id") == "cac"]) == 1,
+        "Retain the saved AutoDeploy CaC Vault credential for registry encryption and decryption.",
     )
     combined = preserved + route_credentials
     pins = {} if shared_seed_credentials is None else shared_seed_credentials
@@ -260,7 +263,7 @@ def scoped_launch_credentials(
     ]
     require(
         len(vault_ids) == len(set(vault_ids)),
-        "Use distinct Vault identities; never replace a case Vault with the registry secret.",
+        "Use one saved CaC Vault credential and distinct environment Vault identities.",
     )
     identities = [entry["id"] for entry in combined]
     require(

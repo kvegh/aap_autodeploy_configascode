@@ -287,7 +287,7 @@
               - aap_instance_route.hypervisor.machine_credential_name | length > 0
           no_log: true
 
-        - name: Resolve only the registry reader, distinct registry Vault and bound Machine
+        - name: Resolve only the registry reader and bound Machine
           ansible.builtin.uri:
             url: >-
               {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/credentials/?name={{ item | urlencode }}&page_size=200
@@ -298,7 +298,6 @@
             follow_redirects: none
           loop:
             - AAP AutoDeploy instance registry reader
-            - AAP AutoDeploy instance registry vault
             - "{{ aap_instance_route.hypervisor.machine_credential_name }}"
           register: aap_selected_route_credentials
           no_log: true
@@ -313,13 +312,11 @@
           loop: "{{ aap_selected_route_credentials.results }}"
           no_log: true
 
-        - name: Verify the Machine and distinct registry Vault bindings
+        - name: Verify the reader and Machine bindings while retaining the saved CaC Vault
           ansible.builtin.assert:
             that:
               - aap_selected_route_credentials.results[0].json.results[0].summary_fields.credential_type.name == 'AAP AutoDeploy instance registry reader'
-              - aap_selected_route_credentials.results[1].json.results[0].kind == 'vault'
-              - aap_selected_route_credentials.results[1].json.results[0].inputs.vault_id == 'instance_registry'
-              - aap_selected_route_credentials.results[2].json.results[0].kind == 'ssh'
+              - aap_selected_route_credentials.results[1].json.results[0].kind == 'ssh'
           no_log: true
 
         - name: Prepare only the selected use-case prerequisites and verify completion

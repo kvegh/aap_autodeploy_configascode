@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.28.6
+
+Reuse the AutoDeploy secrets repository's existing CaC Vault credential for
+instance-registry encryption and decryption. Preparation forwards only the
+registry reader and pinned Machine alongside its saved credentials. Remove the
+redundant registry Vault from selection and saved deployment definitions.
+Verify the existing registry with the shared key without re-encryption; retain
+other credential boundaries and validate real single-key registry reads.
+
 ## 0.28.5
 
 Document direct-import implementation `b5fb34b`, the owner-approved

@@ -42,6 +42,8 @@ Its Verify SSL flag must be true. It never selects a source bearer as target aut
 AAP inventory hosts store explicit FQDNs without scheme/path; VM placement groups
 carry `hypervisor_host`. The separate preparation stage still requires the
 completed protected instance route and pinned infrastructure SSH credentials.
+Its saved AutoDeploy CaC Vault credential also decrypts the instance registry;
+only the reader and Machine credentials are added for preparation routing.
 Public origin/DNS and distinct controller checks remain. There is no guessed
 hostname suffix, free-form destination URL or SSH API-login fallback.
 
@@ -62,7 +64,8 @@ only the destination instance and diagnostic choice as launch variables: its
 project ID, repository and capture file remain fixed on its saved template.
 
 The separate prerequisite child additionally receives the existing registry
-reader, distinct registry Vault and pinned Machine credential. Stage05 uses
+reader and pinned Machine credential, retaining its saved AutoDeploy CaC Vault
+for registry decryption. Stage05 uses
 explicit native API auth for PAH preparation and never scrapes installer
 passwords. Existing infrastructure SSH preparation remains separate from API
 requests. This distinction does not create or redesign any custom credential

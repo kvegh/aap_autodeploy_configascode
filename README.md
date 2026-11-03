@@ -613,8 +613,10 @@ token. Its `CAC_GIT_TOKEN` injector lets playbooks download private encrypted Ca
 Normal Source Control credentials handle AAP's SCM checkout of playbook projects;
 they are not automatically available for arbitrary playbook downloads. Public
 playbook checkout, private CaC read/decrypt, and target AAP API authentication are
-separate purposes. Runtime environment Vaults and the instance-registry Vault
-keep their own bindings. Each child receives exactly its repository's CaC pair,
+separate purposes. Runtime environment Vaults keep their own bindings. The
+AutoDeploy repository's existing CaC Vault credential encrypts and decrypts the
+shared instance registry; a separate registry Vault credential is not required.
+Each child receives exactly its repository's CaC pair,
 never several Vault credentials with the same `cac` identifier.
 
 This step provisions configuration access, not the deployment project's own

@@ -123,7 +123,6 @@ class UseCaseSetupTests(unittest.TestCase):
         original = [credential(1, "Case Git"), credential(2, "Case Vault", "vault", "cac"),
                     credential(3, "Environment Vault", "vault", "")]
         route = [credential(4, "AAP AutoDeploy instance registry reader"),
-                 credential(5, "Registry Vault", "vault", "instance_registry"),
                  credential(6, "Registered Machine", "ssh")]
         native = credential(7, "Destination API", type_name="Red Hat Ansible Automation Platform")
         native.update(credential_type=1, inputs={"host": "https://fresh.example.invalid"})
@@ -146,7 +145,7 @@ class UseCaseSetupTests(unittest.TestCase):
                         "aap_instance_route": {"hypervisor": {"machine_credential_name": "Registered Machine"}},
                         "aap_instance_key": "fixture-target", "aap_selected_importer_extra": {},
                     }
-                    expected = [1, 2, 3, 4, 5, 6, 7] if preparation else [1, 2, 3, 7]
+                    expected = [1, 2, 3, 4, 6, 7] if preparation else [1, 2, 3, 7]
                     fixture = [{"hosts": "localhost", "connection": "local", "gather_facts": False,
                                 "vars": variables, "tasks": tasks[:3] + [
                                     {"ansible.builtin.set_fact": {"rendered_extra": launch["extra_vars"],
@@ -253,15 +252,6 @@ class UseCaseSetupTests(unittest.TestCase):
                 43,
                 "AAP AutoDeploy instance registry reader",
             ),
-            cred(
-                91,
-                "AAP AutoDeploy instance registry vault",
-                "vault",
-                1,
-                8,
-                "Vault",
-                "instance_registry",
-            ),
             cred(92, "Registered machine", "ssh", 1, 1, "Machine"),
         ]
         pins = {
@@ -305,7 +295,7 @@ class UseCaseSetupTests(unittest.TestCase):
                     original, expected, route, organization, "Registered machine", pins
                 )
                 self.assertEqual(
-                    set(selected), {100 + index, 200 + index, 93, 90, 91, 92}
+                    set(selected), {100 + index, 200 + index, 93, 90, 92}
                 )
                 bad = copy.deepcopy(pins)
                 bad[vault["name"]]["id"] += 50
@@ -358,12 +348,6 @@ class UseCaseSetupTests(unittest.TestCase):
         ]
         route = [
             credential(4, "AAP AutoDeploy instance registry reader"),
-            credential(
-                5,
-                "AAP AutoDeploy instance registry vault",
-                "vault",
-                "instance_registry",
-            ),
             credential(6, "Registered Machine", "ssh"),
         ]
         expected = [entry["name"] for entry in original]
@@ -378,7 +362,7 @@ class UseCaseSetupTests(unittest.TestCase):
                 pins,
             )
 
-        self.assertEqual(resolve(original, route), [1, 2, 3, 4, 5, 6])
+        self.assertEqual(resolve(original, route), [1, 2, 3, 4, 6])
         shared = copy.deepcopy(original)
         shared[0].update(organization=None, credential_type=17)
         shared[0]["summary_fields"]["organization"] = None
@@ -391,7 +375,7 @@ class UseCaseSetupTests(unittest.TestCase):
         }
         with self.assertRaises(AnsibleFilterError):
             resolve(shared, route)
-        self.assertEqual(resolve(shared, route, pins), [1, 2, 3, 4, 5, 6])
+        self.assertEqual(resolve(shared, route, pins), [1, 2, 3, 4, 6])
         for changed_id in (True, "1"):
             changed_pins = copy.deepcopy(pins)
             changed_pins["Case Git"]["id"] = changed_id
@@ -422,14 +406,14 @@ class UseCaseSetupTests(unittest.TestCase):
         # A previous Machine is replaced only with the exact registry-bound one.
         self.assertEqual(
             resolve(original + [credential(7, "Previous Machine", "ssh")], route),
-            [1, 2, 3, 4, 5, 6],
+            [1, 2, 3, 4, 6],
         )
         for changed in (original[:-1], original + [credential(8, "Unreviewed Git")]):
             with self.assertRaises(AnsibleFilterError):
                 resolve(changed, route)
         for index, change in (
-            (1, {"inputs": {"vault_id": "cac"}}),
-            (2, {"name": "Unregistered Machine"}),
+            (1, {"kind": "vault"}),
+            (1, {"name": "Unregistered Machine"}),
             (0, {"summary_fields": {"organization": {"name": "Other"}}}),
         ):
             changed = copy.deepcopy(route)

@@ -72,7 +72,10 @@ before target connections. There is no free-form URL or old-host fallback.
 
 Attach `AAP AutoDeploy instance registry reader`, which injects the separately
 scoped `AAP_INSTANCE_REGISTRY_TOKEN` and `AAP_INSTANCE_REGISTRY_REPOSITORY`, plus
-the named CaC Vault and environment Vault. This avoids replacing a use-case's
+`aap_autodeploy_configascode-secrets CaC vault cred` (Vault ID `cac`) and the
+environment Vault. The same AutoDeploy CaC credential encrypts and decrypts the
+registry; no separate instance-registry Vault credential is required.
+This avoids replacing a use-case's
 own `CAC_GIT_TOKEN`. Guest stages also require the selected hypervisor's Machine
 credential. Their private job-local known-hosts file trusts the registered
 hypervisor and newly generated guest public keys. Both SSH hops require strict

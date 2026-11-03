@@ -566,9 +566,7 @@ class RoutingTests(unittest.TestCase):
                 "-i",
                 "localhost,",
                 "--vault-id",
-                "cac@" + str(other_password),
-                "--vault-id",
-                "instance_registry@" + str(password),
+                "cac@" + str(password),
                 str(fixture),
             ]
             for extra, success in (
@@ -600,6 +598,12 @@ class RoutingTests(unittest.TestCase):
             self.assertEqual(
                 git(remote, "rev-list", "--count", "main").stdout.strip(), "1"
             )
+            wrong_key = ["cac@" + str(other_password) if value == "cac@" + str(password) else value
+                         for value in base]
+            refused = subprocess.run(wrong_key + ["-e", json.dumps({"aap_instance_key": "aap27-test-15"})],
+                                     env=env, text=True, capture_output=True, timeout=45)
+            self.assertNotEqual(refused.returncode, 0)
+            self.assertNotIn("fixture-reader-canary", refused.stdout + refused.stderr)
 
 
 if __name__ == "__main__":
