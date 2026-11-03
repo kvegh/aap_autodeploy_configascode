@@ -1833,3 +1833,29 @@ Ansible native modes, and impacted production lint passes. These checks establis
 source behavior without importing a use case or running application/activation
 operations. SCM publication and preserved-ID template metadata migration are
 verified separately; functional use-case tests remain outside this change.
+
+
+## Project-derived deployment names — 3028df4
+
+Commit `3028df4` gives the five project deployment templates the display names
+requested by the operator. Hyphens and underscores separate ID words; word order
+is retained, first letters are capitalized, and AIOps/AAP use explicit acronym
+overrides. A single tested helper derives selector lookups from project IDs, so
+the public catalog no longer maintains independent display-name strings.
+Repository names and project IDs remain unchanged.
+
+The five existing production templates were renamed in place, including the
+matching AutoDeploy survey title. Encrypted template definitions, selector
+credential keys and extraction inventory-reference keys were aligned. Existing
+IDs, repository credentials, launch settings, grants, schedules and numeric
+workflow links were preserved; no application template or SCM Project was renamed.
+Current protected diagnostic wording was copied from the five source surveys
+into the desired capture without weakening secret logging.
+
+Focused naming/selector, extraction and version regressions passed 28 tests;
+production lint passed for the changed catalog. Protected readback compared all
+124 template identities and all 76 workflow nodes. Eighteen current encrypted
+YAML files across the five private repositories had no remaining old deployment
+name references; historical migration evidence remains unchanged. Publication
+and SCM synchronization do not establish a successful project import, and no
+import, application job or activation was run for this naming change.

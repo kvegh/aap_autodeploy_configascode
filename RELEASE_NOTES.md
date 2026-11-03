@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.28.3
+
+Document implementation `3028df4` and the verified in-place naming update.
+Focused regressions pass 28 tests and changed-catalog production lint passes.
+Protected readback preserves all template identities and workflow links; current
+private captures have no old deployment names. No use-case import was run.
+
 ## 0.28.2
 
 Derive the five deployment Job Template names from their fixed project IDs,

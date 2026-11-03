@@ -27,6 +27,8 @@ Hyphens and underscores separate words; AIOps and AAP retain their capitalizatio
 The selector derives these names from the same rule. Existing template IDs,
 repository credentials and workflow links are preserved. See the
 [project import guide](docs/cac-project-import.md) for the full mapping.
+The naming change passed focused selector, extraction and version regressions;
+production readback preserved credentials, permissions, schedules and workflow links.
 
 Project captures now use `vaults/cac/<project-id>-cac-vault.yml` inside their
 separate `<project-id>-secrets` repositories. The generic importer reads only
