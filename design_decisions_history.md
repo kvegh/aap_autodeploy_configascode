@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Resolve resource templates when survey inputs are protected — 2026-11-03
+
+Implementation `617fd15` fixes the first AIOps CaC import validation failure.
+Controller marks survey values as protected text. Passing the entire variable
+mapping into one Jinja normalization expression propagated that protection to
+unrelated nested resource values, leaving an Event Stream organization expression
+unresolved. A controller-side action now reads and renders only the declared
+resource lists before existing validation. Explicit literal injector templates
+remain protected; no validation rule or authentication behavior is weakened.
+
+The failure was reproduced with the actual encrypted AIOps capture and protected
+survey input in both templating modes. The fix passes all eleven importer tests,
+including all five real captures, and the existing production execution image
+with networking disabled. The failed live jobs stopped before CoP resource roles
+and did not change target configuration. Live deployment remains a separate check.
+
 ## Name the temporary VM-registry writer explicitly — 2026-11-03
 
 Implementation `0399e2a` uses the exact owner-selected credential name

@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.28.15
+
+Document rendering fix `617fd15`, the protected survey-input reproduction and
+validation against all five captures and the production execution image.
+
 ## 0.28.14
 
 Render declared CaC resources directly rather than passing all job variables
