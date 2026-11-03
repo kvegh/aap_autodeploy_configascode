@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.28.5
+
+Document direct-import implementation `b5fb34b`, the owner-approved
+`Deploy <Project Name> CaC` rule and removal of unused wrappers.
+
 ## 0.28.4
 
 Name all five project import templates `Deploy <Project Name> CaC`, following the

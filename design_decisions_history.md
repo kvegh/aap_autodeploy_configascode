@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Use direct project selection and explicit CaC deployment names — 2026-11-03
+
+Implementation `b5fb34b` removes the five unused wrapper playbooks. The owner
+requires every project Job Template to call `deploy-cac-project.yml` directly
+with its fixed `aap_cac_project_id` in saved Extra Variables. Controller readback
+confirmed that no production template referenced the wrappers.
+
+The owner also requires a Deploy prefix. Because an existing application job
+already uses an otherwise matching deployment name, the owner chose
+`Deploy <Project Name> CaC` for all five configuration templates. The naming
+helper, existing selector tests, documentation and encrypted references follow
+that rule. Existing IDs, credential pairs and workflow relationships are retained.
+Twenty-four focused checks and syntax checks for the importer and selector pass.
+Compatibility layers are not implied by this design and require consultation
+before being added. No use-case import or application deployment is run here.
+
 ## Propose one shared CaC importer without hiding preparation — 2026-11-03
 
 Analysis `96ce498` compares all five importers, the selector and shared helpers
