@@ -1,5 +1,30 @@
 # Design decisions history
 
+## Propose one shared CaC importer without hiding preparation — 2026-11-03
+
+Analysis `96ce498` compares all five importers, the selector and shared helpers
+with installed CoP/native implementation. Ordinary resource data, different
+capture layouts and duplicated authentication/cleanup do not justify separate
+import engines. The proposed replacement is one resource-driven playbook, with
+normal schema adapters and only demonstrated resource-level compatibility
+handlers. Event Streams and workflow graphs are already supported; EDA project
+field forwarding and asynchronous group ordering need specific attention.
+
+Durable target service tokens require discovery, safe persistence and recovery;
+native token creation alone is not idempotent and does not replace that policy.
+Preparation, model authentication maintenance and child-job orchestration remain
+explicit boundaries. One playbook also does not resolve credential injection:
+repository pairs and destination API access must be bound before launch. Thin
+repository templates can share the playbook until the owner agrees the pending
+credential, self-target and orchestration design under `bead-wd-72f`.
+
+Local role/module inspection and a synthetic zero-API activation probe identified
+a disabled-state compatibility risk, tracked separately as `bead-wd-72f.4`.
+This is not evidence that a live activation changed. The analysis also identifies
+conditional secret logging to eliminate in any common path. Sixty-one source
+links, an illustrative YAML schema and four version-policy checks pass. No
+consolidation, runtime change, AAP job or live credential operation was performed.
+
 ## Bind configuration access to each repository — 2026-11-03
 
 Implementation `7e5f672` and encrypted capture `4ab587f` replace the shared-entry

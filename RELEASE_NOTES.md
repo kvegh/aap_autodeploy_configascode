@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.26.3
+
+Document analysis `96ce498` and the reasons for proposing one shared CaC importer
+while preserving explicit secret lifecycle and preparation boundaries. Keep the
+proposal, credential/self-target decisions and activation compatibility follow-up
+distinct from implemented behavior. Documentation validation remains unchanged;
+no runtime configuration or job is modified.
+
 ## 0.26.2
 
 Document the proposed consolidation of all five CaC importers into one shared
