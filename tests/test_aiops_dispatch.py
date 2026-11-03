@@ -19,7 +19,7 @@ except ImportError:
     yaml = None
 
 
-PLAYBOOK = Path(__file__).resolve().parents[1] / "deploy-aiops-demo.yml"
+PLAYBOOK = Path(__file__).resolve().parents[1] / "deploy-cac-project.yml"
 EDA_ROLES = ("eda_event_streams", "eda_rulebook_activations")
 
 

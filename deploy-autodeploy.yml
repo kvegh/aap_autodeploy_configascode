@@ -1,6 +1,0 @@
----
-# Compatibility entry point; all imports use the same reviewed implementation.
-- name: Import the fixed aap_autodeploy_configascode configuration
-  ansible.builtin.import_playbook: deploy-cac-project.yml
-  vars:
-    aap_cac_project_id: aap_autodeploy_configascode

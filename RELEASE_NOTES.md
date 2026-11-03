@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.28.4
+
+Name all five project import templates `Deploy <Project Name> CaC`, following the
+owner's naming decision and avoiding application-template name collisions.
+Remove the five unused per-project wrappers. Every template calls the single
+`deploy-cac-project.yml` directly with saved `aap_cac_project_id` extra variables.
+Correct outdated overview documentation and update naming, import, dispatch and
+group checks. Preserve template IDs, credentials, permissions and workflow links.
+
 ## 0.28.3
 
 Document implementation `3028df4` and the verified in-place naming update.

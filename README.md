@@ -21,9 +21,11 @@ Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
 
 The five project deployment Job Templates use names derived from their fixed
-project IDs: **AIOps Selfhealing Demo**, **Disconnected Windows Patching**,
-**Automation Orchestrator**, **Assistant Team**, and **AAP Autodeploy Configascode**.
-Hyphens and underscores separate words; AIOps and AAP retain their capitalization.
+project IDs: **Deploy AIOps Selfhealing Demo CaC**, **Deploy Disconnected Windows Patching CaC**,
+**Deploy Automation Orchestrator CaC**, **Deploy Assistant Team CaC**, and **Deploy AAP Autodeploy Configascode CaC**.
+Names begin with **Deploy** and end with **CaC**, distinguishing configuration
+imports from application deployment jobs. Hyphens and underscores separate the project words;
+AIOps and AAP retain their capitalization.
 The selector derives these names from the same rule. Existing template IDs,
 repository credentials and workflow links are preserved. See the
 [project import guide](docs/cac-project-import.md) for the full mapping.
@@ -234,9 +236,8 @@ This establishes stage/import success; a complete workflow launch, recursive
 creation of another AAP and functional demo tests remain open in the
 [project TODO](PLAN.md#todo).
 
-The old `deploy-aiops-demo.yml`, `deploy-windows-demo.yml`,
-`deploy-orchestrator-demo.yml`, `deploy-assistant-team.yml` and
-`deploy-autodeploy.yml` files are thin fixed-ID aliases to the common importer.
+The obsolete per-project wrapper playbooks have been removed. Every deployment
+Job Template selects the common importer and fixes its project ID in extra variables.
 `restore-windows-config.yml` remains a local-file utility.
 `destroy-test-aap.yml` handles guarded test-instance teardown. Previous successful
 imports below are historical evidence, not claims that this new importer has run

@@ -3,17 +3,19 @@
 All five project Job Templates run `deploy-cac-project.yml`. Each template fixes
 its `aap_cac_project_id` and retains its own private repository read token and
 Vault credential. Operators choose the destination, not the repository or file.
-The older five playbook filenames are thin aliases to this same implementation.
+The older five wrapper playbooks have been removed; all five templates select
+the common playbook directly.
 
 | Fixed project ID | Deployment Job Template | Derived private repository | Derived encrypted capture |
 |---|---|---|---|
-| `aiops-selfhealing-demo` | AIOps Selfhealing Demo | `aiops-selfhealing-demo-secrets` | `vaults/cac/aiops-selfhealing-demo-cac-vault.yml` |
-| `disconnected-windows-patching` | Disconnected Windows Patching | `disconnected-windows-patching-secrets` | `vaults/cac/disconnected-windows-patching-cac-vault.yml` |
-| `automation-orchestrator` | Automation Orchestrator | `automation-orchestrator-secrets` | `vaults/cac/automation-orchestrator-cac-vault.yml` |
-| `assistant-team` | Assistant Team | `assistant-team-secrets` | `vaults/cac/assistant-team-cac-vault.yml` |
-| `aap_autodeploy_configascode` | AAP Autodeploy Configascode | `aap_autodeploy_configascode-secrets` | `vaults/cac/aap_autodeploy_configascode-cac-vault.yml` |
+| `aiops-selfhealing-demo` | Deploy AIOps Selfhealing Demo CaC | `aiops-selfhealing-demo-secrets` | `vaults/cac/aiops-selfhealing-demo-cac-vault.yml` |
+| `disconnected-windows-patching` | Deploy Disconnected Windows Patching CaC | `disconnected-windows-patching-secrets` | `vaults/cac/disconnected-windows-patching-cac-vault.yml` |
+| `automation-orchestrator` | Deploy Automation Orchestrator CaC | `automation-orchestrator-secrets` | `vaults/cac/automation-orchestrator-cac-vault.yml` |
+| `assistant-team` | Deploy Assistant Team CaC | `assistant-team-secrets` | `vaults/cac/assistant-team-cac-vault.yml` |
+| `aap_autodeploy_configascode` | Deploy AAP Autodeploy Configascode CaC | `aap_autodeploy_configascode-secrets` | `vaults/cac/aap_autodeploy_configascode-cac-vault.yml` |
 
-Deployment names split the fixed project ID at hyphens and underscores, capitalize
+Deployment names begin with **Deploy** and end with **CaC** to distinguish them
+from application deployment jobs. Split the fixed project ID at hyphens and underscores, capitalize
 each word and retain the original order. `aiops` becomes **AIOps** and `aap`
 becomes **AAP**. The catalog uses this same rule rather than maintaining separate
 name overrides. Existing template IDs, credentials and workflow links are retained;

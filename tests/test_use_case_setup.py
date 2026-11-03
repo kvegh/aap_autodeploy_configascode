@@ -61,11 +61,11 @@ class UseCaseSetupTests(unittest.TestCase):
 
     def test_project_ids_determine_names_with_acronyms_and_original_word_order(self):
         expected = {
-            "aiops-selfhealing-demo": "AIOps Selfhealing Demo",
-            "disconnected-windows-patching": "Disconnected Windows Patching",
-            "automation-orchestrator": "Automation Orchestrator",
-            "assistant-team": "Assistant Team",
-            "aap_autodeploy_configascode": "AAP Autodeploy Configascode",
+            "aiops-selfhealing-demo": "Deploy AIOps Selfhealing Demo CaC",
+            "disconnected-windows-patching": "Deploy Disconnected Windows Patching CaC",
+            "automation-orchestrator": "Deploy Automation Orchestrator CaC",
+            "assistant-team": "Deploy Assistant Team CaC",
+            "aap_autodeploy_configascode": "Deploy AAP Autodeploy Configascode CaC",
         }
         for project_id, name in expected.items():
             with self.subTest(project_id=project_id):

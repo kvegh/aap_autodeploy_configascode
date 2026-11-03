@@ -129,10 +129,10 @@ working-directory/cac/        # editable configuration outside Git
     intelligent_assistant.yml  # Intelligent Assistant                      (skeleton)
 ```
 
-The private configuration repository stores encrypted copies under `cac/`, named
-`base_CaC_vault.yml`, `aiops_demo.yml`, or `DEMO_PLACEHOLDER_CaC_vault.yml`. All
-populated files are whole-file Vault encrypted regardless of filename. The shared encrypted
-base has moved there. Editable working files remain outside Git.
+Shared platform configuration is stored as encrypted `cac/base_CaC_vault.yml`.
+Each project has its own private `<project-id>-secrets` repository containing
+`vaults/cac/<project-id>-cac-vault.yml`. All populated files are whole-file Vault
+encrypted. Editable working files remain outside Git.
 
 The private repository also holds `cac/manifest.zip.vault`, which encrypts the
 complete subscription ZIP without converting or unpacking its contents.
@@ -143,8 +143,9 @@ This public repository retains two empty plaintext examples: use
 and commented entries with generic placeholders. See [README.md](README.md)
 for the preparation, encryption, verification, and commit workflow. Stage 04
 loads only the shared `cac/base_CaC_vault.yml` from `main`; adding another encrypted
-file to the private repository does not automatically apply that demo. The
-separate `deploy-aiops-demo.yml` entry point loads only `vaults/cac/aiops-selfhealing-demo-cac-vault.yml`.
+file to the private repository does not automatically apply that demo. All five
+project templates use `deploy-cac-project.yml`; their fixed project ID determines
+the private repository and `vaults/cac/<project-id>-cac-vault.yml` capture.
 
 ## Variable naming
 

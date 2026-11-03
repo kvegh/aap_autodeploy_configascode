@@ -19,17 +19,16 @@ only explicitly selected prerequisites and imports the selected Projects and CaC
 | 04 | `04-aap-config.yml` | Apply subscription and platform-only base configuration. |
 | Separate | `05-prepare-use-cases.yml` | Prepare the selected PAH collections and existing execution image. |
 
-The five importers are `deploy-aiops-demo.yml`, `deploy-windows-demo.yml`,
-`deploy-orchestrator-demo.yml`, `deploy-assistant-team.yml` and
-`deploy-autodeploy.yml`. AutoDeploy restores the deployment templates and workflow
-on the replacement. Importing definitions does not establish functional demo
-readiness. Imported AIOps activations remain disabled for separate activation.
+The five project Job Templates all run `deploy-cac-project.yml` with a fixed
+project ID. Their names begin with **Deploy**; the unused per-project wrappers
+have been removed. AutoDeploy's capture restores deployment templates and its
+workflow on the replacement. Importing definitions does not establish functional
+demo readiness. New activations are disabled; existing active states are preserved.
 
-Stage 01 publishes only `vm_name`, `vm_ip` and `aap_hostname` as workflow artifacts.
-Stage 03 uses a separate installer hostname. Stage 04 and the use-case importers
-connect through the explicit `aap_hostname` HTTPS URL, allowing an internal route
-independent of VM naming and public reverse-proxy access. Credentials are not
-passed through workflow artifacts.
+Stage 01 records a verified instance handoff for later installation stages.
+Stage 03 uses a separate installer hostname. Project imports select an inventory
+host and use its explicit `ansible_fqdn` over verified HTTPS from the source EE.
+Credentials are not passed through workflow artifacts.
 
 Recover a failed sequence by rerunning the failed stage with the same inputs and
 then launching remaining stages. A full workflow relaunch creates another VM.
@@ -45,7 +44,7 @@ Base owns platform settings, subscription, desired administrator password,
 bootstrap Git/Vault access, persistent MCP access and PAH source configuration.
 Use-case files own their projects, inventories, credentials, execution
 environments, labels, templates, workflows and integrations. Each has a separate
-configuration importer; Stage 04 does not load all use cases implicitly.
+Job Template using the shared importer; Stage 04 does not load all use cases implicitly.
 
 Public empty templates are in `cac/`. Populated working files and Vault password
 files stay outside Git. Completed configuration is whole-file encrypted, checked
@@ -56,11 +55,13 @@ Imports fetch the chosen private repository's `main` branch using a credential
 injecting `CAC_GIT_TOKEN`. A separate Vault credential with identifier `cac`
 decrypts its contents. The original Vault credential is still needed for
 `myvars`, which supplies environment/guest-access settings. Target authentication
-supports the configured password and installer bootstrap; base manages the
-desired password. See [Stage 04 inputs](README.md#stage-04-inputs).
+requires an explicitly selected native AAP API credential for project imports
+and prerequisite preparation; it never reads installer passwords for those jobs.
+Stage 04's separate bootstrap behavior manages the desired administrator password;
+see [Stage 04 inputs](README.md#stage-04-inputs).
 
-Base creates four private Git-read credentials and the CaC Vault credential on
-the replacement from encrypted inputs. The first trusted seed still needs those
+Base creates five repository-specific Git-read credentials and five matching
+CaC Vault credentials on the replacement from encrypted inputs. The first trusted seed still needs those
 initial access secrets supplied independently. Target-issued MCP/PAH/EDA tokens
 belong to their installation; API exports cannot recover masked secret values.
 Persistent MCP recovery storage is on the target; encrypted client write-back

@@ -1,6 +1,0 @@
----
-# Compatibility entry point; all imports use the same reviewed implementation.
-- name: Import the fixed disconnected-windows-patching configuration
-  ansible.builtin.import_playbook: deploy-cac-project.yml
-  vars:
-    aap_cac_project_id: disconnected-windows-patching

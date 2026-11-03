@@ -25,18 +25,6 @@ def metadata(project='assistant-team'):
 
 
 class ImportContractTests(unittest.TestCase):
-    def test_legacy_entries_only_select_their_fixed_project_and_share_one_driver(self):
-        aliases = {'deploy-aiops-demo.yml': 'aiops-selfhealing-demo',
-                   'deploy-windows-demo.yml': 'disconnected-windows-patching',
-                   'deploy-orchestrator-demo.yml': 'automation-orchestrator',
-                   'deploy-assistant-team.yml': 'assistant-team',
-                   'deploy-autodeploy.yml': 'aap_autodeploy_configascode'}
-        for filename, project in aliases.items():
-            entry = yaml.safe_load((ROOT / filename).read_text())
-            self.assertEqual(len(entry), 1)
-            self.assertEqual(entry[0]['ansible.builtin.import_playbook'], 'deploy-cac-project.yml')
-            self.assertEqual(entry[0]['vars'], {'aap_cac_project_id': project})
-
     def test_unreviewed_missing_placeholder_or_executable_configuration_is_rejected(self):
         configuration = metadata()
         configuration['checks'] = {'true_values': ['ready'], 'required_secret_lists': ['required'],

@@ -18,8 +18,8 @@ def project_display_name(project_id):
             and bool(re.fullmatch(r"[a-z0-9]+(?:[-_][a-z0-9]+)*", project_id)),
             "Use a lowercase project ID with hyphen or underscore word separators.")
     acronyms = {"aiops": "AIOps", "aap": "AAP"}
-    return " ".join(acronyms.get(word, word.capitalize())
-                    for word in re.split(r"[-_]", project_id))
+    return "Deploy " + " ".join(acronyms.get(word, word.capitalize())
+                                for word in re.split(r"[-_]", project_id)) + " CaC"
 
 
 def https_origin(value):

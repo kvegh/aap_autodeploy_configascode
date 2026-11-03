@@ -3,14 +3,15 @@
 Base deployment ends after stages01–04. The separate
 `deploy-selected-use-cases.yml` selector prepares only selected use-case
 requirements, then launches their existing configuration Job Templates. All
-five standalone importers use [the common API-only driver](cac-project-import.md).
+five project Job Templates use [the common API-only driver](cac-project-import.md).
 The selector retains a distinct fresh-target check and infrastructure preparation;
 the standalone importer also supports existing and self-target AAP instances.
 Application jobs are not launched. New activation definitions are disabled and
 existing activation states are preserved.
 
 The reviewed selector catalog follows umbrella submodule paths. It derives each
-deployment Job Template display name from the fixed project ID using the
+deployment Job Template display name as **Deploy** followed by the fixed project ID
+and the **CaC** suffix using the
 [shared naming rule](cac-project-import.md); encrypted credential-map keys and
 extraction matches use those same names:
 

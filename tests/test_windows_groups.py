@@ -15,7 +15,7 @@ except ImportError:
     yaml = None
 
 
-PLAYBOOK = Path(__file__).resolve().parents[1] / "deploy-windows-demo.yml"
+PLAYBOOK = Path(__file__).resolve().parents[1] / "deploy-cac-project.yml"
 
 
 @unittest.skipUnless(yaml and importlib.util.find_spec("ansible"), "requires Ansible and PyYAML")
