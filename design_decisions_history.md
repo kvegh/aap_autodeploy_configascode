@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Store the API DNS name explicitly in inventory — 2026-11-03
+
+Source documentation `9003fb4` and companion capture `720710d` define an explicit
+`ansible_fqdn` host variable for AAP instances. The owner confirmed that the
+numbered instance in the request was an example, so only the existing verified
+inventory entry was updated. Its DNS name comes from its already-recorded HTTPS
+origin; no new VM, guessed suffix or remote fact gathering is involved.
+
+Live readback and a decrypted comparison against the previous capture verify
+that only this host variable was added. Other variables, group memberships,
+capture records and literal tags are preserved. The public example parses as
+YAML. The intended future lookup is launch-time instance name to stored FQDN to
+verified HTTPS origin. This data update does not replace the existing registry
+launcher or implement credential selection; that remains the next discussion.
+
 ## Limit this phase to inventory placement and future upstream TLS — 2026-11-03
 
 Implementation `aaafed2` follows the owner's explicit stop boundary. Keep the

@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.25.3
+
+Document the explicit inventory FQDN decision and companion capture, including
+live readback, encrypted-data preservation and the remaining launcher boundary.
+
 ## 0.25.2
 
 Document explicit `ansible_fqdn` inventory metadata for AAP instance selection
