@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Register instance inventory alongside existing token publication — 2026-11-03
+
+Implementation `3dd7f5a` uses the same approved base callback to register the new
+instance in the existing encrypted shared inventory and source Controller.
+Selection by instance name requires an explicit FQDN and hypervisor placement;
+requiring a separate manual inventory update would leave a successful new token
+unusable by project imports. The callback preserves other hosts, variables and
+group memberships, including literal JSON tags, and places no token in inventory.
+Existing Git writer, source API and Vault credentials perform this update.
+
+The same implementation accepts independently declared exact local guest TCP
+permissions in policy checks and published placement. Hactar applies those
+permissions separately; AutoDeploy verifies the complete existing policy. Empty
+lists preserve previous behavior and no automatic network grant is introduced.
+
+Validation comprises 192 full-suite cases, eight publication/literal-tag
+regressions and twenty allocation/routing cases, with production task lint.
+Actual new-instance base publication remains a separate runtime acceptance check.
+
 ## Resolve delegated SSH settings from the original guest entry — 2026-11-03
 
 Implementation `faf64bc` fixes proxy publication after successful AAP installation.

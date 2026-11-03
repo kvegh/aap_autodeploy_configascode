@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.31.1
+
+Document automatic inventory registration and exact declared local-policy
+validation with the implementation reference and tested preservation boundaries.
+
 ## 0.31.0
 
 Register each new AAP instance in the existing encrypted shared inventory and
