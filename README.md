@@ -279,6 +279,11 @@ The shared inventory has per-hypervisor VM groups with `hypervisor_host`, and
 AAP hosts carry explicit `ansible_fqdn`. Configuration import selects the exact
 inventory host through `aap_instance_key`; the native API credential must match
 that FQDN and verify certificates. No target identity or token is guessed.
+Native API credentials created through the API must explicitly set Request
+Timeout, for example `10`. An omitted field can inject an empty
+`aap_request_timeout`, which the configuration roles correctly reject as an
+invalid number. The registered-instance DNS check converts the native Verify
+SSL value to a Boolean while retaining pinned DNS and trusted HTTPS requirements.
 
 ```mermaid
 flowchart LR
@@ -811,6 +816,12 @@ Choose the AIOps configuration Job Template. It fixes
 repository. Follow the [operator procedure](docs/cac-project-import.md), selecting
 `aap_instance_key` and an explicit native destination API credential. The public
 playbook repository needs no private read token.
+
+Before the first import on a fresh target, run the existing use-case prerequisite
+preparation for that instance and the reviewed AIOps selection. It supplies the
+exact PAH collection versions required by the imported SCM projects, including
+`community.libvirt`; a successful Git clone alone does not satisfy those
+dependencies. Existing PAH content is retained, and application jobs are not run.
 
 The capture must be reviewed, contain its required encrypted inputs, and declare
 valid Event Stream/source mappings. Common resource handlers apply complete EDA

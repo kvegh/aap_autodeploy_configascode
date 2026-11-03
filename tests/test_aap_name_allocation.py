@@ -360,6 +360,38 @@ class AllocationTests(unittest.TestCase):
 
 
 class RoutingTests(unittest.TestCase):
+    def test_native_verify_ssl_strings_preserve_the_exact_dns_and_tls_guard(self):
+        from ansible.errors import AnsibleError
+        from ansible.parsing.dataloader import DataLoader
+        from ansible.playbook.conditional import Conditional
+        from ansible.template import Templar
+
+        task = yaml.safe_load((ROOT / 'tasks/aap-instance-api.yml').read_text())[1]
+        route = self.route()
+        for flag, address, accepted in (
+            (True, route['hypervisor']['public_ip'], True),
+            ('True', route['hypervisor']['public_ip'], True),
+            ('true', route['hypervisor']['public_ip'], True),
+            (False, route['hypervisor']['public_ip'], False),
+            ('False', route['hypervisor']['public_ip'], False),
+            ('True', '198.51.100.254', False),
+        ):
+            with self.subTest(flag=flag, address=address):
+                variables = {'aap_instance_route': route, 'aap_hostname': route['aap_hostname'],
+                             'aap_validate_certs': flag}
+                loader = DataLoader()
+                templar = Templar(loader=loader, variables=variables)
+                templar.environment.globals['query'] = lambda *args, **kwargs: (
+                    [address] if kwargs.get('qtype') == 'A' else [])
+                templar.environment.filters['aap_instance_api_dns'] = routing.instance_api_dns
+                condition = Conditional(loader=loader)
+                condition.when = [task['ansible.builtin.assert']['that']]
+                if accepted:
+                    self.assertTrue(condition.evaluate_conditional(templar, variables))
+                else:
+                    with self.assertRaises(AnsibleError):
+                        condition.evaluate_conditional(templar, variables)
+
     def test_optional_https_policy_is_independently_declared_and_preserves_pins(self):
         pin = self.route()["hypervisor"]
         before = copy.deepcopy(pin)

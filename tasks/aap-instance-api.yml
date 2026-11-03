@@ -15,7 +15,7 @@
       aap_instance_route | aap_instance_api_dns(
         query('community.general.dig', aap_hostname | urlsplit('hostname'), qtype='A', real_empty=true),
         query('community.general.dig', aap_hostname | urlsplit('hostname'), qtype='AAAA', real_empty=true),
-        aap_validate_certs | default(true))
+        aap_validate_certs | default(true) | bool)
     fail_msg: The instance API hostname does not resolve exclusively to its pinned hypervisor.
   no_log: true
 

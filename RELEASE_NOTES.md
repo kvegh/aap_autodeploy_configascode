@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.28.16
+
+Normalize native credential Verify SSL strings before the existing registered-
+instance DNS guard. Accept the native true value while continuing to reject
+disabled TLS, conflicting addresses and alternate IPv6 routes. Exercise the
+actual guard with native Boolean/string inputs and conflicting DNS answers.
+Document explicit native API request timeouts and the existing reviewed PAH
+prerequisite step required before importing projects on a fresh controller.
+
 ## 0.28.15
 
 Document rendering fix `617fd15`, the protected survey-input reproduction and
