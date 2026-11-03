@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -10,12 +11,16 @@ import tempfile
 import unittest
 
 from ansible.errors import AnsibleFilterError
+from ansible.utils.unsafe_proxy import wrap_var
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location('cac_import', ROOT / 'filter_plugins/cac_import.py')
 filters = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(filters)
+VAULT_SPEC = importlib.util.spec_from_file_location('test_cac_yaml', ROOT / 'src/cac_yaml.py')
+vault_yaml = importlib.util.module_from_spec(VAULT_SPEC)
+VAULT_SPEC.loader.exec_module(vault_yaml)
 
 
 def metadata(project='assistant-team'):
@@ -117,6 +122,59 @@ class ImportContractTests(unittest.TestCase):
 
 
 class AnsibleCaptureRenderingTests(unittest.TestCase):
+    def test_unsafe_launch_values_do_not_freeze_other_resources_or_literal_injectors(self):
+        source = yaml.safe_load((ROOT / 'deploy-cac-project.yml').read_text())[0]
+        block = source['pre_tasks'][-1]['block']
+        prepare = next(task for task in block if task['name'].startswith('Normalize only'))
+        validate = next(task for task in block if task['name'].startswith('Validate activation relationships'))
+        configuration = metadata('aiops-selfhealing-demo')
+        configuration['resource_variables'] = {
+            'controller_projects': 'captured.projects',
+            'controller_credential_types': 'captured.types',
+            'eda_event_streams': 'captured.streams',
+            'eda_rulebook_activations': 'captured.activations',
+        }
+        configuration['capabilities'] = {'eda_controller_access': {
+            'credential_name': 'Example Controller', 'organization': '{{ example_organization }}',
+            'token_variable': 'example_persistent_token'}}
+        with tempfile.TemporaryDirectory(prefix='cac-unsafe-resource-fixture-') as temporary:
+            root = Path(temporary)
+            for native in ('false', 'true'):
+                output_file = root / ('result-' + native + '.json')
+                variables = {
+                    'aap_hostname': wrap_var('https://target-aap.example.invalid'),
+                    'aap_token': wrap_var('synthetic-unsafe-api-token-canary'),
+                    'aap_instance_key': wrap_var('example-aap'),
+                    'example_organization': 'Example', 'cac_import_metadata': configuration,
+                    'captured': {
+                        'projects': [{'name': 'Project', 'scm_url': '{{ aap_hostname }}/example.git'}],
+                        'types': [{'name': 'Runtime credential', 'injectors': {
+                            'env': {'EXAMPLE_RUNTIME_TOKEN': wrap_var('{{ runtime_value }}')}}}],
+                        'streams': [{'name': 'Stream', 'organization_name': '{{ example_organization }}',
+                                     'credential_name': 'Stream authentication'}],
+                        'activations': [{'event_streams': [{'event_stream': 'Stream', 'source_name': 'events'}]}],
+                    },
+                }
+                retain = {'name': 'Retain only synthetic rendered values for checks', 'no_log': True,
+                          'ansible.builtin.copy': {'dest': str(output_file), 'mode': '0600',
+                              'content': "{{ {'url': cac_import_resources.controller_projects[0].scm_url, 'organization': cac_import_resources.eda_event_streams[0].organization, 'literal': cac_import_resources.controller_credential_types[0].injectors.env.EXAMPLE_RUNTIME_TOKEN} | to_json }}"}}
+                fixture = root / 'fixture.yml'
+                fixture.write_text(yaml.dump([{'hosts': 'localhost', 'connection': 'local',
+                    'gather_facts': False, 'vars': variables, 'tasks': [prepare, validate, retain]}],
+                    Dumper=vault_yaml.VaultDumper, sort_keys=False))
+                environment = dict(os.environ, ANSIBLE_JINJA2_NATIVE=native,
+                    ANSIBLE_ACTION_PLUGINS=str(ROOT / 'action_plugins'),
+                    ANSIBLE_FILTER_PLUGINS=str(ROOT / 'filter_plugins'), ANSIBLE_NOCOLOR='1',
+                    ANSIBLE_LOCAL_TEMP=str(root / 'local'), ANSIBLE_REMOTE_TEMP=str(root / 'remote'))
+                run = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(fixture)],
+                    cwd=ROOT, env=environment, text=True, capture_output=True, timeout=45)
+                output = run.stdout + run.stderr
+                self.assertNotIn('synthetic-unsafe-api-token-canary', output)
+                self.assertEqual(run.returncode, 0, output)
+                result = json.loads(output_file.read_text())
+                self.assertEqual(result, {'url': 'https://target-aap.example.invalid/example.git',
+                    'organization': 'Example', 'literal': '{{ runtime_value }}'})
+
     def test_missing_native_destination_credential_fails_clearly_before_any_api_call(self):
         with tempfile.TemporaryDirectory(prefix='cac-native-auth-fixture-') as temporary:
             directory = Path(temporary)
@@ -154,12 +212,14 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix='cac-render-fixture-') as temporary:
             directory = Path(temporary)
             environment = dict(os.environ, ANSIBLE_FILTER_PLUGINS=str(ROOT / 'filter_plugins'),
+                               ANSIBLE_ACTION_PLUGINS=str(ROOT / 'action_plugins'),
                                ANSIBLE_NOCOLOR='1', ANSIBLE_LOCAL_TEMP=str(directory / 'local'),
                                ANSIBLE_REMOTE_TEMP=str(directory / 'remote'))
             for native in ('false', 'true'):
                 for project in sorted(filters.PROJECT_IDS):
                     capture = candidate_root / project / (project + '-cac-vault.yml')
                     variables = {'aap_hostname': 'https://test-aap.example.invalid',
+                                 'aap_instance_key': wrap_var('synthetic-aap'),
                                  'aap_validate_certs': True, 'aap_token': 'synthetic-destination-token',
                                  'aap_username': '', 'aap_password': '',
                                  'cac_project_contract': {'project_id': project},
@@ -172,7 +232,7 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
                                         'ansible.builtin.include_vars': {'file': str(capture)}, 'no_log': True},
                                        *validation]}]
                     fixture = directory / 'fixture.yml'
-                    fixture.write_text(yaml.safe_dump(play, sort_keys=False))
+                    fixture.write_text(yaml.dump(play, Dumper=vault_yaml.VaultDumper, sort_keys=False))
                     environment['ANSIBLE_JINJA2_NATIVE'] = native
                     run = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,',
                                           '--vault-password-file', str(ROOT.parents[2] / 'vpf'), str(fixture)],

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.28.14
+
+Render declared CaC resources directly rather than passing all job variables
+through Jinja. This fixes AIOps Event Stream validation when AAP protects the
+instance-name survey input. Preserve explicit literal injector templates.
+Validate all five encrypted captures in both templating modes and the actual
+source execution image; no authentication or resource-validation rule is changed.
+
 ## 0.28.13
 
 Document naming implementation `0399e2a` and the owner-approved replacement,

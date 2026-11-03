@@ -76,8 +76,7 @@
           no_log: true
 
         - name: Normalize only this capture's explicitly mapped resource lists
-          ansible.builtin.set_fact:
-            cac_import_resources: "{{ cac_import_metadata | aap_cac_resources(vars) }}"
+          aap_cac_prepare_resources:
           no_log: true
 
         - name: Bind the selected resource lists without ambient wildcard merging

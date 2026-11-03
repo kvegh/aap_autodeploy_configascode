@@ -124,6 +124,12 @@ components need explicit adapters. It never applies configuration to source AAP.
 Association updates apply membership deltas so accepted desired-only bootstrap
 dependencies survive unrelated source removals. Lists inside user variables and
 credential inputs keep their original meaningful order.
+The importer renders only declared resources before validation. AAP marks survey
+input as protected text; passing the entire variables dictionary through Jinja
+can leave unrelated organization expressions unresolved. Direct resource
+rendering preserves literal credential-injector templates while resolving those
+ordinary expressions.
+
 Protected CaC YAML serialization preserves explicit `!unsafe` literal tags.
 AAP injector templates must remain literal during CoP wildcard merging, while
 ordinary environment references still resolve. Logical string equality alone
