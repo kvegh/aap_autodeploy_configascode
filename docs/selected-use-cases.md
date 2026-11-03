@@ -63,13 +63,14 @@ plus the one explicitly attached native destination API credential. It receives
 only the destination instance and diagnostic choice as launch variables: its
 project ID, repository and capture file remain fixed on its saved template.
 
-The separate prerequisite child additionally receives the existing registry
-reader and pinned Machine credential, retaining its saved AutoDeploy CaC Vault
-for registry decryption. Stage05 uses
+The separate prerequisite child additionally receives only the pinned Machine
+credential. Its saved AutoDeploy repository read token and CaC Vault also read
+and decrypt the registry. Stage05 uses
 explicit native API auth for PAH preparation and never scrapes installer
 passwords. Existing infrastructure SSH preparation remains separate from API
 requests. This distinction does not create or redesign any custom credential
-type; reviewing existing infrastructure credential types remains deferred.
+type. The redundant registry-reader type is no longer provisioned or used;
+the allocation-writer design remains a separate discussion.
 
 Every child is watched to actual completion, and the completed job's credential
 associations must match the bounded launch set. Success publishes only bounded

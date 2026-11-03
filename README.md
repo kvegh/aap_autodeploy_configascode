@@ -286,8 +286,11 @@ Stage 01 consumes the shared encrypted counter and publishes `vm_name`, `vm_ip`,
 workflow artifacts. The API URL uses this reserved VM's unique public hostname.
 Stages 02–04 reread the completed registry entry, reject conflicting inputs and
 route private guest SSH through its exact hypervisor with both host keys checked.
-Attach the separate registry-reader credential and named CaC Vault to those
+Attach the existing AutoDeploy secrets repository read token and CaC Vault to those
 stages; guest stages also need the pinned hypervisor's Machine credential.
+The Git/YAML instance registry is temporary. A real CMDB is required; see
+Beads `bead-wd-sc8` and [the work plan](PLAN.md#todo). Product selection and
+migration remain subject to an agreed design.
 Stage 02 refuses a conflicting existing A record and requires either an existing
 certificate for this hostname or a separately approved ACME registration; it
 never accepts new certificate terms. No credentials, passwords or tokens are put
@@ -559,8 +562,8 @@ Supply `aap_instance_key` as the exact completed registered VM name, or carry
 the matching Stage 01 workflow handoff. The registry derives the public HTTPS
 API URL and private guest SSH jump route. Caller-supplied conflicting URLs or
 addresses, bare private-API fallbacks, alternate AAAA routes and disabled TLS
-validation are refused. Attach the registry-reader, named CaC Vault, environment
-Vault, scoped base Git credential and the pinned hypervisor Machine credential.
+validation are refused. Attach the AutoDeploy repository read token, CaC Vault,
+environment Vault and the pinned hypervisor Machine credential.
 
 Supply `aap_config_repo_url` as the HTTPS Git URL of the private configuration
 repository. Stage 04 always uses `main`; it requires these Vault-encrypted files:

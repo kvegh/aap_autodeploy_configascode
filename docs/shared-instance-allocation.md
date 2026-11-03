@@ -70,13 +70,16 @@ decrypts only the shared state file with the attached CaC Vault secret. Unknown
 keys, incomplete reservations and conflicting caller URLs/private addresses fail
 before target connections. There is no free-form URL or old-host fallback.
 
-Attach `AAP AutoDeploy instance registry reader`, which injects the separately
-scoped `AAP_INSTANCE_REGISTRY_TOKEN` and `AAP_INSTANCE_REGISTRY_REPOSITORY`, plus
+Attach `aap_autodeploy_configascode-secrets CaC repo read token`, which supplies
+the existing `CAC_GIT_TOKEN`, plus
 `aap_autodeploy_configascode-secrets CaC vault cred` (Vault ID `cac`) and the
 environment Vault. The same AutoDeploy CaC credential encrypts and decrypts the
 registry; no separate instance-registry Vault credential is required.
-This avoids replacing a use-case's
-own `CAC_GIT_TOKEN`. Guest stages also require the selected hypervisor's Machine
+The registry URL is derived from the namespace in encrypted runtime `myvars`,
+using the same AutoDeploy repository naming rule as the project importer.
+Launch variables cannot redirect this token to another repository. Generic
+use-case imports do not read the instance registry and retain their own tokens.
+Guest stages also require the selected hypervisor's Machine
 credential. Their private job-local known-hosts file trusts the registered
 hypervisor and newly generated guest public keys. Both SSH hops require strict
 host-key checking, and the guest connection always traverses that hypervisor;

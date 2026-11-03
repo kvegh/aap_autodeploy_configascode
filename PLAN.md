@@ -29,6 +29,11 @@ Protected comparison reports, exports and plaintext working files stay outside G
 
 ## TODO
 
+The owner also requires replacing the temporary encrypted Git/YAML instance
+registry with a real CMDB. Beads `bead-wd-sc8` is authoritative for this work.
+Product selection, integration and migration require an agreed design before
+implementation; this backlog item does not select a CMDB product.
+
 ### 1. Resolve the remaining configuration differences
 
 Why: the comparison found settings whose intended behavior is not explicit in

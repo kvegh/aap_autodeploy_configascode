@@ -36,14 +36,16 @@
                'validate_certs': lookup('ansible.builtin.env', 'AAP_VALIDATE_CERTS')}) }}
       no_log: true
 
-    - name: Keep catalog authentication on its credential-bound repository
-      ansible.builtin.assert:
-        that: aap_use_case_catalog_repo_url == lookup('ansible.builtin.env', 'AAP_INSTANCE_REGISTRY_REPOSITORY')
-        fail_msg: Use the reviewed repository bound to the registry-reader credential.
-      no_log: true
-
     - name: Resolve the explicit instance key before any setup orchestration
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
+    - name: Keep catalog authentication on the encrypted AutoDeploy repository
+      ansible.builtin.assert:
+        that: >-
+          (aap_use_case_catalog_repo_url | aap_normalized_git_url) ==
+          (aap_registered_target.registry_repository | aap_normalized_git_url)
+        fail_msg: Use the AutoDeploy repository selected by encrypted configuration.
+      no_log: true
 
     - name: Require inventory and registered preparation routes to identify the same API
       ansible.builtin.assert:
@@ -287,7 +289,7 @@
               - aap_instance_route.hypervisor.machine_credential_name | length > 0
           no_log: true
 
-        - name: Resolve only the registry reader and bound Machine
+        - name: Resolve only the bound Machine credential
           ansible.builtin.uri:
             url: >-
               {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/credentials/?name={{ item | urlencode }}&page_size=200
@@ -297,7 +299,6 @@
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           loop:
-            - AAP AutoDeploy instance registry reader
             - "{{ aap_instance_route.hypervisor.machine_credential_name }}"
           register: aap_selected_route_credentials
           no_log: true
@@ -312,11 +313,10 @@
           loop: "{{ aap_selected_route_credentials.results }}"
           no_log: true
 
-        - name: Verify the reader and Machine bindings while retaining the saved CaC Vault
+        - name: Verify the Machine binding while retaining the saved repository Git and Vault credentials
           ansible.builtin.assert:
             that:
-              - aap_selected_route_credentials.results[0].json.results[0].summary_fields.credential_type.name == 'AAP AutoDeploy instance registry reader'
-              - aap_selected_route_credentials.results[1].json.results[0].kind == 'ssh'
+              - aap_selected_route_credentials.results[0].json.results[0].kind == 'ssh'
           no_log: true
 
         - name: Prepare only the selected use-case prerequisites and verify completion

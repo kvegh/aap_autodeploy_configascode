@@ -504,9 +504,19 @@ class RoutingTests(unittest.TestCase):
             wrapper.write_text(
                 "#!"
                 + sys.executable
-                + '\nimport os,sys\na=[os.environ["FIXTURE_GIT_REMOTE"] if x=="https://git.example.invalid/registry.git" else x for x in sys.argv[1:]]\nos.execv("/usr/bin/git",["git"]+a)\n'
+                + '\nimport os,sys\na=[os.environ["FIXTURE_GIT_REMOTE"] if x=="https://git.example.invalid/fixture-owner/aap_autodeploy_configascode-secrets.git" else x for x in sys.argv[1:]]\nif any(x.startswith(("https://","http://","ssh://","git@")) for x in a):sys.exit("Unexpected network target")\nos.execv("/usr/bin/git",["git"]+a)\n'
             )
             wrapper.chmod(0o700)
+            # Run the actual action source with encrypted fixture configuration.
+            # Its project-relative lookup must never read the operator's myvars.
+            for relative in ('action_plugins/aap_read_instance.py',
+                             'filter_plugins/aap_instance_route.py', 'filter_plugins/cac_import.py'):
+                target = directory / relative
+                target.parent.mkdir(exist_ok=True)
+                target.write_bytes((ROOT / relative).read_bytes())
+            (directory / 'myvars').write_bytes(vault.encrypt(yaml.safe_dump({
+                'git_url': 'https://git.example.invalid/fixture-owner/aap_autodeploy_configascode.git',
+            }), vault_id='cac'))
             password = directory / "password"
             password.write_text("fixture-password")
             password.chmod(0o600)
@@ -550,10 +560,9 @@ class RoutingTests(unittest.TestCase):
             env = dict(
                 os.environ,
                 PATH=str(binaries) + os.pathsep + os.environ["PATH"],
-                AAP_INSTANCE_REGISTRY_TOKEN="fixture-reader-canary",
-                AAP_INSTANCE_REGISTRY_REPOSITORY="https://git.example.invalid/registry.git",
+                CAC_GIT_TOKEN="fixture-reader-canary",
                 FIXTURE_GIT_REMOTE=str(remote),
-                ANSIBLE_ACTION_PLUGINS=str(ROOT / "action_plugins"),
+                ANSIBLE_ACTION_PLUGINS=str(directory / "action_plugins"),
                 ANSIBLE_LIBRARY=str(ROOT / "library"),
                 ANSIBLE_FILTER_PLUGINS=str(ROOT / "filter_plugins"),
                 ANSIBLE_LOCAL_TEMP=str(directory / "local"),
@@ -571,6 +580,9 @@ class RoutingTests(unittest.TestCase):
             ]
             for extra, success in (
                 ({"aap_instance_key": "aap27-test-15"}, True),
+                ({"aap_instance_key": "aap27-test-15",
+                  "git_url": "https://untrusted.example.invalid/attacker/project.git",
+                  "vault_cac_repository_namespace": "https://untrusted.example.invalid/attacker"}, True),
                 ({"aap_instance_key": "unknown"}, False),
                 ({"aap_instance_key": "aap27-test-15", "vm_ip": "192.0.2.99"}, False),
                 (

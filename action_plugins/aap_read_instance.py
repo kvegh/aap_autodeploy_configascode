@@ -3,9 +3,9 @@
 from importlib.util import module_from_spec, spec_from_file_location
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
-from urllib.parse import urlsplit
 
 from ansible.errors import AnsibleActionFail
 from ansible.parsing.yaml.loader import AnsibleLoader
@@ -18,35 +18,43 @@ spec = spec_from_file_location(
 routing = module_from_spec(spec)
 spec.loader.exec_module(routing)
 
+contract_spec = spec_from_file_location(
+    "registry_cac_contract",
+    Path(__file__).resolve().parents[1] / "filter_plugins/cac_import.py",
+)
+contract = module_from_spec(contract_spec)
+contract_spec.loader.exec_module(contract)
+
 
 class ActionModule(ActionBase):
     TRANSFERS_FILES = False
 
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
-        repository = os.environ.get("AAP_INSTANCE_REGISTRY_REPOSITORY", "")
-        token = os.environ.get("AAP_INSTANCE_REGISTRY_TOKEN", "")
-        parsed = urlsplit(repository)
-        if (
-            not token
-            or parsed.scheme != "https"
-            or not parsed.hostname
-            or parsed.username
-            or parsed.password
-            or parsed.query
-            or parsed.fragment
-            or parsed.path in ("", "/")
-            or any(c.isspace() for c in repository)
-        ):
+        token = os.environ.get("CAC_GIT_TOKEN", "")
+        if not token:
             raise AnsibleActionFail(
-                "Attach the scoped AAP instance registry reader credential."
+                "Attach the AutoDeploy secrets repository CaC read-token credential."
             )
+        if set(self._task.args) - {"instance_key", "expected_route"}:
+            raise AnsibleActionFail("The registry repository is fixed by encrypted AutoDeploy configuration.")
+        try:
+            settings_file = Path(__file__).resolve().parents[1] / "myvars"
+            if not settings_file.read_bytes().startswith(b"$ANSIBLE_VAULT;"):
+                raise ValueError("Runtime configuration must be encrypted")
+            settings = self._loader.load_from_file(str(settings_file))
+            namespace = settings.get("vault_cac_repository_namespace")
+            if namespace is None:
+                namespace = re.sub(r"/[^/]+/?$", "", settings.get("git_url", ""))
+            repository = contract.project_contract("aap_autodeploy_configascode", namespace)["repository"]
+        except Exception:
+            raise AnsibleActionFail("Load the encrypted AutoDeploy repository configuration with its environment Vault credential.") from None
         with tempfile.TemporaryDirectory(prefix="aap-instance-registry-") as temporary:
             workspace = Path(temporary)
             helper = workspace / "git-askpass"
             helper.write_text(
                 '#!/bin/sh\ncase "$1" in\n*Username*) printf "%s\\n" x-access-token ;;\n'
-                '*Password*) printf "%s\\n" "$AAP_INSTANCE_REGISTRY_TOKEN" ;;\n*) exit 1 ;;\nesac\n'
+                '*Password*) printf "%s\\n" "$CAC_GIT_TOKEN" ;;\n*) exit 1 ;;\nesac\n'
             )
             helper.chmod(0o700)
             environment = dict(
@@ -95,5 +103,5 @@ class ActionModule(ActionBase):
                 raise AnsibleActionFail(
                     "The supplied workflow handoff differs from the registered instance."
                 )
-            result.update(changed=False, instance_route=route)
+            result.update(changed=False, instance_route=route, registry_repository=repository)
             return result

@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.28.8
+
+Reuse the existing AutoDeploy CaC repository read credential for instance-registry
+reads. Bind the repository to encrypted runtime configuration, keep Git TLS
+verification and redirect refusal, and prevent launch-variable URL overrides.
+Preparation retains its saved repository pair and adds only the pinned Machine.
+Align five job consumers and encrypted definitions without changing the writer
+or token permissions. Validate real registry access and the full 171-test suite.
+Add the owner's real-CMDB requirement to the existing work plan and Beads backlog.
+
 ## 0.28.7
 
 Document shared-registry Vault implementation `eb6b214`, the unchanged registry

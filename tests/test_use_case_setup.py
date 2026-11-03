@@ -120,10 +120,9 @@ class UseCaseSetupTests(unittest.TestCase):
                     "summary_fields": {"organization": {"name": organization},
                                        "credential_type": {"name": type_name or name}}}
 
-        original = [credential(1, "Case Git"), credential(2, "Case Vault", "vault", "cac"),
+        original = [credential(1, "aap_autodeploy_configascode-secrets CaC repo read token", type_name="Cac_git_token_type"), credential(2, "Case Vault", "vault", "cac"),
                     credential(3, "Environment Vault", "vault", "")]
-        route = [credential(4, "AAP AutoDeploy instance registry reader"),
-                 credential(6, "Registered Machine", "ssh")]
+        route = [credential(6, "Registered Machine", "ssh")]
         native = credential(7, "Destination API", type_name="Red Hat Ansible Automation Platform")
         native.update(credential_type=1, inputs={"host": "https://fresh.example.invalid"})
         for native_mode in ("false", "true"):
@@ -145,7 +144,7 @@ class UseCaseSetupTests(unittest.TestCase):
                         "aap_instance_route": {"hypervisor": {"machine_credential_name": "Registered Machine"}},
                         "aap_instance_key": "fixture-target", "aap_selected_importer_extra": {},
                     }
-                    expected = [1, 2, 3, 4, 6, 7] if preparation else [1, 2, 3, 7]
+                    expected = [1, 2, 3, 6, 7] if preparation else [1, 2, 3, 7]
                     fixture = [{"hosts": "localhost", "connection": "local", "gather_facts": False,
                                 "vars": variables, "tasks": tasks[:3] + [
                                     {"ansible.builtin.set_fact": {"rendered_extra": launch["extra_vars"],
@@ -243,17 +242,9 @@ class UseCaseSetupTests(unittest.TestCase):
                 },
             }
 
-        route = [
-            cred(
-                90,
-                "AAP AutoDeploy instance registry reader",
-                "cloud",
-                1,
-                43,
-                "AAP AutoDeploy instance registry reader",
-            ),
-            cred(92, "Registered machine", "ssh", 1, 1, "Machine"),
-        ]
+        native = cred(90, "Destination API", "cloud", 1, 1,
+                      "Red Hat Ansible Automation Platform")
+        native['inputs'] = {'host': 'https://fresh.example.invalid'}
         pins = {
             repo
             + " CaC vault cred": {
@@ -291,21 +282,21 @@ class UseCaseSetupTests(unittest.TestCase):
                 environment = cred(93, "Environment Vault", "vault", 1, 8, "Vault", "")
                 original = [git, vault, environment]
                 expected = [x["name"] for x in original]
-                selected = setup.scoped_launch_credentials(
-                    original, expected, route, organization, "Registered machine", pins
+                selected = setup.api_launch_credentials(
+                    original, expected, [native], organization, "https://fresh.example.invalid", pins
                 )
                 self.assertEqual(
-                    set(selected), {100 + index, 200 + index, 93, 90, 92}
+                    set(selected), {100 + index, 200 + index, 93, 90}
                 )
                 bad = copy.deepcopy(pins)
                 bad[vault["name"]]["id"] += 50
                 with self.assertRaises(AnsibleFilterError):
-                    setup.scoped_launch_credentials(
+                    setup.api_launch_credentials(
                         original,
                         expected,
-                        route,
+                        [native],
                         organization,
-                        "Registered machine",
+                        "https://fresh.example.invalid",
                         bad,
                     )
                 other_index = (index + 1) % len(repositories)
@@ -319,12 +310,12 @@ class UseCaseSetupTests(unittest.TestCase):
                     "cac",
                 )
                 with self.assertRaises(AnsibleFilterError):
-                    setup.scoped_launch_credentials(
+                    setup.api_launch_credentials(
                         original + [other],
                         expected + [other["name"]],
-                        route,
+                        [native],
                         organization,
-                        "Registered machine",
+                        "https://fresh.example.invalid",
                         pins,
                     )
 
@@ -342,14 +333,12 @@ class UseCaseSetupTests(unittest.TestCase):
             }
 
         original = [
-            credential(1, "Case Git"),
+            credential(1, "aap_autodeploy_configascode-secrets CaC repo read token"),
             credential(2, "Case Vault", "vault", "cac"),
             credential(3, "Environment Vault", "vault"),
         ]
-        route = [
-            credential(4, "AAP AutoDeploy instance registry reader"),
-            credential(6, "Registered Machine", "ssh"),
-        ]
+        original[0]["summary_fields"]["credential_type"]["name"] = "Cac_git_token_type"
+        route = [credential(6, "Registered Machine", "ssh")]
         expected = [entry["name"] for entry in original]
 
         def resolve(source, dependencies, pins=None):
@@ -362,23 +351,23 @@ class UseCaseSetupTests(unittest.TestCase):
                 pins,
             )
 
-        self.assertEqual(resolve(original, route), [1, 2, 3, 4, 6])
+        self.assertEqual(resolve(original, route), [1, 2, 3, 6])
         shared = copy.deepcopy(original)
         shared[0].update(organization=None, credential_type=17)
         shared[0]["summary_fields"]["organization"] = None
         pins = {
-            "Case Git": {
+            "aap_autodeploy_configascode-secrets CaC repo read token": {
                 "id": 1,
                 "credential_type": 17,
-                "credential_type_name": "Case Git",
+                "credential_type_name": "Cac_git_token_type",
             }
         }
         with self.assertRaises(AnsibleFilterError):
             resolve(shared, route)
-        self.assertEqual(resolve(shared, route, pins), [1, 2, 3, 4, 6])
+        self.assertEqual(resolve(shared, route, pins), [1, 2, 3, 6])
         for changed_id in (True, "1"):
             changed_pins = copy.deepcopy(pins)
-            changed_pins["Case Git"]["id"] = changed_id
+            changed_pins["aap_autodeploy_configascode-secrets CaC repo read token"]["id"] = changed_id
             with self.assertRaises(AnsibleFilterError):
                 resolve(shared, route, changed_pins)
         for change in ({"id": 99}, {"credential_type": 99}):
@@ -394,26 +383,26 @@ class UseCaseSetupTests(unittest.TestCase):
         changed_route = copy.deepcopy(route)
         changed_route[0].update(organization=None, credential_type=18)
         changed_route[0]["summary_fields"]["organization"] = None
-        reader_pin = {
+        machine_pin = {
             route[0]["name"]: {
-                "id": 4,
+                "id": 6,
                 "credential_type": 18,
                 "credential_type_name": route[0]["name"],
             }
         }
         with self.assertRaises(AnsibleFilterError):
-            resolve(original, changed_route, reader_pin)
+            resolve(original, changed_route, machine_pin)
         # A previous Machine is replaced only with the exact registry-bound one.
         self.assertEqual(
             resolve(original + [credential(7, "Previous Machine", "ssh")], route),
-            [1, 2, 3, 4, 6],
+            [1, 2, 3, 6],
         )
         for changed in (original[:-1], original + [credential(8, "Unreviewed Git")]):
             with self.assertRaises(AnsibleFilterError):
                 resolve(changed, route)
         for index, change in (
-            (1, {"kind": "vault"}),
-            (1, {"name": "Unregistered Machine"}),
+            (0, {"kind": "vault"}),
+            (0, {"name": "Unregistered Machine"}),
             (0, {"summary_fields": {"organization": {"name": "Other"}}}),
         ):
             changed = copy.deepcopy(route)

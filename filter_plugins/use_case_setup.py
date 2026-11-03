@@ -200,7 +200,7 @@ def scoped_launch_credentials(
         isinstance(original, list)
         and isinstance(expected_names, list)
         and isinstance(route_credentials, list)
-        and len(route_credentials) == 2,
+        and len(route_credentials) == 1,
         "Resolve the exact saved and registered route credential identities.",
     )
     preserved = [entry for entry in original if entry.get("kind") != "ssh"]
@@ -208,14 +208,18 @@ def scoped_launch_credentials(
         sorted(entry.get("name", "") for entry in preserved) == sorted(expected_names),
         "The importer credential associations differ from the reviewed capture.",
     )
-    reader, machine = route_credentials
+    machine = route_credentials[0]
     require(
-        reader.get("name") == "AAP AutoDeploy instance registry reader"
-        and reader.get("summary_fields", {}).get("credential_type", {}).get("name")
-        == reader["name"]
-        and machine.get("kind") == "ssh"
+        machine.get("kind") == "ssh"
         and machine.get("name") == machine_name,
-        "The selected route requires its fixed reader and bound Machine.",
+        "The selected route requires its bound Machine credential.",
+    )
+    require(
+        len([entry for entry in preserved
+             if entry.get("name") == "aap_autodeploy_configascode-secrets CaC repo read token"
+             and entry.get("summary_fields", {}).get("credential_type", {}).get("name")
+             == "Cac_git_token_type"]) == 1,
+        "Retain the saved AutoDeploy repository read token for registry reads.",
     )
     require(
         len([entry for entry in preserved if entry.get("kind") == "vault"
