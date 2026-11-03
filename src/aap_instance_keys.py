@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import re
+import yaml
+from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
 from urllib.parse import quote, urlsplit
 
 TYPE_NAME = "Pseudo Instance Key Store"
@@ -135,6 +137,111 @@ def retire_record(configuration, selected, target):
         if row.get("name") != selected + " MCP and API token"]
     document(records)
     return result
+
+
+def inventory_variables(row):
+    value = row.get("variables", {})
+    value = yaml.safe_load(value) if isinstance(value, str) else deepcopy(value)
+    if value is None:
+        value = {}
+    require(isinstance(value, dict), "Require mapping variables on the selected inventory entries.")
+    return value
+
+
+def set_inventory_variables(row, values):
+    """Retain a captured literal JSON field instead of enabling its templates."""
+    previous = row.get("variables")
+    if isinstance(previous, AnsibleUnsafeText):
+        row["variables"] = wrap_var(json.dumps(values))
+    elif isinstance(previous, str):
+        row["variables"] = json.dumps(values)
+    else:
+        row["variables"] = values
+
+
+def merge_inventory(configuration, selected, route, policy):
+    """Keep VM placement in the existing inventory capture, without any tokens."""
+    instance_name(selected)
+    require(route.get("vm_name") == selected, "Inventory registration must match the allocated VM.")
+    match = re.fullmatch(r"aap[0-9]+-test-([0-9]+)", selected)
+    require(match is not None, "Register only the selected globally allocated AAP instance.")
+    pin = route["hypervisor"]
+    result = deepcopy(configuration)
+    data = result["host_inventory_configuration"]
+    hypervisors = [row for row in data["hosts"]
+                   if inventory_variables(row).get("ansible_host") == pin["address"]]
+    require(len(hypervisors) == 1, "Register the pinned hypervisor in the existing shared inventory first.")
+    hypervisor = hypervisors[0]
+    variables = inventory_variables(hypervisor)
+    require(variables.get("machine_id", pin["machine_id"]) == pin["machine_id"],
+            "The existing inventory hypervisor has a conflicting machine identity.")
+    variables.update(ansible_host=pin["address"], ansible_user=pin["user"], ansible_port=pin["port"],
+                     public_ipv4=pin["public_ip"], machine_id=pin["machine_id"],
+                     host_keys=pin["host_keys"], isolation_policy=deepcopy(policy))
+    set_inventory_variables(hypervisor, variables)
+    matches = [row for row in data["hosts"] if row.get("name") == selected]
+    require(len(matches) <= 1, "Resolve one inventory entry for the selected instance.")
+    if matches:
+        host = matches[0]
+        values = inventory_variables(host)
+        require(host["inventory"] == hypervisor["inventory"] and
+                origin("https://" + values.get("ansible_fqdn", "")) == origin(route["aap_hostname"]),
+                "Do not replace an existing inventory host pointing to a different AAP.")
+    else:
+        host = {"name": selected, "inventory": hypervisor["inventory"], "enabled": True}
+        data["hosts"].append(host)
+        values = {}
+    values.update(ansible_host=route["vm_ip"], ansible_fqdn=urlsplit(origin(route["aap_hostname"])).hostname,
+                  hypervisor_host=hypervisor["name"], aap_instance_number=int(match[1]), vm_ip=route["vm_ip"],
+                  host_keys=deepcopy(route["guest_host_keys"]))
+    set_inventory_variables(host, values)
+    groups = [row for row in data["groups"] if row["inventory"] == hypervisor["inventory"]
+              and inventory_variables(row).get("hypervisor_host") == hypervisor["name"]]
+    require(len(groups) == 1, "Define one VM inventory group mapped to the selected hypervisor.")
+    if selected not in groups[0].setdefault("hosts", []):
+        groups[0]["hosts"].append(selected)
+    return result
+
+
+def ensure_source_inventory(client, configuration, selected, route):
+    data = configuration["host_inventory_configuration"]
+    host = next(row for row in data["hosts"] if row["name"] == selected)
+    hypervisor = next(row for row in data["hosts"]
+                      if row["name"] == inventory_variables(host)["hypervisor_host"])
+    inventories = client.rows("inventories/?name=" + quote(host["inventory"]))
+    require(len(inventories) == 1, "Resolve the maintained shared inventory on the source AAP.")
+    identity = inventories[0]["id"]
+    changed = False
+    host_id = None
+    for desired in (hypervisor, host):
+        existing = client.rows("hosts/?inventory=%s&name=%s" % (identity, quote(desired["name"])))
+        require(len(existing) <= 1, "Require unique source inventory host names.")
+        values = inventory_variables(desired)
+        if existing:
+            current = inventory_variables(existing[0])
+            key = "ansible_fqdn" if desired is host else "ansible_host"
+            require(current.get(key) == values[key], "The live source inventory has conflicting placement data.")
+            merged = dict(current, **values)
+            if merged != current:
+                client.request("PATCH", "hosts/%s/" % existing[0]["id"], {"variables": json.dumps(merged)})
+                changed = True
+            row_id = existing[0]["id"]
+        else:
+            row = client.request("POST", "hosts/", {"name": desired["name"], "inventory": identity,
+                "enabled": desired.get("enabled", True), "variables": json.dumps(values)})
+            row_id = row["id"]
+            changed = True
+        if desired is host:
+            host_id = row_id
+    group = next(row for row in data["groups"] if row["inventory"] == host["inventory"] and
+                 inventory_variables(row).get("hypervisor_host") == hypervisor["name"])
+    groups = client.rows("groups/?inventory=%s&name=%s" % (identity, quote(group["name"])))
+    require(len(groups) == 1, "Resolve the existing source VM placement group.")
+    members = client.rows("groups/%s/hosts/" % groups[0]["id"])
+    if not any(row["id"] == host_id for row in members):
+        client.request("POST", "groups/%s/hosts/" % groups[0]["id"], {"id": host_id})
+        changed = True
+    return changed
 
 
 def ensure_source_store(client, records, organization):

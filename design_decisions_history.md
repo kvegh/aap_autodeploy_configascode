@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Resolve delegated SSH settings from the original guest entry — 2026-11-03
+
+Implementation `faf64bc` fixes proxy publication after successful AAP installation.
+Ansible evaluates SSH connection variables in the delegated hypervisor's context,
+but the selected instance route belongs to the original guest inventory entry.
+Explicit `hostvars[inventory_hostname]` references retain that route and its exact
+management address, account and port. The machine-ID guard and strict host-key
+validation remain enforced.
+
+The regression executes actual Ansible delegated connection resolution with the
+route present only on the original entry and an isolated SSH fixture. Thirteen
+TLS/proxy cases and production lint pass. A live publication-only retry then
+succeeded, and independent checks confirmed trusted public HTTPS, upstream
+authority/SNI verification and a valid nginx configuration. Temporary diagnostic
+Job Template settings were restored afterward; installation was not repeated.
+
 ## Retry verified upstream publication without repeating installation — 2026-11-03
 
 Implementation `ec1aed8` adds the `aap_upstream_tls` tag after the vendor installer

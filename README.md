@@ -75,7 +75,11 @@ before any image write, with a pinned hypervisor and live isolation checks.
 The isolation guard keeps its original bridge/DNS policy unless the inventory
 independently declares approved HTTPS clients and protected source addresses.
 Each exception binds an exact bridge, IPv4 and MAC; the registered hypervisor
-pin remains unchanged. Local counters are preserved as migration evidence. Fresh guest host keys and
+pin remains unchanged. Independently approved local guest-to-hypervisor grants
+may also declare exact host IPv4 destinations and TCP ports through
+`aap_hypervisor_isolation_host_clients`. The guard verifies the complete existing
+policy; it never applies a new permission. Empty optional lists retain the
+original isolation policy. Local counters are preserved as migration evidence. Fresh guest host keys and
 the exact instance route are retained for the following stages. Stages 02–04
 resolve an exact instance key from that registry before any target connection;
 SSH uses the pinned hypervisor jump route and API access uses verified public

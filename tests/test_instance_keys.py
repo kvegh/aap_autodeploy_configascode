@@ -90,6 +90,51 @@ class FakeSource:
 
 
 class InstanceKeyTests(unittest.TestCase):
+    def test_inventory_registration_retains_literal_json_variable_tags(self):
+        from test_aap_name_allocation import RoutingTests
+        route = RoutingTests().route()
+        original = wrap_var(json.dumps({"ansible_host": route["hypervisor"]["address"],
+                                       "ansible_python_interpreter": "{{ ansible_playbook_python }}"}))
+        configuration = {"host_inventory_configuration": {
+            "hosts": [{"name": "fixture-hypervisor", "inventory": "Shared", "variables": original}],
+            "groups": [{"name": "guests", "inventory": "Shared", "variables": {
+                "hypervisor_host": "fixture-hypervisor"}, "hosts": []}]}}
+        updated = keys.merge_inventory(configuration, route["vm_name"], route, {})
+        restored = AnsibleLoader(yaml.dump(updated, Dumper=vault_yaml.VaultDumper).encode()).get_single_data()
+        row = restored["host_inventory_configuration"]["hosts"][0]
+        self.assertTrue(getattr(row["variables"], "__UNSAFE__", False))
+        self.assertEqual(keys.inventory_variables(row)["ansible_python_interpreter"],
+                         "{{ ansible_playbook_python }}")
+        self.assertEqual(keys.merge_inventory(restored, route["vm_name"], route, {}), restored)
+
+    def test_inventory_registration_preserves_other_hosts_and_refuses_conflicting_placement(self):
+        from test_aap_name_allocation import RoutingTests
+        route = RoutingTests().route()
+        configuration = {"host_inventory_configuration": {
+            "inventories": [{"name": "Shared"}],
+            "hosts": [{"name": "fixture-hypervisor", "inventory": "Shared", "variables": {
+                "ansible_host": route["hypervisor"]["address"], "keep": True}},
+                {"name": "unrelated", "inventory": "Shared", "variables": ""}],
+            "groups": [{"name": "guests", "inventory": "Shared", "variables": {
+                "hypervisor_host": "fixture-hypervisor"}, "hosts": ["unrelated"]}]}}
+        original = deepcopy(configuration)
+        updated = keys.merge_inventory(configuration, route["vm_name"], route, {"bridges": ["virbr0"]})
+        self.assertEqual(configuration, original)
+        data = updated["host_inventory_configuration"]
+        selected = next(row for row in data["hosts"] if row["name"] == route["vm_name"])
+        self.assertEqual(selected["variables"]["ansible_fqdn"], "aap27-test-15.example.invalid")
+        self.assertEqual(selected["variables"]["aap_instance_number"], 15)
+        self.assertEqual(selected["variables"]["hypervisor_host"], "fixture-hypervisor")
+        self.assertEqual(data["groups"][0]["hosts"], ["unrelated", route["vm_name"]])
+        self.assertTrue(data["hosts"][0]["variables"]["keep"])
+        self.assertNotIn("token", json.dumps(data))
+        self.assertEqual(keys.merge_inventory(updated, route["vm_name"], route,
+                         {"bridges": ["virbr0"]}), updated)
+        broken = deepcopy(updated)
+        broken["host_inventory_configuration"]["hosts"][-1]["variables"]["ansible_fqdn"] = "other.example.invalid"
+        with self.assertRaises(keys.StoreError):
+            keys.merge_inventory(broken, route["vm_name"], route, {})
+
     def test_selected_name_controls_url_and_token_and_unknown_or_mismatched_hosts_fail(self):
         first = keys.merge_record({}, "one", saved())
         second = keys.merge_record(first, "two", saved("two", "synthetic-instance-two-token", 2))

@@ -161,7 +161,52 @@ def instance_route(route):
     return route
 
 
-def isolation_policy(pin, https_clients=None, protected_ipv4=None):
+def local_host_policy(result, pin, clients):
+    clients = [] if clients is None else clients
+    require(isinstance(clients, list) and len(clients) <= 64,
+            "Declare a bounded guest-to-hypervisor client list.")
+    addresses, macs, approved = set(), set(), []
+    rule_count = 0
+
+    def local_address(address):
+        ipv4(address)
+        parsed = IPv4Address(address)
+        require(not (parsed.is_unspecified or parsed.is_multicast or parsed.is_loopback
+                     or parsed.is_reserved or address == "255.255.255.255"),
+                "Declare normalized unicast guest and local host addresses.")
+
+    for client in clients:
+        require(isinstance(client, Mapping) and set(client) ==
+                {"bridge", "ipv4", "mac", "destinations", "ports"},
+                "Bind each local guest grant to its identity, host destinations and TCP ports.")
+        require(client["bridge"] in pin["isolation_bridges"],
+                "A local guest client escaped the pinned isolation bridges.")
+        local_address(client["ipv4"])
+        mac = client["mac"]
+        require(isinstance(mac, str) and re.fullmatch(r"[0-9a-f]{2}(?::[0-9a-f]{2}){5}", mac)
+                and int(mac[:2], 16) & 1 == 0 and mac != "00:00:00:00:00:00"
+                and client["ipv4"] not in addresses and mac not in macs,
+                "Declare unique normalized local guest identities.")
+        destinations, ports = client["destinations"], client["ports"]
+        require(isinstance(destinations, list) and 1 <= len(destinations) <= 64,
+                "Declare bounded exact local host destinations.")
+        for address in destinations:
+            local_address(address)
+        require(len(set(destinations)) == len(destinations), "Local host destinations must be unique.")
+        require(isinstance(ports, list) and 1 <= len(ports) <= 64
+                and all(type(port) is int and 1 <= port <= 65535 for port in ports)
+                and len(set(ports)) == len(ports), "Declare unique bounded local TCP ports.")
+        addresses.add(client["ipv4"])
+        macs.add(mac)
+        rule_count += len(destinations) * len(ports)
+        approved.append(dict(client, destinations=list(destinations), ports=list(ports)))
+    require(rule_count <= 4096, "The local guest policy exceeds its bounded rule count.")
+    if approved:
+        result["guest_host_clients"] = approved
+    return result
+
+
+def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_clients=None):
     pin = hypervisor_pin(pin)
     result = {
         "bridges": list(pin["isolation_bridges"]),
@@ -173,7 +218,7 @@ def isolation_policy(pin, https_clients=None, protected_ipv4=None):
         "Declare approved HTTPS clients explicitly as a list.",
     )
     if not clients:
-        return result
+        return local_host_policy(result, pin, guest_host_clients)
     require(
         isinstance(protected_ipv4, list) and protected_ipv4,
         "Approved HTTPS clients require independently declared protected source IPv4 addresses.",
@@ -207,7 +252,7 @@ def isolation_policy(pin, https_clients=None, protected_ipv4=None):
         "Duplicate HTTPS approvals are refused.",
     )
     result.update(https_clients=approved, protected_ipv4=list(protected_ipv4))
-    return result
+    return local_host_policy(result, pin, guest_host_clients)
 
 
 def safe_instance_dns(records, name, address):

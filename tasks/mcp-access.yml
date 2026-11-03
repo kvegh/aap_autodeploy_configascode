@@ -314,6 +314,13 @@
         instance_name: "{{ aap_instance_key }}"
         record: "{{ cac_instance_api_record }}"
         organization: "{{ aap_instance_key_store.source_organization | default('Default') }}"
+        inventory_registration: >-
+          {{ {'route': aap_instance_route,
+              'policy': aap_instance_route.hypervisor | aap_hypervisor_isolation_policy(
+                aap_hypervisor_isolation_https_clients | default([]),
+                aap_hypervisor_isolation_protected_ipv4 | default([]),
+                aap_hypervisor_isolation_host_clients | default([]))}
+             if aap_instance_key_store.register_inventory | default(false) | bool else omit }}
       register: cac_instance_key_publication
   rescue:
     - name: Report protected publication failure without exposing the saved token

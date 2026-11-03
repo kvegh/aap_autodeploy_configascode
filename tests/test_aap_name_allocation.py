@@ -409,6 +409,25 @@ class RoutingTests(unittest.TestCase):
             routing.isolation_policy(pin, [invalid], ["198.51.100.5"])
         self.assertEqual(routing.isolation_policy(pin, [], ["198.51.100.5"]), baseline)
 
+    def test_local_host_policy_is_exact_bounded_and_does_not_change_default_isolation(self):
+        pin = self.route()["hypervisor"]
+        baseline = routing.isolation_policy(pin)
+        client = {"bridge": "virbr0", "ipv4": "192.0.2.15", "mac": "52:54:00:00:00:15",
+                  "destinations": ["192.0.2.200"], "ports": [2222]}
+        self.assertEqual(routing.isolation_policy(pin, guest_host_clients=[client]),
+                         dict(baseline, guest_host_clients=[client]))
+        self.assertEqual(routing.isolation_policy(pin, guest_host_clients=[]), baseline)
+        invalid = [dict(client, bridge="other"), dict(client, destinations=["0.0.0.0"]),
+                   dict(client, destinations=["192.0.2.200", "192.0.2.200"]),
+                   dict(client, ports=[True]), dict(client, ports=[0]),
+                   dict(client, ports=[2222, 2222]), dict(client, mac="00:00:00:00:00:00"),
+                   dict(client, protocol="all")]
+        for value in invalid:
+            with self.subTest(value=value), self.assertRaises(routing.AnsibleFilterError):
+                routing.isolation_policy(pin, guest_host_clients=[value])
+        with self.assertRaises(routing.AnsibleFilterError):
+            routing.isolation_policy(pin, guest_host_clients=[client, client])
+
     def route(self):
         return {
             "vm_name": "aap27-test-15",

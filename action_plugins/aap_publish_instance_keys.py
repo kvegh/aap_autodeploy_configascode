@@ -29,6 +29,7 @@ def load(name, path):
 keys = load("publish_instance_keys", ROOT / "src/aap_instance_keys.py")
 contract = load("publish_cac_contract", ROOT / "filter_plugins/cac_import.py")
 vault_yaml = load("publish_cac_yaml", ROOT / "src/cac_yaml.py")
+routing = load("publish_inventory_routing", ROOT / "filter_plugins/aap_instance_route.py")
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -80,12 +81,25 @@ class ActionModule(ActionBase):
                 result.update(changed=False, published=False)
                 return result
             args = self._task.args
-            keys.require(set(args) in ({"instance_name", "record", "organization"},
-                                     {"instance_name", "record", "organization", "operation"}),
+            keys.require(set(args) >= {"instance_name", "record", "organization"} and
+                         set(args) <= {"instance_name", "record", "organization", "operation", "inventory_registration"},
                          "Publish only the selected instance's verified saved token.")
             retiring = args.get("operation", "publish") == "retire"
             keys.require(args.get("operation", "publish") in ("publish", "retire"),
                          "Choose instance access publication or retirement.")
+            registration = args.get("inventory_registration")
+            if registration:
+                keys.require(not retiring and set(registration) == {"route", "policy"},
+                             "Publish inventory placement only with a fresh instance token.")
+                registered_route = routing.instance_route(registration["route"])
+                keys.require(registered_route["vm_name"] == args["instance_name"] and
+                             keys.origin(registered_route["aap_hostname"]) == keys.origin(args["record"]["target"]),
+                             "Inventory placement must identify the same verified token destination.")
+                declared = registration["policy"]
+                keys.require(routing.isolation_policy(registered_route["hypervisor"],
+                    declared.get("https_clients", []), declared.get("protected_ipv4"),
+                    declared.get("guest_host_clients", [])) == declared,
+                    "Publish the current declared recovery isolation policy without changing its scope.")
             token = os.environ.get("CAC_GIT_TOKEN", "")
             keys.require(bool(token), "Attach VM allocation git Pseudo CMDB writer for token publication.")
             repository = contract.autodeploy_repository(self._loader, ROOT)
@@ -136,6 +150,16 @@ class ActionModule(ActionBase):
                     after = (keys.retire_record(before, args["instance_name"], args["record"].get("target"))
                              if retiring else keys.merge_record(before, args["instance_name"], args["record"]))
                     changes = [(relative, path, before, after, label, secret)]
+                    if registration:
+                        extra = "cac/host_inventory.yml"
+                        extra_path = checkout / extra
+                        keys.require(extra_path.is_file() and not extra_path.is_symlink(),
+                                     "Require the maintained encrypted shared inventory capture.")
+                        raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
+                            extra_path.read_bytes(), filename=str(extra_path))
+                        old = AnsibleLoader(raw).get_single_data()
+                        updated = keys.merge_inventory(old, args["instance_name"], registered_route, declared)
+                        changes.append((extra, extra_path, old, updated, extra_label, extra_secret))
                     if retiring:
                         for extra in ("state/aap_vm_allocations_vault.yml", "cac/host_inventory.yml"):
                             extra_path = checkout / extra
@@ -203,6 +227,11 @@ class ActionModule(ActionBase):
                     records = latest["aap_instance_api_credentials"]
                     synchronized = keys.ensure_source_store(source, records, args["organization"])
                     api_changed = api_changed or synchronized["changed"]
+                    if registration:
+                        inventory = AnsibleLoader(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                        api_changed = keys.ensure_source_inventory(source, inventory,
+                            args["instance_name"], registered_route) or api_changed
                     if retiring:
                         for host in source.rows("hosts/?name=" + args["instance_name"]):
                             variables = yaml.safe_load(host.get("variables", "{}")) or {}

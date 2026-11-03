@@ -41,6 +41,14 @@ IP, verified public SSH keys and complete isolation bridge/DNS-bridge lists.
 The Machine credential name may be included for later selected setup. No
 password or private key belongs in this handoff.
 
+The optional `aap_hypervisor_isolation_host_clients` list describes previously
+approved local guest-to-hypervisor TCP permissions. Each entry has exactly
+`bridge`, `ipv4`, `mac`, `destinations` and `ports`; addresses, ports and identities
+must be normalized, unique and bounded. This list is independent of public HTTPS
+egress. The persistent Hactar checker also verifies that its local destinations
+belong to the connected hypervisor. AutoDeploy compares the complete policy and
+does not configure firewall permissions implicitly.
+
 Before reservation, Stage 01 enforces SSH host-key checking, reads the actual
 machine ID, verifies the existing persistent recovery isolation helper/service,
 checks the selected network bridge and requires the already-published golden
@@ -128,3 +136,12 @@ Stage 04 now needs the existing Git writer instead of the repository reader,
 alongside the existing source API and source CA credentials, to publish the new
 instance token back to the source. Stages 02/03 retain repository read access.
 See [instance token storage](instance-token-store.md) and [decommissioning](decommission.md).
+
+With `aap_instance_key_store.register_inventory: true`, the same base publication
+also updates the existing encrypted shared inventory and source AAP inventory.
+It registers the selected instance's explicit FQDN, fresh guest host keys and
+hypervisor placement, adds the existing placement-group membership and retains
+other hosts, variables and members. The hypervisor's verified management identity
+and declared isolation policy are preserved alongside placement. This callback
+uses the existing writer, source API and Vault credentials; it creates no extra
+job and places no API tokens in inventory variables.

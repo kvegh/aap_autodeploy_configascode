@@ -163,6 +163,7 @@ class McpAccessTests(unittest.TestCase):
         config.write_text("[defaults]\nstdout_callback=default\nretry_files_enabled=False\n")
         environment = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_NOCOLOR="1",
                            ANSIBLE_ACTION_PLUGINS=actions,
+                           ANSIBLE_FILTER_PLUGINS=str(ROOT / "filter_plugins"),
                            ANSIBLE_LOCAL_TEMP=str(self.root / "local"), ANSIBLE_REMOTE_TEMP=str(self.root / "remote"))
         result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(fixture)],
                                 cwd=self.root, env=environment, capture_output=True, text=True, timeout=60)

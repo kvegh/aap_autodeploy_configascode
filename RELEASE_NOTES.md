@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.31.0
+
+Register each new AAP instance in the existing encrypted shared inventory and
+source Controller as part of persistent API/MCP token publication. Preserve
+existing host variables, literal JSON tags and group membership; keep tokens out
+of inventory. The callback uses the existing writer, source API and Vault inputs.
+
+Recognize independently declared local guest-to-hypervisor TCP clients in the
+complete isolation guard and published placement data. Require exact bounded
+bridge/IP/MAC/destination/port entries; empty lists preserve the original policy.
+These declarations verify existing permissions and do not apply firewall changes.
+
+Validation includes 192 passing full-suite cases, eight publication/literal-tag
+regressions, twenty allocation/routing cases and production task lint. Actual
+fresh base publication remains an independent deployment check.
+
 ## 0.30.1
 
 Fix delegated proxy publication when the selected route exists only on its guest
