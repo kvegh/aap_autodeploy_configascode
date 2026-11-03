@@ -192,16 +192,16 @@ Current drift review uses CaC comparisons. Incremental catch-up using AAP audit
 logs is planned: identify changed objects, retrieve their current configuration
 and dependencies, and review differences before updating encrypted captures.
 Audit checkpoints, component coverage and retention gaps still need validation.
-Base implements persistent MCP token creation with a protected target-side copy.
-The TODO tracks Vault-encrypted per-instance connection values in the private
-base repository, separate Git write access, client configuration and CA trust.
+Base creates one persistent API/MCP token, retains a protected target-side copy,
+and publishes its instance-indexed entry to encrypted CaC and the source AAP
+shared token-store credential. See [instance token storage](docs/instance-token-store.md).
 
 ## Current implementation
 
 All five project import Job Templates now use [one API-only configuration
 playbook](docs/cac-project-import.md), `deploy-cac-project.yml`, with fixed project
 IDs and separate repository Git/Vault credentials. Choose the inventory instance
-and its native destination API credential at launch. The playbook derives the
+at launch; the saved shared token store supplies its API token automatically. The playbook derives the
 private repository and canonical capture filename, verifies TLS, and applies
 reviewed CoP data without SSH authentication fallback or workload execution.
 The [consolidation analysis](docs/deployment-consolidation-analysis.md) remains
@@ -245,7 +245,9 @@ creation of another AAP and functional demo tests remain open in the
 The obsolete per-project wrapper playbooks have been removed. Every deployment
 Job Template selects the common importer and fixes its project ID in extra variables.
 `restore-windows-config.yml` remains a local-file utility.
-`destroy-test-aap.yml` handles guarded test-instance teardown. Previous successful
+`destroy-test-aap.yml` backs **Decommission AAP Test Instance**, with explicit
+instance confirmation, pinned recovery identity and exact disk/DNS/TLS/nginx cleanup, related versioned guests and an orphaned DNS
+scan. Active source inventory/API state is retired without reusing its number. Previous successful
 imports below are historical evidence, not claims that this new importer has run
 against a target.
 
@@ -276,14 +278,16 @@ pins preserve existing global associations; route credentials still require
 organization ownership. Source/target API prechecks and temporary-token cleanup
 have passed; a live selected-use-case import remains unperformed.
 The shared inventory has per-hypervisor VM groups with `hypervisor_host`, and
-AAP hosts carry explicit `ansible_fqdn`. Configuration import selects the exact
-inventory host through `aap_instance_key`; the native API credential must match
-that FQDN and verify certificates. No target identity or token is guessed.
-Native API credentials created through the API must explicitly set Request
-Timeout, for example `10`. An omitted field can inject an empty
-`aap_request_timeout`, which the configuration roles correctly reject as an
-invalid number. The registered-instance DNS check converts the native Verify
-SSL value to a Boolean while retaining pinned DNS and trusted HTTPS requirements.
+AAP hosts carry explicit `ansible_fqdn`. Configuration import selects the exact inventory host through `aap_instance_key`.
+The saved **AAP API/MCP Auth Token Store** selects its bearer and binds its URL to
+`ansible_fqdn`; TLS verification is required. There is no SSH or installer-password
+fallback. Manual native API credentials remain usable separately and must set a
+Request Timeout; the generic importer sets its own numeric request timeout.
+
+Future deployments use `<role>.vNN.<zone>` public names, with the same allocated
+number for AAP and its demo website. Existing allocation/libvirt/inventory keys
+are preserved. See [shared allocation](docs/shared-instance-allocation.md) and
+[decommissioning](docs/decommission.md).
 
 ```mermaid
 flowchart LR
@@ -620,7 +624,7 @@ The production and existing fresh-instance credential names, grants and bindings
 were verified after migration. Configuration templates keep their own repository
 pair; runtime credentials and unrelated template settings stay unchanged. This
 maintenance leaves current registry routing intact. Inventory-driven destination
-lookup and explicit native destination API credentials are implemented in the shared project importer.
+lookup and automatic per-instance API token selection are implemented in the shared project importer.
 
 `Cac_git_token_type` is the reusable custom schema, not a credential containing a
 token. Its `CAC_GIT_TOKEN` injector supplies the separate per-repository read
@@ -709,7 +713,7 @@ success or an ordinary task failure and removes the workspace even if revocation
 fails. Fatal role-loading errors or interruptions can skip Ansible's cleanup;
 such runs require checking for a leftover token.
 
-### Persistent MCP access from base
+### Persistent API and MCP access from base
 
 After applying base and verifying the final administrator login, Step 04 creates
 an `MCP admin token` owned by the administrator account with API scope `write`,
@@ -742,23 +746,15 @@ revoked by ordinary run cleanup. Process termination or a lost token-creation
 response can still require manual inspection. Run this provisioning serially for
 each target; concurrent base jobs are not a token-rotation mechanism.
 
-This implements target-side token creation and recovery storage. Fresh base
-job 2233 and independent target checks verified live provisioning and MCP access;
-live rerun preservation remains in the [TODO](PLAN.md#todo). Vault-encrypted
-per-instance Git write-back, external client configuration and certificate trust,
-and controlled rotation are also pending. Current target-side storage needs no
-additional repository write credential.
-
-For AAP 2.7, dispatch excludes the legacy `controller_applications` role because
-`ansible.controller` 4.8.11 does not contain its application module. Dispatch's
-`gateway_applications` role applies `aap_applications` through `ansible.platform`.
-Other Controller configuration roles remain enabled.
-
-The execution environment must provide `ansible.controller.license` and Git,
-and trust the repository server's TLS certificate. HTTPS redirects and stored
-Git credential helpers are disabled for this download. Submodules are not
-fetched. Git servers must accept token authentication using the `x-access-token`
-username, as GitHub does.
+The same token also authenticates remote CaC deployment API calls. With
+`aap_instance_key_store.publish: true`, base writes the selected instance record
+into `aap_instance_api_credentials` in the canonical encrypted AutoDeploy capture,
+then updates **AAP API/MCP Auth Token Store on the source AAP**. Publication uses
+the existing Git writer, source API credential and source CA; no second token or
+additional job is created. A failed publication keeps the saved target token so
+reruns can repair synchronization. Other instance records and literal templates
+are preserved. See [instance token storage](docs/instance-token-store.md) for
+requirements, tests and the temporary store's access limitation.
 
 ### Step 04 debug logging
 
@@ -814,7 +810,7 @@ Choose the AIOps configuration Job Template. It fixes
 `aap_cac_project_id: aiops-selfhealing-demo`; the common importer loads
 `vaults/cac/aiops-selfhealing-demo-cac-vault.yml` from its dedicated private
 repository. Follow the [operator procedure](docs/cac-project-import.md), selecting
-`aap_instance_key` and an explicit native destination API credential. The public
+`aap_instance_key`; the saved shared token store selects its API token. The public
 playbook repository needs no private read token.
 
 Before the first import on a fresh target, run the existing use-case prerequisite
@@ -842,7 +838,7 @@ Choose the Windows configuration Job Template, which fixes
 `aap_cac_project_id: disconnected-windows-patching` for the common importer.
 It reads `vaults/cac/disconnected-windows-patching-cac-vault.yml` from its own
 private repository using that repository's saved read token and Vault credential.
-Choose the inventory destination and its explicit native API credential; raw
+Choose the inventory destination; its API bearer is selected automatically; raw
 repository/file inputs and installer-password SSH fallback are removed.
 Prepared target public CA/known-host inputs are required for application trust.
 See the [shared procedure and safeguards](docs/cac-project-import.md).
@@ -891,7 +887,7 @@ and object permissions. The LDAP integration does not import Windows ACLs.
 Choose the Orchestrator configuration Job Template, which fixes
 `aap_cac_project_id: automation-orchestrator` for the shared importer. Its
 canonical capture is `vaults/cac/automation-orchestrator-cac-vault.yml`. Select the
-inventory destination and native API credential under the
+inventory destination under the
 [common procedure](docs/cac-project-import.md); its own Git/Vault pair stays saved.
 
 The capture's `orchestrator_capture_readiness` mapping must set
@@ -936,7 +932,7 @@ The private companion stores the whole-file encrypted capture at
 `vaults/cac/assistant-team-cac-vault.yml`. Its public automation repositories need
 no private SCM credential. Choose the Assistant configuration Job Template; its
 fixed `assistant-team` project ID selects this capture. Set the inventory host
-and select an explicit native destination API credential. The saved repository
+and keep the saved shared API/MCP token-store credential. The saved repository
 read token and Vault credential stay separate. Follow the
 [common operator procedure](docs/cac-project-import.md).
 

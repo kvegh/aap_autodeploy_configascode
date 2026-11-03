@@ -116,12 +116,12 @@
           register: aap_selected_parent_credentials
           no_log: true
 
-        - name: Select only the native destination credential supplied to this job
+        - name: Select the shared instance token store attached to this job
           ansible.builtin.set_fact:
-            aap_selected_api_credentials: "{{ aap_selected_parent_credentials.json.results | aap_native_api_credentials }}"
+            aap_selected_api_credentials: "{{ aap_selected_parent_credentials.json.results | aap_instance_store_credentials }}"
           no_log: true
 
-        - name: Read the selected credential's managed type
+        - name: Read the selected store credential type
           ansible.builtin.uri:
             url: >-
               {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/credential_types/{{ aap_selected_api_credentials[0].credential_type }}/
@@ -133,12 +133,12 @@
           register: aap_selected_api_type
           no_log: true
 
-        - name: Require the complete association list and standard managed AAP credential type
+        - name: Require the complete association list and approved instance token store
           ansible.builtin.assert:
             that:
               - aap_selected_parent_credentials.json.next is none
-              - aap_selected_api_type.json.managed
-              - aap_selected_api_type.json.name == 'Red Hat Ansible Automation Platform'
+              - not aap_selected_api_type.json.managed
+              - aap_selected_api_type.json.name == 'Pseudo Instance Key Store'
               - aap_selected_api_type.json.id == aap_selected_api_credentials[0].credential_type
           no_log: true
 

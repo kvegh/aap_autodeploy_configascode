@@ -1,120 +1,224 @@
 ---
-- name: "Destroy Test AAP VM"
+# Retire one registered test deployment, including related guests and orphaned DNS.
+# Verify pinned hypervisor, storage ownership and full zone selection before deleting.
+- name: Decommission one explicitly selected AAP test instance
   hosts: hypervisor
   become: true
+  gather_facts: false
   vars_files:
     - myvars
     - vars/main.yml
-  vars:
-    aap_test_subdomain: "{{ vm_name }}"
-    vm_disk_path: "{{ vm_dir }}/{{ vm_name }}.disk.qcow2"
-    nginx_conf: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
-    cert_name: "{{ aap_test_subdomain }}.{{ vault_domain }}"
-    dns_record_name: "{{ aap_test_subdomain }}"
-
-  tasks:
-    - name: Validate vm_name is provided
+  pre_tasks:
+    - name: Read the registered instance before any infrastructure connection
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+    - name: Require confirmation and the independently pinned recovery hypervisor
       ansible.builtin.assert:
         that:
-          - vm_name is defined
-          - vm_name | length > 0
-        fail_msg: "vm_name must be provided as an extra variable"
-
-    - name: Validate vm_name matches allowed pattern
-      ansible.builtin.assert:
-        that:
-          - vm_name is match('^aap27-test-\d+$')
-        fail_msg: "Refusing to proceed — vm_name '{{ vm_name }}' does not match 'aap27-test-N'"
-
-    - name: Assert VM name is safe for virsh destroy
-      ansible.builtin.assert:
-        that:
-          - vm_name is match('^aap27-test-\d+$')
-          - vm_name is not match('.*(;|&&|\||\$|`).*')
-        fail_msg: "Refusing virsh destroy — vm_name '{{ vm_name }}' failed safety check"
-
-    - name: Destroy VM (force stop)
-      ansible.builtin.command:
-        cmd: "virsh destroy {{ vm_name }}"
-      register: destroy_result
-      failed_when: false
-      changed_when: destroy_result.rc == 0
-
-    - name: Assert VM name is safe for virsh undefine
-      ansible.builtin.assert:
-        that:
-          - vm_name is match('^aap27-test-\d+$')
-          - vm_name is not match('.*(;|&&|\||\$|`).*')
-        fail_msg: "Refusing virsh undefine — vm_name '{{ vm_name }}' failed safety check"
-
-    - name: Undefine VM
-      ansible.builtin.command:
-        cmd: "virsh undefine {{ vm_name }}"
-      register: undefine_result
-      failed_when:
-        - undefine_result.rc != 0
-        - "'failed to get domain' not in undefine_result.stderr"
-
-    - name: Assert disk path matches expected pattern
-      ansible.builtin.assert:
-        that:
-          - vm_disk_path is match('^/opt/vms/aap27-test-\d+\.disk\.qcow2$')
-        fail_msg: "Refusing to remove disk — path '{{ vm_disk_path }}' does not match expected pattern"
-
-    - name: Remove VM disk
-      ansible.builtin.file:
-        path: "{{ vm_disk_path }}"
-        state: absent
-
-    - name: Assert nginx config path matches expected pattern
-      ansible.builtin.assert:
-        that:
-          - nginx_conf is match('^/etc/nginx/conf\.d/aap27-test-\d+\.conf$')
-        fail_msg: "Refusing to remove nginx config — path '{{ nginx_conf }}' does not match expected pattern"
-
-    - name: Remove nginx config
-      ansible.builtin.file:
-        path: "{{ nginx_conf }}"
-        state: absent
-      notify: reload nginx
-
-    - name: Assert cert name matches expected pattern
-      ansible.builtin.assert:
-        that:
-          - cert_name is match('^aap27-test-\d+\.\S+$')
-          - cert_name is not match('.*(;|&&|\||\$|`).*')
-        fail_msg: "Refusing to delete cert — name '{{ cert_name }}' does not match expected pattern"
-
-    - name: Remove Let's Encrypt certificate
-      ansible.builtin.command:
-        cmd: "certbot delete --cert-name {{ cert_name }} --non-interactive"
-      register: certbot_delete
-      failed_when: false
-      changed_when: "'Deleted' in certbot_delete.stdout"
-
-    - name: Assert DNS record name matches expected pattern
-      ansible.builtin.assert:
-        that:
-          - dns_record_name is match('^aap27-test-\d+$')
-          - dns_record_name is not match('.*(;|&&|\||\$|`).*')
-        fail_msg: "Refusing to delete DNS record — name '{{ dns_record_name }}' does not match expected pattern"
-
-    - name: Remove GoDaddy DNS A record
-      ansible.builtin.uri:
-        url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/A/{{ dns_record_name }}"
-        method: DELETE
-        headers:
-          Authorization: "Bearer {{ vault_godaddy_api_token }}"
-        status_code: [200, 204, 404]
-      become: false
+          - aap_decommission_confirmation | default('') == aap_instance_key
+          - aap_instance_route.hypervisor == aap_hypervisor_pin
+        fail_msg: Confirm the instance name and select its pinned recovery-only inventory.
       no_log: true
-
-    - name: Report
-      ansible.builtin.debug:
-        msg: "VM {{ vm_name }} destroyed — disk, nginx, cert, and DNS cleaned up"
-
-  handlers:
-    - name: reload nginx
+    - name: Verify the actual recovery hypervisor before any deletion
+      ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
+    - name: Derive only the selected reservation's resource paths
+      ansible.builtin.set_fact:
+        aap_retirement: '{{ aap_instance_route | aap_decommission_resources(vault_domain, vm_dir, aap_instance_resources)
+          }}'
+      no_log: true
+    - name: Read actual domain names
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - list
+          - --all
+          - --name
+      register: aap_retirement_domains
+      changed_when: false
+      check_mode: false
+      no_log: true
+    - name: Inspect selected domain disk ownership
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - dumpxml
+          - '{{ vm_name }}'
+      when: vm_name in aap_retirement_domains.stdout_lines
+      register: aap_retirement_domain
+      changed_when: false
+      check_mode: false
+      no_log: true
+    - name: Refuse unexpected disk paths or additional disks
+      ansible.builtin.assert:
+        that: aap_retirement_domain.stdout | aap_decommission_domain_matches(aap_retirement)
+        fail_msg: The selected domain must own exactly the expected test disk.
+      when: vm_name in aap_retirement_domains.stdout_lines
+      no_log: true
+    - name: Inspect snapshots without removing them
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - snapshot-list
+          - '{{ vm_name }}'
+          - --name
+      when: vm_name in aap_retirement_domains.stdout_lines
+      register: aap_retirement_snapshots
+      changed_when: false
+      check_mode: false
+      no_log: true
+    - name: Require separate review when snapshots exist
+      ansible.builtin.assert:
+        that: aap_retirement_snapshots.stdout | trim | length == 0
+      when: vm_name in aap_retirement_domains.stdout_lines
+      no_log: true
+    - name: Check every related guest and orphaned disk before any deletion
+      ansible.builtin.include_tasks: tasks/decommission-related-check.yml
+      loop: '{{ aap_retirement.domains[1:] }}'
+      loop_control:
+        loop_var: aap_related_guest
+      no_log: true
+    - name: Read the entire DNS zone to discover orphaned version records
+      ansible.builtin.include_tasks: tasks/decommission-dns-page.yml
+      loop: '{{ range(0, 10000, 500) | list }}'
+      loop_control:
+        loop_var: aap_dns_page_offset
+      when: not (aap_dns_zone_complete | default(false) | bool)
+      no_log: true
+    - name: Require complete zone pagination before removing any resource
+      ansible.builtin.assert:
+        that: aap_dns_zone_complete | bool
+      no_log: true
+    - name: Select exact version records and refuse conflicting ownership
+      ansible.builtin.set_fact:
+        aap_retirement_dns_plan: '{{ aap_dns_zone_records | aap_decommission_dns_plan(aap_retirement, aap_hypervisor_pin.public_ip,
+          vault_domain) }}'
+      no_log: true
+    - name: Validate nginx before modifying its virtual hosts
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/nginx
+          - -t
+      changed_when: false
+      check_mode: false
+    - name: Stop after ownership inspection in check mode
+      ansible.builtin.meta: end_play
+      when: ansible_check_mode
+  tasks:
+    - name: Request graceful shutdown of only the selected guest
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - shutdown
+          - '{{ vm_name }}'
+      when: vm_name in aap_retirement_domains.stdout_lines
+      register: aap_retirement_shutdown
+      failed_when: false
+      changed_when: aap_retirement_shutdown.rc == 0
+    - name: Observe the selected guest shutdown
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - domstate
+          - '{{ vm_name }}'
+      when: vm_name in aap_retirement_domains.stdout_lines
+      register: aap_retirement_state
+      until: aap_retirement_state.stdout | trim == 'shut off'
+      retries: 12
+      delay: 5
+      failed_when: false
+      changed_when: false
+    - name: Force stop only the confirmed guest if necessary
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - destroy
+          - '{{ vm_name }}'
+      when:
+        - vm_name in aap_retirement_domains.stdout_lines
+        - aap_retirement_state.stdout | trim != 'shut off'
+      changed_when: true
+    - name: Remove only the selected domain definition
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - undefine
+          - '{{ vm_name }}'
+      when: vm_name in aap_retirement_domains.stdout_lines
+      changed_when: true
+    - name: Retire only the verified related guests
+      ansible.builtin.include_tasks: tasks/decommission-related-delete.yml
+      loop: '{{ aap_retirement.domains[1:] }}'
+      loop_control:
+        loop_var: aap_related_guest
+      when: aap_related_guest.name in aap_retirement_domains.stdout_lines
+      no_log: true
+    - name: Remove only the selected disk, proxy files and upstream authority
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: absent
+      loop: '{{ (aap_retirement.domains | map(attribute=''disk'') | list) + [aap_retirement.authority] + aap_retirement.nginx
+        + aap_retirement.website_paths }}'
+      no_log: true
+    - name: Validate the remaining nginx configuration
+      ansible.builtin.command:
+        argv:
+          - /usr/sbin/nginx
+          - -t
+      changed_when: false
+    - name: Reload nginx after selected virtual-host removal
       ansible.builtin.systemd:
         name: nginx
         state: reloaded
+    - name: Inspect selected certificate renewal records
+      ansible.builtin.stat:
+        path: /etc/letsencrypt/renewal/{{ item }}.conf
+      loop: '{{ aap_retirement.certificates }}'
+      register: aap_retirement_certificates
+      no_log: true
+    - name: Remove only the selected existing certificate lineages
+      ansible.builtin.command:
+        argv:
+          - certbot
+          - delete
+          - --cert-name
+          - '{{ item.item }}'
+          - --non-interactive
+      loop: '{{ aap_retirement_certificates.results }}'
+      when: item.stat.exists
+      changed_when: true
+      no_log: true
+    - name: Delete and verify all exact version records including orphaned roles
+      ansible.builtin.include_tasks: tasks/decommission-dns-delete.yml
+      loop: '{{ aap_retirement_dns_plan }}'
+      loop_control:
+        loop_var: aap_dns_retire_record
+      no_log: true
+    - name: Retire encrypted and source AAP access while retaining allocation history
+      aap_publish_instance_keys:
+        instance_name: '{{ aap_instance_key }}'
+        record:
+          target: '{{ aap_instance_route.aap_hostname }}'
+        organization: Default
+        operation: retire
+      delegate_to: localhost
+      become: false
+      no_log: true
+    - name: Report the completed infrastructure teardown
+      ansible.builtin.debug:
+        msg: The selected version VMs, disks, website/proxy/auth/cache files, certificates and matching DNS were
+          retired. Allocation history remains reserved.
+  vars:
+    aap_allow_retired_instance: true

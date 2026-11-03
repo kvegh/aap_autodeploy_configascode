@@ -48,7 +48,7 @@ def public_host_key(value):
     return result
 
 
-def registered_instance(state, name):
+def registered_instance(state, name, allow_retired=False):
     require(
         isinstance(state, Mapping)
         and state.get("schema_version") == 1
@@ -65,7 +65,19 @@ def registered_instance(state, name):
         len(matches) == 1,
         "The selected instance has no unique verified routing record.",
     )
+    require(allow_retired is True or not any(record.get("decommissioned") for record in
+            state["reservations"].values() if record.get("vm_name") == name),
+            "The selected deployment was decommissioned; allocate a new instance.")
     return instance_route(matches[0])
+
+
+def instance_public_name(name, zone):
+    """The global reservation identifies the shared AAP and website version."""
+    match = re.fullmatch(r"(aap[0-9]+)-test-([0-9]+)", name or "")
+    require(match is not None and int(match[2]) > 0, "Use a globally reserved AAP test name.")
+    require(isinstance(zone, str) and re.fullmatch(r"[a-z0-9]+(?:[.-][a-z0-9]+)*\.[a-z]{2,}", zone),
+            "Supply the protected public DNS zone.")
+    return "%s.v%02d.%s" % (match[1], int(match[2]), zone)
 
 
 def hypervisor_pin(pin):
@@ -134,7 +146,10 @@ def instance_route(route):
         and parsed.hostname
         and re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", parsed.hostname)
         and ".." not in parsed.hostname
-        and parsed.hostname.startswith(route["vm_name"] + ".")
+        and (parsed.hostname.startswith(route["vm_name"] + ".")
+             or re.fullmatch(
+                 re.escape(route["vm_name"].split("-", 1)[0]) + r"\.v%02d\.[a-z0-9.-]+"
+                 % int(route["vm_name"].rsplit("-", 1)[1]), parsed.hostname))
         and not parsed.username
         and not parsed.password
         and parsed.port in (None, 443)
@@ -302,4 +317,5 @@ class FilterModule:
             "aap_guest_ipv4": guest_ipv4,
             "aap_safe_instance_dns": safe_instance_dns,
             "aap_instance_api_dns": instance_api_dns,
+            "aap_instance_public_name": instance_public_name,
         }

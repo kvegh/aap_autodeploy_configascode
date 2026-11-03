@@ -19,7 +19,7 @@
     ansible_ssh_common_args: >-
       -o StrictHostKeyChecking=yes
       -o UserKnownHostsFile={{ hostvars['localhost'].aap_instance_trust.path | quote }}
-    aap_test_subdomain: "{{ vm_name }}"
+    aap_test_subdomain: "{{ (aap_hostname | ansible.builtin.urlsplit('hostname')) | regex_replace('\\.' + (vault_domain | regex_escape) + '$', '') }}"
   block:
     - name: Require the registered hypervisor before writing its proxy configuration
       ansible.builtin.command:
@@ -54,7 +54,7 @@
           - -c
           - "{{ lookup('ansible.builtin.file', 'files/verify_aap_upstream.py') }}"
           - "{{ vm_ip }}"
-          - "{{ vm_name }}.{{ vault_domain }}"
+          - "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
           - "/etc/nginx/aap-upstreams/{{ vm_name }}.pem"
       register: aap_upstream_tls_check
       changed_when: false
@@ -80,6 +80,7 @@
             backup: true
           vars:
             aap_upstream_ready: true
+            aap_upstream_hostname: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
           register: aap_verified_proxy
           no_log: true
           diff: false

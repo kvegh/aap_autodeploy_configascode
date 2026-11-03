@@ -98,7 +98,7 @@ class McpAccessTests(unittest.TestCase):
         self.storage = self.root / "protected"
         self.token_file = self.storage / "mcp-token.json"
 
-    def run_tasks(self, save_failure=None, unknown_save=False):
+    def run_tasks(self, save_failure=None, unknown_save=False, publication=False, publication_failure=False):
         tasks = yaml.safe_load((ROOT / "tasks/mcp-access.yml").read_text())
         tasks[0]["vars"]["cac_mcp_directory"] = str(self.storage)
 
@@ -135,12 +135,34 @@ class McpAccessTests(unittest.TestCase):
                      "aap_token": MANAGEMENT, "aap_validate_certs": True, "debug_logging": True,
                      "vault_ansible_user": "synthetic-ssh-user", "vault_ansible_password": "synthetic-ssh-secret",
                      "ansible_python_interpreter": sys.executable}
+        actions = str(ROOT / "action_plugins")
+        if publication:
+            variables.update(aap_instance_key="fixture-instance", aap_instance_key_store={"publish": True,
+                                                                                         "source_organization": "Example"})
+            action_directory = self.root / "action_plugins"
+            action_directory.mkdir(exist_ok=True)
+            action_directory.joinpath("aap_publish_instance_keys.py").write_text(
+                "from ansible.plugins.action import ActionBase\n"
+                "from ansible.errors import AnsibleActionFail\nimport json\n"
+                "class ActionModule(ActionBase):\n"
+                "    def run(self, tmp=None, task_vars=None):\n"
+                "        record = self._task.args['record']\n"
+                f"        assert record['token'] == {BEARER!r}\n"
+                "        assert self._task.args['instance_name'] == 'fixture-instance'\n"
+                "        assert self._task.args['organization'] == 'Example'\n"
+                f"        if {publication_failure!r}: raise AnsibleActionFail('Synthetic publication refusal')\n"
+                f"        with open({str(self.root / 'published.jsonl')!r}, 'a') as output:\n"
+                "            output.write(json.dumps({'token_id': record['id'], 'scope': record['scope']}) + '\\n')\n"
+                "        return {'changed': True, 'published': True}\n"
+            )
+            actions = str(action_directory) + os.pathsep + actions
         fixture = self.root / "play.yml"
         fixture.write_text(yaml.safe_dump([{"hosts": "localhost", "connection": "local", "gather_facts": False,
                                           "vars": variables, "tasks": tasks}], sort_keys=False))
         config = self.root / "ansible.cfg"
         config.write_text("[defaults]\nstdout_callback=default\nretry_files_enabled=False\n")
         environment = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_NOCOLOR="1",
+                           ANSIBLE_ACTION_PLUGINS=actions,
                            ANSIBLE_LOCAL_TEMP=str(self.root / "local"), ANSIBLE_REMOTE_TEMP=str(self.root / "remote"))
         result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(fixture)],
                                 cwd=self.root, env=environment, capture_output=True, text=True, timeout=60)
@@ -148,6 +170,27 @@ class McpAccessTests(unittest.TestCase):
         for secret in (BEARER, MANAGEMENT, PASSWORD, "synthetic-ssh-secret"):
             self.assertNotIn(secret, output)
         return result, output
+
+    def test_api_publication_reuses_the_same_saved_mcp_token_on_rerun(self):
+        for _ in range(2):
+            result, output = self.run_tasks(publication=True)
+            self.assertEqual(result.returncode, 0, output)
+        self.assertEqual(self.state["created"], 1)
+        self.assertEqual(self.state["deleted"], [])
+        rows = [json.loads(line) for line in (self.root / "published.jsonl").read_text().splitlines()]
+        self.assertEqual(rows, [{"token_id": 101, "scope": "write"}] * 2)
+
+    def test_failed_api_publication_preserves_the_target_token_for_retry(self):
+        failed, output = self.run_tasks(publication=True, publication_failure=True)
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertIn("Instance API access could not be published", output)
+        saved = self.token_file.read_bytes()
+        self.assertEqual(self.state["created"], 1)
+        self.assertEqual(self.state["deleted"], [])
+        retried, output = self.run_tasks(publication=True)
+        self.assertEqual(retried.returncode, 0, output)
+        self.assertEqual(self.token_file.read_bytes(), saved)
+        self.assertEqual(self.state["created"], 1)
 
     def create_and_check(self):
         result, output = self.run_tasks()

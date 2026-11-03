@@ -1,0 +1,28 @@
+---
+- name: Request graceful shutdown of the recorded related guest
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', shutdown, "{{ aap_related_guest.name }}"]
+  register: aap_related_shutdown
+  failed_when: false
+  changed_when: aap_related_shutdown.rc == 0
+
+- name: Observe the related guest shutdown
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', domstate, "{{ aap_related_guest.name }}"]
+  register: aap_related_state
+  until: aap_related_state.stdout | trim == 'shut off'
+  retries: 12
+  delay: 5
+  failed_when: false
+  changed_when: false
+
+- name: Force stop only the recorded related guest if necessary
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', destroy, "{{ aap_related_guest.name }}"]
+  when: aap_related_state.stdout | trim != 'shut off'
+  changed_when: true
+
+- name: Remove the recorded related domain definition
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', undefine, "{{ aap_related_guest.name }}"]
+  changed_when: true

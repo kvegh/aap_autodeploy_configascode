@@ -35,7 +35,7 @@ class ActionModule(ActionBase):
             raise AnsibleActionFail(
                 "Attach the AutoDeploy secrets repository CaC read-token credential."
             )
-        if set(self._task.args) - {"instance_key", "expected_route"}:
+        if set(self._task.args) - {"instance_key", "expected_route", "allow_retired"}:
             raise AnsibleActionFail("The registry repository is fixed by encrypted AutoDeploy configuration.")
         try:
             repository = contract.autodeploy_repository(
@@ -91,11 +91,16 @@ class ActionModule(ActionBase):
             route = routing.registered_instance(
                 configuration.get("aap_vm_allocation"),
                 self._task.args.get("instance_key"),
+                self._task.args.get("allow_retired", False),
             )
             expected = self._task.args.get("expected_route")
             if expected is not None and expected != route:
                 raise AnsibleActionFail(
                     "The supplied workflow handoff differs from the registered instance."
                 )
-            result.update(changed=False, instance_route=route, registry_repository=repository)
+            ownership = next(record.get("instance_resources", {}) for record in
+                configuration["aap_vm_allocation"]["reservations"].values()
+                if record.get("vm_name") == route["vm_name"])
+            result.update(changed=False, instance_route=route, registry_repository=repository,
+                          instance_resources=ownership)
             return result

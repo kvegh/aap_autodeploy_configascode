@@ -1,0 +1,54 @@
+---
+- name: Recheck this exact DNS record set immediately before deletion
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/{{ aap_dns_retire_record.type }}/{{ aap_dns_retire_record.name | urlencode }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vault_godaddy_api_token }}"
+    status_code: [200, 404]
+    validate_certs: true
+    follow_redirects: none
+  delegate_to: localhost
+  become: false
+  register: aap_dns_retire_current
+  no_log: true
+
+- name: Refuse a record changed since the ownership review
+  ansible.builtin.assert:
+    that: >-
+      aap_dns_retire_current.status == 404 or aap_dns_retire_current.json == [] or
+      (aap_dns_retire_current.json == aap_dns_retire_record.records)
+  no_log: true
+
+- name: Remove the exact unchanged version-owned DNS record set
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/{{ aap_dns_retire_record.type }}/{{ aap_dns_retire_record.name | urlencode }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ vault_godaddy_api_token }}"
+    status_code: [200, 204, 404]
+    validate_certs: true
+    follow_redirects: none
+  when: aap_dns_retire_current.status == 200 and aap_dns_retire_current.json | length > 0
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Verify provider absence after deletion
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/{{ aap_dns_retire_record.type }}/{{ aap_dns_retire_record.name | urlencode }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vault_godaddy_api_token }}"
+    status_code: [200, 404]
+    validate_certs: true
+    follow_redirects: none
+  delegate_to: localhost
+  become: false
+  register: aap_dns_retire_readback
+  no_log: true
+
+- name: Require verified DNS retirement
+  ansible.builtin.assert:
+    that: aap_dns_retire_readback.status == 404 or aap_dns_retire_readback.json == []
+  no_log: true

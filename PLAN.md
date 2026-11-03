@@ -279,3 +279,10 @@ and takeover checks remain in the open list above.
 - [x] **Independent targeting/diagnostics:** explicit `aap_hostname`, Stage 04 debug
   default/survey, manual stage retry and existing-installer observation are in
   place. Automatic workflow recovery was dropped.
+
+Durable follow-up work is tracked in Beads. `bead-wd-72f.13` replaces the temporary
+**Pseudo Instance Key Store** / **AAP API/MCP Auth Token Store** with an external
+enterprise secret manager: the current design exists because no external manager
+is available. `bead-wd-72f.14` covers future-only numbered public names; existing
+instances are not silently migrated. `bead-wd-72f.16` tracks the explicitly
+authorized recovery-hypervisor decommission and fresh deployment proof.

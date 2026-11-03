@@ -3,6 +3,7 @@
   aap_read_instance:
     instance_key: "{{ aap_instance_key | default(aap_instance_route.vm_name | default('')) }}"
     expected_route: "{{ aap_instance_route | default(omit) }}"
+    allow_retired: "{{ aap_allow_retired_instance | default(false) | bool }}"
   register: aap_registered_target
   no_log: true
 
@@ -24,4 +25,5 @@
     vm_ip: "{{ aap_registered_target.instance_route.vm_ip }}"
     aap_hostname: "{{ aap_registered_target.instance_route.aap_hostname }}"
     aap_target_hostname: "{{ aap_registered_target.instance_route.aap_hostname }}"
+    aap_instance_resources: "{{ aap_registered_target.instance_resources | default({}) }}"
   no_log: true

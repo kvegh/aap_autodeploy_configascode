@@ -1,32 +1,31 @@
 ---
-- name: Require a native destination API credential selected at launch
+- name: Require the shared instance token-store credential
   ansible.builtin.assert:
-    that:
-      - lookup('ansible.builtin.env', 'AAP_HOSTNAME') | length > 0
-      - >-
-        (lookup('ansible.builtin.env', 'AAP_TOKEN') | length > 0) or
-        (lookup('ansible.builtin.env', 'AAP_USERNAME') | length > 0 and
-         lookup('ansible.builtin.env', 'AAP_PASSWORD') | length > 0)
+    that: lookup('ansible.builtin.env', 'AAP_INSTANCE_KEY_STORE_FILE') | length > 0
+    fail_msg: Attach AAP API/MCP Auth Token Store to this job template.
     quiet: true
-    fail_msg: Select a native Red Hat Ansible Automation Platform credential for the destination, with Verify SSL enabled.
 
-- name: Bind explicit native API credentials to the selected inventory instance
-  ansible.builtin.set_fact:
-    cac_api_auth: >-
-      {{ hostvars[aap_instance_key] | aap_cac_api_target({
-           'hostname': lookup('ansible.builtin.env', 'AAP_HOSTNAME'),
-           'username': lookup('ansible.builtin.env', 'AAP_USERNAME'),
-           'password': lookup('ansible.builtin.env', 'AAP_PASSWORD'),
-           'token': lookup('ansible.builtin.env', 'AAP_TOKEN'),
-           'validate_certs': lookup('ansible.builtin.env', 'AAP_VALIDATE_CERTS')}) }}
+- name: Select API access by inventory instance name from the injected token store
+  aap_instance_access:
+    instance_name: "{{ aap_instance_key }}"
+    fqdn: "{{ hostvars[aap_instance_key].ansible_fqdn }}"
+  register: cac_selected_instance_access
   no_log: true
 
-- name: Use only the explicitly injected destination API authentication
+- name: Explain a safe instance-token selection failure without revealing stored data
+  ansible.builtin.assert:
+    that: cac_selected_instance_access.access_error is not defined
+    fail_msg: "{{ cac_selected_instance_access.access_error | default('The selected instance API access is unavailable.') }}"
+    quiet: true
+
+- name: Pass only the selected instance authentication to the configuration roles
   ansible.builtin.set_fact:
-    aap_hostname: "{{ cac_api_auth.hostname }}"
-    aap_token: "{{ cac_api_auth.token }}"
-    aap_username: "{{ cac_api_auth.username }}"
-    aap_password: "{{ cac_api_auth.password }}"
+    cac_api_auth: "{{ cac_selected_instance_access.authentication }}"
+    aap_hostname: "{{ cac_selected_instance_access.authentication.hostname }}"
+    aap_token: "{{ cac_selected_instance_access.authentication.token }}"
+    aap_username: ''
+    aap_password: ''
+    aap_request_timeout: 10.0
     aap_validate_certs: true
   no_log: true
 
@@ -38,17 +37,4 @@
     validate_certs: true
     follow_redirects: none
     status_code: 200
-  when: cac_api_auth.token | length > 0
-  no_log: true
-
-- name: Authenticate the explicitly supplied destination username and password
-  ansible.builtin.uri:
-    url: "{{ cac_api_auth.hostname }}/api/gateway/v1/me/"
-    url_username: "{{ cac_api_auth.username }}"
-    url_password: "{{ cac_api_auth.password }}"
-    force_basic_auth: true
-    validate_certs: true
-    follow_redirects: none
-    status_code: 200
-  when: cac_api_auth.token | length == 0
   no_log: true

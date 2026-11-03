@@ -136,7 +136,7 @@
     - name: Add FQDN to /etc/hosts so installer resolves locally
       ansible.builtin.lineinfile:
         path: /etc/hosts
-        line: "{{ vm_ip }}  {{ vm_name }}  {{ vm_name }}.{{ vault_domain }}"
+        line: "{{ vm_ip }}  {{ vm_name }}  {{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
         regexp: "{{ vm_name }}"
 
     - name: Install ansible-core
@@ -155,7 +155,7 @@
     - vars/main.yml
   vars:
     installer_dir_name: "ansible-automation-platform-containerized-setup-bundle-{{ aap_version }}-x86_64"
-    aap_installer_hostname: "{{ vm_name }}.{{ vault_domain }}"
+    aap_installer_hostname: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
     source_aap_fqdn: "aap.{{ vault_domain }}"
     aap_installer_ca_path: "/home/{{ vault_aap_install_user }}/aap/tls/extracted/pem/directory-hash/ca-bundle.crt"
 

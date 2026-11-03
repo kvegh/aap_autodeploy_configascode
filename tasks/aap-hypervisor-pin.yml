@@ -15,6 +15,7 @@
   delegate_to: localhost
   become: false
   register: aap_hypervisor_trust
+  check_mode: false
 
 - name: Install only the verified hypervisor SSH public keys
   ansible.builtin.copy:
@@ -28,6 +29,7 @@
   delegate_to: localhost
   become: false
   no_log: true
+  check_mode: false
 
 - name: Enforce the pinned managed connection before any remote action
   ansible.builtin.set_fact:

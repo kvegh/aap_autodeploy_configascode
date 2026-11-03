@@ -1,6 +1,6 @@
 ---
-# The bearer value is returned once. Keep a recoverable copy on this target only.
-- name: Manage target-local persistent MCP access
+# Reuse this one token for MCP and remote API access; never issue a second token.
+- name: Manage persistent administrator API and MCP access
   no_log: true
   vars:
     cac_mcp_directory: /var/lib/aap-autodeploy
@@ -31,7 +31,9 @@
 
     - name: Look up existing administrator MCP tokens
       ansible.builtin.uri:
-        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/?description={{ cac_mcp_description | urlencode }}&user={{ cac_mcp_admin.json.results[0].id }}"
+        url: >-
+          {{ (aap_hostname | regex_replace('/+$', '')) ~ '/api/gateway/v1/tokens/?description=' ~
+             (cac_mcp_description | urlencode) ~ '&user=' ~ (cac_mcp_admin.json.results[0].id | string) }}
         headers:
           Authorization: "Bearer {{ aap_token }}"
         status_code: 200
@@ -263,10 +265,60 @@
   rescue:
     - name: Report MCP provisioning failure without exposing connection values
       ansible.builtin.fail:
-        msg: MCP access needs review of its token metadata, validity and protected target storage. Existing access was not replaced. If a new token's save outcome could not be confirmed, inspect it before rerunning.
+        msg: >-
+          MCP access needs review of its token metadata, validity and protected target storage.
+          Existing access was not replaced. If a new token's save outcome could not be confirmed,
+          inspect it before rerunning.
       no_log: false
 
 - name: Report preserved manual MCP access without exposing its bearer value
   ansible.builtin.debug:
-    msg: Existing administrator MCP access was preserved. Its token value cannot be recovered through the API; retain the operator's existing copy or plan explicit rotation.
+    msg: >-
+      Existing administrator MCP access was preserved. Its token value cannot be recovered through
+      the API; retain the operator's existing copy or plan explicit rotation.
   when: cac_mcp_manual | default(false)
+
+- name: Publish the verified shared API and MCP token for this instance
+  when: aap_instance_key_store.publish | default(false) | bool
+  no_log: true
+  block:
+    - name: Require a recoverable token before publishing API access
+      ansible.builtin.assert:
+        that:
+          - not (cac_mcp_manual | default(false))
+          - aap_instance_key is defined
+          - cac_mcp_record is defined or cac_mcp_new_record is defined
+        fail_msg: Preserve the existing token and recover its saved copy before publishing instance API access.
+
+    - name: Use the existing verified token record
+      ansible.builtin.set_fact:
+        cac_instance_api_record: "{{ cac_mcp_record }}"
+      when: cac_mcp_record is defined
+
+    - name: Use the newly saved token record
+      ansible.builtin.set_fact:
+        cac_instance_api_record: "{{ cac_mcp_new_record | from_json }}"
+      when: cac_mcp_record is not defined
+
+    - name: Verify the shared token before publishing it for remote use
+      ansible.builtin.uri:
+        url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/me/"
+        headers:
+          Authorization: "Bearer {{ cac_instance_api_record.token }}"
+        validate_certs: true
+        follow_redirects: none
+        status_code: 200
+
+    - name: Update encrypted CaC and the source AAP token-store credential
+      aap_publish_instance_keys:
+        instance_name: "{{ aap_instance_key }}"
+        record: "{{ cac_instance_api_record }}"
+        organization: "{{ aap_instance_key_store.source_organization | default('Default') }}"
+      register: cac_instance_key_publication
+  rescue:
+    - name: Report protected publication failure without exposing the saved token
+      ansible.builtin.fail:
+        msg: >-
+          Instance API access could not be published. The token remains saved on the target;
+          review source API access, the Git writer and encrypted CaC before retrying.
+      no_log: false

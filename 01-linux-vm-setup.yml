@@ -166,7 +166,7 @@
               - "{{ vm_dir }}/{{ vm_name }}.disk.qcow2"
               - --no-network
               - --hostname
-              - "{{ vm_name }}.{{ vault_domain }}"
+              - "{{ vm_name | aap_instance_public_name(vault_domain) }}"
               - --upload
               - "{{ aap_guest_key_workspace.path }}/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key"
               - --upload
@@ -265,7 +265,7 @@
         aap_instance_route:
           vm_name: "{{ vm_name }}"
           vm_ip: "{{ new_vm_ip }}"
-          aap_hostname: "https://{{ vm_name }}.{{ vault_domain }}"
+          aap_hostname: "https://{{ vm_name | aap_instance_public_name(vault_domain) }}"
           hypervisor: "{{ aap_hypervisor_pin }}"
           guest_host_keys: "{{ aap_fresh_guest_keys }}"
       no_log: true

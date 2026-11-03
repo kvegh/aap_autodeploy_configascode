@@ -85,9 +85,11 @@ class UseCaseSetupTests(unittest.TestCase):
             {"id": 11, "name": "Case Vault", "kind": "vault", "inputs": {"vault_id": "cac"},
              "summary_fields": {"organization": {"name": "Fixture organization"}}},
         ]
-        api = {"id": 12, "name": "Explicit destination API", "credential_type": 1,
+        api = {"id": 12, "name": "AAP API/MCP Auth Token Store", "credential_type": 46,
                "inputs": {"host": "https://fresh.example.invalid"},
-               "summary_fields": {"credential_type": {"name": "Red Hat Ansible Automation Platform"}}}
+               "summary_fields": {"credential_type": {"name": "Pseudo Instance Key Store"},
+                                  "organization": {"name": "Fixture organization"}}}
+        original.append(api)
         names = [entry["name"] for entry in original]
 
         def resolve(source, destination):
@@ -95,14 +97,14 @@ class UseCaseSetupTests(unittest.TestCase):
                                                 "Fixture organization", "https://fresh.example.invalid")
 
         self.assertEqual(resolve(original, [api]), [10, 11, 12])
-        self.assertEqual(setup.native_api_credentials(original + [api]), [api])
-        for credentials in ([], [api, copy.deepcopy(api)], original):
+        self.assertEqual(setup.instance_store_credentials(original), [api])
+        for credentials in ([], [api, copy.deepcopy(api)], original[:-1]):
             with self.subTest(credentials=credentials), self.assertRaises(AnsibleFilterError):
-                setup.native_api_credentials(credentials)
+                setup.instance_store_credentials(credentials)
         for source, destination in (
             (original[:-1], [api]),
             (original + [{"id": 90, "kind": "ssh", "name": "Registry Machine"}], [api]),
-            (original, [dict(api, inputs={"host": "https://other.example.invalid"})]),
+            (original, [dict(api, id=99)]),
             (original, original + [api]),
         ):
             with self.subTest(source=source, destination=destination), self.assertRaises(AnsibleFilterError):
@@ -123,8 +125,9 @@ class UseCaseSetupTests(unittest.TestCase):
         original = [credential(1, "aap_autodeploy_configascode-secrets CaC repo read token", type_name="Cac_git_token_type"), credential(2, "Case Vault", "vault", "cac"),
                     credential(3, "Environment Vault", "vault", "")]
         route = [credential(6, "Registered Machine", "ssh")]
-        native = credential(7, "Destination API", type_name="Red Hat Ansible Automation Platform")
-        native.update(credential_type=1, inputs={"host": "https://fresh.example.invalid"})
+        native = credential(7, "AAP API/MCP Auth Token Store", type_name="Pseudo Instance Key Store")
+        native.update(credential_type=46, inputs={})
+        original.append(native)
         for native_mode in ("false", "true"):
             for preparation in (False, True):
                 with self.subTest(native=native_mode, preparation=preparation), tempfile.TemporaryDirectory(
@@ -144,7 +147,7 @@ class UseCaseSetupTests(unittest.TestCase):
                         "aap_instance_route": {"hypervisor": {"machine_credential_name": "Registered Machine"}},
                         "aap_instance_key": "fixture-target", "aap_selected_importer_extra": {},
                     }
-                    expected = [1, 2, 3, 6, 7] if preparation else [1, 2, 3, 7]
+                    expected = [1, 2, 3, 7, 6] if preparation else [1, 2, 3, 7]
                     fixture = [{"hosts": "localhost", "connection": "local", "gather_facts": False,
                                 "vars": variables, "tasks": tasks[:3] + [
                                     {"ansible.builtin.set_fact": {"rendered_extra": launch["extra_vars"],
@@ -242,8 +245,8 @@ class UseCaseSetupTests(unittest.TestCase):
                 },
             }
 
-        native = cred(90, "Destination API", "cloud", 1, 1,
-                      "Red Hat Ansible Automation Platform")
+        native = cred(90, "AAP API/MCP Auth Token Store", "cloud", 1, 46,
+                      "Pseudo Instance Key Store")
         native['inputs'] = {'host': 'https://fresh.example.invalid'}
         pins = {
             repo
@@ -280,7 +283,7 @@ class UseCaseSetupTests(unittest.TestCase):
                     "cac",
                 )
                 environment = cred(93, "Environment Vault", "vault", 1, 8, "Vault", "")
-                original = [git, vault, environment]
+                original = [git, vault, environment, native]
                 expected = [x["name"] for x in original]
                 selected = setup.api_launch_credentials(
                     original, expected, [native], organization, "https://fresh.example.invalid", pins

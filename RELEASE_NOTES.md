@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.29.0
+
+Select destination API/MCP access automatically from the approved shared token
+store, preserving project Git/Vault pairs and the single importer. Base publishes
+its existing persistent token to encrypted CaC and the source AAP without a
+second token or job. Future public AAP names use the shared numbered scheme.
+
+Upgrade guarded decommissioning to related versioned VMs, website/nginx/TLS
+resources and a complete version-label DNS scan, including orphaned roles.
+Retire source access/inventory data while retaining consumed allocation history.
+Check-mode trust setup performs only bounded local public-key preparation.
+
+Validation includes real encrypted Git publication/retirement and retry fixtures,
+DNS version/ownership and foreign-disk refusal, full unit tests, production lint
+and Ansible syntax. Live teardown/rebuild proof is tracked separately.
+
 ## 0.28.18
 
 Document successful live AIOps configuration import after the reviewed PAH

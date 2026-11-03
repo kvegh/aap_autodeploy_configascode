@@ -7,7 +7,7 @@
     - myvars
     - vars/main.yml
   vars:
-    aap_test_subdomain: "{{ vm_name }}"
+    aap_test_subdomain: "{{ (aap_hostname | ansible.builtin.urlsplit('hostname')) | regex_replace('\\.' + (vault_domain | regex_escape) + '$', '') }}"
 
   pre_tasks:
     - name: Select the registered instance before any infrastructure connection
@@ -21,7 +21,7 @@
           - aap_instance_route | aap_instance_route is mapping
           - vm_name == aap_instance_route.vm_name
           - vm_ip == aap_instance_route.vm_ip
-          - aap_hostname == 'https://' + vm_name + '.' + vault_domain
+          - aap_hostname == aap_instance_route.aap_hostname
         fail_msg: "Required extra_vars: vm_ip, vm_name"
 
     - name: Bind infrastructure changes to the instance's own hypervisor
@@ -47,7 +47,7 @@
 
     - name: Inspect the exact reserved hostname's existing certificate
       ansible.builtin.stat:
-        path: "/etc/letsencrypt/live/{{ vm_name }}.{{ vault_domain }}/{{ item }}"
+        path: "/etc/letsencrypt/live/{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}/{{ item }}"
       loop: [fullchain.pem, privkey.pem]
       register: aap_existing_instance_certificate
       no_log: true
@@ -131,7 +131,7 @@
     - name: Deploy temporary HTTP-only nginx config for certbot challenge
       ansible.builtin.template:
         src: templates/nginx-aap-test-http.conf.j2
-        dest: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
+        dest: "/etc/nginx/conf.d/{{ vm_name }}.conf"
         mode: "0644"
 
     - name: Validate the temporary HTTP config before reload
@@ -167,7 +167,7 @@
     - name: Deploy the TLS frontend pending authenticated installer trust
       ansible.builtin.template:
         src: templates/nginx-aap-test.conf.j2
-        dest: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
+        dest: "/etc/nginx/conf.d/{{ vm_name }}.conf"
         mode: "0644"
       vars:
         aap_upstream_ready: false

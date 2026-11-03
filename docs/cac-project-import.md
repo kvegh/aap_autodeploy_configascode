@@ -34,11 +34,11 @@ The separate platform bootstrap file remains `cac/base_CaC_vault.yml`.
 2. Set `aap_instance_key` to its exact host name in the shared inventory. That
    entry must have `ansible_fqdn`, for example `test-aap.example.invalid`. VM
    placement still uses the inventory's `hypervisor_host` group variable.
-3. At credential launch, keep the saved project Git/Vault/environment credentials
-   and select a native **Red Hat Ansible Automation Platform** API credential for
-   this destination. Its HTTPS origin must match `ansible_fqdn` and Verify SSL
-   must be enabled. Supply either a bearer token or a username/password pair.
-   A missing or mismatched credential stops the job.
+3. Keep the saved project Git/Vault/environment credentials and the shared
+   **AAP API/MCP Auth Token Store** credential. The job selects that instance's
+   bearer automatically; there is no destination credential prompt. The stored
+   HTTPS origin must match `ansible_fqdn`, and certificates are verified.
+   Missing, expired or mismatched access stops the job before the import.
 4. Launch the configuration job. It checks the destination API from the source
    execution environment, retrieves the derived private repository, decrypts the
    one canonical capture, checks readiness/labels and imports the declared data.
@@ -50,8 +50,9 @@ importer has no fresh-instance or different-controller requirement. The optional
 selector retains its distinct fresh-target and PAH preparation checks.
 No SSH login, installer inventory password, source AAP bearer, or certificate
 verification exception substitutes for destination API authentication.
-The generic import reuses native bearer/basic authentication directly and never
-revokes the credential supplied by the operator. Credentials remain protected
+The generic import passes only the selected bearer to the CoP roles and never
+revokes that persistent API/MCP token. A native API credential attached in addition
+to the shared store is refused because its injected variables could override selection. Credentials remain protected
 when diagnostic logging is enabled. Temporary private checkouts are removed on
 normal completion and ordinary failure; process interruption can prevent cleanup.
 
@@ -96,16 +97,19 @@ All six embedded deployment/authentication snapshots must remain fully encrypted
 Windows target CA and SSH-known-host data must already be prepared in encrypted
 configuration. The importer does not discover them using SSH or invent them.
 This public trust data is used by the imported application credential, not to
-replace the native destination API credential.
+replace the selected destination API token.
 
 ## Preparation, validation and deployment evidence
 
 `05-prepare-use-cases.yml` stays separate from pure configuration import. It
-requires the same explicitly selected native destination credential. PAH calls
-reuse its bearer or a temporary session created from that explicit login;
-cleanup revokes only that newly created session. Infrastructure SSH preparation
-remains a separate operation. The selector forwards each child's saved Git/Vault
-credentials plus the explicitly attached native destination API credential.
+uses the same shared token-store credential and selected instance. PAH calls use
+that bearer; infrastructure SSH remains separate. The selector forwards the
+same saved store credential to preparation and each importer, while keeping each
+importer's own repository Git/Vault pair. Preparation still permits its reviewed
+Machine credential to be supplied for the selected hypervisor.
+
+See [instance token storage](instance-token-store.md) for the encrypted source,
+population during base deployment and the external secret-manager backlog.
 
 The source EE's cached base image was inspected read-only, without pulling an
 image or installing content. Its core is 2.16.19. The actual source Project's
@@ -117,6 +121,6 @@ actual source action process; they never contact a live activation endpoint.
 Offline validation covers all five maintained captures under both Ansible
 native modes, ownership/label/readiness checks, literal templates, group
 relationships, masked-secret preservation, token failure cleanup, explicit
-native auth and selector forwarding. SCM synchronization and Job Template
-metadata verification establish publication only. No use-case import,
-application job or activation is run to validate this migration.
+instance-token selection and selector forwarding. SCM synchronization and Job Template
+metadata verification establish publication only. AIOps CaC was subsequently verified live on a disposable target; that proof is
+separate from application deployment and EDA activation.

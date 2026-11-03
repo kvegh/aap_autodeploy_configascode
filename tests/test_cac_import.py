@@ -175,7 +175,7 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
                 self.assertEqual(result, {'url': 'https://target-aap.example.invalid/example.git',
                     'organization': 'Example', 'literal': '{{ runtime_value }}'})
 
-    def test_missing_native_destination_credential_fails_clearly_before_any_api_call(self):
+    def test_missing_instance_store_fails_clearly_before_any_api_call(self):
         with tempfile.TemporaryDirectory(prefix='cac-native-auth-fixture-') as temporary:
             directory = Path(temporary)
             fixture = directory / 'fixture.yml'
@@ -185,6 +185,7 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
             environment = {key: value for key, value in os.environ.items()
                            if not key.startswith(('AAP_', 'TOWER_', 'CONTROLLER_'))}
             environment.update(ANSIBLE_FILTER_PLUGINS=str(ROOT / 'filter_plugins'),
+                               ANSIBLE_ACTION_PLUGINS=str(ROOT / 'action_plugins'),
                                ANSIBLE_NOCOLOR='1', ANSIBLE_LOCAL_TEMP=str(directory / 'local'),
                                ANSIBLE_REMOTE_TEMP=str(directory / 'remote'),
                                AAP_PASSWORD='synthetic-auth-password-canary')
@@ -192,7 +193,7 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
                                  cwd=ROOT, env=environment, text=True, capture_output=True, timeout=30)
             output = run.stdout + run.stderr
             self.assertNotEqual(run.returncode, 0)
-            self.assertIn('Select a native Red Hat Ansible Automation Platform credential', output)
+            self.assertIn('Attach AAP API/MCP Auth Token Store', output)
             self.assertNotIn('synthetic-auth-password-canary', output)
             self.assertNotIn('TASK [Authenticate', output)
 

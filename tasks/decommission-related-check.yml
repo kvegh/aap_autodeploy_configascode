@@ -1,0 +1,47 @@
+---
+- name: Inspect the related guest disk before any deletion
+  ansible.builtin.stat:
+    path: "{{ aap_related_guest.disk }}"
+    follow: false
+    get_checksum: false
+  register: aap_related_disk
+  no_log: true
+
+- name: Require recorded ownership for a related guest or orphaned disk
+  ansible.builtin.assert:
+    that:
+      - >-
+        (aap_related_guest.name not in aap_retirement_domains.stdout_lines and not aap_related_disk.stat.exists)
+        or (aap_related_guest.uuid | default('', true) | length > 0)
+      - not aap_related_disk.stat.islnk | default(false)
+  no_log: true
+
+- name: Inspect related domain storage and UUID
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', dumpxml, "{{ aap_related_guest.name }}"]
+  when: aap_related_guest.name in aap_retirement_domains.stdout_lines
+  register: aap_related_xml
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Require the recorded UUID and exact related disk
+  ansible.builtin.assert:
+    that: aap_related_xml.stdout | aap_decommission_domain_matches(aap_related_guest)
+  when: aap_related_guest.name in aap_retirement_domains.stdout_lines
+  no_log: true
+
+- name: Inspect related snapshots
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', snapshot-list, "{{ aap_related_guest.name }}", --name]
+  when: aap_related_guest.name in aap_retirement_domains.stdout_lines
+  register: aap_related_snapshots
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Refuse implicit related snapshot deletion
+  ansible.builtin.assert:
+    that: aap_related_snapshots.stdout | trim | length == 0
+  when: aap_related_guest.name in aap_retirement_domains.stdout_lines
+  no_log: true

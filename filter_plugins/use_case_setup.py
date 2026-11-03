@@ -146,20 +146,21 @@ def distinct_controllers(seed_instances, target_instances):
     return True
 
 
-def native_api_credentials(credentials):
-    """Forward only the native destination credential actually attached to this job."""
+def instance_store_credentials(credentials):
+    """Forward the shared store already attached to the source job."""
     require(isinstance(credentials, list), "Read this source job's credential associations.")
     selected = [entry for entry in credentials if entry.get("summary_fields", {})
-                .get("credential_type", {}).get("name") == "Red Hat Ansible Automation Platform"]
+                .get("credential_type", {}).get("name") == "Pseudo Instance Key Store"
+                and entry.get("name") == "AAP API/MCP Auth Token Store"]
     require(len(selected) == 1 and type(selected[0].get("id")) is int
             and type(selected[0].get("credential_type")) is int,
-            "Select exactly one native destination AAP API credential when launching this job.")
+            "Attach exactly one AAP API/MCP Auth Token Store to this job.")
     return selected
 
 
 def api_launch_credentials(original, expected_names, destination_credentials,
                            organization, destination, shared_seed_credentials=None):
-    """Keep the saved repository pair; add only the explicitly selected API credential."""
+    """Keep the saved repository credentials and the same shared instance store."""
     require(isinstance(original, list) and isinstance(expected_names, list)
             and all(entry.get("kind") != "ssh" for entry in original)
             and sorted(entry.get("name", "") for entry in original) == sorted(expected_names),
@@ -179,11 +180,14 @@ def api_launch_credentials(original, expected_names, destination_credentials,
                   == pin.get("credential_type_name"))
         require(type(entry.get("id")) is int and (owner.get("name") == organization or pinned),
                 "Repository credential ownership must match the organization or exact reviewed source pins.")
-    native = native_api_credentials(destination_credentials)[0]
+    store = instance_store_credentials(destination_credentials)[0]
+    saved_store = instance_store_credentials(original)[0]
     require(len(destination_credentials) == 1
-            and https_origin(native.get("inputs", {}).get("host")) == https_origin(destination),
-            "Forward only the explicitly selected API credential for the selected destination.")
-    combined = original + [native]
+            and saved_store["id"] == store["id"]
+            and saved_store["credential_type"] == store["credential_type"],
+            "Parent and child must use the same reviewed instance token store.")
+    https_origin(destination)
+    combined = original
     vault_ids = [entry.get("inputs", {}).get("vault_id", "") for entry in original
                  if entry.get("kind") == "vault"]
     identities = [entry["id"] for entry in combined]
@@ -320,7 +324,7 @@ class FilterModule:
             "aap_normalized_git_url": git_url,
             "aap_https_origin": https_origin,
             "aap_scoped_launch_credentials": scoped_launch_credentials,
-            "aap_native_api_credentials": native_api_credentials,
+            "aap_instance_store_credentials": instance_store_credentials,
             "aap_api_launch_credentials": api_launch_credentials,
             "aap_selected_use_case_prerequisites": selected_prerequisites,
         }

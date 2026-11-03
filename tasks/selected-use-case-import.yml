@@ -11,15 +11,15 @@
   no_log: true
   when: aap_selected_importer.item.playbook == '05-prepare-use-cases.yml'
 
-- name: Forward the selected native API credential alongside preparation dependencies
+- name: Retain the shared token store alongside preparation dependencies
   ansible.builtin.set_fact:
     aap_selected_launch_credential_ids: >-
-      {{ aap_selected_preparation_credential_ids +
-         (aap_selected_api_credentials | map(attribute='id') | list) }}
+      {{ (aap_selected_preparation_credential_ids +
+         (aap_selected_api_credentials | map(attribute='id') | list)) | unique | list }}
   when: aap_selected_importer.item.playbook == '05-prepare-use-cases.yml'
   no_log: true
 
-- name: Keep generic import credentials limited to the saved repository pair and selected API credential
+- name: Keep generic import credentials limited to saved repository access and the shared token store
   ansible.builtin.set_fact:
     aap_selected_launch_credential_ids: >-
       {{ aap_selected_saved_credentials | aap_api_launch_credentials(

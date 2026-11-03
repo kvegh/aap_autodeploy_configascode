@@ -32,11 +32,11 @@ versions stay in `vaults/cac/aap_autodeploy_configascode-cac-vault.yml`.
 ## Launching the selector
 
 Use its AAP Job Template with the shared `main inventory`. Choose the exact
-`aap_instance_key`, supported use cases and a native Red Hat Ansible Automation
-Platform credential for the destination. Keep its existing saved source/catalog
-credentials. The selected native API credential must be attached to this actual
-source job: the selector reads the job's credential associations, verifies the
-managed native type and binds its HTTPS origin to the inventory `ansible_fqdn`.
+`aap_instance_key` and supported use cases. Keep the saved source/catalog
+credentials and **AAP API/MCP Auth Token Store**. Its injected JSON contains
+per-instance API/MCP tokens; the selected inventory name determines which bearer
+and HTTPS origin are used. That origin must match inventory `ansible_fqdn`. The
+selector checks that the saved shared-store credential is forwarded unchanged.
 Its Verify SSL flag must be true. It never selects a source bearer as target auth.
 
 AAP inventory hosts store explicit FQDNs without scheme/path; VM placement groups
@@ -49,7 +49,7 @@ hostname suffix, free-form destination URL or SSH API-login fallback.
 
 Source orchestration uses only the encrypted catalog's explicit seed login and,
 if supplied, its dedicated CA file. Source token creation, reads, job waits and
-cleanup use this source trust context. Native destination credentials cannot
+cleanup use this source trust context. Destination token selection cannot
 replace the source login through extra-variable precedence. TLS verification
 remains enabled. The source session is revoked; the operator's destination API
 credential is preserved.
@@ -59,17 +59,16 @@ organization, labels, reviewed SCM Project, common playbook, fixed project ID,
 bounded survey and exact saved case credential associations. Source-global
 credentials require their existing reviewed name/ID/type pins; no grants are
 widened. Each generic child receives its saved Git/Vault/environment credentials
-plus the one explicitly attached native destination API credential. It receives
+including the same saved shared API/MCP token-store credential. It receives
 only the destination instance and diagnostic choice as launch variables: its
 project ID, repository and capture file remain fixed on its saved template.
 
 The separate prerequisite child additionally receives only the pinned Machine
 credential. Its saved AutoDeploy repository read token and CaC Vault also read
 and decrypt the registry. Stage05 uses
-explicit native API auth for PAH preparation and never scrapes installer
+the selected instance bearer for PAH preparation and never scrapes installer
 passwords. Existing infrastructure SSH preparation remains separate from API
-requests. This distinction does not create or redesign any custom credential
-type. The redundant registry-reader type is no longer provisioned or used;
+requests. The approved temporary credential type is described in [instance token storage](instance-token-store.md). The redundant registry-reader type is no longer provisioned or used;
 the separate allocation writer uses the same Git-token type with its own write token.
 
 Every child is watched to actual completion, and the completed job's credential

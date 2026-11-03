@@ -64,7 +64,7 @@ class DeploymentWorkflowTests(unittest.TestCase):
         self.assertFalse(artifact["aggregate"])
         installer = yaml.safe_load((ROOT / "03-aap-install.yml").read_text())[-1]
         self.assertNotIn("aap_hostname", installer["vars"])
-        self.assertEqual(installer["vars"]["aap_installer_hostname"], "{{ vm_name }}.{{ vault_domain }}")
+        self.assertEqual(installer["vars"]["aap_installer_hostname"], "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}")
 
     @unittest.skipUnless(importlib.util.find_spec("ansible"), "requires installed Ansible")
     def test_duplicate_collection_pins_are_synced_in_nonoverlapping_exact_batches(self):

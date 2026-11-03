@@ -26,7 +26,9 @@
       - hub_collection_remotes_base | map(attribute='name') | sort == ['community', 'rh-certified', 'validated']
       - hub_collection_repositories_base | map(attribute='name') | sort == ['community', 'rh-certified', 'validated']
       - aap_organizations_base | selectattr('name', 'equalto', pah_base.organization) | list | length == 1
-      - (aap_organizations_base | selectattr('name', 'equalto', pah_base.organization) | first).galaxy_credentials == (pah_base.download_credentials | map(attribute='name') | list)
+      - >-
+        (aap_organizations_base | selectattr('name', 'equalto', pah_base.organization) | first).galaxy_credentials ==
+        (pah_base.download_credentials | map(attribute='name') | list)
     fail_msg: Define the certified, validated, and community PAH sources in base, in that order, and attach only their credentials to the base organization.
 
 - name: Require an upstream token when configuring an upstream authentication URL

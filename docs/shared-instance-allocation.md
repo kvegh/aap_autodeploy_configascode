@@ -114,3 +114,17 @@ check mode, lost-number retention, a real read-only registry lookup, refusal of
 unknown/stale targets, delegated SSH routing and conflicting DNS refusal. They do not establish
 real VM boot, guest SSH, certificate issuance or AAP installation. Check mode
 checks access without consuming a number or provisioning a VM.
+
+## Public names for future deployments
+
+A reservation such as `aap27-test-7` keeps that VM and inventory key. Its new
+guest and public FQDN is `aap27.v07.example.invalid`; the matching demo website
+is `redhat.v07.example.invalid`. Numbers have at least two digits. The shared
+allocator consumes one number; services do not allocate independent counters.
+Existing completed instance routes retain their current public names. Rerunning
+stages against such an instance does not migrate its DNS or certificates.
+
+Stage 04 now needs the existing Git writer instead of the repository reader,
+alongside the existing source API and source CA credentials, to publish the new
+instance token back to the source. Stages 02/03 retain repository read access.
+See [instance token storage](instance-token-store.md) and [decommissioning](decommission.md).

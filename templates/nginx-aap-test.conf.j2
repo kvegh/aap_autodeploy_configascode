@@ -12,7 +12,7 @@ server {
     proxy_ssl_verify on;
     proxy_ssl_trusted_certificate /etc/nginx/aap-upstreams/{{ vm_name }}.pem;
     proxy_ssl_server_name on;
-    proxy_ssl_name {{ vm_name }}.{{ vault_domain }};
+    proxy_ssl_name {{ aap_upstream_hostname | default(vm_name + '.' + vault_domain) }};
     proxy_ssl_verify_depth 3;
 
     location ~ ^/api/gateway/v1/login/?$ {
