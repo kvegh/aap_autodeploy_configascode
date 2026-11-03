@@ -9,7 +9,10 @@ the standalone importer also supports existing and self-target AAP instances.
 Application jobs are not launched. New activation definitions are disabled and
 existing activation states are preserved.
 
-The reviewed selector catalog follows umbrella submodule paths:
+The reviewed selector catalog follows umbrella submodule paths. It derives each
+deployment Job Template display name from the fixed project ID using the
+[shared naming rule](cac-project-import.md); encrypted credential-map keys and
+extraction matches use those same names:
 
 | Submodule | Fixed project ID | Common playbook |
 |---|---|---|

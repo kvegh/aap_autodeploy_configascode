@@ -59,6 +59,25 @@ class UseCaseSetupTests(unittest.TestCase):
         self.assertEqual([x["project_id"] for x in result["importers"]],
                          ["aiops-selfhealing-demo", "disconnected-windows-patching"])
 
+    def test_project_ids_determine_names_with_acronyms_and_original_word_order(self):
+        expected = {
+            "aiops-selfhealing-demo": "AIOps Selfhealing Demo",
+            "disconnected-windows-patching": "Disconnected Windows Patching",
+            "automation-orchestrator": "Automation Orchestrator",
+            "assistant-team": "Assistant Team",
+            "aap_autodeploy_configascode": "AAP Autodeploy Configascode",
+        }
+        for project_id, name in expected.items():
+            with self.subTest(project_id=project_id):
+                self.assertEqual(setup.project_display_name(project_id), name)
+        selected = [key for key, entry in self.catalog.items() if "project_id" in entry]
+        result = self.plan(selected)
+        self.assertEqual([entry["name"] for entry in result["importers"]],
+                         [expected[self.catalog[key]["project_id"]] for key in selected])
+        for project_id in (None, "", "AiOps", "bad--id", "../other", "id with spaces"):
+            with self.subTest(project_id=project_id), self.assertRaises(AnsibleFilterError):
+                setup.project_display_name(project_id)
+
     def test_generic_children_get_only_saved_repository_credentials_and_selected_destination(self):
         original = [
             {"id": 10, "name": "Case Git", "kind": "cloud",

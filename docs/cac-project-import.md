@@ -5,13 +5,19 @@ its `aap_cac_project_id` and retains its own private repository read token and
 Vault credential. Operators choose the destination, not the repository or file.
 The older five playbook filenames are thin aliases to this same implementation.
 
-| Fixed project ID | Derived private repository | Derived encrypted capture |
-|---|---|---|
-| `aiops-selfhealing-demo` | `aiops-selfhealing-demo-secrets` | `vaults/cac/aiops-selfhealing-demo-cac-vault.yml` |
-| `disconnected-windows-patching` | `disconnected-windows-patching-secrets` | `vaults/cac/disconnected-windows-patching-cac-vault.yml` |
-| `automation-orchestrator` | `automation-orchestrator-secrets` | `vaults/cac/automation-orchestrator-cac-vault.yml` |
-| `assistant-team` | `assistant-team-secrets` | `vaults/cac/assistant-team-cac-vault.yml` |
-| `aap_autodeploy_configascode` | `aap_autodeploy_configascode-secrets` | `vaults/cac/aap_autodeploy_configascode-cac-vault.yml` |
+| Fixed project ID | Deployment Job Template | Derived private repository | Derived encrypted capture |
+|---|---|---|---|
+| `aiops-selfhealing-demo` | AIOps Selfhealing Demo | `aiops-selfhealing-demo-secrets` | `vaults/cac/aiops-selfhealing-demo-cac-vault.yml` |
+| `disconnected-windows-patching` | Disconnected Windows Patching | `disconnected-windows-patching-secrets` | `vaults/cac/disconnected-windows-patching-cac-vault.yml` |
+| `automation-orchestrator` | Automation Orchestrator | `automation-orchestrator-secrets` | `vaults/cac/automation-orchestrator-cac-vault.yml` |
+| `assistant-team` | Assistant Team | `assistant-team-secrets` | `vaults/cac/assistant-team-cac-vault.yml` |
+| `aap_autodeploy_configascode` | AAP Autodeploy Configascode | `aap_autodeploy_configascode-secrets` | `vaults/cac/aap_autodeploy_configascode-cac-vault.yml` |
+
+Deployment names split the fixed project ID at hyphens and underscores, capitalize
+each word and retain the original order. `aiops` becomes **AIOps** and `aap`
+becomes **AAP**. The catalog uses this same rule rather than maintaining separate
+name overrides. Existing template IDs, credentials and workflow links are retained;
+application templates and SCM Projects keep their existing names.
 
 The repository owner namespace comes from encrypted environment configuration:
 `vault_cac_repository_namespace`, or the owner of the existing protected

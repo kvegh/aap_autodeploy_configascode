@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.28.2
+
+Derive the five deployment Job Template names from their fixed project IDs,
+with AIOps/AAP capitalization and preserved word order. Align selector lookups,
+encrypted desired configuration, extraction names and current operator guidance.
+Retain existing template IDs, credentials, launch settings and workflow links.
+Focused naming/selector checks and protected capture preservation validate the
+change; no use-case import or application job is launched.
+
 ## 0.28.1
 
 Document shared importer implementation `305b0cd`, its explicit native API

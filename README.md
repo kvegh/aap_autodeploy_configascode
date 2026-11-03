@@ -20,6 +20,14 @@ The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
 
+The five project deployment Job Templates use names derived from their fixed
+project IDs: **AIOps Selfhealing Demo**, **Disconnected Windows Patching**,
+**Automation Orchestrator**, **Assistant Team**, and **AAP Autodeploy Configascode**.
+Hyphens and underscores separate words; AIOps and AAP retain their capitalization.
+The selector derives these names from the same rule. Existing template IDs,
+repository credentials and workflow links are preserved. See the
+[project import guide](docs/cac-project-import.md) for the full mapping.
+
 Project captures now use `vaults/cac/<project-id>-cac-vault.yml` inside their
 separate `<project-id>-secrets` repositories. The generic importer reads only
 that canonical capture; shared base checkout retains its temporary old-path fallback.

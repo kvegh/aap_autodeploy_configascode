@@ -1,6 +1,7 @@
 """Bound selected configuration imports to reviewed umbrella submodules."""
 
 from collections.abc import Mapping
+import re
 from urllib.parse import urlsplit
 
 from ansible.errors import AnsibleFilterError
@@ -9,6 +10,16 @@ from ansible.errors import AnsibleFilterError
 def require(condition, message):
     if not condition:
         raise AnsibleFilterError(message)
+
+
+def project_display_name(project_id):
+    """Derive deployment template names from IDs, preserving their word order."""
+    require(isinstance(project_id, str)
+            and bool(re.fullmatch(r"[a-z0-9]+(?:[-_][a-z0-9]+)*", project_id)),
+            "Use a lowercase project ID with hyphen or underscore word separators.")
+    acronyms = {"aiops": "AIOps", "aap": "AAP"}
+    return " ".join(acronyms.get(word, word.capitalize())
+                    for word in re.split(r"[-_]", project_id))
 
 
 def https_origin(value):
@@ -97,7 +108,7 @@ def setup_plan(selected, catalog, protected, seed, target):
         importers.append(
             {
                 "key": key,
-                "name": entry["template"],
+                "name": project_display_name(entry["project_id"]),
                 "playbook": entry["playbook"],
                 "project_id": entry["project_id"],
                 "repository": repository,
@@ -297,6 +308,7 @@ class FilterModule:
     def filters(self):
         return {
             "aap_use_case_setup_plan": setup_plan,
+            "aap_cac_project_display_name": project_display_name,
             "aap_distinct_controllers": distinct_controllers,
             "aap_normalized_git_url": git_url,
             "aap_https_origin": https_origin,

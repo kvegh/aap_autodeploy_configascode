@@ -1,23 +1,20 @@
 ---
-# Keys match reviewed AAP-advanced-features submodule paths. URLs stay in Vault.
+# Keys match reviewed umbrella submodule paths. URLs stay in Vault.
+# Deployment template display names are derived from project_id.
 aap_use_case_catalog:
   aap_autodeploy_configascode:
-    template: Deploy AAP AutoDeploy Configuration
     playbook: deploy-cac-project.yml
     project_id: aap_autodeploy_configascode
     configuration: base
   AIOps_selfhealing_demo:
-    template: Deploy AIOps Self-Healing Configuration
     playbook: deploy-cac-project.yml
     project_id: aiops-selfhealing-demo
     configuration: aiops
   automation-orchestrator:
-    template: Deploy Automation Orchestrator Configuration
     playbook: deploy-cac-project.yml
     project_id: automation-orchestrator
     configuration: orchestrator
   disconnected-windows-patching:
-    template: Deploy Disconnected Windows Configuration
     playbook: deploy-cac-project.yml
     project_id: disconnected-windows-patching
     configuration: windows_disconnected
