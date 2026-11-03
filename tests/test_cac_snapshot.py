@@ -247,6 +247,19 @@ class FakeAPI:
 
 
 class SnapshotTests(unittest.TestCase):
+    def test_shared_inventory_override_preserves_older_owned_alias_definition(self):
+        import json
+
+        scope = self.scope()
+        scope['aliases']['inventories'] = {'Shared inventory': 'Portable stage inventory'}
+        scope['external_dependencies'] = {'inventories': ['Shared inventory']}
+        scope['template_inventory_references'] = {'Project importer': 'Shared inventory'}
+        captured = snapshot.Snapshot(FakeAPI(), scope, json.loads)
+        self.assertFalse(captured.external_dependency('inventories', 'Shared inventory'))
+        self.assertEqual(captured.alias('inventories', 'Shared inventory'), 'Portable stage inventory')
+        scope['aliases']['inventories'] = {}
+        self.assertTrue(captured.external_dependency('inventories', 'Shared inventory'))
+
     def test_separate_ca_custom_type_alias_and_retained_dependency_are_complete(self):
         import json
 

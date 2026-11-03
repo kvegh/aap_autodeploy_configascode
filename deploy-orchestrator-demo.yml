@@ -138,7 +138,7 @@
 
         - name: Read the encrypted Orchestrator configuration
           ansible.builtin.slurp:
-            src: "{{ cac_workspace.path }}/repository/cac/orchestrator.yml"
+            src: "{{ lookup('ansible.builtin.first_found', {'files': ['vaults/cac/automation-orchestrator-cac-vault.yml', 'cac/orchestrator.yml'], 'paths': [cac_workspace.path ~ '/repository']}) }}"
           register: cac_encrypted_orchestrator
           no_log: true
 
@@ -151,7 +151,7 @@
 
         - name: Decrypt and load the Orchestrator configuration with the attached Vault credentials
           ansible.builtin.include_vars:
-            file: "{{ cac_workspace.path }}/repository/cac/orchestrator.yml"
+            file: "{{ lookup('ansible.builtin.first_found', {'files': ['vaults/cac/automation-orchestrator-cac-vault.yml', 'cac/orchestrator.yml'], 'paths': [cac_workspace.path ~ '/repository']}) }}"
           no_log: true
 
         - name: Require a reviewed and complete Orchestrator configuration

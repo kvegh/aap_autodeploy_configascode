@@ -269,6 +269,16 @@ class Snapshot:
     def alias(self, kind, name):
         return self.aliases.get(kind, {}).get(name, name)
 
+    def external_dependency(self, kind, name):
+        declared = self.scope.get('external_dependencies', {}).get(kind, [])
+        aliased = self.alias(kind, name)
+        # One shared inventory can also have an older portable alias for stage
+        # jobs. Keep that owned definition while new imports reference the
+        # unaliased shared dependency through a declared template override.
+        shared_override = (kind == 'inventories' and aliased != name
+                           and name in self.scope.get('template_inventory_references', {}).values())
+        return aliased in declared or (name in declared and not shared_override)
+
     def detail(self, kind, identity):
         endpoint = {"workflows": "workflow_job_templates"}.get(kind, kind)
         key = (endpoint, identity)
@@ -393,6 +403,17 @@ class Snapshot:
             ]:
                 if job.get(field) is not None:
                     value[field] = self.reference(kind, job[field])
+                    if field == 'inventory':
+                        overrides = self.scope.get('template_inventory_references', {})
+                        if not isinstance(overrides, dict):
+                            raise CaptureError('Template inventory references must be a declared mapping.')
+                        expected = overrides.get(job['name'])
+                        if expected is not None:
+                            if (not isinstance(expected, str) or not expected
+                                    or expected not in self.scope.get('external_dependencies', {}).get('inventories', [])
+                                    or self.detail('inventories', job[field]).get('name') != expected):
+                                raise CaptureError('A template inventory differs from its declared shared dependency.')
+                            value[field] = expected
                     if kind in dependencies:
                         dependencies[kind].add(job[field])
             associated = self.related(job, "credentials")
@@ -468,9 +489,7 @@ class Snapshot:
             self.source_dependency_names[kind] = []
             for identifier in sorted(identifiers):
                 raw = self.detail(kind, identifier)
-                if raw["name"] in external.get(kind, []) or self.alias(
-                    kind, raw["name"]
-                ) in external.get(kind, []):
+                if self.external_dependency(kind, raw['name']):
                     continue
                 self.source_dependency_names[kind].append(raw["name"])
                 value = self.fields(kind, raw)

@@ -248,7 +248,7 @@ class ActionModule(ActionBase):
                         "This scope is unavailable: " + scope["unavailable"]
                     )
                 configuration_file = scope["configuration_file"]
-                if not re.fullmatch(r"cac/[A-Za-z0-9_-]+\.yml", configuration_file):
+                if not re.fullmatch(r"(?:cac/[A-Za-z0-9_-]+|vaults/cac/[A-Za-z0-9_-]+-cac-vault)\.yml", configuration_file):
                     raise core.CaptureError(
                         "Only the declared CaC file may be updated; allocator state is excluded."
                     )

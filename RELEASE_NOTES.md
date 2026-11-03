@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.27.0
+
+Prepare canonical project capture paths before private repository file moves.
+All existing case importers and shared AutoDeploy checkout prefer the new path
+with a temporary old-path fallback. Extraction accepts fixed `vaults/cac` capture
+paths and explicit per-template shared inventory references without discarding
+older owned inventory aliases. Focused Ansible syntax and snapshot/capture
+regressions validate compatibility; no production Job Template or application
+configuration is changed.
+
 ## 0.26.3
 
 Document analysis `96ce498` and the reasons for proposing one shared CaC importer

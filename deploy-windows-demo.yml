@@ -140,7 +140,7 @@
 
         - name: Read the encrypted Windows configuration
           ansible.builtin.slurp:
-            src: "{{ cac_workspace.path }}/repository/cac/windows_disconnected.yml"
+            src: "{{ lookup('ansible.builtin.first_found', {'files': ['vaults/cac/disconnected-windows-patching-cac-vault.yml', 'cac/windows_disconnected.yml'], 'paths': [cac_workspace.path ~ '/repository']}) }}"
           register: cac_encrypted_windows
           no_log: true
 
@@ -153,7 +153,7 @@
 
         - name: Decrypt and load the Windows configuration with the attached Vault credentials
           ansible.builtin.include_vars:
-            file: "{{ cac_workspace.path }}/repository/cac/windows_disconnected.yml"
+            file: "{{ lookup('ansible.builtin.first_found', {'files': ['vaults/cac/disconnected-windows-patching-cac-vault.yml', 'cac/windows_disconnected.yml'], 'paths': [cac_workspace.path ~ '/repository']}) }}"
           no_log: true
 
         - name: Require a reviewed and complete Windows configuration

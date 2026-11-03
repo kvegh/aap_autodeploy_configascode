@@ -110,7 +110,7 @@
 
         - name: Read the encrypted AIOps configuration
           ansible.builtin.slurp:
-            src: "{{ cac_workspace.path }}/repository/cac/aiops_demo.yml"
+            src: "{{ lookup('ansible.builtin.first_found', {'files': ['vaults/cac/aiops-selfhealing-demo-cac-vault.yml', 'cac/aiops_demo.yml'], 'paths': [cac_workspace.path ~ '/repository']}) }}"
           register: cac_encrypted_aiops
           no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
@@ -123,7 +123,7 @@
 
         - name: Decrypt and load the AIOps configuration with the attached Vault credentials
           ansible.builtin.include_vars:
-            file: "{{ cac_workspace.path }}/repository/cac/aiops_demo.yml"
+            file: "{{ lookup('ansible.builtin.first_found', {'files': ['vaults/cac/aiops-selfhealing-demo-cac-vault.yml', 'cac/aiops_demo.yml'], 'paths': [cac_workspace.path ~ '/repository']}) }}"
           no_log: "{{ not (debug_logging | default(false) | bool) }}"
 
         - name: Require a reviewed and complete AIOps configuration

@@ -20,6 +20,14 @@ The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
 
+Project captures now use `vaults/cac/<project-id>-cac-vault.yml` inside their
+separate `<project-id>-secrets` repositories. Existing importers prefer the
+canonical capture and temporarily retain their old path as a migration fallback.
+The shared bootstrap capture remains `cac/base_CaC_vault.yml`. Extraction accepts
+the canonical project path and can declare a shared inventory reference for an
+individual template while retaining older portable inventory aliases. This
+compatibility change does not switch production templates or run any imports.
+
 Complete CaC object ownership remains an open design task. Labels cannot cover
 every Controller resource, and API label support does not imply that the UI can
 edit or filter it. [The TODO backlog](TODO.md) mirrors Beads `bead-wd-72v`, with

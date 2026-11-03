@@ -66,12 +66,21 @@
     GIT_CONFIG_VALUE_2: 'true'
   no_log: true
 
+- name: Prefer the canonical capture while retaining the old path during migration
+  ansible.builtin.set_fact:
+    cac_autodeploy_capture_relative_path: >-
+      {{ lookup('ansible.builtin.first_found', {'files':
+           ['vaults/cac/aap_autodeploy_configascode-cac-vault.yml', 'cac/autodeploy.yml'],
+           'paths': [cac_workspace.path ~ '/repository']}) |
+         relpath(cac_workspace.path ~ '/repository') }}
+  no_log: true
+
 - name: Read only the requested configuration ciphertexts
   ansible.builtin.slurp:
     src: "{{ cac_workspace.path }}/repository/{{ item }}"
   loop:
     - cac/base_CaC_vault.yml
-    - cac/autodeploy.yml
+    - "{{ cac_autodeploy_capture_relative_path }}"
   register: cac_configuration_ciphertexts
   no_log: true
 
@@ -88,5 +97,5 @@
     file: "{{ cac_workspace.path }}/repository/{{ item }}"
   loop:
     - cac/base_CaC_vault.yml
-    - cac/autodeploy.yml
+    - "{{ cac_autodeploy_capture_relative_path }}"
   no_log: true
