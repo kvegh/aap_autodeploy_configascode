@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.28.10
+
+Use the existing `Cac_git_token_type` for the separate allocation writer and its
+dedicated replacement token. Allocation and extraction use `CAC_GIT_TOKEN` and
+the protected repository URL from encrypted project configuration. Keep reader
+tokens separate, remove obsolete writer input names, and retain existing IDs
+and grants. Save the existing environment Vault on the extraction template.
+Align production, the existing test controller and encrypted base/captures;
+validate real GitHub write-service authorization without modifying repository
+state, native reservation/concurrency, wrong-key refusal and secret logging.
+
 ## 0.28.9
 
 Document registry-reader consolidation `328c982`, protected repository binding,

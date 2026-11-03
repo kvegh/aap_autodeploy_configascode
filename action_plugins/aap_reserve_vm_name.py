@@ -7,7 +7,6 @@ import re
 import subprocess
 import tempfile
 import time
-from urllib.parse import urlsplit
 import uuid
 
 import yaml
@@ -23,6 +22,13 @@ spec = spec_from_file_location(
 allocator = module_from_spec(spec)
 spec.loader.exec_module(allocator)
 
+contract_spec = spec_from_file_location(
+    "allocation_cac_contract",
+    Path(__file__).resolve().parents[1] / "filter_plugins/cac_import.py",
+)
+contract = module_from_spec(contract_spec)
+contract_spec.loader.exec_module(contract)
+
 
 class ActionModule(ActionBase):
     TRANSFERS_FILES = False
@@ -30,27 +36,23 @@ class ActionModule(ActionBase):
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
         args = self._task.args
-        repository = args.get("repository", "")
-        parsed = urlsplit(repository)
-        if (
-            parsed.scheme != "https"
-            or not parsed.hostname
-            or parsed.username
-            or parsed.password
-            or parsed.query
-            or parsed.fragment
-            or any(c.isspace() for c in repository)
-        ):
+        if "repository" in args:
             raise AnsibleActionFail(
-                "Supply the protected HTTPS allocation repository without credentials in its URL."
+                "The allocation repository is fixed by encrypted AutoDeploy configuration."
             )
-        token = os.environ.get("AAP_ALLOCATION_GIT_TOKEN") or os.environ.get(
-            "HACTAR_REGISTRY_GIT_TOKEN"
-        )
+        token = os.environ.get("CAC_GIT_TOKEN", "")
         if not token:
             raise AnsibleActionFail(
                 "Attach the authorized shared-allocation Git writer credential."
             )
+        try:
+            repository = contract.autodeploy_repository(
+                self._loader, Path(__file__).resolve().parents[1]
+            )
+        except Exception:
+            raise AnsibleActionFail(
+                "Load the encrypted AutoDeploy repository configuration with its environment Vault credential."
+            ) from None
         request_id = args.get("request_id") or str(uuid.uuid4())
         floor = args.get("observed_floor", 1)
         if isinstance(floor, str) and floor.isdecimal():
@@ -61,12 +63,11 @@ class ActionModule(ActionBase):
             helper = workspace / "git-askpass"
             helper.write_text(
                 '#!/bin/sh\ncase "$1" in\n*Username*) printf "%s\\n" x-access-token ;;\n'
-                '*Password*) printf "%s\\n" "$AAP_ALLOCATION_GIT_TOKEN" ;;\n*) exit 1 ;;\nesac\n'
+                '*Password*) printf "%s\\n" "$CAC_GIT_TOKEN" ;;\n*) exit 1 ;;\nesac\n'
             )
             helper.chmod(0o700)
             environment = dict(
                 os.environ,
-                AAP_ALLOCATION_GIT_TOKEN=token,
                 GIT_ASKPASS=str(helper),
                 GIT_TERMINAL_PROMPT="0",
                 LC_ALL="C",

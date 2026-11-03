@@ -3,7 +3,6 @@
 from importlib.util import module_from_spec, spec_from_file_location
 import os
 from pathlib import Path
-import re
 import subprocess
 import tempfile
 
@@ -39,14 +38,9 @@ class ActionModule(ActionBase):
         if set(self._task.args) - {"instance_key", "expected_route"}:
             raise AnsibleActionFail("The registry repository is fixed by encrypted AutoDeploy configuration.")
         try:
-            settings_file = Path(__file__).resolve().parents[1] / "myvars"
-            if not settings_file.read_bytes().startswith(b"$ANSIBLE_VAULT;"):
-                raise ValueError("Runtime configuration must be encrypted")
-            settings = self._loader.load_from_file(str(settings_file))
-            namespace = settings.get("vault_cac_repository_namespace")
-            if namespace is None:
-                namespace = re.sub(r"/[^/]+/?$", "", settings.get("git_url", ""))
-            repository = contract.project_contract("aap_autodeploy_configascode", namespace)["repository"]
+            repository = contract.autodeploy_repository(
+                self._loader, Path(__file__).resolve().parents[1]
+            )
         except Exception:
             raise AnsibleActionFail("Load the encrypted AutoDeploy repository configuration with its environment Vault credential.") from None
         with tempfile.TemporaryDirectory(prefix="aap-instance-registry-") as temporary:

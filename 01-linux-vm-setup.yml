@@ -59,7 +59,6 @@
 
     - name: Reserve and publish one global encrypted name before any image write
       aap_reserve_vm_name:
-        repository: "{{ lookup('ansible.builtin.env', 'AAP_ALLOCATION_REPOSITORY') }}"
         prefix: "aap{{ aap_version_short }}-{{ vm_suffix }}"
         hypervisor_id: "{{ aap_hypervisor_pin.machine_id }}"
         observed_floor: >-
@@ -273,7 +272,6 @@
 
     - name: Publish the verified route into the shared encrypted instance registry
       aap_reserve_vm_name:
-        repository: "{{ lookup('ansible.builtin.env', 'AAP_ALLOCATION_REPOSITORY') }}"
         prefix: "aap{{ aap_version_short }}-{{ vm_suffix }}"
         hypervisor_id: "{{ aap_hypervisor_pin.machine_id }}"
         request_id: "{{ aap_vm_reservation.request_id }}"

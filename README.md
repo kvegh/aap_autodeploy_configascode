@@ -612,7 +612,15 @@ maintenance leaves current registry routing intact. Inventory-driven destination
 lookup and explicit native destination API credentials are implemented in the shared project importer.
 
 `Cac_git_token_type` is the reusable custom schema, not a credential containing a
-token. Its `CAC_GIT_TOKEN` injector lets playbooks download private encrypted CaC.
+token. Its `CAC_GIT_TOKEN` injector supplies the separate per-repository read
+tokens and the dedicated `AAP AutoDeploy allocation writer` token. The writer
+uses this same type; it does not share the read token or change its permissions.
+The encrypted shared base stores the writer under `controller_credentials_base`,
+with `credential_type: Cac_git_token_type` and `inputs.token`. Allocation and
+extraction derive its repository URL from encrypted project `myvars` and require
+the existing environment Vault credential. The extractor saves this attachment
+alongside its CaC Vault. The old allocation-writer type is no longer provisioned; migrate the existing
+writer credential before using these updated jobs.
 Normal Source Control credentials handle AAP's SCM checkout of playbook projects;
 they are not automatically available for arbitrary playbook downloads. Public
 playbook checkout, private CaC read/decrypt, and target AAP API authentication are

@@ -70,7 +70,7 @@ explicit native API auth for PAH preparation and never scrapes installer
 passwords. Existing infrastructure SSH preparation remains separate from API
 requests. This distinction does not create or redesign any custom credential
 type. The redundant registry-reader type is no longer provisioned or used;
-the allocation-writer design remains a separate discussion.
+the separate allocation writer uses the same Git-token type with its own write token.
 
 Every child is watched to actual completion, and the completed job's credential
 associations must match the bounded launch set. Success publishes only bounded

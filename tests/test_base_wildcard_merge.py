@@ -73,8 +73,7 @@ class BaseWildcardMergeTests(unittest.TestCase):
                     private = Path(directory)
                     output = private / "merged.json"
                     injectors = {
-                        "AAP_ALLOCATION_GIT_TOKEN": "{{ api_token }}",
-                        "AAP_ALLOCATION_REPOSITORY": "{{ repository }}",
+                        "CAC_GIT_TOKEN": "{{ token }}",
                     }
                     if literal:
                         injectors = {
@@ -94,13 +93,13 @@ class BaseWildcardMergeTests(unittest.TestCase):
                         ],
                         "controller_credential_types_base": [
                             {
-                                "name": "Fixture allocation writer",
+                                "name": "Cac_git_token_type",
                                 "kind": "cloud",
                                 "injectors": {"env": injectors},
                             }
                         ],
                         "controller_credentials_base": [
-                            {"name": "Fixture writer", "inputs": {"api_token": CANARY}}
+                            {"name": "Fixture writer", "inputs": {"token": CANARY}}
                         ],
                     }
                     tasks = [
@@ -167,7 +166,7 @@ class BaseWildcardMergeTests(unittest.TestCase):
                     merged = json.loads(output.read_text())
                     self.assertEqual(merged["types"][0]["injectors"]["env"], injectors)
                     self.assertEqual(
-                        merged["credentials"][0]["inputs"]["api_token"], CANARY
+                        merged["credentials"][0]["inputs"]["token"], CANARY
                     )
                     self.assertEqual(merged["users"][0]["username"], "Fixture operator")
                     self.assertEqual(merged["remotes"][0]["token"], CANARY)

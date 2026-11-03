@@ -14,10 +14,20 @@ causes a fresh read/retry. The accepted reservation is reread before a name is
 returned. Failed provisioning never releases or reuses its number. A lost job
 can therefore leave a consumed name without a VM; that gap is intentional.
 
-The `AAP AutoDeploy allocation writer` credential injects
-`AAP_ALLOCATION_GIT_TOKEN` and `AAP_ALLOCATION_REPOSITORY`. Its encrypted type/
-credential definitions belong to shared base, independently of optional recovery
-use cases. Attach that credential, the named `cac` Vault credential, the
+The `AAP AutoDeploy allocation writer` is a separate credential using the existing
+`Cac_git_token_type`. Its dedicated write token is injected as `CAC_GIT_TOKEN`;
+the repository URL comes directly from encrypted project `myvars`, using the
+AutoDeploy secrets-repository naming rule. Launch variables cannot redirect it.
+The encrypted shared base defines the reusable Git type before creating the
+writer, independently of optional recovery use cases. In `cac/base_CaC_vault.yml`,
+its `controller_credentials_base` entry stores the secret in `inputs.token`.
+The read-only repository credentials retain their own separate tokens.
+The obsolete allocation-writer type is no longer provisioned. Controller refuses
+a type change when a credential has job history. Migrate such a writer to a
+replacement credential of the existing Git type, updating active assignments
+and retaining the old credential for historical jobs. Approval is required before
+creating a replacement credential. Existing type objects are retained. No new token permissions are granted by this
+change. Attach that credential, the named `cac` Vault credential, the
 environment Vault and the selected hypervisor Machine credential to Stage 01.
 Read-only repository access is insufficient; the action never falls back to a
 host-local allocator or a force push.

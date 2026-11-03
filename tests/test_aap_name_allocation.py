@@ -13,6 +13,8 @@ from types import SimpleNamespace
 import unittest
 from unittest import mock
 import yaml
+from ansible.parsing.dataloader import DataLoader
+from ansible.errors import AnsibleActionFail
 from ansible.parsing.vault import VaultLib, VaultSecret
 from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
@@ -31,7 +33,35 @@ allocation = load("allocation", ROOT / "src/aap_name_allocation.py")
 routing = load("routing", ROOT / "filter_plugins/aap_instance_route.py")
 
 
+def writer_project(directory, vault):
+    """Use actual action files and encrypted fixture settings for token-bound Git."""
+    project = directory / "project"
+    for relative in ("action_plugins/aap_reserve_vm_name.py",
+                     "src/aap_name_allocation.py", "filter_plugins/cac_import.py"):
+        target = project / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((ROOT / relative).read_bytes())
+    (project / "myvars").write_bytes(vault.encrypt(yaml.safe_dump({
+        "git_url": "https://git.example.invalid/fixture-owner/aap_autodeploy_configascode.git",
+    }), vault_id="cac"))
+    return project
+
+
 class AllocationTests(unittest.TestCase):
+    def test_writer_refuses_repository_overrides_and_obsolete_token_injection(self):
+        action = load("reserve_binding", ROOT / "action_plugins/aap_reserve_vm_name.py")
+        plugin = action.ActionModule.__new__(action.ActionModule)
+        plugin._task = SimpleNamespace(args={"repository": "https://untrusted.example.invalid/repo.git"})
+        with mock.patch.object(ActionBase, "run", return_value={}), mock.patch.object(
+            action.subprocess, "run", side_effect=AssertionError("No Git operation allowed")
+        ), mock.patch.dict(os.environ, {"CAC_GIT_TOKEN": "fixture-writer"}):
+            with self.assertRaisesRegex(AnsibleActionFail, "fixed by encrypted"):
+                plugin.run(task_vars={})
+            plugin._task.args = {}
+            with mock.patch.dict(os.environ, {"CAC_GIT_TOKEN": "", "AAP_ALLOCATION_GIT_TOKEN": "obsolete"}):
+                with self.assertRaisesRegex(AnsibleActionFail, "writer credential"):
+                    plugin.run(task_vars={})
+
     def state(self):
         return {"schema_version": 1, "next_number": 15, "reservations": {}}
 
@@ -97,7 +127,6 @@ class AllocationTests(unittest.TestCase):
             allocation.publish_route(result, request, route)
 
     def test_real_git_competing_writers_publish_unique_vaulted_reservations(self):
-        action = load("reserve_action", ROOT / "action_plugins/aap_reserve_vm_name.py")
         secret = VaultSecret(b"fixture-vault-password")
         vault = VaultLib([("cac", secret)])
         real_run = subprocess.run
@@ -144,12 +173,14 @@ class AllocationTests(unittest.TestCase):
             )
             git(seed, "remote", "add", "origin", str(remote))
             git(seed, "push", "origin", "main")
+            project = writer_project(directory, vault)
+            action = load("reserve_action", project / "action_plugins/aap_reserve_vm_name.py")
             barrier = threading.Barrier(2)
             seen = threading.local()
 
             def redirected(command, *args, **kwargs):
                 command = [
-                    str(remote) if x == "https://git.example.invalid/counter.git" else x
+                    str(remote) if x == "https://git.example.invalid/fixture-owner/aap_autodeploy_configascode-secrets.git" else x
                     for x in command
                 ]
                 result = real_run(command, *args, **kwargs)
@@ -162,13 +193,13 @@ class AllocationTests(unittest.TestCase):
                 plugin = action.ActionModule.__new__(action.ActionModule)
                 plugin._task = SimpleNamespace(
                     args={
-                        "repository": "https://git.example.invalid/counter.git",
                         "prefix": "aap27-test",
                         "hypervisor_id": hypervisor,
                     },
                     check_mode=False,
                 )
-                plugin._loader = SimpleNamespace(_vault=VaultLib([("cac", secret)]))
+                plugin._loader = DataLoader()
+                plugin._loader.set_vault_secrets([("cac", secret)])
                 return plugin.run(task_vars={})
 
             with mock.patch.object(
@@ -176,7 +207,7 @@ class AllocationTests(unittest.TestCase):
             ), mock.patch.object(
                 action.subprocess, "run", side_effect=redirected
             ), mock.patch.dict(
-                os.environ, {"AAP_ALLOCATION_GIT_TOKEN": "fixture-writer"}
+                os.environ, {"CAC_GIT_TOKEN": "fixture-writer"}
             ):
                 with ThreadPoolExecutor(max_workers=2) as pool:
                     results = list(pool.map(reserve_one, ["1" * 32, "2" * 32]))
@@ -239,7 +270,7 @@ class AllocationTests(unittest.TestCase):
             wrapper.write_text(
                 "#!"
                 + sys.executable
-                + '\nimport os,sys\na=[os.environ["FIXTURE_GIT_REMOTE"] if x=="https://git.example.invalid/counter.git" else x for x in sys.argv[1:]]\nos.execv("/usr/bin/git",["git"]+a)\n'
+                + '\nimport os,sys\na=[os.environ["FIXTURE_GIT_REMOTE"] if x=="https://git.example.invalid/fixture-owner/aap_autodeploy_configascode-secrets.git" else x for x in sys.argv[1:]]\nos.execv("/usr/bin/git",["git"]+a)\n'
             )
             wrapper.chmod(0o700)
             password = directory / "password"
@@ -260,7 +291,6 @@ class AllocationTests(unittest.TestCase):
                                 {
                                     "name": "Run the real controller action",
                                     "aap_reserve_vm_name": {
-                                        "repository": "https://git.example.invalid/counter.git",
                                         "prefix": "aap27-test",
                                         "hypervisor_id": "1" * 32,
                                         "observed_floor": "15",
@@ -281,12 +311,13 @@ class AllocationTests(unittest.TestCase):
                     ]
                 )
             )
+            project = writer_project(directory, vault)
             env = dict(
                 os.environ,
                 PATH=str(binaries) + os.pathsep + os.environ["PATH"],
-                AAP_ALLOCATION_GIT_TOKEN="fixture-writer-canary",
+                CAC_GIT_TOKEN="fixture-writer-canary",
                 FIXTURE_GIT_REMOTE=str(remote),
-                ANSIBLE_ACTION_PLUGINS=str(ROOT / "action_plugins"),
+                ANSIBLE_ACTION_PLUGINS=str(project / "action_plugins"),
                 ANSIBLE_LIBRARY=str(ROOT / "library"),
                 ANSIBLE_LOCAL_TEMP=str(directory / "local"),
                 ANSIBLE_REMOTE_TEMP=str(directory / "remote"),
@@ -306,7 +337,10 @@ class AllocationTests(unittest.TestCase):
                 if check:
                     command.append("--check")
                 result = subprocess.run(
-                    command + [str(fixture)],
+                    command + [str(fixture), "-e", json.dumps({
+                        "git_url": "https://untrusted.example.invalid/attacker/project.git",
+                        "vault_cac_repository_namespace": "https://untrusted.example.invalid/attacker",
+                    })],
                     env=env,
                     text=True,
                     capture_output=True,

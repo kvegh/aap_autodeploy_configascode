@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping
 from copy import deepcopy
+from pathlib import Path
 import re
 from urllib.parse import urlsplit
 
@@ -81,6 +82,18 @@ def project_contract(project_id, namespace):
             "Configure one HTTPS repository owner namespace without credentials or overrides.")
     return {'project_id': project_id, 'repository': namespace + '/' + project_id + '-secrets.git',
             'configuration_file': 'vaults/cac/' + project_id + '-cac-vault.yml'}
+
+
+def autodeploy_repository(loader, project_root):
+    """Read the fixed secrets URL from project Vault data, never launch variables."""
+    settings_file = Path(project_root) / 'myvars'
+    require(settings_file.read_bytes().startswith(b'$ANSIBLE_VAULT;'),
+            'Runtime configuration must be encrypted.')
+    settings = loader.load_from_file(str(settings_file))
+    namespace = settings.get('vault_cac_repository_namespace')
+    if namespace is None:
+        namespace = re.sub(r'/[^/]+/?$', '', settings.get('git_url', ''))
+    return project_contract('aap_autodeploy_configascode', namespace)['repository']
 
 
 def import_metadata(metadata, project_id):

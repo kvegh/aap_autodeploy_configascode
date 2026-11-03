@@ -20,9 +20,9 @@ from ansible.template import Templar
 from ansible.utils.unsafe_proxy import wrap_var
 
 ROOT = Path(__file__).resolve().parents[1]
-for module_name in ("cac_compare", "cac_snapshot", "cac_yaml"):
+for module_name in ("cac_compare", "cac_snapshot", "cac_yaml", "cac_import"):
     spec = importlib.util.spec_from_file_location(
-        module_name, ROOT / "src" / (module_name + ".py")
+        module_name, ROOT / ("filter_plugins" if module_name == "cac_import" else "src") / (module_name + ".py")
     )
     module = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = module
@@ -122,12 +122,19 @@ class ActionModule(ActionBase):
             raise AnsibleActionFail(
                 "Git publication requires explicit Boolean commit and push choices."
             )
-        repository = os.environ.get("AAP_CAC_CAPTURE_REPOSITORY") or os.environ.get(
-            "AAP_ALLOCATION_REPOSITORY", ""
-        )
-        token = os.environ.get("AAP_CAC_CAPTURE_GIT_TOKEN") or os.environ.get(
-            "AAP_ALLOCATION_GIT_TOKEN", ""
-        )
+        repository = os.environ.get("AAP_CAC_CAPTURE_REPOSITORY", "")
+        token = os.environ.get("AAP_CAC_CAPTURE_GIT_TOKEN", "")
+        if not repository and not token:
+            token = os.environ.get("CAC_GIT_TOKEN", "")
+            if token:
+                try:
+                    repository = sys.modules["cac_import"].autodeploy_repository(
+                        self._loader, ROOT
+                    )
+                except Exception:
+                    raise AnsibleActionFail(
+                        "Load the encrypted AutoDeploy repository configuration with its environment Vault credential."
+                    ) from None
         parsed = extraction.urlsplit(repository)
         if (
             parsed.scheme != "https"

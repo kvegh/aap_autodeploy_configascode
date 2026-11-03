@@ -13,6 +13,7 @@ from unittest import mock
 
 import yaml
 from ansible.errors import AnsibleActionFail
+from ansible.parsing.dataloader import DataLoader
 from ansible.parsing.vault import VaultLib, VaultSecret
 from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
@@ -27,6 +28,42 @@ spec.loader.exec_module(capture)
 
 
 class CaptureActionTests(unittest.TestCase):
+    def test_existing_git_type_reads_protected_repository_configuration(self):
+        with tempfile.TemporaryDirectory(prefix="aap-capture-writer-binding-") as temporary:
+            project = Path(temporary)
+            secret = VaultSecret(b"fixture-environment-secret")
+            vault = VaultLib([("default", secret)])
+            (project / "myvars").write_bytes(vault.encrypt(yaml.safe_dump({
+                "git_url": "https://git.example.invalid/fixture-owner/autodeploy.git",
+            })))
+            plugin = capture.ActionModule.__new__(capture.ActionModule)
+            plugin._task = SimpleNamespace(args={"scope": "fixture"}, check_mode=False)
+            plugin._loader = DataLoader()
+            plugin._loader.set_vault_secrets([("default", secret)])
+            attempted = []
+
+            def stop_at_git(command, **kwargs):
+                self.assertEqual(kwargs["env"]["AAP_CAC_CAPTURE_GIT_TOKEN"], "fixture-new-writer")
+                if "remote" in command:
+                    self.assertEqual(command[-1], "https://git.example.invalid/fixture-owner/aap_autodeploy_configascode-secrets.git")
+                    attempted.append(command[-1])
+                    raise AnsibleActionFail("Fixture reached the protected repository")
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            with mock.patch.object(ActionBase, "run", return_value={}), mock.patch.object(
+                capture, "ROOT", project
+            ), mock.patch.object(capture.subprocess, "run", side_effect=stop_at_git), mock.patch.dict(
+                os.environ, {"CAC_GIT_TOKEN": "fixture-new-writer", "AAP_CAC_CAPTURE_REPOSITORY": "", "AAP_CAC_CAPTURE_GIT_TOKEN": ""}
+            ):
+                result = plugin.run(task_vars={"git_url": "https://untrusted.example.invalid/attacker/repo.git"})
+                self.assertTrue(result["capture_failed"])
+                self.assertEqual(attempted, ["https://git.example.invalid/fixture-owner/aap_autodeploy_configascode-secrets.git"])
+                plugin._loader = DataLoader()
+                plugin._loader.set_vault_secrets([("default", VaultSecret(b"wrong-key"))])
+                with mock.patch.object(capture.subprocess, "run", side_effect=AssertionError("No Git before decryption")):
+                    refused = plugin.run(task_vars={})
+                self.assertIn("environment Vault credential", refused["msg"])
+
     def test_real_entrypoint_normalizes_survey_booleans_and_exposes_only_safe_refusals(
         self,
     ):
@@ -40,7 +77,7 @@ class CaptureActionTests(unittest.TestCase):
                 ANSIBLE_LOCAL_TEMP=str(Path(temporary) / "local"),
                 ANSIBLE_REMOTE_TEMP=str(Path(temporary) / "remote"),
                 AAP_CAC_CAPTURE_REPOSITORY="",
-                AAP_ALLOCATION_REPOSITORY="",
+                CAC_GIT_TOKEN="",
                 AAP_CAC_CAPTURE_GIT_TOKEN="fixture-protected-token-canary",
             )
             for commit, push, message in [

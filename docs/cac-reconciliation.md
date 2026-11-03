@@ -102,8 +102,12 @@ exact origin and redirect refusal. An invalid supplied file blocks collection;
 no global EE trust, host-file or DNS setting changes. Never trust a certificate
 merely because the failing endpoint presented it.
 
-The existing authorized allocation writer can supply its equivalent repository/
-token variables; no new repository grant is implied.
+The existing authorized allocation writer instead uses `Cac_git_token_type`
+and injects its separate write token as `CAC_GIT_TOKEN`. For that credential,
+the collector reads the fixed AutoDeploy secrets-repository URL directly from
+encrypted project `myvars`; attach the existing environment Vault as well as
+the CaC Vault. The production extraction template saves both Vault attachments.
+Launch variables cannot redirect this token. No new repository grant is implied.
 
 ```sh
 ansible-playbook -i localhost, capture-aap-cac.yml \
