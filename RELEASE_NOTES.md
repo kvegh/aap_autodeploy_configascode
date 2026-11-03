@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.28.12
+
+Use the owner-selected name `VM allocation git Pseudo CMDB writer` in current
+operator guidance and saved CaC. Migrate production through an approved
+replacement, update active assignments and delete the retired credential only
+after verification. Existing test-controller writer changes type/name in place.
+
 ## 0.28.11
 
 Document writer-type implementation `64a197e`, 173-test validation and Controller

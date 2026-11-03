@@ -14,7 +14,7 @@ causes a fresh read/retry. The accepted reservation is reread before a name is
 returned. Failed provisioning never releases or reuses its number. A lost job
 can therefore leave a consumed name without a VM; that gap is intentional.
 
-The `AAP AutoDeploy allocation writer` is a separate credential using the existing
+The `VM allocation git Pseudo CMDB writer` is a separate credential using the existing
 `Cac_git_token_type`. Its dedicated write token is injected as `CAC_GIT_TOKEN`;
 the repository URL comes directly from encrypted project `myvars`, using the
 AutoDeploy secrets-repository naming rule. Launch variables cannot redirect it.
@@ -24,9 +24,10 @@ its `controller_credentials_base` entry stores the secret in `inputs.token`.
 The read-only repository credentials retain their own separate tokens.
 The obsolete allocation-writer type is no longer provisioned. Controller refuses
 a type change when a credential has job history. Migrate such a writer to a
-replacement credential of the existing Git type, updating active assignments
-and retaining the old credential for historical jobs. Approval is required before
-creating a replacement credential. Existing type objects are retained. No new token permissions are granted by this
+replacement credential of the existing Git type and update its active assignments.
+The owner approved naming it `VM allocation git Pseudo CMDB writer` and deleting
+the retired credential after the replacement is verified. Existing type objects
+are retained; no job record is deleted. No new token permissions are granted by this
 change. Attach that credential, the named `cac` Vault credential, the
 environment Vault and the selected hypervisor Machine credential to Stage 01.
 Read-only repository access is insufficient; the action never falls back to a

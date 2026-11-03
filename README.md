@@ -613,7 +613,7 @@ lookup and explicit native destination API credentials are implemented in the sh
 
 `Cac_git_token_type` is the reusable custom schema, not a credential containing a
 token. Its `CAC_GIT_TOKEN` injector supplies the separate per-repository read
-tokens and the dedicated `AAP AutoDeploy allocation writer` token. The writer
+tokens and the dedicated `VM allocation git Pseudo CMDB writer` token. The writer
 uses this same type; it does not share the read token or change its permissions.
 The encrypted shared base stores the writer under `controller_credentials_base`,
 with `credential_type: Cac_git_token_type` and `inputs.token`. Allocation and
