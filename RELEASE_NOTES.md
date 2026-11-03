@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.28.17
+
+Document native TLS normalization `f4c5b5b`, the typed request-timeout
+requirement and reviewed prerequisites for fresh-controller project imports.
+
 ## 0.28.16
 
 Normalize native credential Verify SSL strings before the existing registered-

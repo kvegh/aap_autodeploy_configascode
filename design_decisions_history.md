@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Preserve native credential TLS flags in registered-instance checks — 2026-11-03
+
+Implementation `f4c5b5b` converts the native credential's Verify SSL
+value to an Ansible Boolean before applying the existing pinned DNS/TLS guard.
+The managed credential injector emits `True` as a string; the guard previously
+accepted Boolean true or lowercase `true`, causing prerequisite preparation to
+stop despite enabled verification. The real guard is tested against native
+Boolean/string inputs, disabled TLS and conflicting DNS answers. All eleven
+routing tests and changed-task production lint pass. DNS pinning, IPv6 refusal
+and trusted HTTPS remain enforced.
+
+The same deployment iteration identified an omitted native credential Request
+Timeout: its empty injected value fails the configuration role's numeric argument
+schema. Explicitly setting the existing credential to ten seconds preserves its
+token and grants. Current operator guidance also requires the existing reviewed
+PAH prerequisite selection before first project import on a fresh controller.
+This supplies declared collection pins without launching application workloads.
+
 ## Resolve resource templates when survey inputs are protected — 2026-11-03
 
 Implementation `617fd15` fixes the first AIOps CaC import validation failure.
