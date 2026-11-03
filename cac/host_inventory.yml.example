@@ -12,7 +12,8 @@ host_inventory_configuration:
       variables: '{}'
     - name: INSTANCE_NAME_PLACEHOLDER
       inventory: ALL_HOSTS_INVENTORY_PLACEHOLDER
-      variables: '{}'
+      variables:
+        ansible_fqdn: INSTANCE_FQDN_PLACEHOLDER
   groups:
     - name: vms_on_hypervisor_a
       inventory: ALL_HOSTS_INVENTORY_PLACEHOLDER

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.25.2
+
+Document explicit `ansible_fqdn` inventory metadata for AAP instance selection
+and show it in the encrypted-capture structural example. Preserve other host
+variables and placement memberships. This defines the intended address lookup;
+the current launcher and credential-selection behavior are unchanged.
+
 ## 0.25.1
 
 Document implementation `aaafed2` and companion placement capture `e3a171b`:

@@ -244,8 +244,10 @@ organization ownership. Source/target API prechecks and temporary-token cleanup
 have passed; a live selected-use-case import remains unperformed.
 The shared host inventory now has per-hypervisor VM placement groups carrying
 `hypervisor_host`. Its encrypted capture preserves existing aliases, variables
-and functional memberships. The launch-time instance input remains required;
-credential management and workflow replacement remain the next design step.
+and functional memberships. AAP hosts also store an explicit `ansible_fqdn`
+for the intended inventory-based API address lookup. The launch-time instance
+input remains required; credential management and workflow replacement remain
+the next design step.
 
 ```mermaid
 flowchart LR

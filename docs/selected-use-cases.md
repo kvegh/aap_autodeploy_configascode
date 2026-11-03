@@ -36,6 +36,11 @@ repository must not retarget either shared input.
 ## Target inventory mapping and current implementation boundary
 
 Keep the exact instance name as the launch-time `aap_instance_key` input.
+Each AAP instance host stores its explicit `ansible_fqdn`: the DNS name used
+to reach its API, without a scheme or path. The intended inventory-based lookup
+is selected instance name → stored `ansible_fqdn` → HTTPS origin. This is an
+inventory value; no remote fact gathering or guessed DNS suffix is required.
+
 The shared all-hosts inventory has separate VM placement groups, each carrying
 `hypervisor_host` as a group variable. Its value names an existing hypervisor
 host in that same inventory. VM hosts join one placement group while retaining
