@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.28.13
+
+Document naming implementation `0399e2a` and the owner-approved replacement,
+verification and retired-credential deletion sequence.
+
 ## 0.28.12
 
 Use the owner-selected name `VM allocation git Pseudo CMDB writer` in current

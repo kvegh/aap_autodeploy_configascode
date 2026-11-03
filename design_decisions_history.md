@@ -1,5 +1,17 @@
 # Design decisions history
 
+## Name the temporary VM-registry writer explicitly — 2026-11-03
+
+Implementation `0399e2a` uses the exact owner-selected credential name
+`VM allocation git Pseudo CMDB writer` throughout current operator guidance.
+The matching encrypted configuration uses this name for the credential and all
+saved template/dependency references. The owner approved replacing the used
+production credential with one of the existing `Cac_git_token_type`, then
+explicitly chose deletion of the retired credential after the replacement is
+verified. This supersedes the earlier proposal to retain that credential.
+Job records, template IDs and workflow links remain; the unused test writer can
+change type and name in place. Separate read tokens and grants are preserved.
+
 ## Use the existing Git type with a distinct writer token — 2026-11-03
 
 Implementation `64a197e` follows the owner's decision to use `Cac_git_token_type`
