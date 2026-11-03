@@ -111,12 +111,15 @@ class SeedApiTrustTests(unittest.TestCase):
         source = yaml.safe_load((ROOT / "deploy-selected-use-cases.yml").read_text())[0]
         block = source["tasks"][0]["block"]
         names = ["Require explicit seed credentials separately from target base",
-                 "Authenticate only the seed controller for importer orchestration",
+                 "Create this run's source orchestration session using only its explicit API login",
                  "Read the seed controller's current instance identities"]
         tasks = [copy.deepcopy(next(task for task in block if task["name"] == name)) for name in names]
-        tasks[1]["ansible.builtin.include_tasks"] = str(ROOT / "tasks/gateway-base-login.yml")
         importer = yaml.safe_load((ROOT / "tasks/selected-use-case-import.yml").read_text())
-        tasks.extend(copy.deepcopy(importer[1:3]))
+        tasks.extend(copy.deepcopy([
+            next(task for task in importer if "ansible.controller.job_launch" in task),
+            next(task for task in importer if task.get("name") ==
+                 "Read the completed job's actual credential associations"),
+        ]))
         tasks.extend([
             {"name": "Source module environment must not change default trust",
              "ansible.builtin.uri": {"url": "{{ aap_seed_hostname }}/untrusted-default-probe",
@@ -128,10 +131,7 @@ class SeedApiTrustTests(unittest.TestCase):
                  "default_trust_probe.status | default(-1) != 200",
                  "aap_selected_import_job.status == 'successful'",
                  "aap_selected_completed_credentials.json.count == 0"]}, "no_log": True},
-            {"name": "Remove temporary seed authentication",
-             "ansible.builtin.include_tasks": str(ROOT / "tasks/private-config-cleanup.yml"),
-             "vars": {"aap_hostname": "{{ aap_seed_hostname }}",
-                      "cac_cleanup_ca_path": "{{ aap_seed_ca_path }}"}},
+            copy.deepcopy(source["tasks"][0]["always"][0]),
         ])
         variables = {
             "aap_seed_hostname": f"https://{hostname}:{self.server.server_port}",
@@ -141,7 +141,8 @@ class SeedApiTrustTests(unittest.TestCase):
             "cac_use_case_selector": {"seed_username": "synthetic-seed-user",
                                        "seed_password": "synthetic-seed-password"} if seed_login else {},
             "aap_selected_importer": {"json": {"results": [{"id": 7}]},
-                                      "item": {"repository": "https://git.example.invalid/test/config.git"}},
+                                      "item": {"repository": "https://git.example.invalid/test/config.git",
+                                               "playbook": "deploy-cac-project.yml"}},
             "aap_selected_importer_extra": {}, "aap_selected_launch_credential_ids": [],
         }
         with tempfile.TemporaryDirectory(dir=self.root, prefix="run-") as directory:

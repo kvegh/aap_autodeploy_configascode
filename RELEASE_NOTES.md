@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.28.0
+
+Consolidate five project imports into `deploy-cac-project.yml`, with fixed project
+IDs, derived private repositories/canonical captures and separate saved Git/Vault
+pairs. Require explicit native destination API credentials matched to inventory
+FQDNs, verified TLS and source-EE API calls; remove importer/selector/preparation
+installer-password fallback. Old import filenames are thin fixed-ID aliases.
+Preserve typed/literal data, masked secrets, lifecycle bindings and existing
+activation states; create new activations disabled. Normalize common CoP resources,
+complete EDA project settings, and establish group skeletons before relationships.
+Update selector forwarding and PAH preparation authentication without changing
+custom credential types or launching imported workloads. Validate real captures
+in both native modes, actual native module/action fixtures, API-only lifecycle,
+TLS source trust, group ordering, selector forwarding and impacted production lint.
+Deployment consists only of SCM publication and reviewed template metadata updates;
+no use-case import, application job, VM or activation operation is run.
+
 ## 0.27.0
 
 Prepare canonical project capture paths before private repository file moves.

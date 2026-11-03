@@ -16,6 +16,26 @@
     debug_logging: false
     aap_seed_ca_path: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_CA_FILE') }}"
   pre_tasks:
+    - name: Require the destination host in the shared inventory
+      ansible.builtin.assert:
+        that:
+          - aap_instance_key is defined
+          - aap_instance_key in hostvars
+          - awx_job_id is defined
+        fail_msg: Run this launcher in AAP with the shared inventory and an explicit destination host.
+      no_log: true
+
+    - name: Bind the explicitly selected native API credential to the inventory destination
+      ansible.builtin.set_fact:
+        aap_selected_target_auth: >-
+          {{ hostvars[aap_instance_key] | aap_cac_api_target({
+               'hostname': lookup('ansible.builtin.env', 'AAP_HOSTNAME'),
+               'username': lookup('ansible.builtin.env', 'AAP_USERNAME'),
+               'password': lookup('ansible.builtin.env', 'AAP_PASSWORD'),
+               'token': lookup('ansible.builtin.env', 'AAP_TOKEN'),
+               'validate_certs': lookup('ansible.builtin.env', 'AAP_VALIDATE_CERTS')}) }}
+      no_log: true
+
     - name: Keep catalog authentication on its credential-bound repository
       ansible.builtin.assert:
         that: aap_use_case_catalog_repo_url == lookup('ansible.builtin.env', 'AAP_INSTANCE_REGISTRY_REPOSITORY')
@@ -24,6 +44,13 @@
 
     - name: Resolve the explicit instance key before any setup orchestration
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
+    - name: Require inventory and registered preparation routes to identify the same API
+      ansible.builtin.assert:
+        that:
+          - (aap_target_hostname | aap_https_origin) == (aap_selected_target_auth.hostname | aap_https_origin)
+        fail_msg: The selected inventory destination and registered preparation route must agree.
+      no_log: true
 
     - name: Verify the registered target public API before sending credentials
       ansible.builtin.include_tasks: tasks/aap-instance-api.yml
@@ -56,14 +83,61 @@
             fail_msg: Supply the source seed login in the encrypted selector catalog; target base credentials are separate.
           no_log: true
 
-        - name: Authenticate only the seed controller for importer orchestration
-          # The target administrator password from base is a separate identity.
-          ansible.builtin.include_tasks: tasks/gateway-base-login.yml
-          vars:
-            aap_hostname: "{{ aap_seed_hostname }}"
-            aap_username: "{{ cac_use_case_selector.seed_username }}"
-            aap_password: "{{ cac_use_case_selector.seed_password }}"
-            cac_gateway_ca_path: "{{ aap_seed_ca_path }}"
+        - name: Create this run's source orchestration session using only its explicit API login
+          ansible.builtin.uri:
+            url: "{{ aap_seed_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
+            method: POST
+            url_username: "{{ cac_use_case_selector.seed_username }}"
+            url_password: "{{ cac_use_case_selector.seed_password }}"
+            force_basic_auth: true
+            body_format: json
+            body:
+              description: Temporary selected-use-case orchestration session
+              scope: write
+              application: null
+            status_code: 201
+            validate_certs: true
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
+            follow_redirects: none
+          register: cac_gateway_token
+          no_log: true
+
+        - name: Read the credentials actually attached to this launcher job
+          ansible.builtin.uri:
+            url: >-
+              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ awx_job_id }}/credentials/?page_size=200
+            headers:
+              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+            validate_certs: true
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
+            follow_redirects: none
+          register: aap_selected_parent_credentials
+          no_log: true
+
+        - name: Select only the native destination credential supplied to this job
+          ansible.builtin.set_fact:
+            aap_selected_api_credentials: "{{ aap_selected_parent_credentials.json.results | aap_native_api_credentials }}"
+          no_log: true
+
+        - name: Read the selected credential's managed type
+          ansible.builtin.uri:
+            url: >-
+              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/credential_types/{{ aap_selected_api_credentials[0].credential_type }}/
+            headers:
+              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+            validate_certs: true
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
+            follow_redirects: none
+          register: aap_selected_api_type
+          no_log: true
+
+        - name: Require the complete association list and standard managed AAP credential type
+          ansible.builtin.assert:
+            that:
+              - aap_selected_parent_credentials.json.next is none
+              - aap_selected_api_type.json.managed
+              - aap_selected_api_type.json.name == 'Red Hat Ansible Automation Platform'
+              - aap_selected_api_type.json.id == aap_selected_api_credentials[0].credential_type
           no_log: true
 
         - name: Read the seed controller's current instance identities
@@ -80,10 +154,11 @@
         - name: Read the fresh target's identities before allowing any importer launch
           ansible.builtin.uri:
             url: "{{ aap_target_hostname | regex_replace('/+$', '') }}/api/controller/v2/instances/?page_size=200"
-            url_username: "{{ aap_username }}"
-            url_password: "{{ aap_password }}"
-            force_basic_auth: true
-            validate_certs: "{{ aap_validate_certs }}"
+            headers: "{{ {'Authorization': 'Bearer ' ~ aap_selected_target_auth.token} if aap_selected_target_auth.token else {} }}"
+            url_username: "{{ aap_selected_target_auth.username | default(omit, true) }}"
+            url_password: "{{ aap_selected_target_auth.password | default(omit, true) }}"
+            force_basic_auth: "{{ not aap_selected_target_auth.token }}"
+            validate_certs: true
             follow_redirects: none
           register: aap_target_instances
           no_log: true
@@ -124,6 +199,9 @@
               - item.json.results[0].inventory is not none
               - item.json.results[0].project == aap_selected_importer_lookups.results[0].json.results[0].project
               - item.json.results[0].summary_fields.credentials | length >= 3
+              - >-
+                item.item.playbook != 'deploy-cac-project.yml' or
+                (item.json.results[0].extra_vars | from_yaml).aap_cac_project_id == item.item.project_id
             fail_msg: Reconcile the seed's labelled configuration importers before selected setup.
           loop: "{{ aap_selected_importer_lookups.results }}"
           no_log: true
@@ -162,13 +240,18 @@
           register: aap_selected_importer_surveys
           no_log: true
 
-        - name: Require explicit target and repository prompts on every importer
+        - name: Require bounded target prompts and keep generic project IDs fixed
           ansible.builtin.assert:
             that:
-              - "['aap_instance_key', 'aap_config_repo_url', 'debug_logging'] | difference(item.json.spec | map(attribute='variable') | list) | length == 0"
+              - "['aap_instance_key', 'debug_logging'] | difference(item.json.spec | map(attribute='variable') | list) | length == 0"
+              - >-
+                item.item.item.playbook != 'deploy-cac-project.yml' or
+                ['aap_config_repo_url', 'aap_config_file', 'aap_cac_project_id'] |
+                intersect(item.json.spec | map(attribute='variable') | list) | length == 0
               - >-
                 item.item.item.playbook != '05-prepare-use-cases.yml' or
-                'aap_selected_use_cases' in (item.json.spec | map(attribute='variable') | list)
+                ['aap_selected_use_cases', 'aap_config_repo_url'] |
+                difference(item.json.spec | map(attribute='variable') | list) | length == 0
             fail_msg: Update the seed importer surveys before running selected setup.
           loop: "{{ aap_selected_importer_surveys.results }}"
           no_log: true
@@ -266,8 +349,24 @@
             aggregate: false
             per_host: false
       always:
-        - name: Revoke seed authentication and remove the private checkout
-          ansible.builtin.include_tasks: tasks/private-config-cleanup.yml
-          vars:
-            aap_hostname: "{{ aap_seed_hostname }}"
-            cac_cleanup_ca_path: "{{ aap_seed_ca_path }}"
+        - name: Revoke only this run's source orchestration session
+          block:
+            - name: Delete the temporary source session without touching destination credentials
+              ansible.builtin.uri:
+                url: >-
+                  {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/{{ cac_gateway_token.json.id }}/
+                method: DELETE
+                headers:
+                  Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+                status_code: [204, 404]
+                validate_certs: true
+                ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
+                follow_redirects: none
+              when: cac_gateway_token.json.id is defined
+              no_log: true
+          always:
+            - name: Remove the private checkout on success or failure
+              ansible.builtin.file:
+                path: "{{ cac_workspace.path }}"
+                state: absent
+              when: cac_workspace.path is defined

@@ -1,0 +1,45 @@
+---
+- name: Prepare the temporary Git authentication helper
+  ansible.builtin.copy:
+    dest: "{{ cac_workspace.path }}/git-askpass"
+    mode: '0700'
+    content: |
+      #!/bin/sh
+      case "$1" in
+        *Username*) printf '%s\n' 'x-access-token' ;;
+        *Password*) printf '%s\n' "$CAC_GIT_TOKEN" ;;
+        *) exit 1 ;;
+      esac
+
+- name: Fetch the derived private project repository with protected diagnostics
+  ansible.builtin.git:
+    repo: "{{ cac_project_contract.repository }}"
+    dest: "{{ cac_workspace.path }}/repository"
+    version: main
+    depth: 1
+    recursive: false
+    single_branch: true
+  environment:
+    GIT_ASKPASS: "{{ cac_workspace.path }}/git-askpass"
+    GIT_TERMINAL_PROMPT: '0'
+    LC_ALL: C
+    GIT_CONFIG_COUNT: '3'
+    GIT_CONFIG_KEY_0: credential.helper
+    GIT_CONFIG_VALUE_0: ''
+    GIT_CONFIG_KEY_1: http.followRedirects
+    GIT_CONFIG_VALUE_1: 'false'
+    GIT_CONFIG_KEY_2: http.sslVerify
+    GIT_CONFIG_VALUE_2: 'true'
+  no_log: true
+
+- name: Check encrypted capture identity and safety before evaluating its variables
+  aap_cac_validate_capture:
+    file: "{{ cac_workspace.path }}/repository/{{ cac_project_contract.configuration_file }}"
+    repository: "{{ cac_workspace.path }}/repository"
+    project_id: "{{ cac_project_contract.project_id }}"
+  no_log: true
+
+- name: Load only the derived encrypted project capture
+  ansible.builtin.include_vars:
+    file: "{{ cac_workspace.path }}/repository/{{ cac_project_contract.configuration_file }}"
+  no_log: true

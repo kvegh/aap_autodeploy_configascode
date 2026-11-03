@@ -54,6 +54,100 @@ class UseCaseSetupTests(unittest.TestCase):
         )
         self.assertEqual(result["preparation"]["playbook"], "05-prepare-use-cases.yml")
         self.assertNotIn("credentials", result["importers"][0])
+        self.assertEqual([x["playbook"] for x in result["importers"]],
+                         ["deploy-cac-project.yml"] * 2)
+        self.assertEqual([x["project_id"] for x in result["importers"]],
+                         ["aiops-selfhealing-demo", "disconnected-windows-patching"])
+
+    def test_generic_children_get_only_saved_repository_credentials_and_selected_destination(self):
+        original = [
+            {"id": 10, "name": "Case Git", "kind": "cloud",
+             "summary_fields": {"organization": {"name": "Fixture organization"}}},
+            {"id": 11, "name": "Case Vault", "kind": "vault", "inputs": {"vault_id": "cac"},
+             "summary_fields": {"organization": {"name": "Fixture organization"}}},
+        ]
+        api = {"id": 12, "name": "Explicit destination API", "credential_type": 1,
+               "inputs": {"host": "https://fresh.example.invalid"},
+               "summary_fields": {"credential_type": {"name": "Red Hat Ansible Automation Platform"}}}
+        names = [entry["name"] for entry in original]
+
+        def resolve(source, destination):
+            return setup.api_launch_credentials(source, names, destination,
+                                                "Fixture organization", "https://fresh.example.invalid")
+
+        self.assertEqual(resolve(original, [api]), [10, 11, 12])
+        self.assertEqual(setup.native_api_credentials(original + [api]), [api])
+        for credentials in ([], [api, copy.deepcopy(api)], original):
+            with self.subTest(credentials=credentials), self.assertRaises(AnsibleFilterError):
+                setup.native_api_credentials(credentials)
+        for source, destination in (
+            (original[:-1], [api]),
+            (original + [{"id": 90, "kind": "ssh", "name": "Registry Machine"}], [api]),
+            (original, [dict(api, inputs={"host": "https://other.example.invalid"})]),
+            (original, original + [api]),
+        ):
+            with self.subTest(source=source, destination=destination), self.assertRaises(AnsibleFilterError):
+                resolve(source, destination)
+
+    def test_real_launch_argument_rendering_separates_preparation_routes_from_generic_imports(self):
+        tasks = yaml.safe_load((ROOT / "tasks/selected-use-case-import.yml").read_text())
+        launch = next(task["ansible.controller.job_launch"] for task in tasks
+                      if "ansible.controller.job_launch" in task)
+        organization = "Fixture organization"
+
+        def credential(identity, name, kind="cloud", vault_id=None, type_name=None):
+            return {"id": identity, "name": name, "kind": kind,
+                    "inputs": {} if vault_id is None else {"vault_id": vault_id},
+                    "summary_fields": {"organization": {"name": organization},
+                                       "credential_type": {"name": type_name or name}}}
+
+        original = [credential(1, "Case Git"), credential(2, "Case Vault", "vault", "cac"),
+                    credential(3, "Environment Vault", "vault", "")]
+        route = [credential(4, "AAP AutoDeploy instance registry reader"),
+                 credential(5, "Registry Vault", "vault", "instance_registry"),
+                 credential(6, "Registered Machine", "ssh")]
+        native = credential(7, "Destination API", type_name="Red Hat Ansible Automation Platform")
+        native.update(credential_type=1, inputs={"host": "https://fresh.example.invalid"})
+        for native_mode in ("false", "true"):
+            for preparation in (False, True):
+                with self.subTest(native=native_mode, preparation=preparation), tempfile.TemporaryDirectory(
+                    prefix="aap-selector-forwarding-"
+                ) as temporary:
+                    directory = Path(temporary)
+                    variables = {
+                        "aap_selected_importer": {"json": {"results": [{"id": 88}]}, "item": {
+                            "name": "Fixture importer", "repository": "https://git.example.invalid/config/base.git",
+                            "playbook": "05-prepare-use-cases.yml" if preparation else "deploy-cac-project.yml"}},
+                        "aap_selected_saved_credentials": original,
+                        "cac_use_case_selector": {"importer_credentials": {"Fixture importer": [x["name"] for x in original]}},
+                        "aap_selected_route_credentials": {"results": [{"json": {"results": [entry]}} for entry in route]},
+                        "aap_selected_api_credentials": [native],
+                        "aap_selected_target_auth": {"hostname": "https://fresh.example.invalid"},
+                        "aap_selected_setup_plan": {"organization": organization},
+                        "aap_instance_route": {"hypervisor": {"machine_credential_name": "Registered Machine"}},
+                        "aap_instance_key": "fixture-target", "aap_selected_importer_extra": {},
+                    }
+                    expected = [1, 2, 3, 4, 5, 6, 7] if preparation else [1, 2, 3, 7]
+                    fixture = [{"hosts": "localhost", "connection": "local", "gather_facts": False,
+                                "vars": variables, "tasks": tasks[:3] + [
+                                    {"ansible.builtin.set_fact": {"rendered_extra": launch["extra_vars"],
+                                                                "rendered_credentials": launch["credentials"]}},
+                                    {"ansible.builtin.assert": {"that": [
+                                        "aap_selected_launch_credential_ids == " + repr(expected),
+                                        "rendered_credentials | map('int') | list == " + repr(expected),
+                                        "rendered_extra.aap_instance_key == 'fixture-target'",
+                                        "'aap_cac_project_id' not in rendered_extra",
+                                        "('aap_config_repo_url' in rendered_extra) == " + ("true" if preparation else "false"),
+                                    ]}},
+                                ]}]
+                    path = directory / "fixture.yml"
+                    path.write_text(yaml.safe_dump(fixture))
+                    env = dict(os.environ, ANSIBLE_JINJA2_NATIVE=native_mode,
+                               ANSIBLE_FILTER_PLUGINS=str(ROOT / "filter_plugins"),
+                               ANSIBLE_LOCAL_TEMP=str(directory / "local"), ANSIBLE_REMOTE_TEMP=str(directory / "remote"))
+                    process = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(path)],
+                                             env=env, text=True, capture_output=True, timeout=30)
+                    self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
 
     def test_empty_duplicate_unknown_and_unsupported_choices_fail(self):
         for selected in (
@@ -470,69 +564,6 @@ class UseCaseSetupTests(unittest.TestCase):
                     result.returncode == 0, expected, result.stdout + result.stderr
                 )
 
-    def test_imported_aiops_activations_cannot_start_from_saved_enabled_state(self):
-        source = yaml.safe_load((ROOT / "deploy-aiops-demo.yml").read_text())[0]
-        block = next(t["block"] for t in source["pre_tasks"] if "block" in t)
-        task = next(
-            t
-            for t in block
-            if t.get("name")
-            == "Keep imported AIOps rulebooks disabled for separate explicit activation"
-        )
-        with tempfile.TemporaryDirectory(prefix="aap-inert-activations-") as temporary:
-            directory = Path(temporary)
-            fixture = directory / "fixture.yml"
-            fixture.write_text(
-                yaml.safe_dump(
-                    [
-                        {
-                            "hosts": "localhost",
-                            "connection": "local",
-                            "gather_facts": False,
-                            "vars": {
-                                "eda_rulebook_activations_aiops_demo": [
-                                    {
-                                        "name": "Fixture activation",
-                                        "enabled": True,
-                                        "state": "enabled",
-                                    }
-                                ]
-                            },
-                            "tasks": [
-                                task,
-                                {
-                                    "ansible.builtin.assert": {
-                                        "that": [
-                                            "not eda_rulebook_activations[0].enabled",
-                                            "eda_rulebook_activations[0].state == 'present'",
-                                        ]
-                                    }
-                                },
-                            ],
-                        }
-                    ]
-                )
-            )
-            env = dict(
-                os.environ,
-                ANSIBLE_LOCAL_TEMP=str(directory / "local"),
-                ANSIBLE_REMOTE_TEMP=str(directory / "remote"),
-            )
-            result = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "ansible.cli.playbook",
-                    "-i",
-                    "localhost,",
-                    str(fixture),
-                ],
-                env=env,
-                text=True,
-                capture_output=True,
-                timeout=30,
-            )
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

@@ -1,126 +1,71 @@
 # Explicit selected use-case setup
 
-Base deployment ends after stages 01–04. `deploy-selected-use-cases.yml` runs
-separately on a trusted seed AAP or control node. It prepares only selected
-requirements, then invokes the existing configuration importers with their own
-Git/Vault credentials. Those create the selected SCM Projects, Job Templates,
-labels and related saved CaC on a distinct fresh AAP. Application jobs are not
-run. Imported AIOps activations stay disabled.
+Base deployment ends after stages01–04. The separate
+`deploy-selected-use-cases.yml` selector prepares only selected use-case
+requirements, then launches their existing configuration Job Templates. All
+five standalone importers use [the common API-only driver](cac-project-import.md).
+The selector retains a distinct fresh-target check and infrastructure preparation;
+the standalone importer also supports existing and self-target AAP instances.
+Application jobs are not launched. New activation definitions are disabled and
+existing activation states are preserved.
 
-The reviewed catalog follows the umbrella `.gitmodules` paths. Current support:
+The reviewed selector catalog follows umbrella submodule paths:
 
-| Submodule | Configuration importer |
-|---|---|
-| `aap_autodeploy_configascode` | `deploy-autodeploy.yml` |
-| `AIOps_selfhealing_demo` | `deploy-aiops-demo.yml` |
-| `automation-orchestrator` | `deploy-orchestrator-demo.yml` |
-| `disconnected-windows-patching` | `deploy-windows-demo.yml` |
+| Submodule | Fixed project ID | Common playbook |
+|---|---|---|
+| `aap_autodeploy_configascode` | `aap_autodeploy_configascode` | `deploy-cac-project.yml` |
+| `AIOps_selfhealing_demo` | `aiops-selfhealing-demo` | `deploy-cac-project.yml` |
+| `automation-orchestrator` | `automation-orchestrator` | `deploy-cac-project.yml` |
+| `disconnected-windows-patching` | `disconnected-windows-patching` | `deploy-cac-project.yml` |
 
-The other six declared submodules are listed with a missing reviewed capture/
-importer reason. Selecting one fails before setup. Empty, duplicate and unknown
-selections also fail. Assistant Team and the recovery project are not umbrella
-submodules; their standalone configuration/captures are not silently selected.
+Other declared modules have explicit unavailable reasons; empty, duplicate and
+unknown selections fail before setup. Assistant Team has its standalone importer
+but is not silently added as an umbrella submodule. Update the public eligibility
+catalog and encrypted protected bindings when umbrella membership changes.
+Actual source/private repository URLs, scoped credential pins and prerequisite
+versions stay in `vaults/cac/aap_autodeploy_configascode-cac-vault.yml`.
 
-The public eligibility table is `vars/use-case-catalog.yml`. Actual repository
-URLs and prerequisite pins remain in encrypted `cac/autodeploy.yml`, under
-`cac_use_case_selector` and `cac_use_case_prerequisites`. Refresh that reviewed
-catalog when umbrella membership changes.
+## Launching the selector
 
-AIOps has a dedicated private configuration companion containing
-`cac/aiops_demo.yml` and uses its own Git-read credential provisioned from
-`cac_bootstrap_git_credentials.aiops` in encrypted base. Its public automation
-source remains separate. The shared catalog and completed-instance registry
-continue to use the base configuration repository; changing the AIOps capture
-repository must not retarget either shared input.
+Use its AAP Job Template with the shared `main inventory`. Choose the exact
+`aap_instance_key`, supported use cases and a native Red Hat Ansible Automation
+Platform credential for the destination. Keep its existing saved source/catalog
+credentials. The selected native API credential must be attached to this actual
+source job: the selector reads the job's credential associations, verifies the
+managed native type and binds its HTTPS origin to the inventory `ansible_fqdn`.
+Its Verify SSL flag must be true. It never selects a source bearer as target auth.
 
-## Target inventory mapping and current implementation boundary
+AAP inventory hosts store explicit FQDNs without scheme/path; VM placement groups
+carry `hypervisor_host`. The separate preparation stage still requires the
+completed protected instance route and pinned infrastructure SSH credentials.
+Public origin/DNS and distinct controller checks remain. There is no guessed
+hostname suffix, free-form destination URL or SSH API-login fallback.
 
-Keep the exact instance name as the launch-time `aap_instance_key` input.
-Each AAP instance host stores its explicit `ansible_fqdn`: the DNS name used
-to reach its API, without a scheme or path. The intended inventory-based lookup
-is selected instance name → stored `ansible_fqdn` → HTTPS origin. This is an
-inventory value; no remote fact gathering or guessed DNS suffix is required.
+Source orchestration uses only the encrypted catalog's explicit seed login and,
+if supplied, its dedicated CA file. Source token creation, reads, job waits and
+cleanup use this source trust context. Native destination credentials cannot
+replace the source login through extra-variable precedence. TLS verification
+remains enabled. The source session is revoked; the operator's destination API
+credential is preserved.
 
-The shared all-hosts inventory has separate VM placement groups, each carrying
-`hypervisor_host` as a group variable. Its value names an existing hypervisor
-host in that same inventory. VM hosts join one placement group while retaining
-their functional groups and existing host variables. Hypervisor hosts themselves
-are not members of these VM groups. Existing aliases are retained rather than
-renamed into names already used by service groups.
+Before any child launch, the selector verifies unique importer identity,
+organization, labels, reviewed SCM Project, common playbook, fixed project ID,
+bounded survey and exact saved case credential associations. Source-global
+credentials require their existing reviewed name/ID/type pins; no grants are
+widened. Each generic child receives its saved Git/Vault/environment credentials
+plus the one explicitly attached native destination API credential. It receives
+only the destination instance and diagnostic choice as launch variables: its
+project ID, repository and capture file remain fixed on its saved template.
 
-The protected definitions live in encrypted `cac/host_inventory.yml` in the
-shared private configuration repository. Literal inventory variables survive
-Vault serialization. A public structural example is
-[`cac/host_inventory.yml.example`](../cac/host_inventory.yml.example).
+The separate prerequisite child additionally receives the existing registry
+reader, distinct registry Vault and pinned Machine credential. Stage05 uses
+explicit native API auth for PAH preparation and never scrapes installer
+passwords. Existing infrastructure SSH preparation remains separate from API
+requests. This distinction does not create or redesign any custom credential
+type; reviewing existing infrastructure credential types remains deferred.
 
-This addition establishes inventory data and preserves the current target
-prompt. It does not switch existing launchers away from their registry route,
-change credential bindings, introduce API delegation or implement a replacement
-workflow. Credential selection must be agreed before connecting that next stage.
-
-## Invocation
-
-```sh
-ansible-playbook -i localhost, deploy-selected-use-cases.yml \
-  -e aap_seed_hostname=https://seed.example.invalid \
-  -e aap_instance_key="$INSTANCE_KEY" \
-  -e aap_use_case_catalog_repo_url=https://git.example.invalid/team/configuration.git \
-  -e '{"aap_selected_use_cases":["AIOps_selfhealing_demo","disconnected-windows-patching"]}'
-```
-
-Supply the existing CaC Git-token credential, `cac` Vault credential, environment
-Vault and separate registry-reader credential. The exact instance key must have
-a completed route in the latest encrypted registry; it determines the target's
-public URL and both SSH peer keys. There is no free-form target URL fallback.
-Both HTTPS origins must be trusted, public A records must identify only the
-pinned hypervisor, and unpinned AAAA records are refused. The seed must have the
-updated labelled configuration importers and the bounded Stage 05 selection
-survey. The fresh target must already have received base configuration and its
-configured administrator login. Distinct instance UUIDs are read from both APIs,
-preventing a different URL for the seed from passing as a fresh target.
-
-The encrypted catalog must supply `cac_use_case_selector.seed_username` and
-`seed_password` for orchestration on the seed. The target's administrator password
-from base is a separate identity and is never used as a seed-login fallback.
-Keep literal passwords tagged `!unsafe` when serializing the catalog.
-
-When the seed uses a private issuer, attach the existing source CA credential to
-the selector. Its private file injector supplies `AAP_CAC_SOURCE_CA_FILE`.
-Source authentication, API reads and token cleanup use that file explicitly;
-only the source job-launch/wait task receives `SSL_CERT_FILE`. Missing input
-retains default trust. Certificate and hostname checks remain enabled, and target
-API requests retain their normal trust context. No global trust-store change is
-needed. A locally declared credential alone does not attach it to the live selector.
-
-Before launching, the selector verifies unique fixed importer names, expected
-playbooks, organization, project source URL, labels and bounded target/repository
-surveys. It uses each just-validated template ID, verifies its exact captured
-non-Machine credential associations and retains their scoped Git/Vault inputs.
-Existing source credentials without an organization require exact reviewed
-name, numeric ID, credential-type ID and type-name pins in the encrypted
-`cac_use_case_selector.shared_seed_credentials` mapping. Pins cover only the
-already-associated source credentials; all route credentials still require the
-reviewed organization. This preserves existing ACLs and is not a general resource
-ownership scheme. Re-review source-local pins when moving to another seed.
-Credential prompting adds only the fixed registry-reader, the distinct
-`instance_registry` Vault identity and the route's named Machine credential.
-Case Vault identities must remain unique. Standalone importer runs require the
-same explicit key and scoped route credentials; wrong Machine access fails the
-pinned jump authentication. Completed jobs' actual credential associations are
-also verified. Each setup job must finish successfully before proceeding. Bounded
-job IDs/statuses are published after successful completion; launch acceptance
-alone does not establish setup success.
-
-The encrypted AutoDeploy capture defines `Configure Selected AAP Use Cases`
-with the same scoped credentials as its existing importer, a bounded multiselect,
-explicit seed/registered-instance/repository prompts and a twelve-hour overall timeout.
-Importing that capture creates the template; a local declaration alone does not
-make it available in AAP. The base workflow and selector are not launched by
-configuration import. No live selector run or new fresh deployment is claimed.
-
-Each selected importer retains the read token and CaC Vault credential named
-for its own secrets repository. The selector validates captured source-only
-name/ID/type pins for organization-null credentials, then adds the existing
-registry dependencies and selected Machine credential. It rejects multiple
-`cac` Vaults on a child. This naming/scope maintenance does not implement the
-pending inventory-based destination lookup or target API-credential redesign.
+Every child is watched to actual completion, and the completed job's credential
+associations must match the bounded launch set. Success publishes only bounded
+selection/job/status results. A successful SCM update or metadata migration alone
+does not establish a completed selector run. This migration does not run any
+configuration import, application job, VM operation or activation.

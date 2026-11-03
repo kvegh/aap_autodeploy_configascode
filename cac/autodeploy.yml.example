@@ -1,6 +1,6 @@
 ---
 # Empty structure only. Complete outside Git and encrypt the whole file before
-# storing populated cac/autodeploy.yml in the private configuration repository.
+# storing populated vaults/cac/aap_autodeploy_configascode-cac-vault.yml in the private configuration repository.
 autodeploy_capture_readiness:
   aap_objects_complete: false
   required_secrets_available: false

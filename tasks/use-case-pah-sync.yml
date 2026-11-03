@@ -13,7 +13,7 @@
     sync_dependencies: false
     tls_validation: true
     ah_host: "{{ aap_hostname }}"
-    ah_token: "{{ aap_token }}"
+    ah_token: "{{ cac_api_session_token | default(aap_token) }}"
     validate_certs: "{{ aap_validate_certs }}"
     state: present
 
@@ -21,7 +21,7 @@
   ansible.hub.collection_repository_sync:
     name: "{{ cac_required_repository.name }}"
     ah_host: "{{ aap_hostname }}"
-    ah_token: "{{ aap_token }}"
+    ah_token: "{{ cac_api_session_token | default(aap_token) }}"
     validate_certs: "{{ aap_validate_certs }}"
     wait: true
     interval: 10

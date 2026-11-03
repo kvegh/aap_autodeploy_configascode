@@ -1,7 +1,7 @@
 ---
 - name: Bind the exact scoped credentials plus registered route dependencies
   ansible.builtin.set_fact:
-    aap_selected_launch_credential_ids: >-
+    aap_selected_preparation_credential_ids: >-
       {{ aap_selected_saved_credentials | aap_scoped_launch_credentials(
            cac_use_case_selector.importer_credentials[aap_selected_importer.item.name],
            aap_selected_route_credentials.results | map(attribute='json.results') | flatten | list,
@@ -9,14 +9,35 @@
            aap_instance_route.hypervisor.machine_credential_name,
            cac_use_case_selector.shared_seed_credentials | default({})) }}
   no_log: true
+  when: aap_selected_importer.item.playbook == '05-prepare-use-cases.yml'
+
+- name: Forward the selected native API credential alongside preparation dependencies
+  ansible.builtin.set_fact:
+    aap_selected_launch_credential_ids: >-
+      {{ aap_selected_preparation_credential_ids +
+         (aap_selected_api_credentials | map(attribute='id') | list) }}
+  when: aap_selected_importer.item.playbook == '05-prepare-use-cases.yml'
+  no_log: true
+
+- name: Keep generic import credentials limited to the saved repository pair and selected API credential
+  ansible.builtin.set_fact:
+    aap_selected_launch_credential_ids: >-
+      {{ aap_selected_saved_credentials | aap_api_launch_credentials(
+           cac_use_case_selector.importer_credentials[aap_selected_importer.item.name],
+           aap_selected_api_credentials, aap_selected_setup_plan.organization,
+           aap_selected_target_auth.hostname,
+           cac_use_case_selector.shared_seed_credentials | default({})) }}
+  when: aap_selected_importer.item.playbook == 'deploy-cac-project.yml'
+  no_log: true
 
 - name: Run only the just-validated configuration template with its existing credentials
   ansible.controller.job_launch:
     job_template: "{{ aap_selected_importer.json.results[0].id | string }}"
     extra_vars: >-
-      {{ {'aap_instance_key': aap_instance_key,
-          'aap_config_repo_url': aap_selected_importer.item.repository,
-          'debug_logging': 'false'} | combine(aap_selected_importer_extra) }}
+      {{ {'aap_instance_key': aap_instance_key, 'debug_logging': 'false'} |
+         combine({'aap_config_repo_url': aap_selected_importer.item.repository}
+                 if aap_selected_importer.item.playbook == '05-prepare-use-cases.yml' else {}) |
+         combine(aap_selected_importer_extra) }}
     credentials: "{{ aap_selected_launch_credential_ids | map('string') | list }}"
     wait: true
     interval: 10

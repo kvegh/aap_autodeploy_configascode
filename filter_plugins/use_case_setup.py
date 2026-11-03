@@ -99,6 +99,7 @@ def setup_plan(selected, catalog, protected, seed, target):
                 "key": key,
                 "name": entry["template"],
                 "playbook": entry["playbook"],
+                "project_id": entry["project_id"],
                 "repository": repository,
             }
         )
@@ -132,6 +133,52 @@ def distinct_controllers(seed_instances, target_instances):
         "The fresh target and seed must have distinct verified controller instances.",
     )
     return True
+
+
+def native_api_credentials(credentials):
+    """Forward only the native destination credential actually attached to this job."""
+    require(isinstance(credentials, list), "Read this source job's credential associations.")
+    selected = [entry for entry in credentials if entry.get("summary_fields", {})
+                .get("credential_type", {}).get("name") == "Red Hat Ansible Automation Platform"]
+    require(len(selected) == 1 and type(selected[0].get("id")) is int
+            and type(selected[0].get("credential_type")) is int,
+            "Select exactly one native destination AAP API credential when launching this job.")
+    return selected
+
+
+def api_launch_credentials(original, expected_names, destination_credentials,
+                           organization, destination, shared_seed_credentials=None):
+    """Keep the saved repository pair; add only the explicitly selected API credential."""
+    require(isinstance(original, list) and isinstance(expected_names, list)
+            and all(entry.get("kind") != "ssh" for entry in original)
+            and sorted(entry.get("name", "") for entry in original) == sorted(expected_names),
+            "The generic importer's saved repository credentials differ from the reviewed capture.")
+    pins = shared_seed_credentials or {}
+    require(isinstance(pins, Mapping), "Declare shared source credential pins as a mapping.")
+    for entry in original:
+        owner = entry.get("summary_fields", {}).get("organization") or {}
+        pin = pins.get(entry.get("name"), {})
+        pinned = (isinstance(pin, Mapping) and type(pin.get("id")) is int
+                  and type(pin.get("credential_type")) is int
+                  and "organization" in entry and entry["organization"] is None
+                  and entry.get("summary_fields", {}).get("organization") is None
+                  and entry.get("id") == pin.get("id")
+                  and entry.get("credential_type") == pin.get("credential_type")
+                  and entry.get("summary_fields", {}).get("credential_type", {}).get("name")
+                  == pin.get("credential_type_name"))
+        require(type(entry.get("id")) is int and (owner.get("name") == organization or pinned),
+                "Repository credential ownership must match the organization or exact reviewed source pins.")
+    native = native_api_credentials(destination_credentials)[0]
+    require(len(destination_credentials) == 1
+            and https_origin(native.get("inputs", {}).get("host")) == https_origin(destination),
+            "Forward only the explicitly selected API credential for the selected destination.")
+    combined = original + [native]
+    vault_ids = [entry.get("inputs", {}).get("vault_id", "") for entry in original
+                 if entry.get("kind") == "vault"]
+    identities = [entry["id"] for entry in combined]
+    require(len(vault_ids) == len(set(vault_ids)) and len(identities) == len(set(identities)),
+            "Duplicate Vault identities or launch credentials are refused.")
+    return identities
 
 
 def scoped_launch_credentials(
@@ -252,6 +299,9 @@ class FilterModule:
             "aap_use_case_setup_plan": setup_plan,
             "aap_distinct_controllers": distinct_controllers,
             "aap_normalized_git_url": git_url,
+            "aap_https_origin": https_origin,
             "aap_scoped_launch_credentials": scoped_launch_credentials,
+            "aap_native_api_credentials": native_api_credentials,
+            "aap_api_launch_credentials": api_launch_credentials,
             "aap_selected_use_case_prerequisites": selected_prerequisites,
         }

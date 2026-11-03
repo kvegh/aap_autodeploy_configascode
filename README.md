@@ -21,8 +21,8 @@ Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
 
 Project captures now use `vaults/cac/<project-id>-cac-vault.yml` inside their
-separate `<project-id>-secrets` repositories. Existing importers prefer the
-canonical capture and temporarily retain their old path as a migration fallback.
+separate `<project-id>-secrets` repositories. The generic importer reads only
+that canonical capture; shared base checkout retains its temporary old-path fallback.
 The shared bootstrap capture remains `cac/base_CaC_vault.yml`. Extraction accepts
 the canonical project path and can declare a shared inventory reference for an
 individual template while retaining older portable inventory aliases. This
@@ -180,12 +180,15 @@ base repository, separate Git write access, client configuration and CA trust.
 
 ## Current implementation
 
-The [proposed importer consolidation](docs/deployment-consolidation-analysis.md)
-compares all five importers, shared helpers and selector against the installed
-CoP roles/modules. It recommends one resource-driven importer playbook, with
-explicit secret lifecycle and preparation boundaries. This is analysis only;
-credential selection, self-targeting and orchestration remain open decisions.
-The existing entry points below are unchanged.
+All five project import Job Templates now use [one API-only configuration
+playbook](docs/cac-project-import.md), `deploy-cac-project.yml`, with fixed project
+IDs and separate repository Git/Vault credentials. Choose the inventory instance
+and its native destination API credential at launch. The playbook derives the
+private repository and canonical capture filename, verifies TLS, and applies
+reviewed CoP data without SSH authentication fallback or workload execution.
+The [consolidation analysis](docs/deployment-consolidation-analysis.md) remains
+historical reasoning; its former credential and importer design questions are
+superseded by this implementation. Live import/function tests remain separate.
 
 The repository contains the deployment stages and separate use-case imports:
 
@@ -221,15 +224,13 @@ This establishes stage/import success; a complete workflow launch, recursive
 creation of another AAP and functional demo tests remain open in the
 [project TODO](PLAN.md#todo).
 
-The separate `deploy-windows-demo.yml` imports the encrypted disconnected Windows
-configuration from its private repository. `restore-windows-config.yml` remains a
-local-file import utility. `deploy-orchestrator-demo.yml` imports only Automation
-Orchestrator AAP definitions through a separate Job Template.
-`deploy-assistant-team.yml` independently imports seven ordinary Assistant
-Team deployment, lifecycle and recovery templates and their supporting AAP objects.
-Its first successful live import restored all 21 owned objects; functional
-deployment and recovery tests remain separate.
-`destroy-test-aap.yml` handles guarded test-instance teardown.
+The old `deploy-aiops-demo.yml`, `deploy-windows-demo.yml`,
+`deploy-orchestrator-demo.yml`, `deploy-assistant-team.yml` and
+`deploy-autodeploy.yml` files are thin fixed-ID aliases to the common importer.
+`restore-windows-config.yml` remains a local-file utility.
+`destroy-test-aap.yml` handles guarded test-instance teardown. Previous successful
+imports below are historical evidence, not claims that this new importer has run
+against a target.
 
 The Windows importer creates inventory groups before linking their memberships.
 The CoP group role starts requests asynchronously, so a parent group can otherwise
@@ -257,12 +258,10 @@ normal target TLS trust remain separate. Exact reviewed source-only credential
 pins preserve existing global associations; route credentials still require
 organization ownership. Source/target API prechecks and temporary-token cleanup
 have passed; a live selected-use-case import remains unperformed.
-The shared host inventory now has per-hypervisor VM placement groups carrying
-`hypervisor_host`. Its encrypted capture preserves existing aliases, variables
-and functional memberships. AAP hosts also store an explicit `ansible_fqdn`
-for the intended inventory-based API address lookup. The launch-time instance
-input remains required; credential management and workflow replacement remain
-the next design step.
+The shared inventory has per-hypervisor VM groups with `hypervisor_host`, and
+AAP hosts carry explicit `ansible_fqdn`. Configuration import selects the exact
+inventory host through `aap_instance_key`; the native API credential must match
+that FQDN and verify certificates. No target identity or token is guessed.
 
 ```mermaid
 flowchart LR
@@ -292,13 +291,13 @@ counter value. Installer observation remains available through Stage 03's existi
 async-job identifier.
 
 AutoDeploy is a separate use case rather than platform base. Its whole-file
-Vault-encrypted `cac/autodeploy.yml` lives beside `cac/base_CaC_vault.yml` in the
+Vault-encrypted `vaults/cac/aap_autodeploy_configascode-cac-vault.yml` lives beside `cac/base_CaC_vault.yml` in the
 existing private companion repository. It contains the workflow repository
 mapping, exact deployment/use-case PAH requirements, deployment source project,
 execution environment, two dedicated inventories, provisioning and environment
 Vault credentials, and the deployment/import/teardown templates and surveys.
-It has a dedicated `deploy-autodeploy.yml` importer and Job Template. The
-importer restores the workflow on the target too, allowing that target to repeat
+It has a dedicated Job Template fixing `aap_autodeploy_configascode` for the
+common importer. The importer restores the workflow on the target too, allowing that target to repeat
 the same deployment sequence. The empty public structure is
 [`cac/autodeploy.yml.example`](cac/autodeploy.yml.example). Populate it outside
 Git, verify provisioning access, and encrypt it with the same `cac` Vault
@@ -596,7 +595,7 @@ The production and existing fresh-instance credential names, grants and bindings
 were verified after migration. Configuration templates keep their own repository
 pair; runtime credentials and unrelated template settings stay unchanged. This
 maintenance leaves current registry routing intact. Inventory-driven destination
-lookup and target API-credential redesign remain pending.
+lookup and explicit native destination API credentials are implemented in the shared project importer.
 
 `Cac_git_token_type` is the reusable custom schema, not a credential containing a
 token. Its `CAC_GIT_TOKEN` injector lets playbooks download private encrypted CaC.
@@ -776,99 +775,30 @@ open.
 
 ### AIOps configuration deployment
 
-Run `deploy-aiops-demo.yml` through its own Job Template only after Step 04 has
-finished on the chosen target. This job loads `cac/aiops_demo.yml` from AIOps's
-dedicated private companion repository's `main` branch. The public playbook
-repository remains separate and needs no private-repository token. Use the
-dedicated AIOps Git-read credential for this checkout; the shared catalog and
-instance registry remain in their existing repository. It does not load base or the subscription
-manifest, and it does not launch any of the imported demo Job Templates.
-Applying enabled EDA activation definitions can start those activations.
+Choose the AIOps configuration Job Template. It fixes
+`aap_cac_project_id: aiops-selfhealing-demo`; the common importer loads
+`vaults/cac/aiops-selfhealing-demo-cac-vault.yml` from its dedicated private
+repository. Follow the [operator procedure](docs/cac-project-import.md), selecting
+`aap_instance_key` and an explicit native destination API credential. The public
+playbook repository needs no private read token.
 
-The companion migration verified private publication, identical capture bytes
-and the dedicated reader before removing the former shared capture. The seed
-importer's repository default and Git credential are updated; its other scoped
-inputs remain unchanged. AIOps's separate runtime `myvars` is still in its public
-playbook repository and remains a separate migration question.
-
-The template uses the same execution environment, project, and three credentials
-as Step 04. Supply the target's explicit `aap_hostname` and
-`aap_config_repo_url`. `debug_logging` defaults to `false`; the optional survey
-accepts the quoted strings `"true"` and `"false"` for API launches. Authentication
-uses the current encrypted `aap_password`, or the installer SSH fallback described
-above. A temporary Gateway token is revoked after configuration.
-
-The encrypted AIOps file must declare `aiops_configuration_ready: true` after
-review, a list named `aiops_required_secret_variables` (empty is allowed), and
-`aiops_eda_controller_credential_name` / `aiops_eda_organization_name`. Required
-secret variables must be supplied, nonempty, and contain actual secret values.
-These checks stop incomplete captures before target API changes.
-
-Deployment applies Controller resources and EDA credentials, projects, and
-decision environments first. It then creates Event Streams with
-`ansible.eda.event_stream`, and finally applies the rulebook activations through
-the CoP role. After initial dispatch, a supplemental project task preserves
-`update_revision_on_launch` and its cache timeout when declared in the vault;
-CoP 4.10.0 does not forward those settings. It waits for the project without
-triggering a second sync. Initial dispatch excludes both `eda_event_streams`
-and `eda_rulebook_activations`. CoP 4.10.0 includes an Event Stream role, but
-its data items expect `organization`; our dedicated module definitions use
-`organization_name`. Excluding that role keeps stream creation in the explicit
-step, after prerequisites and before activations. The vault must contain
-nonempty `eda_event_streams_aiops_demo` and
-`eda_rulebook_activations_aiops_demo` lists, with every activation mapping
-referencing an Event Stream defined in the vault. References use names and
-rulebook source names or indexes; target IDs and stream UUIDs are generated on
-the new instance. External event publishers are outside this deployment's scope.
-
-The EDA Controller credential in `eda_credentials_aiops_demo` uses the CoP
-item keys `organization` and `credential_type`. It must use the target URL plus
-`/api/controller` for `inputs.host`, and
-`aiops_controller_access_token` for its
-`inputs.oauth_token`. On first deployment the playbook generates a persistent
-target-specific Gateway token and immediately stores it in that EDA credential.
-It never copies the source instance's token. On reruns it preserves the existing
-credential and token, checking organization, credential type, target URL, and
-other declared settings. A mismatch requires review rather than automatic token
-replacement. This check cannot verify the hidden token's validity or expiry.
-
-The persistent EDA token remains available after the job. If deployment fails,
-cleanup revokes a newly created token only when a successful API lookup proves
-that its EDA credential was not saved. An inconclusive lookup preserves the token
-for inspection, avoiding revocation of a token already needed by EDA. Ordinary
-cleanup still revokes the temporary configuration token and removes the checkout.
-Fatal role-loading errors and interruptions have the same cleanup limitations as
-Step 04. This job deploys AAP configuration; external environment setup and
-functional remediation verification are separate work.
-
-Never commit plaintext secrets or sensitive environment-specific data, including
-account names, hostnames, addresses, tokens, or keys. Vault-encrypted files/values
-are allowed. Keep `vpf` and other Vault password files outside Git. Ignore rules
-are a convenience; inspect staged files before committing.
+The capture must be reviewed, contain its required encrypted inputs, and declare
+valid Event Stream/source mappings. Common resource handlers apply complete EDA
+project settings, normalize Event Stream organization aliases and create new
+activation definitions disabled. Existing activation states and stored Controller
+access tokens are preserved; mismatches require review. No imported demo Job
+Template or explicit activation action is launched.
 
 ### Disconnected Windows configuration deployment
 
-Run `deploy-windows-demo.yml` through its own Job Template after shared base has
-been applied. Supply `aap_instance_key` as the registered target name and
-`aap_config_repo_url` as the private Windows configuration repository's HTTPS Git
-URL. It reads only the fully Vault-encrypted `cac/windows_disconnected.yml` from
-`main`. The attached Git token must have read access to this repository; access
-to another demo's private repository does not imply access here. For a fine-grained
-token, include the chosen configuration repository in its selected repositories
-and grant repository contents read access. The Git credential remains separate
-from the Vault credential needed to decrypt the downloaded configuration.
-
-Git failures report only a fixed category: repository access/not found, DNS,
-TLS/certificate, redirect, connection/timeout, or an unclassified failure. Raw Git
-errors and credential data stay hidden, including with diagnostics enabled.
-
-Attach the same three credential types used by Step 04: the custom Git token
-injecting `CAC_GIT_TOKEN`, the `cac` Vault credential, and the existing Vault
-credential for `myvars`. Administrator authentication comes from an explicitly
-supplied protected `aap_password`, or the installer password retrieved over SSH
-using the existing environment settings. A temporary Gateway token authenticates
-the import and is revoked afterward; the checkout and askpass helper are removed
-on success and ordinary task failures.
+Choose the Windows configuration Job Template, which fixes
+`aap_cac_project_id: disconnected-windows-patching` for the common importer.
+It reads `vaults/cac/disconnected-windows-patching-cac-vault.yml` from its own
+private repository using that repository's saved read token and Vault credential.
+Choose the inventory destination and its explicit native API credential; raw
+repository/file inputs and installer-password SSH fallback are removed.
+Prepared target public CA/known-host inputs are required for application trust.
+See the [shared procedure and safeguards](docs/cac-project-import.md).
 
 The vault must set `windows_disconnected_configuration_ready: true` and list its
 required secret variables in `windows_disconnected_required_secret_variables`.
@@ -878,22 +808,11 @@ definitions through CoP dispatch. It rejects job-launch and schedule definitions
 and excludes dispatch's launch roles. It does not apply the subscription or shared
 base, run the imported automation, or change Windows machines.
 
-When the encrypted capture declares `windows_disconnected_ad_target_enabled`,
-the importer also prepares the AD extension's encrypted target credential for
-this platform. It reads public SSH host keys and the host and installed-platform
-CA bundles over the
-existing installer SSH connection and verifies the target HTTPS chain and
-hostname before saving the credential. Runtime AD configuration uses this
-platform's credentials and trust, rather than a previous validation instance.
-The imported Windows workflow contains the AD provisioning branch; importing
-its definitions still launches no jobs and enables no LDAP authenticator.
-The installed-platform bundle uses the existing containerized-installer trust
-path; a protected `windows_disconnected_ad_target_ca_path` can select another
-verified layout. Certificate and hostname validation remain required.
-Diagnostic logging can show this public-trust read command's error; passwords,
-decryption and credential updates remain protected.
-TLS verification reads the certificate files directly so Unicode comments in
-the public trust bundles are accepted.
+The AD extension's target public CA bundle and SSH-known-host data must be
+prepared as encrypted project inputs before import. The generic importer does
+not discover them using SSH. Runtime AD configuration uses the selected
+platform's credential and trust; importing definitions launches no jobs and
+enables no LDAP authenticator.
 
 `debug_logging` defaults to `false`, with the same optional `"false"`/`"true"`
 survey choice as other import templates. Authentication, decryption, wildcard
@@ -922,15 +841,11 @@ and object permissions. The LDAP integration does not import Windows ACLs.
 
 ### Automation Orchestrator configuration deployment
 
-Use `deploy-orchestrator-demo.yml` after shared base to import the Orchestrator's
-AAP objects. Supply `aap_instance_key` as the registered target name and
-`aap_config_repo_url` as its private configuration repository's HTTPS Git URL.
-The importer downloads `main` and loads only the whole-file Vault-encrypted
-`cac/orchestrator.yml`. Attach the custom Git credential with read access to
-that repository (`CAC_GIT_TOKEN`), the `cac` Vault credential, and the existing
-Vault credential for the environment settings in `myvars`. A protected
-`aap_password` may be supplied; otherwise it retrieves the current installer
-password over SSH. Git failures disclose only a fixed diagnostic category.
+Choose the Orchestrator configuration Job Template, which fixes
+`aap_cac_project_id: automation-orchestrator` for the shared importer. Its
+canonical capture is `vaults/cac/automation-orchestrator-cac-vault.yml`. Select the
+inventory destination and native API credential under the
+[common procedure](docs/cac-project-import.md); its own Git/Vault pair stays saved.
 
 The capture's `orchestrator_capture_readiness` mapping must set
 `aap_object_definitions_complete`, `static_secrets_recovered`, and
@@ -963,143 +878,43 @@ launched for this verification.
 The importer does not apply base or the subscription, launch either imported
 template, deploy OpenShift resources, or perform cleanup operations.
 
-`debug_logging` defaults to `false`, with the same optional `"false"`/`"true"`
-survey as the other import templates. Git authentication, Vault loading,
-registry credentials, wildcard combination, and temporary Gateway-token tasks
-remain protected during diagnostics. Ordinary object operations follow the
-logging choice. Each run revokes its own temporary Gateway token and removes
-its checkout on success or ordinary failure; checkout cleanup also runs if token
-revocation fails. Interruptions and fatal role-loading errors can prevent cleanup.
-
-Focused offline validation exercises actual Vault loading and eleven import
-preflight cases, including plaintext rejection, missing secrets, incomplete
-review, and attempts to execute automation. Three failure scenarios verify token
-revocation and workspace cleanup. The first live definition import completed
-successfully; the imported deployment and cleanup templates were not launched.
+Diagnostic logging does not reveal protected Git, Vault, registry or API
+credentials. The common importer removes its private checkout on normal
+completion and ordinary failure. Earlier live imports described above predate
+the shared-driver migration; no new application job was launched for it.
 
 ### Assistant Team configuration deployment
 
-The private companion repository stores the encrypted capture at
-`vaults/cac/assistant_team_vault.yml`. Its editable working copy and export
-inventory stay outside Git. The code repository is public, so its projects no
-longer require an SCM credential for private code. Access to the private companion
-repository remains a separate bootstrap requirement.
+The private companion stores the whole-file encrypted capture at
+`vaults/cac/assistant-team-cac-vault.yml`. Its public automation repositories need
+no private SCM credential. Choose the Assistant configuration Job Template; its
+fixed `assistant-team` project ID selects this capture. Set the inventory host
+and select an explicit native destination API credential. The saved repository
+read token and Vault credential stay separate. Follow the
+[common operator procedure](docs/cac-project-import.md).
 
-Use `deploy-assistant-team.yml` after shared base. Supply `aap_instance_key` as the
-registered target name and `aap_config_repo_url` in the form
-`https://GIT_HOST/OWNER/REPOSITORY.git`. The importer downloads `main` and loads
-only `vaults/cac/assistant_team_vault.yml`. Use the existing custom CaC Git-token
-credential type, which injects `CAC_GIT_TOKEN`, with read access to this private
-repository. Attach that credential, the `cac` Vault credential, and the existing
-Vault credential for `myvars`. Reusing the type does not grant repository access;
-the attached token must authorize this repository. A separate credential of the
-same type can hold a different token without changing other use cases' access.
+Seven ordinary deployment, lifecycle and recovery templates and their supporting
+objects are imported as reviewed CoP data. Optional authentication maintenance
+remains outside default dispatch and is not enabled by this import. Ordinary
+readiness flags must be true, unresolved/required secret lists empty, and all
+six embedded deployment/authentication snapshots fully Vault encrypted. Preserve
+`!unsafe` runtime expressions and snapshots without refreshing provider credentials.
+Collection/image prerequisites and functional application tests remain separate.
 
-All standalone use-case imports additionally need the registry reader, distinct
-`instance_registry` Vault identity and the registered hypervisor Machine
-credential. The [selected setup entrypoint](docs/selected-use-cases.md) validates
-and supplies these alongside the exact saved case credential set.
-Every captured configuration importer must expose required instance-key and
-repository prompts, including templates whose earlier survey contained only
-diagnostic logging. Saved stale target URLs/addresses are removed during migration;
-other scoped inputs are preserved. The AutoDeploy capture preflight checks this
-survey coverage before restoring definitions.
-Arbitrary variable prompts are disabled on those fixed importers; their required
-surveys define the accepted target/repository/logging inputs.
-The selector's seed origin must match its protected catalog and the catalog Git
-URL must match its registry credential binding before authentication.
-Git uses a temporary askpass helper with HTTPS certificate verification enabled;
-the token stays out of URLs, command arguments and the helper's stored contents.
-For public code projects, omit the source-control credential field. An empty
-credential name can make the Controller module match every credential and fail.
+The dedicated inventory service identity is checked entirely through target
+APIs: one nonprivileged user, the exact inventory grant, no team membership and
+the reviewed credential schema. Existing-user control is proved before changes;
+its password is omitted from metadata updates. First setup stores a target-only
+service token directly in its Controller credential. Reruns preserve masked
+inputs and check API-visible bindings. Legacy or ambiguous access needs explicit
+recovery; the common importer does not read target token files, scrape installer
+passwords, rotate existing tokens or use SSH for API authentication.
 
-The target administrator input follows the other importers: supply a protected
-`aap_password`, or let the importer retrieve the current installer password over
-SSH using the encrypted environment settings. It creates its own temporary
-Gateway token, revokes that token, and removes the private checkout after success
-or ordinary failure. Checkout cleanup still runs if token revocation fails.
-Interrupted jobs and fatal role-loading failures retain the existing cleanup
-limitation. `debug_logging` defaults to `false`; authentication, credential
-updates, Vault loading and wildcard combination remain protected during debugging.
-
-Capture the current project revisions, deployment and recovery templates, and
-external configuration credential definitions together. The injected inputs are
-encrypted file snapshots from the private companion; do not restore obsolete
-Vault paths inside the code repository or assume that a historical release still
-includes environment configuration. Preserve the existing encrypted authentication
-snapshots without refreshing provider credentials during a configuration export.
-
-The capture also declares its collection requirements for PAH and its execution
-environment image and pull policy. Prepare the required content through PAH
-before project synchronization; validated object definitions do not establish
-that collections or container images are available on the target.
-
-Seven ordinary deployment, lifecycle and recovery templates are captured in the
-standard Controller variable lists. Authentication maintenance is captured separately under
-`assistant_team_authentication_maintenance`, outside default CoP dispatch.
-Activate that optional section explicitly with repository write access, controller
-authorization and CA trust for the target AAP. A maintenance token or certificate
-bundle from the source AAP must not be treated as valid for another instance.
-Keep unresolved optional inputs in the protected readiness report. The ordinary
-import requires Boolean readiness for ordinary objects, deployment configuration,
-static secrets and embedded encrypted configuration, with empty unresolved and
-required secret lists. It verifies all six embedded snapshots are whole-file
-Vault ciphertext and rejects launches and schedules. Overall capture readiness
-can remain false while optional maintenance or functional testing is outstanding;
-this does not authorize importing maintenance or executing runtime automation.
-
-The current lifecycle capture includes the Shutdown template and controlled VM
-name surveys for fresh deployment and retirement. Retirement defaults to a
-preview and requires an explicit confirmation to delete. Arbitrary launch extra
-variables are disabled on these three lifecycle templates. The deployment-test
-project pins the reviewed application release and explicitly selects the owned
-execution environment.
-
-The encrypted configuration also defines a nonadministrator inventory service
-account, a long password, and its administrator grant on the dedicated Assistant
-Team inventory. CoP imports these prerequisites before the templates. The importer
-reuses the captured lifecycle credential schema, then issues a token on the new
-target using that service account. Source-instance tokens and inventory IDs are
-never copied. New target deployments register their guests; existing source guest
-registrations stay outside this dedicated capture's owned scope.
-
-The service token is stored on its target at
-`/var/lib/aap-autodeploy/assistant-team-inventory-token.json`, in a root-owned
-directory with mode `0700` and a regular file with mode `0600`. The resolved
-credential contains that target's URL, inventory ID, CA and token. Reruns preserve
-the password and token and verify the stored binding and credential checksum.
-An existing service account must authenticate with its encrypted password before
-any definition updates. Its password is then omitted from user updates, so other
-metadata changes cannot reset it.
-Duplicate or expired tokens, unexpected privileges, incompatible credential
-schemas, changed CA/URL/inventory bindings, and existing access without a
-recoverable token copy require review. Only a newly issued token proved not to
-have been saved is revoked after a failed first setup.
-
-Lifecycle clients require verified HTTPS. The importer reads the installed CA
-from the target over the existing trusted SSH connection, and verifies the URL
-before creating lifecycle resources. By default the CA is below the installer
-user's `aap/tls/extracted/pem/directory-hash/ca-bundle.crt`; an encrypted lifecycle
-`ca_path` can select another installed trust file. The supplied `aap_hostname`
-must match a certificate DNS or IP SAN and be reachable from the execution
-environment. Trusting a CA alone does not make an unmatched IP address valid.
-This check does not disable certificate verification or replace certificates.
-
-Verify the declared PAH collections and existing service-side execution
-environment image before launching the import Job Template. The importer restores
-definitions only; it does not launch VM lifecycle, recovery, provider requests or
-authentication-maintenance operations. Offline validation exercises actual Vault
-loading, core completeness, encrypted snapshots, repository URL guards and token
-cleanup. A successful import is separate from testing the imported automation.
-
-Live import job 2139 succeeded with protected logging after the declared certified
-collection was synchronized through PAH and the existing execution image verified
-in the Controller runtime's image store. Independent, TLS-verified API comparison
-passed 396 checks across all 21 owned objects, including both synchronized public
-code projects, six templates, credential attachments and protected snapshot inputs.
-The temporary Gateway token and checkout were removed. Optional authentication
-maintenance and the imported VM lifecycle, recovery and provider operations were
-not run.
+Imported lifecycle templates retain their own preview/confirmation requirements.
+Configuration import does not run VM creation/retirement, recovery, provider or
+authentication-maintenance operations. Historical import2139 verified21objects
+through396APIchecks before this generic migration; that is not a live functional
+validation of the new driver.
 
 ## Start a CaC configuration
 
@@ -1134,7 +949,7 @@ ownership. Source objects remain untouched.
 
 Keep the editable working files and Vault password file outside Git. This public
 repository's `cac/` retains the empty examples. Stage 04 loads the private shared
-base automatically. The separate AIOps entry point loads `cac/aiops_demo.yml`;
+base automatically. The separate AIOps entry point loads `vaults/cac/aiops-selfhealing-demo-cac-vault.yml`;
 adding other encrypted demo files does not apply them automatically.
 
 See [Configuration_as_Code.md](Configuration_as_Code.md) for variable naming,

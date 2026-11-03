@@ -1,0 +1,144 @@
+---
+- name: Import ordinary configuration resources without wildcard merging or workload execution
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.dispatch
+    apply:
+      no_log: true
+  vars:
+    dispatch_include_wildcard_vars: false
+    aap_configuration_dispatcher_exclude_roles:
+      - controller_applications
+      - controller_job_launch
+      - controller_workflow_launch
+      - controller_inventory_source_update
+      - controller_host_groups
+      - controller_job_templates
+      - controller_workflow_job_templates
+      - eda_projects
+      - eda_event_streams
+      - eda_decision_environments
+      - eda_rulebook_activations
+  no_log: true
+
+- name: Persist dedicated inventory service access using only the target APIs
+  aap_cac_lifecycle:
+    operation: service_access
+    authentication: "{{ cac_api_auth }}"
+    contract: "{{ vars | aap_cac_read_path(cac_import_metadata.capabilities.inventory_service_access.contract_variable) }}"
+    password: "{{ vars | aap_cac_read_path(cac_import_metadata.capabilities.inventory_service_access.password_variable) }}"
+    credential_type: "{{ cac_service_preflight.credential_type }}"
+  when: cac_import_metadata.capabilities.inventory_service_access is defined
+  no_log: true
+
+- name: Persist or preserve the EDA Controller credential using only the target APIs
+  aap_cac_lifecycle:
+    operation: eda_access
+    authentication: "{{ cac_api_auth }}"
+    capability: "{{ cac_import_metadata.capabilities.eda_controller_access }}"
+    definitions: "{{ cac_import_resources.eda_credentials }}"
+  when: cac_import_metadata.capabilities.eda_controller_access is defined
+  no_log: true
+
+- name: Create all group skeletons before establishing group relationships
+  ansible.controller.group:
+    name: "{{ item.name }}"
+    inventory: "{{ item.inventory }}"
+    variables: "{{ item.variables | default(omit) }}"
+    description: "{{ item.description | default(omit) }}"
+    state: present
+    controller_host: "{{ aap_hostname }}"
+    controller_oauthtoken: "{{ aap_token | default(omit, true) }}"
+    controller_username: "{{ aap_username | default(omit, true) }}"
+    controller_password: "{{ aap_password | default(omit, true) }}"
+    validate_certs: true
+  loop: "{{ controller_groups }}"
+  no_log: true
+
+- name: Link group relationships after every group skeleton exists
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_host_groups
+    apply:
+      no_log: true
+  when: controller_groups | length > 0
+  no_log: true
+
+- name: Import job templates after their persistent credential dependencies
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_job_templates
+    apply:
+      no_log: true
+  when: controller_templates | length > 0
+  no_log: true
+
+- name: Import workflow definitions after all referenced job templates
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.controller_workflow_job_templates
+    apply:
+      no_log: true
+  when: controller_workflows | length > 0
+  no_log: true
+
+- name: Import each EDA project completely in its first application
+  ansible.eda.project:
+    name: "{{ item.name }}"
+    description: "{{ item.description | default(omit) }}"
+    url: "{{ item.url | default(item.scm_url | default(omit)) }}"
+    scm_branch: "{{ item.scm_branch | default(omit) }}"
+    credential: "{{ item.credential | default(omit) }}"
+    organization_name: "{{ item.organization | default(omit) }}"
+    proxy: "{{ item.proxy | default(omit) }}"
+    sync: "{{ item.sync | default(false) }}"
+    update_revision_on_launch: "{{ item.update_revision_on_launch | default(false) }}"
+    scm_update_cache_timeout: "{{ item.scm_update_cache_timeout | default(0) }}"
+    state: present
+    controller_host: "{{ aap_hostname }}"
+    controller_token: "{{ aap_token | default(omit, true) }}"
+    controller_username: "{{ aap_username | default(omit, true) }}"
+    controller_password: "{{ aap_password | default(omit, true) }}"
+    validate_certs: true
+  loop: "{{ eda_projects }}"
+  no_log: true
+
+- name: Import Event Streams after their projects and credential dependencies
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.eda_event_streams
+    apply:
+      no_log: true
+  when: eda_event_streams | length > 0
+  no_log: true
+
+- name: Import decision environments before activation definitions
+  ansible.builtin.include_role:
+    name: infra.aap_configuration.eda_decision_environments
+    apply:
+      no_log: true
+  when: eda_decision_environments | length > 0
+  no_log: true
+
+- name: Import activation definitions with disabled creation and unchanged existing active states
+  aap_cac_activation:
+    name: "{{ item.name }}"
+    description: "{{ item.description | default(omit) }}"
+    project: "{{ item.project }}"
+    rulebook: "{{ item.rulebook }}"
+    decision_environment: "{{ item.decision_environment }}"
+    awx_token: "{{ item.awx_token | default(omit) }}"
+    restart_policy: "{{ item.restart_policy | default(omit) }}"
+    extra_vars: "{{ item.extra_vars | default(omit) }}"
+    organization: "{{ item.organization }}"
+    eda_credentials: "{{ item.eda_credentials | default(omit) }}"
+    k8s_service_name: "{{ item.k8s_service_name | default(omit) }}"
+    event_streams: "{{ item.event_streams | default(omit) }}"
+    log_level: "{{ item.log_level | default(omit) }}"
+    enable_persistence: "{{ item.enable_persistence | default(omit) }}"
+    restart_on_project_update: "{{ item.restart_on_project_update | default(omit) }}"
+    rule_engine_credential_id: "{{ item.rule_engine_credential_id | default(omit) }}"
+    state: present
+    restart: false
+    controller_host: "{{ aap_hostname }}"
+    controller_token: "{{ aap_token | default(omit, true) }}"
+    controller_username: "{{ aap_username | default(omit, true) }}"
+    controller_password: "{{ aap_password | default(omit, true) }}"
+    validate_certs: true
+  loop: "{{ eda_rulebook_activations }}"
+  no_log: true

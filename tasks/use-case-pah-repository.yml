@@ -3,7 +3,7 @@
   ansible.builtin.uri:
     url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/galaxy/pulp/api/v3/remotes/ansible/collection/?name={{ cac_required_repository.name | urlencode }}"
     headers:
-      Authorization: "Bearer {{ aap_token }}"
+      Authorization: "Bearer {{ cac_api_session_token | default(aap_token) }}"
     validate_certs: "{{ aap_validate_certs }}"
     status_code: 200
   register: cac_required_remote
@@ -13,15 +13,20 @@
     that:
       - cac_required_remote.json.count | int == 1
       - cac_required_remote.json.results[0].tls_validation | bool
-      - cac_required_remote.json.results[0].pulp_href is match('^/api/galaxy/pulp/api/v3/remotes/ansible/collection/[a-f0-9-]+/$') or cac_required_remote.json.results[0].pulp_href is match('^/pulp/api/v3/remotes/ansible/collection/[a-f0-9-]+/$')
+      - >-
+        cac_required_remote.json.results[0].pulp_href is match('^/api/galaxy/pulp/api/v3/remotes/ansible/collection/[a-f0-9-]+/$') or
+        cac_required_remote.json.results[0].pulp_href is match('^/pulp/api/v3/remotes/ansible/collection/[a-f0-9-]+/$')
     fail_msg: Prerequisite preparation needs exactly one TLS-validated base remote for each declared source.
 
 - name: Bound remote version selection while preserving explicit exact versions
   ansible.builtin.uri:
-    url: "{{ aap_hostname | regex_replace('/+$', '') }}{{ cac_required_remote.json.results[0].pulp_href if cac_required_remote.json.results[0].pulp_href.startswith('/api/galaxy/') else '/api/galaxy' + cac_required_remote.json.results[0].pulp_href }}"
+    url: >-
+      {{ aap_hostname | regex_replace('/+$', '') }}{{ cac_required_remote.json.results[0].pulp_href
+         if cac_required_remote.json.results[0].pulp_href.startswith('/api/galaxy/')
+         else '/api/galaxy' + cac_required_remote.json.results[0].pulp_href }}
     method: PATCH
     headers:
-      Authorization: "Bearer {{ aap_token }}"
+      Authorization: "Bearer {{ cac_api_session_token | default(aap_token) }}"
     body_format: json
     body:
       sync_highest_versions: 1
@@ -72,15 +77,17 @@
         sync_dependencies: false
         tls_validation: true
         ah_host: "{{ aap_hostname }}"
-        ah_token: "{{ aap_token }}"
+        ah_token: "{{ cac_api_session_token | default(aap_token) }}"
         validate_certs: "{{ aap_validate_certs }}"
         state: present
 
 - name: Verify every declared version is available from this PAH distribution
   ansible.builtin.uri:
-    url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/galaxy/v3/plugin/ansible/content/{{ cac_required_repository.name }}/collections/index/{{ item.name.split('.')[0] }}/{{ item.name.split('.')[1] }}/versions/{{ item.version }}/"
+    url: >-
+      {{ aap_hostname | regex_replace('/+$', '') }}/api/galaxy/v3/plugin/ansible/content/{{ cac_required_repository.name
+      }}/collections/index/{{ item.name.split('.')[0] }}/{{ item.name.split('.')[1] }}/versions/{{ item.version }}/
     headers:
-      Authorization: "Bearer {{ aap_token }}"
+      Authorization: "Bearer {{ cac_api_session_token | default(aap_token) }}"
     validate_certs: "{{ aap_validate_certs }}"
     status_code: 200
   loop: "{{ cac_required_repository.collections }}"

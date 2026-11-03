@@ -1788,3 +1788,14 @@ parent-relative Vault path point outside the synced AAP project. Moving `myvars`
 into this repository and updating load paths makes the encrypted file available
 inside the project root. The handoff reports a local variable-loading check;
 that check does not establish full post-split deployment success.
+
+## Canonical capture compatibility — 99cc306
+
+Project captures move to one predictable `vaults/cac/<project-id>-cac-vault.yml`
+path in each project's private companion. Commit99cc306 publishes compatibility
+before private file removal: old consumers prefer canonical paths and shared
+checkout temporarily retains the former AutoDeploy path. Extraction accepts the
+canonical path and a narrow declared per-template shared-inventory reference,
+while retaining older portable inventory aliases. This ordering avoids breaking
+saved jobs during private publication. The implementation was validated offline;
+SCM synchronization3165 completed at the same commit without running an import.

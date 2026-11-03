@@ -1,0 +1,54 @@
+---
+- name: Require a native destination API credential selected at launch
+  ansible.builtin.assert:
+    that:
+      - lookup('ansible.builtin.env', 'AAP_HOSTNAME') | length > 0
+      - >-
+        (lookup('ansible.builtin.env', 'AAP_TOKEN') | length > 0) or
+        (lookup('ansible.builtin.env', 'AAP_USERNAME') | length > 0 and
+         lookup('ansible.builtin.env', 'AAP_PASSWORD') | length > 0)
+    quiet: true
+    fail_msg: Select a native Red Hat Ansible Automation Platform credential for the destination, with Verify SSL enabled.
+
+- name: Bind explicit native API credentials to the selected inventory instance
+  ansible.builtin.set_fact:
+    cac_api_auth: >-
+      {{ hostvars[aap_instance_key] | aap_cac_api_target({
+           'hostname': lookup('ansible.builtin.env', 'AAP_HOSTNAME'),
+           'username': lookup('ansible.builtin.env', 'AAP_USERNAME'),
+           'password': lookup('ansible.builtin.env', 'AAP_PASSWORD'),
+           'token': lookup('ansible.builtin.env', 'AAP_TOKEN'),
+           'validate_certs': lookup('ansible.builtin.env', 'AAP_VALIDATE_CERTS')}) }}
+  no_log: true
+
+- name: Use only the explicitly injected destination API authentication
+  ansible.builtin.set_fact:
+    aap_hostname: "{{ cac_api_auth.hostname }}"
+    aap_token: "{{ cac_api_auth.token }}"
+    aap_username: "{{ cac_api_auth.username }}"
+    aap_password: "{{ cac_api_auth.password }}"
+    aap_validate_certs: true
+  no_log: true
+
+- name: Authenticate the supplied bearer before fetching private configuration
+  ansible.builtin.uri:
+    url: "{{ cac_api_auth.hostname }}/api/gateway/v1/me/"
+    headers:
+      Authorization: "Bearer {{ cac_api_auth.token }}"
+    validate_certs: true
+    follow_redirects: none
+    status_code: 200
+  when: cac_api_auth.token | length > 0
+  no_log: true
+
+- name: Authenticate the explicitly supplied destination username and password
+  ansible.builtin.uri:
+    url: "{{ cac_api_auth.hostname }}/api/gateway/v1/me/"
+    url_username: "{{ cac_api_auth.username }}"
+    url_password: "{{ cac_api_auth.password }}"
+    force_basic_auth: true
+    validate_certs: true
+    follow_redirects: none
+    status_code: 200
+  when: cac_api_auth.token | length == 0
+  no_log: true

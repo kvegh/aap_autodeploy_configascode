@@ -1,0 +1,30 @@
+---
+- name: Reuse the explicitly supplied bearer for PAH preparation
+  ansible.builtin.set_fact:
+    cac_api_session_token: "{{ cac_api_auth.token }}"
+  no_log: true
+
+- name: Create a temporary preparation session from the explicit native destination login
+  ansible.builtin.uri:
+    url: "{{ cac_api_auth.hostname }}/api/gateway/v1/tokens/"
+    method: POST
+    url_username: "{{ cac_api_auth.username }}"
+    url_password: "{{ cac_api_auth.password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      description: "Temporary PAH preparation {{ cac_workspace.path | basename }}"
+      scope: write
+      application: null
+    status_code: 201
+    validate_certs: true
+    follow_redirects: none
+  register: cac_gateway_token
+  when: cac_api_auth.token | length == 0
+  no_log: true
+
+- name: Use only the newly created preparation session when native login was supplied
+  ansible.builtin.set_fact:
+    cac_api_session_token: "{{ cac_gateway_token.json.token }}"
+  when: cac_api_auth.token | length == 0
+  no_log: true

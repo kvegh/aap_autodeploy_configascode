@@ -20,6 +20,9 @@
     - name: Route selected instance observers through its pinned hypervisor
       ansible.builtin.include_tasks: tasks/aap-instance-ssh.yml
 
+    - name: Require explicit verified destination API authentication
+      ansible.builtin.include_tasks: tasks/cac-api-auth.yml
+
   tasks:
     - name: Prepare this target using its encrypted deployment requirements
       block:
@@ -33,16 +36,15 @@
                  aap_selected_use_case_prerequisites(aap_selected_use_cases) }}
           no_log: true
 
-        - name: Authenticate to the configured target
-          ansible.builtin.include_tasks: tasks/gateway-base-login.yml
-
-        - name: Use the temporary Gateway token for prerequisite preparation
-          ansible.builtin.set_fact:
-            aap_token: "{{ cac_gateway_token.json.token }}"
-          no_log: true
+        - name: Use an explicit native API session for prerequisite preparation
+          ansible.builtin.include_tasks: tasks/cac-api-session.yml
 
         - name: Prepare the declared collections and execution image
-          ansible.builtin.include_tasks: tasks/use-case-prerequisites.yml
+          ansible.builtin.include_tasks:
+            file: tasks/use-case-prerequisites.yml
+            apply:
+              no_log: true
+          no_log: true
       always:
         - name: Revoke the temporary token and remove the private checkout
           ansible.builtin.include_tasks: tasks/private-config-cleanup.yml

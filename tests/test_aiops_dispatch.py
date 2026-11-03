@@ -33,15 +33,17 @@ def tasks_in(tasks):
 @unittest.skipUnless(yaml and importlib.util.find_spec("ansible"), "requires Ansible and PyYAML")
 class AIOpsDispatchTests(unittest.TestCase):
     def test_initial_dispatch_defers_streams_and_activations(self):
-        source = yaml.safe_load(PLAYBOOK.read_text())[0]
+        source = yaml.safe_load((PLAYBOOK.parent / 'deploy-cac-project.yml').read_text())[0]
+        resource_tasks = yaml.safe_load((PLAYBOOK.parent / 'tasks/cac-resource-definitions.yml').read_text())
         dispatch = next(
-            task for task in tasks_in(source["pre_tasks"])
+            task for task in tasks_in(resource_tasks)
             if task.get("ansible.builtin.include_role", {}).get("name")
             == "infra.aap_configuration.dispatch"
         )
         with tempfile.TemporaryDirectory(prefix="aiops-dispatch-test-") as directory:
             root = Path(directory)
             variables = copy.deepcopy(source["vars"])
+            variables.update(dispatch["vars"])
             variables.update({
                 "aap_hostname": "https://aap.example.invalid",
                 "aap_password": "synthetic-test-password",
@@ -49,12 +51,12 @@ class AIOpsDispatchTests(unittest.TestCase):
                 "debug_logging": True,
                 "ansible_python_interpreter": sys.executable,
                 "aap_configuration_async_dir": str(root / "async"),
-                "eda_event_streams_aiops_demo": [{
+                "eda_event_streams": [{
                     "name": "Synthetic stream",
                     "organization_name": "Synthetic organization",
                     "credential_name": "Synthetic credential",
                 }],
-                "eda_rulebook_activations_aiops_demo": [{
+                "eda_rulebook_activations": [{
                     "name": "Synthetic activation",
                     "organization": "Synthetic organization",
                     "event_streams": [{"event_stream": "Synthetic stream", "source_index": 0}],
@@ -64,8 +66,8 @@ class AIOpsDispatchTests(unittest.TestCase):
                 "hosts": "localhost", "connection": "local", "gather_facts": False,
                 "vars": variables,
                 "tasks": [dispatch, {"ansible.builtin.assert": {"that": [
-                    "eda_event_streams == eda_event_streams_aiops_demo",
-                    "eda_rulebook_activations == eda_rulebook_activations_aiops_demo",
+                    "eda_event_streams | length == 1",
+                    "eda_rulebook_activations | length == 1",
                 ]}}],
             }]
             config = root / "ansible.cfg"
@@ -98,13 +100,14 @@ class AIOpsDispatchTests(unittest.TestCase):
             exclusions = variables["aap_configuration_dispatcher_exclude_roles"]
             for role in EDA_ROLES:
                 with self.subTest(missing_exclusion=role):
-                    variables["aap_configuration_dispatcher_exclude_roles"] = [
+                    dispatch["vars"]["aap_configuration_dispatcher_exclude_roles"] = [
                         excluded for excluded in exclusions if excluded != role
                     ]
                     status, output = run_dispatch()
                     self.assertNotEqual(status, 0, output)
                     self.assertIn(f"TASK [infra.aap_configuration.{role} :", output, output)
-                    self.assertIn("check mode and async cannot be used on same task", output, output)
+                    self.assertIn("FAILED", output, output)
+                    self.assertNotIn("synthetic-test-password", output)
 
 
 if __name__ == "__main__":

@@ -2,8 +2,9 @@
 
 AAP post-install configuration uses the `dispatch` role from `infra.aap_configuration`,
 the [Red Hat Communities of Practice AAP Configuration Collection](https://github.com/redhat-cop/infra.aap_configuration#readme).
-CoP means Community of Practice. `04-aap-config.yml`, `deploy-aiops-demo.yml`,
-and `restore-windows-config.yml` use this role to apply AAP object definitions.
+CoP means Community of Practice. `04-aap-config.yml`, the shared
+`deploy-cac-project.yml` importer and the legacy local-file restore utility use
+this collection to apply AAP object definitions.
 
 [PLAN.md](PLAN.md#todo) is the single current work list; completed items are at
 [Done:](PLAN.md#done). [README.md](README.md#current-implementation) describes the
@@ -14,7 +15,11 @@ alternative TODO list.
 
 The `dispatch` role auto-merges suffixed variables into base variables. With `dispatch_include_wildcard_vars: true`, it discovers all variables matching a pattern (e.g., `controller_templates_*`), merges them into `controller_templates`, and applies them through the appropriate service collection, including `ansible.controller` and `ansible.platform`.
 
-This lets us split configuration into logical files — one per project group — without writing any glue code. The dispatch role handles the merge and the module calls.
+Base configuration retains that wildcard mechanism. Project imports instead
+map only reviewed resource paths from their own encrypted metadata, disable
+wildcard merging and apply the common resource handlers. See the
+[shared importer](docs/cac-project-import.md) for API authentication and lifecycle
+boundaries; base bootstrap described below remains a separate operation.
 
 ## Target playbook (04-aap-config.yml)
 
@@ -70,78 +75,28 @@ bootstrap credentials, persistent MCP access and execution-environment requireme
 Fresh base and all five captured use-case imports have succeeded. Full workflow
 execution, recursive deployment and functional tests remain in the project TODO.
 
-## AIOps deployment after base
+## Project deployment after base
 
-The independent `deploy-aiops-demo.yml` loads the whole-file Vault-encrypted
-`cac/aiops_demo.yml` from the private repository's `main` branch. It takes the
-same explicit target URL, repository URL, and attached credentials as Step 04.
-It does not reapply base or import a subscription. Use the `_aiops_demo` suffix
-on the dispatch variables in this file. Each object has one defining file;
-shared dependencies are references to objects already installed by base.
+All five project Job Templates run `deploy-cac-project.yml` with their own fixed
+`aap_cac_project_id`. The project ID derives `<id>-secrets` and
+`vaults/cac/<id>-cac-vault.yml`; its owner comes from protected environment data.
+Each repository has a separate read token and Vault credential. Raw repository
+and file prompts are removed. The old five playbook filenames are thin aliases.
 
-The file must set `aiops_configuration_ready: true` after review and declare
-`aiops_required_secret_variables`, a list of required secret variable names.
-An incomplete capture keeps readiness false. Required variables must resolve to
-nonempty values; missing values and exported `$encrypted$` markers are rejected.
-Readiness and secret checks run before creating API tokens or applying objects.
+At launch choose `aap_instance_key` from the shared inventory and attach a native
+Red Hat Ansible Automation Platform credential for its exact `ansible_fqdn`.
+TLS verification is mandatory. Explicit bearer or username/password API
+requests run in the source execution environment. There is no SSH installer
+password fallback, source-token substitution or delegated AAP API operation.
+Self-target import is supported by the standalone driver.
 
-Declare the special EDA Controller credential using
-`aiops_eda_controller_credential_name` and `aiops_eda_organization_name`. Its entry
-in `eda_credentials_aiops_demo` uses the CoP item keys `organization` and
-`credential_type` (the built-in `Red Hat Ansible Automation Platform` type),
-`inputs.host` referencing the normalized `aap_hostname` plus `/api/controller`,
-and `inputs.oauth_token` referencing
-`aiops_controller_access_token`. The playbook supplies that token at runtime.
-Do not export or reuse the source AAP's token.
-
-If that target credential does not exist, the playbook creates a write-scope
-Gateway token, then immediately saves it in the new EDA credential. The token
-is persistent because activations need it after the configuration job exits.
-If the credential already exists, the playbook preserves it and checks its
-organization, type, normalized target URL, token presence, and other declared
-nonsecret settings. Drift requires review; a rerun does not rotate the token.
-The hidden token's validity cannot be inferred from its presence.
-
-That special credential is removed from the list passed to ordinary dispatch.
-This matters because `ansible.eda.credential` 2.13.0 requires `inputs` for updates
-and defaults to updating secrets; sending an exported encryption marker would
-not provide a valid new target token.
-
-CoP dispatch 4.10.0 includes an Event Stream role. Its data items expect
-`organization`, while our dedicated stream definitions use the module's
-`organization_name` field. Initial dispatch therefore excludes both
-`eda_event_streams` and `eda_rulebook_activations`, applying configuration in
-this order:
-
-1. Controller resources, EDA credentials, projects, and decision environments
-   through dispatch.
-2. Supplemental `ansible.eda.project` updates for projects declaring
-   `update_revision_on_launch`, preserving that setting and
-   `scm_update_cache_timeout`. CoP 4.10.0 omits these fields. The prerequisite
-   project must already exist; the supplemental task waits without another sync.
-3. `eda_event_streams_aiops_demo` through `ansible.eda.event_stream`.
-4. `eda_rulebook_activations_aiops_demo` through the CoP
-   `eda_rulebook_activations` role.
-
-Both lists must be nonempty. Every activation must map a defined Event Stream
-using `event_stream` and either `source_name` or `source_index`. The module
-resolves names into the new target's IDs and rulebook source metadata. Source
-instance IDs and stream UUIDs are not reused. Stream definitions use module
-fields `name`, `organization_name`, `credential_name`, optional
-`event_stream_type`, `headers`, `forward_events`, and `state`. Connecting external
-event publishers to the new stream URLs remains outside this AAP-only work.
-
-The temporary configuration token is revoked and the checkout removed after
-ordinary success or failure. A newly generated persistent EDA token is revoked
-only when an API lookup proves that no corresponding credential was saved.
-If that lookup fails, inspect the target before removing a potentially used
-token. Fatal Ansible role-loading errors or interruptions can skip cleanup.
-
-The entry point has completed live configuration imports, including fresh-target
-job 2260. It configures AAP objects; it does not deploy the external monitoring,
-website or assistant environment. Applying enabled EDA activations may start them.
-Functional tests remain separate. See
-[README.md](README.md#aiops-configuration-deployment) for inputs.
+The importer validates capture readiness, labels, required encrypted inputs,
+explicit resource mappings and declared lifecycle capabilities. It applies CoP
+configuration while preventing workload launches/schedules/deletions, creates
+group skeletons before relationships, applies complete EDA project settings,
+and creates new activation definitions disabled while preserving existing active
+states. Persistent tokens and masked secrets have explicit reuse/failure rules.
+See [the full procedure and data contract](docs/cac-project-import.md).
 
 ## Collection sources
 
@@ -189,11 +144,13 @@ and commented entries with generic placeholders. See [README.md](README.md)
 for the preparation, encryption, verification, and commit workflow. Stage 04
 loads only the shared `cac/base_CaC_vault.yml` from `main`; adding another encrypted
 file to the private repository does not automatically apply that demo. The
-separate `deploy-aiops-demo.yml` entry point loads only `cac/aiops_demo.yml`.
+separate `deploy-aiops-demo.yml` entry point loads only `vaults/cac/aiops-selfhealing-demo-cac-vault.yml`.
 
 ## Variable naming
 
-Each file uses a dispatch suffix on every variable. The suffix matches the project group name.
+Historical captures use project suffixes or nested resource lists. Project
+metadata explicitly maps those paths to canonical CoP resource names; only base
+bootstrap still discovers suffixed variables through wildcard merging.
 
 Prefixes follow the CoP convention: `aap_*` for platform-level objects (gateway-managed), `controller_*` for controller objects, `eda_*` for EDA, `hub_*` for Hub.
 
@@ -241,7 +198,7 @@ Fresh deployment and local PAH credentials have been verified. Use-case projects
 inventories, hosts, execution environments, templates and workflows belong to
 separate encrypted captures; their credentials are owned by those use cases.
 
-### aiops_demo.yml (current AIOps capture)
+### AIOps project capture
 
 The selected working demo has seven job templates and two active EDA rulebooks:
 agent remediation plus website enable/disable, outage, repair, and rearming.
@@ -276,7 +233,7 @@ scope decisions and incomplete use cases are tracked only in [PLAN.md](PLAN.md#t
 - Deploy Automation Orchestrator — OCP deployment with survey
 - Cleanup AAP after Orchestrator — removes OAuth2 apps for fresh redeploy
 
-### autodeploy.yml (5 JTs)
+### AutoDeploy project capture
 - 01 VM Setup, 02 Infra Config, 03 AAP Install, 04 AAP Config, Destroy VM v2
 - Various inventories and credentials per step
 - Most use Orchestrator EE

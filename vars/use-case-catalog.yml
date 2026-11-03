@@ -3,19 +3,23 @@
 aap_use_case_catalog:
   aap_autodeploy_configascode:
     template: Deploy AAP AutoDeploy Configuration
-    playbook: deploy-autodeploy.yml
+    playbook: deploy-cac-project.yml
+    project_id: aap_autodeploy_configascode
     configuration: base
   AIOps_selfhealing_demo:
     template: Deploy AIOps Self-Healing Configuration
-    playbook: deploy-aiops-demo.yml
+    playbook: deploy-cac-project.yml
+    project_id: aiops-selfhealing-demo
     configuration: aiops
   automation-orchestrator:
     template: Deploy Automation Orchestrator Configuration
-    playbook: deploy-orchestrator-demo.yml
+    playbook: deploy-cac-project.yml
+    project_id: automation-orchestrator
     configuration: orchestrator
   disconnected-windows-patching:
     template: Deploy Disconnected Windows Configuration
-    playbook: deploy-windows-demo.yml
+    playbook: deploy-cac-project.yml
+    project_id: disconnected-windows-patching
     configuration: windows_disconnected
   ServiceNow-ITSM-Integration:
     unavailable: No reviewed encrypted CaC capture and standalone importer is registered.

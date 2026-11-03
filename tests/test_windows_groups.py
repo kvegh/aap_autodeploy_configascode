@@ -34,13 +34,13 @@ class WindowsGroupTests(unittest.TestCase):
         if not role_file.is_file():
             self.skipTest("requires installed infra.aap_configuration")
         role_module = yaml.safe_load(role_file.read_text())[0]["block"][0]["ansible.controller.group"]
-        source = yaml.safe_load(PLAYBOOK.read_text())[0]
+        tasks = yaml.safe_load((PLAYBOOK.parent / 'tasks/cac-resource-definitions.yml').read_text())
+        source = tasks[0]
         self.assertIn("controller_host_groups", source["vars"]["aap_configuration_dispatcher_exclude_roles"])
-        tasks = source["pre_tasks"][-1]["block"]
         skeleton = next(task for task in tasks if task["name"] ==
-                        "Create all Windows inventory groups before adding memberships")
+                        "Create all group skeletons before establishing group relationships")
         membership = next(task for task in tasks if task["name"] ==
-                          "Apply the declared Windows inventory group memberships")
+                          "Link group relationships after every group skeleton exists")
         self.assertLess(tasks.index(skeleton), tasks.index(membership))
         self.assertEqual(membership["ansible.builtin.include_role"]["name"],
                          "infra.aap_configuration.controller_host_groups")
