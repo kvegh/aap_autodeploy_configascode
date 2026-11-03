@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Limit this phase to inventory placement and future upstream TLS — 2026-11-03
+
+Implementation `aaafed2` follows the owner's explicit stop boundary. Keep the
+instance name as a launch-time input and add per-hypervisor VM placement groups
+whose `hypervisor_host` variable resolves to an existing host in the shared
+inventory. Companion capture `e3a171b` preserves original variables and functional
+memberships. Existing aliases are retained to avoid colliding with service group
+names. Actual Ansible inventory parsing verified all nine mapped VM entries.
+Credential bindings, use-case execution, API delegation and replacement workflow
+implementation are deferred until credential management is agreed.
+
+The owner retained public UI/API access and prohibited production SSL changes.
+Future Stage 02 therefore publishes a temporary 503 frontend until installation
+provides the guest's public CA bundle through pinned SSH. Stage 03 verifies guest
+health against that installed authority, binds nginx to the selected hostname and
+CA, validates before reload and restores the prior instance configuration after
+a publication failure. The small standard-library probe verifies a private
+upstream address with its DNS certificate identity without changing DNS, global
+trust or sending API credentials.
+
+Eleven focused cases pass in both templating modes, including real TLS refusal
+paths, real Ansible publication/rollback and validation-before-reload ordering.
+Both nginx states pass in-memory syntax validation with the installed binary;
+the infrastructure/install entry points and full trust task syntax pass, as does
+scoped production lint. No existing proxy configuration or service was changed,
+and no deployment job or fresh VM installation was run.
+
 ## Keep selected setup's seed identity and trust separate from its target — 2026-11-02
 
 Implementation `0684007` fixes readiness failures found before the first selected

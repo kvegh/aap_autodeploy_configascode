@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.25.1
+
+Document implementation `aaafed2` and companion placement capture `e3a171b`:
+inventory inheritance is verified, future upstream TLS is checked before proxy
+publication, and existing deployments stay unchanged. Credential management is
+the next agreed decision; no workflow replacement or use-case execution ran.
+
 ## 0.25.0
 
 Add the shared host-inventory placement contract and encrypted capture example:
