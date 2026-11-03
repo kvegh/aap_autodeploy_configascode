@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.28.9
+
+Document registry-reader consolidation `328c982`, protected repository binding,
+171-test validation and the separately requested CMDB backlog item.
+
 ## 0.28.8
 
 Reuse the existing AutoDeploy CaC repository read credential for instance-registry

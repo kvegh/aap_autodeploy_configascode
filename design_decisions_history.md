@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Reuse the AutoDeploy CaC read token for registry reads — 2026-11-03
+
+Implementation `328c982` follows the owner's approval to replace the separate
+instance-registry reader with the existing AutoDeploy secrets repository read
+credential. The registry action uses `CAC_GIT_TOKEN` and derives its fixed
+repository from encrypted project runtime configuration, so launch variables
+cannot redirect the token. Preparation retains its saved repository pair and
+adds only the registered Machine credential. Existing ownership pins remain.
+
+The existing read token successfully read the current registry ciphertext.
+Real Ansible/Git fixtures verify encrypted configuration, rejected wrong keys,
+ignored launch namespace overrides and preserved host routing. The full suite
+passes 171 tests; production lint and source checks pass. Five live consumer
+definitions and companion dependencies follow the same credential selection.
+The allocation writer and token permissions are outside this change.
+
+The owner separately requires a real CMDB instead of the temporary Git/YAML
+registry. That requirement is tracked in `bead-wd-sc8` and the work plan; no CMDB
+product is selected or implemented by this change.
+
 ## Use the repository CaC Vault for registry encryption and decryption — 2026-11-03
 
 Implementation `eb6b214` follows the owner's explicit instruction to reuse
