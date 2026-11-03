@@ -349,6 +349,35 @@ class BootstrapCredentialTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, output)
         self.assertEqual(self.state["writes"], [])
 
+    def test_commented_example_parses_and_provisions_five_repository_pairs(self):
+        text = (ROOT / "cac/base_CaC_vault.yml.example").read_text()
+        block = text[
+            text.index("# cac_bootstrap_git_credentials:") : text.index(
+                "# Base sets selection"
+            )
+        ]
+        example = yaml.safe_load(
+            "\n".join(
+                line[2:] if line.startswith("# ") else line
+                for line in block.splitlines()
+            )
+        )
+        self.assertEqual(
+            set(example["cac_bootstrap_git_credentials"]),
+            set(self.variables["cac_bootstrap_git_credentials"]),
+        )
+        self.assertEqual(
+            set(example["cac_bootstrap_vault_credentials"]),
+            set(self.variables["cac_bootstrap_vault_credentials"]),
+        )
+        variables = copy.deepcopy(self.variables)
+        variables.update(example)
+        result, output = self.run_tasks(variables)
+        self.assertEqual(result.returncode, 0, output)
+        self.assertEqual(
+            len([x for kind, x in self.state["writes"] if kind == "credentials"]), 10
+        )
+
     def test_absent_bootstrap_remains_optional_for_generic_base(self):
         variables = {
             key: value

@@ -577,6 +577,11 @@ Each Vault entry supplies its name, `vault_id: cac`, and protected password.
 When bootstrap is configured, all five pairs are required. Existing hidden
 secrets are preserved on reruns; rotation and rekeying are separate operations.
 Both mappings may be omitted when replacement-access bootstrap is not wanted.
+The production and existing fresh-instance credential names, grants and bindings
+were verified after migration. Configuration templates keep their own repository
+pair; runtime credentials and unrelated template settings stay unchanged. This
+maintenance leaves current registry routing intact. Inventory-driven destination
+lookup and target API-credential redesign remain pending.
 
 `Cac_git_token_type` is the reusable custom schema, not a credential containing a
 token. Its `CAC_GIT_TOKEN` injector lets playbooks download private encrypted CaC.

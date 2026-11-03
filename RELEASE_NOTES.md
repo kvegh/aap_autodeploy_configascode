@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.26.1
+
+Document repository-bound access implementation `7e5f672` and capture `4ab587f`.
+Correct the commented bootstrap example to five complete pairs and execute it
+against the local fixture in both native modes. Live production/fresh-instance
+checks preserve grants, metadata, existing inputs and all unrelated bindings;
+no imports or deployment jobs ran. Historical audit names remain evidence only.
+
 ## 0.26.0
 
 Bootstrap five repository-specific Git/Vault pairs with canonical names and

@@ -32,22 +32,46 @@ hub_collection_remotes_base: []
 hub_collection_repositories_base: []
 pah_base: {}
 
-# Optional replacement-access bootstrap: retain the complete required base,
-# assistant_team, windows_disconnected and orchestrator entries plus the cac-ID
-# Vault input when using this feature. Add aiops for its private companion repo.
+# Optional replacement-access bootstrap: when configured, include every pair.
+# Each repository has its own Git read-token entry and CaC Vault entry.
+# Replace placeholders only in the encrypted populated configuration.
 # cac_bootstrap_git_credentials:
-#   base: {token: BASE_REPOSITORY_READ_TOKEN_PLACEHOLDER}
-#   assistant_team: {token: ASSISTANT_REPOSITORY_READ_TOKEN_PLACEHOLDER}
-#   windows_disconnected: {token: WINDOWS_REPOSITORY_READ_TOKEN_PLACEHOLDER}
-#   orchestrator: {token: ORCHESTRATOR_REPOSITORY_READ_TOKEN_PLACEHOLDER}
+#   base:
+#     aap_credential_name: aap_autodeploy_configascode-secrets CaC repo read token
+#     token: BASE_REPOSITORY_READ_TOKEN_PLACEHOLDER
+#   assistant_team:
+#     aap_credential_name: assistant-team-secrets CaC repo read token
+#     token: ASSISTANT_TEAM_REPOSITORY_READ_TOKEN_PLACEHOLDER
+#   windows_disconnected:
+#     aap_credential_name: disconnected-windows-patching-secrets CaC repo read token
+#     token: WINDOWS_DISCONNECTED_REPOSITORY_READ_TOKEN_PLACEHOLDER
+#   orchestrator:
+#     aap_credential_name: automation-orchestrator-secrets CaC repo read token
+#     token: ORCHESTRATOR_REPOSITORY_READ_TOKEN_PLACEHOLDER
 #   aiops:
-#     aap_credential_name: AIOps CaC Git Read
+#     aap_credential_name: aiops-selfhealing-demo-secrets CaC repo read token
 #     token: AIOPS_REPOSITORY_READ_TOKEN_PLACEHOLDER
 # cac_bootstrap_vault_credentials:
-#   cac:
-#     name: CAC_VAULT_CREDENTIAL_PLACEHOLDER
+#   base:
+#     name: aap_autodeploy_configascode-secrets CaC vault cred
 #     vault_id: cac
-#     vault_password: CAC_VAULT_PASSWORD_PLACEHOLDER
+#     vault_password: BASE_CAC_VAULT_PASSWORD_PLACEHOLDER
+#   assistant_team:
+#     name: assistant-team-secrets CaC vault cred
+#     vault_id: cac
+#     vault_password: ASSISTANT_TEAM_CAC_VAULT_PASSWORD_PLACEHOLDER
+#   windows_disconnected:
+#     name: disconnected-windows-patching-secrets CaC vault cred
+#     vault_id: cac
+#     vault_password: WINDOWS_DISCONNECTED_CAC_VAULT_PASSWORD_PLACEHOLDER
+#   orchestrator:
+#     name: automation-orchestrator-secrets CaC vault cred
+#     vault_id: cac
+#     vault_password: ORCHESTRATOR_CAC_VAULT_PASSWORD_PLACEHOLDER
+#   aiops:
+#     name: aiops-selfhealing-demo-secrets CaC vault cred
+#     vault_id: cac
+#     vault_password: AIOPS_CAC_VAULT_PASSWORD_PLACEHOLDER
 
 # Base sets selection/snapshot limits without synchronizing or deleting content.
 # Release pruning separately preserves the newest installed release and audited

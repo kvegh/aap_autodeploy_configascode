@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Bind configuration access to each repository — 2026-11-03
+
+Implementation `7e5f672` and encrypted capture `4ab587f` replace the shared-entry
+bootstrap with five independently named read-token/Vault pairs. Production
+readers were renamed in place; the existing base Vault entry was retained and
+four repository Vault entries were added with the same ownership/grant boundary.
+The four use-case importers now bind their own Vault, while base stages, catalog
+and extractor retain base access. The existing fresh instance has all five pairs
+without changing runtime Vaults, registry access, token inputs or credential types.
+All fourteen affected production template assignments, role grants, workflow
+nodes, schedules and surveys were verified. Actual selector checks pass for every
+importer and preparation using the encrypted pins. Eight bootstrap checks and ten
+selector checks cover both native modes; generic regression checks and impacted
+production lint pass. No import, deployment, rekey or target API redesign ran.
+The corrected commented example provisions all five pairs in the local fixture.
+The encrypted migration record preserves genuine before/after evidence; historical
+names there do not define current bindings. Future multi-repository extraction
+key routing is tracked separately as `bead-wd-72f.2`.
+
 ## Store the API DNS name explicitly in inventory — 2026-11-03
 
 Source documentation `9003fb4` and companion capture `720710d` define an explicit
