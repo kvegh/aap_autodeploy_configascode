@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.28.11
+
+Document writer-type implementation `64a197e`, 173-test validation and Controller
+restrictions on changing credential types with job history. Describe the required
+approval for a production replacement while retaining historical credentials.
+
 ## 0.28.10
 
 Use the existing `Cac_git_token_type` for the separate allocation writer and its

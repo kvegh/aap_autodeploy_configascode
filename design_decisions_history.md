@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Use the existing Git type with a distinct writer token — 2026-11-03
+
+Implementation `64a197e` follows the owner's decision to use `Cac_git_token_type`
+for the separate allocation writer, with the replacement write token supplied
+in encrypted shared base. Repository readers keep their own read-only tokens.
+The writer uses `CAC_GIT_TOKEN`; allocation and extraction read the fixed
+repository URL from encrypted project runtime configuration using the same
+protected naming rule as registry reads. Launch variables cannot redirect it.
+The extraction template therefore also needs its existing environment Vault.
+Obsolete writer environment names and the old host-registry token fallback are
+removed. No wrapper, extra credential type or repository permission is added.
+
+All 173 regression tests and changed-playbook production lint pass. Actual
+GitHub write-service authorization accepts the writer and refuses the reader
+without changing repository state. Native fixtures cover concurrent encrypted
+reservations, check mode, launch overrides, wrong Vault keys and secret logging.
+The existing test-controller writer changed type in place, preserving its ID,
+other objects and grants. Production rejects changing a credential's type when
+it has job history; such a migration requires an approved replacement with
+active assignments updated and the original credential retained for history.
+The owner must approve creating that replacement. No VM or use-case job is run.
+
 ## Reuse the AutoDeploy CaC read token for registry reads — 2026-11-03
 
 Implementation `328c982` follows the owner's approval to replace the separate
