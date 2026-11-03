@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.28.7
+
+Document shared-registry Vault implementation `eb6b214`, the unchanged registry
+ciphertext and the owner-approved reuse of the repository CaC credential.
+
 ## 0.28.6
 
 Reuse the AutoDeploy secrets repository's existing CaC Vault credential for

@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Use the repository CaC Vault for registry encryption and decryption — 2026-11-03
+
+Implementation `eb6b214` follows the owner's explicit instruction to reuse
+`aap_autodeploy_configascode-secrets CaC vault cred` for the instance registry.
+Preparation retains that saved credential and adds only the registry reader
+and pinned Machine credential. The selector no longer selects a separate
+registry Vault. Existing repository-pair ownership checks remain in place.
+
+The maintained shared password decrypts the current registry without changing
+its ciphertext or reservation history. Real Ansible/Git fixtures read a registry
+with only its `cac` key and refuse an unrelated key. Forty-nine focused checks,
+selector syntax and production lint pass. Companion configuration stops creating
+or attaching the redundant Vault entry. No credential object is deleted and no
+key is rotated; custom Git credential types remain unchanged.
+
 ## Use direct project selection and explicit CaC deployment names — 2026-11-03
 
 Implementation `b5fb34b` removes the five unused wrapper playbooks. The owner
