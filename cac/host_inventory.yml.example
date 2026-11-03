@@ -1,0 +1,24 @@
+---
+# Populated values belong only in the encrypted shared configuration repository.
+host_inventory_schema_version: 1
+host_inventory_configuration:
+  inventories:
+    - name: ALL_HOSTS_INVENTORY_PLACEHOLDER
+      organization: ORGANIZATION_PLACEHOLDER
+      variables: '{}'
+  hosts:
+    - name: HYPERVISOR_ALIAS_PLACEHOLDER
+      inventory: ALL_HOSTS_INVENTORY_PLACEHOLDER
+      variables: '{}'
+    - name: INSTANCE_NAME_PLACEHOLDER
+      inventory: ALL_HOSTS_INVENTORY_PLACEHOLDER
+      variables: '{}'
+  groups:
+    - name: vms_on_hypervisor_a
+      inventory: ALL_HOSTS_INVENTORY_PLACEHOLDER
+      variables:
+        hypervisor_host: HYPERVISOR_ALIAS_PLACEHOLDER
+      hosts: [INSTANCE_NAME_PLACEHOLDER]
+      children: []
+      preserve_existing_hosts: true
+      preserve_existing_children: true

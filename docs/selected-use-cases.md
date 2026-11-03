@@ -33,6 +33,26 @@ source remains separate. The shared catalog and completed-instance registry
 continue to use the base configuration repository; changing the AIOps capture
 repository must not retarget either shared input.
 
+## Target inventory mapping and current implementation boundary
+
+Keep the exact instance name as the launch-time `aap_instance_key` input.
+The shared all-hosts inventory has separate VM placement groups, each carrying
+`hypervisor_host` as a group variable. Its value names an existing hypervisor
+host in that same inventory. VM hosts join one placement group while retaining
+their functional groups and existing host variables. Hypervisor hosts themselves
+are not members of these VM groups. Existing aliases are retained rather than
+renamed into names already used by service groups.
+
+The protected definitions live in encrypted `cac/host_inventory.yml` in the
+shared private configuration repository. Literal inventory variables survive
+Vault serialization. A public structural example is
+[`cac/host_inventory.yml.example`](../cac/host_inventory.yml.example).
+
+This addition establishes inventory data and preserves the current target
+prompt. It does not switch existing launchers away from their registry route,
+change credential bindings, introduce API delegation or implement a replacement
+workflow. Credential selection must be agreed before connecting that next stage.
+
 ## Invocation
 
 ```sh

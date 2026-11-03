@@ -31,6 +31,16 @@ observer waits for the same ceiling without starting another installer. Set the
 installation Job Template timeout to three hours to leave room for host
 preparation and final health checks.
 
+Future installations publish a TLS frontend that returns a temporary 503 until
+the installer supplies its upstream CA through the authenticated guest SSH
+connection. Stage 03 verifies the installed Gateway, copies that public CA bundle
+to the selected hypervisor and validates the upstream hostname before publishing
+the proxy with certificate verification and SNI enabled. Configuration validation
+precedes reload, with rollback on publication failure. This code changes no
+existing deployment unless its installation stage is explicitly run.
+See the [upstream TLS lifecycle](docs/aap-upstream-tls.md) for the bootstrap,
+verification, rollback and validation boundaries.
+
 Recovery Stage 01 now uses a [shared encrypted name reservation](docs/shared-instance-allocation.md)
 before any image write, with a pinned hypervisor and live isolation checks.
 The isolation guard keeps its original bridge/DNS policy unless the inventory
@@ -232,6 +242,10 @@ normal target TLS trust remain separate. Exact reviewed source-only credential
 pins preserve existing global associations; route credentials still require
 organization ownership. Source/target API prechecks and temporary-token cleanup
 have passed; a live selected-use-case import remains unperformed.
+The shared host inventory now has per-hypervisor VM placement groups carrying
+`hypervisor_host`. Its encrypted capture preserves existing aliases, variables
+and functional memberships. The launch-time instance input remains required;
+credential management and workflow replacement remain the next design step.
 
 ```mermaid
 flowchart LR

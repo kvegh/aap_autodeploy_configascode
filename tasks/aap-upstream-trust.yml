@@ -1,0 +1,125 @@
+---
+- name: Read the installed public CA bundle through the pinned guest SSH connection
+  ansible.builtin.slurp:
+    src: "{{ aap_installer_ca_path }}"
+  register: aap_installed_upstream_ca
+  no_log: true
+
+- name: Publish the installed authority on this instance's own hypervisor
+  delegate_to: "{{ aap_instance_route.hypervisor.address }}"
+  become: true
+  become_user: root
+  vars:
+    ansible_connection: ssh
+    ansible_host: "{{ aap_instance_route.hypervisor.address }}"
+    ansible_user: "{{ aap_instance_route.hypervisor.user }}"
+    ansible_port: "{{ aap_instance_route.hypervisor.port }}"
+    ansible_password: ''
+    ansible_become_password: ''
+    ansible_ssh_common_args: >-
+      -o StrictHostKeyChecking=yes
+      -o UserKnownHostsFile={{ hostvars['localhost'].aap_instance_trust.path | quote }}
+    aap_test_subdomain: "{{ vm_name }}"
+  block:
+    - name: Require the registered hypervisor before writing its proxy configuration
+      ansible.builtin.command:
+        argv: [cat, /etc/machine-id]
+      register: aap_proxy_hypervisor_identity
+      changed_when: false
+      failed_when: aap_proxy_hypervisor_identity.stdout | trim != aap_instance_route.hypervisor.machine_id
+      no_log: true
+
+    - name: Create a directory for instance-specific public upstream authorities
+      ansible.builtin.file:
+        path: /etc/nginx/aap-upstreams
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Install this guest's authenticated public CA bundle
+      ansible.builtin.copy:
+        content: "{{ aap_installed_upstream_ca.content | b64decode }}"
+        dest: "/etc/nginx/aap-upstreams/{{ vm_name }}.pem"
+        owner: root
+        group: root
+        mode: '0644'
+      no_log: true
+      diff: false
+
+    - name: Verify upstream TLS and hostname using only the installed authority
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - "{{ lookup('ansible.builtin.file', 'files/verify_aap_upstream.py') }}"
+          - "{{ vm_ip }}"
+          - "{{ vm_name }}.{{ vault_domain }}"
+          - "/etc/nginx/aap-upstreams/{{ vm_name }}.pem"
+      register: aap_upstream_tls_check
+      changed_when: false
+      failed_when: false
+      no_log: true
+
+    - name: Refuse proxy publication when the upstream certificate is not trusted
+      ansible.builtin.assert:
+        that:
+          - aap_upstream_tls_check.rc == 0
+          - (aap_upstream_tls_check.stdout | from_json).verified | bool
+        fail_msg: The installed upstream CA, certificate identity or TLS connection could not be verified.
+
+    - name: Validate and reload only the verified instance proxy
+      block:
+        - name: Render the instance proxy with required upstream certificate verification
+          ansible.builtin.template:
+            src: templates/nginx-aap-test.conf.j2
+            dest: "/etc/nginx/conf.d/{{ vm_name }}.conf"
+            owner: root
+            group: root
+            mode: '0644'
+            backup: true
+          vars:
+            aap_upstream_ready: true
+          register: aap_verified_proxy
+          no_log: true
+          diff: false
+
+        - name: Validate the complete nginx configuration before reload
+          ansible.builtin.command:
+            argv: [/usr/sbin/nginx, -t]
+          changed_when: false
+
+        # Keep reload in this block so a failure triggers its configuration rollback.
+        - name: Reload the verified instance proxy # noqa: no-handler
+          ansible.builtin.systemd:
+            name: nginx
+            state: reloaded
+          when: aap_verified_proxy.changed
+
+      rescue:
+        - name: Restore the previous instance configuration after a publication failure
+          ansible.builtin.copy:
+            src: "{{ aap_verified_proxy.backup_file }}"
+            dest: "/etc/nginx/conf.d/{{ vm_name }}.conf"
+            remote_src: true
+            owner: root
+            group: root
+            mode: '0644'
+          when: aap_verified_proxy.backup_file is defined
+          no_log: true
+          diff: false
+
+        - name: Check the restored configuration without ignoring failures
+          ansible.builtin.command:
+            argv: [/usr/sbin/nginx, -t]
+          changed_when: false
+
+        - name: Reload the restored instance configuration
+          ansible.builtin.systemd:
+            name: nginx
+            state: reloaded
+          when: aap_verified_proxy.backup_file is defined
+
+        - name: Report the failed verified proxy publication
+          ansible.builtin.fail:
+            msg: Verified upstream publication failed; the previous instance configuration was restored where available.

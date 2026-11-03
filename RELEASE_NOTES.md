@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.25.0
+
+Add the shared host-inventory placement contract and encrypted capture example:
+each VM group carries `hypervisor_host`, resolving to an existing inventory host.
+Keep the instance name as a required launch-time input. Preserve existing host
+variables and functional groups; credential selection and workflow redesign
+remain deferred.
+
+For new AAP installations, hold the public TLS frontend at 503 until the
+installer supplies its CA through pinned SSH. Verify guest health against that
+authority, verify the upstream hostname, then enable nginx chain/name/SNI checks
+with validation and rollback before public health verification. Eleven focused TLS,
+template and real-Ansible publication/rollback tests pass in each templating
+mode; both nginx states pass in-memory syntax validation. Production SSL and
+existing deployments were not modified, and no deployment job was launched.
+
 ## 0.24.4
 
 Document selected setup readiness implementation `0684007`, its scoped seed

@@ -134,6 +134,11 @@
         dest: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
         mode: "0644"
 
+    - name: Validate the temporary HTTP config before reload
+      ansible.builtin.command:
+        argv: [/usr/sbin/nginx, -t]
+      changed_when: false
+
     - name: Reload nginx for HTTP config
       ansible.builtin.systemd:
         name: nginx
@@ -159,14 +164,22 @@
           --non-interactive
         creates: "/etc/letsencrypt/live/{{ aap_test_subdomain }}.{{ vault_domain }}/fullchain.pem"
 
-    - name: Deploy full SSL nginx reverse proxy config
+    - name: Deploy the TLS frontend pending authenticated installer trust
       ansible.builtin.template:
         src: templates/nginx-aap-test.conf.j2
         dest: "/etc/nginx/conf.d/{{ aap_test_subdomain }}.conf"
         mode: "0644"
+      vars:
+        aap_upstream_ready: false
       notify: Reload nginx
 
   handlers:
+    - name: Validate nginx before the TLS frontend reload
+      ansible.builtin.command:
+        argv: [/usr/sbin/nginx, -t]
+      changed_when: false
+      listen: Reload nginx
+
     - name: Reload nginx
       ansible.builtin.systemd:
         name: nginx
