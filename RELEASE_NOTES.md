@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.30.0
+
+Allow a successful installation's remaining TLS verification and nginx publication
+to be retried with the `aap_upstream_tls` tag. Always retain registered-target
+selection and pinned SSH setup; exclude preparation, installer execution and the
+temporary async-result observer. Full untagged installation remains unchanged.
+Add an opt-in diagnostic result for the non-secret hypervisor identity command.
+Validate tag selection with actual Ansible task listing, plus existing real TLS,
+nginx rendering and rollback tests.
+
 ## 0.29.2
 
 Accept libvirt-generated disk-index metadata during decommission ownership

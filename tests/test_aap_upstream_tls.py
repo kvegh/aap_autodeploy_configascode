@@ -118,6 +118,39 @@ class ProxyTemplateTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec("ansible"), "requires installed Ansible")
 class ProxyPublicationTests(unittest.TestCase):
+    def test_upstream_retry_keeps_routing_and_omits_installation(self):
+        plays = yaml.safe_load((ROOT / "03-aap-install.yml").read_text())
+        with tempfile.TemporaryDirectory(prefix="upstream-retry-tags-") as directory:
+            workspace = Path(directory)
+            for play in plays:
+                play.pop("vars_files", None)
+                play.setdefault("vars", {}).update(vault_aap_install_user="synthetic_installer")
+            path = workspace / "play.yml"
+            path.write_text(yaml.safe_dump(plays, sort_keys=False))
+            environment = dict(os.environ, ANSIBLE_NOCOLOR="1",
+                ANSIBLE_LOCAL_TEMP=str(workspace / "local"),
+                ANSIBLE_ACTION_PLUGINS=str(ROOT / "action_plugins"),
+                ANSIBLE_LIBRARY=str(ROOT / "library"))
+            command = [sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,target_vm,",
+                       str(path), "--list-tasks"]
+            full = subprocess.run(command, env=environment, cwd=ROOT,
+                                  capture_output=True, text=True, timeout=60)
+            retry = subprocess.run(command + ["--tags", "aap_upstream_tls"], env=environment,
+                                   cwd=ROOT, capture_output=True, text=True, timeout=60)
+            self.assertEqual(full.returncode, 0, full.stdout + full.stderr)
+            self.assertEqual(retry.returncode, 0, retry.stdout + retry.stderr)
+            self.assertIn("Run AAP installer", full.stdout)
+            self.assertIn("Wait for the existing installer result", full.stdout)
+            self.assertNotIn("Run AAP installer", retry.stdout)
+            self.assertNotIn("Wait for the existing installer result", retry.stdout)
+            self.assertNotIn("Grow root filesystem", retry.stdout)
+            for name in ("Select the registered instance before any guest connection",
+                         "Prepare strict guest trust through the pinned hypervisor",
+                         "Verify the installed Gateway against its authenticated local CA",
+                         "Publish only a verified upstream after successful installation",
+                         "Verify the public Gateway through the trusted proxy"):
+                self.assertIn(name, retry.stdout)
+
     def test_frontend_reload_is_stopped_by_failed_nginx_validation(self):
         handlers = copy.deepcopy(yaml.safe_load((ROOT / "02-infra-config.yml").read_text())[0]["handlers"])
         with tempfile.TemporaryDirectory(prefix="proxy-handler-order-") as directory:

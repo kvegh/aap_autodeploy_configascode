@@ -60,6 +60,13 @@ precedes reload, with rollback on publication failure. This code changes no
 existing deployment unless its installation stage is explicitly run.
 See the [upstream TLS lifecycle](docs/aap-upstream-tls.md) for the bootstrap,
 verification, rollback and validation boundaries.
+After an independently verified successful installation, the `aap_upstream_tls`
+tag retries only trusted Gateway verification and proxy publication. Registered
+target selection and pinned SSH setup always run; host preparation, the installer
+and its temporary async-result observer are excluded. Normal untagged Stage 03
+still runs the complete installation. The narrowly scoped
+`aap_proxy_identity_diagnostics: true` option reveals only the hypervisor
+machine-ID command result when diagnosing its connection; it defaults to false.
 
 Recovery Stage 01 now uses a [shared encrypted name reservation](docs/shared-instance-allocation.md)
 before any image write, with a pinned hypervisor and live isolation checks.

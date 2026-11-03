@@ -25,6 +25,22 @@ nginx configuration must validate before reload. Publication failure restores
 the prior instance configuration and checks it before reloading. Successful
 publication is followed by a certificate-verified public API health check.
 
+When installation has already succeeded and only proxy publication failed, run
+Stage 03 with the Ansible tag `aap_upstream_tls`. The initial registered-instance
+selection and SSH trust tasks carry `always`; the tag then runs installed Gateway
+CA verification, authority publication and public verification. It excludes all
+preparation, installation and async-observer tasks. Confirm the original installer
+returned zero before using this retry; an expired or cleaned async result is not
+a reason to repeat installation. An ordinary untagged launch keeps the complete
+installation behavior.
+
+For a failed hypervisor identity command, the temporary variable
+`aap_proxy_identity_diagnostics: true` exposes that command's native result. Its
+only command is `cat /etc/machine-id`; it has no secret arguments. Other secret
+tasks remain protected, and this option defaults to false. Remove the diagnostic
+variable and restore the Job Template's usual verbosity and tags after checking
+the outcome.
+
 Infrastructure SSH here installs nginx trust; use-case API tasks continue to
 use public HTTPS. This adds no API delegation, execution node or credential
 selection mechanism. Existing deployments and production SSL were not changed

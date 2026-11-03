@@ -27,7 +27,7 @@
       register: aap_proxy_hypervisor_identity
       changed_when: false
       failed_when: aap_proxy_hypervisor_identity.stdout | trim != aap_instance_route.hypervisor.machine_id
-      no_log: true
+      no_log: "{{ not (aap_proxy_identity_diagnostics | default(false) | bool) }}"
 
     - name: Create a directory for instance-specific public upstream authorities
       ansible.builtin.file:

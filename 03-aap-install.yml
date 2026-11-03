@@ -2,6 +2,7 @@
 - name: "Add target VM to inventory"
   hosts: localhost
   gather_facts: false
+  tags: [always]
   vars_files:
     - myvars
   tasks:
@@ -210,6 +211,7 @@
               Inspect its protected logs before retrying installation.
 
     - name: Verify the installed Gateway against its authenticated local CA
+      tags: [aap_upstream_tls]
       ansible.builtin.uri:
         url: "{{ aap_hostname }}/api/controller/v2/ping/"
         ca_path: "{{ aap_installer_ca_path }}"
@@ -221,9 +223,14 @@
       until: aap_ping.status == 200
 
     - name: Publish only a verified upstream after successful installation
-      ansible.builtin.include_tasks: tasks/aap-upstream-trust.yml
+      ansible.builtin.include_tasks:
+        file: tasks/aap-upstream-trust.yml
+        apply:
+          tags: [aap_upstream_tls]
+      tags: [aap_upstream_tls]
 
     - name: Verify the public Gateway through the trusted proxy
+      tags: [aap_upstream_tls]
       ansible.builtin.uri:
         url: "{{ aap_hostname }}/api/controller/v2/ping/"
         validate_certs: true
@@ -236,6 +243,7 @@
       register: aap_public_ping
 
     - name: Require an actual Controller response through the verified upstream
+      tags: [aap_upstream_tls]
       ansible.builtin.assert:
         that:
           - aap_public_ping.json.version is defined
