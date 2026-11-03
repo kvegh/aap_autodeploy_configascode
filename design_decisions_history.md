@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Verify configuration import separately from application execution — 2026-11-03
+
+Rendering implementation `617fd15` and native TLS-input fix `f4c5b5b`, together
+with an explicit native API request timeout and the existing reviewed PAH
+prerequisite preparation, allow the AIOps configuration import to finish on a
+fresh recovery controller. The prerequisite stage supplies only the approved
+collection pins and retains existing content. Independent target API readback
+checks the declared Controller and EDA resources, successful project syncs and
+both activation definitions disabled.
+
+This result establishes configuration deployment. It does not establish functional
+remediation: the importer launches no application Job Template or activation.
+Existing supplied API credentials and persistent EDA Controller access tokens
+remain in place. No new deployment architecture or security exception is needed
+for these focused corrections.
+
 ## Preserve native credential TLS flags in registered-instance checks — 2026-11-03
 
 Implementation `f4c5b5b` converts the native credential's Verify SSL

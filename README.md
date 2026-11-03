@@ -830,6 +830,12 @@ activation definitions disabled. Existing activation states and stored Controlle
 access tokens are preserved; mismatches require review. No imported demo Job
 Template or explicit activation action is launched.
 
+The configuration import has been verified on a fresh recovery controller after
+the reviewed prerequisite preparation. Independent API readback checked all
+declared Controller and EDA objects, successful Controller project syncs and both
+activation definitions remaining disabled. This verifies configuration deployment;
+application execution and end-to-end remediation remain separate checks.
+
 ### Disconnected Windows configuration deployment
 
 Choose the Windows configuration Job Template, which fixes

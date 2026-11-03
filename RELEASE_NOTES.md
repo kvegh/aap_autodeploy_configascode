@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.28.18
+
+Document successful live AIOps configuration import after the reviewed PAH
+prerequisite preparation. Independently verify declared Controller and EDA
+resources, project synchronization and disabled activation definitions. The
+importer launches no application job or activation. Record the focused rendering,
+request-timeout and TLS-input corrections that made the import complete.
+
 ## 0.28.17
 
 Document native TLS normalization `f4c5b5b`, the typed request-timeout
