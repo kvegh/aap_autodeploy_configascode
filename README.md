@@ -247,7 +247,8 @@ Job Template selects the common importer and fixes its project ID in extra varia
 `restore-windows-config.yml` remains a local-file utility.
 `destroy-test-aap.yml` backs **Decommission AAP Test Instance**, with explicit
 instance confirmation, pinned recovery identity and exact disk/DNS/TLS/nginx cleanup, related versioned guests and an orphaned DNS
-scan. Active source inventory/API state is retired without reusing its number. Previous successful
+scan. Disk ownership checks accept libvirt's generated disk-index metadata while
+requiring the exact single file-backed disk. Active source inventory/API state is retired without reusing its number. Previous successful
 imports below are historical evidence, not claims that this new importer has run
 against a target.
 

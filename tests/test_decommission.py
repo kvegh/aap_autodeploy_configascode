@@ -43,6 +43,7 @@ class DecommissionTests(unittest.TestCase):
         disk = '<disk device="disk"><source file="/opt/vms/aap27-test-7.disk.qcow2"/></disk>'
         xml = '<domain><name>aap27-test-7</name><devices>' + disk + '</devices></domain>'
         self.assertTrue(retire.domain_matches(xml, expected))
+        self.assertTrue(retire.domain_matches(xml.replace('<source file=', '<source index="1" file='), expected))
         self.assertFalse(retire.domain_matches(xml.replace('</devices>', disk + '</devices>'), expected))
         self.assertFalse(retire.domain_matches(xml.replace('aap27-test-7.disk', 'production.disk'), expected))
         self.assertFalse(retire.domain_matches(xml.replace('<name>aap27-test-7', '<name>production'), expected))

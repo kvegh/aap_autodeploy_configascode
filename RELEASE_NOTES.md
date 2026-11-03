@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.29.2
+
+Accept libvirt-generated disk-index metadata during decommission ownership
+checks while retaining exact file-path, single-disk and related UUID validation.
+The first live preview stopped safely on this normal metadata before deletion;
+five focused ownership/DNS/naming tests pass.
+
 ## 0.29.1
 
 Document the shared token, numbered naming and decommissioning decisions with

@@ -44,7 +44,8 @@ def domain_matches(xml, expected):
         disks = root.findall("./devices/disk[@device='disk']")
         sources = [disk.find("source") for disk in disks]
         return (root.findtext("name") == expected["name"] and len(disks) == 1
-                and sources[0] is not None and sources[0].attrib == {"file": expected["disk"]}
+                and sources[0] is not None and sources[0].get("file") == expected["disk"]
+                and set(sources[0].attrib) <= {"file", "index"}
                 and (expected.get("primary", True) or
                      (expected.get("uuid") and root.findtext("uuid") == expected["uuid"])))
     except ET.ParseError:
