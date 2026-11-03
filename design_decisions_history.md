@@ -1,5 +1,17 @@
 # Design decisions history
 
+## Retry verified upstream publication without repeating installation — 2026-11-03
+
+Implementation `ec1aed8` adds the `aap_upstream_tls` tag after the vendor installer
+had independently returned zero and its installed Gateway passed a trusted local
+HTTPS check, but proxy publication failed. The initial route selection and pinned
+SSH setup always run. The tag excludes preparation, installation and the async
+observer; untagged installation retains all phases. A real Ansible task-listing
+fixture verifies this separation alongside existing TLS and rollback tests.
+
+Only the non-secret machine-ID command has an opt-in diagnostic result. All
+credential-handling tasks remain protected and diagnostics default to disabled.
+
 ## Verify configuration import separately from application execution — 2026-11-03
 
 Rendering implementation `617fd15` and native TLS-input fix `f4c5b5b`, together

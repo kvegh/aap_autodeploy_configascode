@@ -67,6 +67,8 @@ and its temporary async-result observer are excluded. Normal untagged Stage 03
 still runs the complete installation. The narrowly scoped
 `aap_proxy_identity_diagnostics: true` option reveals only the hypervisor
 machine-ID command result when diagnosing its connection; it defaults to false.
+Delegated SSH connection settings explicitly read the selected guest's saved
+route, because Ansible evaluates connection variables against the delegated host.
 
 Recovery Stage 01 now uses a [shared encrypted name reservation](docs/shared-instance-allocation.md)
 before any image write, with a pinned hypervisor and live isolation checks.

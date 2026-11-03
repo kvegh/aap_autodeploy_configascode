@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.30.1
+
+Fix delegated proxy publication when the selected route exists only on its guest
+inventory entry. Read SSH address, account and port from that original entry
+explicitly; preserve hypervisor identity checks and strict host-key validation.
+Exercise the actual delegated SSH variable resolution with an isolated native
+Ansible fixture that provides no route on the delegated host.
+
 ## 0.30.0
 
 Allow a successful installation's remaining TLS verification and nginx publication

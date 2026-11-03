@@ -11,9 +11,9 @@
   become_user: root
   vars:
     ansible_connection: ssh
-    ansible_host: "{{ aap_instance_route.hypervisor.address }}"
-    ansible_user: "{{ aap_instance_route.hypervisor.user }}"
-    ansible_port: "{{ aap_instance_route.hypervisor.port }}"
+    ansible_host: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.address }}"
+    ansible_user: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.user }}"
+    ansible_port: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.port }}"
     ansible_password: ''
     ansible_become_password: ''
     ansible_ssh_common_args: >-

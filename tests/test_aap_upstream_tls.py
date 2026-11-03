@@ -3,6 +3,7 @@
 import copy
 import hashlib
 import importlib.util
+import json
 import os
 from pathlib import Path
 import shutil
@@ -118,6 +119,45 @@ class ProxyTemplateTests(unittest.TestCase):
 
 @unittest.skipUnless(importlib.util.find_spec("ansible"), "requires installed Ansible")
 class ProxyPublicationTests(unittest.TestCase):
+    def test_delegated_connection_reads_route_from_the_original_inventory_host(self):
+        source = yaml.safe_load((ROOT / "tasks/aap-upstream-trust.yml").read_text())
+        block = copy.deepcopy(source[1])
+        block["block"] = block["block"][:1]
+        task = block["block"][0]
+        task.pop("ansible.builtin.command")
+        task["ansible.builtin.raw"] = "cat /etc/machine-id"
+        task["no_log"] = False
+        block["become"] = False
+        with tempfile.TemporaryDirectory(prefix="proxy-delegated-route-") as directory:
+            workspace = Path(directory)
+            calls = workspace / "ssh-call.json"
+            executable = workspace / "ssh"
+            identity = "a" * 32
+            executable.write_text("#!" + sys.executable + "\nimport json,sys\nfrom pathlib import Path\n"
+                + "Path(%r).write_text(json.dumps(sys.argv[1:]))\nprint(%r)\n" % (str(calls), identity))
+            executable.chmod(0o700)
+            route = {"hypervisor": {"address": "192.0.2.200", "user": "synthetic_manager",
+                                    "port": 2222, "machine_id": identity}}
+            inventory = {"all": {"hosts": {
+                "target_vm": {"aap_instance_route": route},
+                "localhost": {"aap_instance_trust": {"path": str(workspace / "known-hosts")}}}}}
+            (workspace / "inventory.yml").write_text(yaml.safe_dump(inventory))
+            play = [{"hosts": "target_vm", "gather_facts": False,
+                     "vars": {"ansible_ssh_executable": str(executable)}, "tasks": [block]}]
+            (workspace / "play.yml").write_text(yaml.safe_dump(play, sort_keys=False))
+            environment = dict(os.environ, ANSIBLE_NOCOLOR="1",
+                               ANSIBLE_SSH_CONTROL_PATH_DIR=str(workspace / "cp"),
+                               ANSIBLE_LOCAL_TEMP=str(workspace / "local"))
+            result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i",
+                                     str(workspace / "inventory.yml"), str(workspace / "play.yml")],
+                                    env=environment, capture_output=True, text=True, timeout=60)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            arguments = calls.read_text()
+            self.assertIn("192.0.2.200", arguments)
+            self.assertIn("2222", arguments)
+            self.assertIn("synthetic_manager", arguments)
+            self.assertIn("StrictHostKeyChecking=yes", arguments)
+
     def test_upstream_retry_keeps_routing_and_omits_installation(self):
         plays = yaml.safe_load((ROOT / "03-aap-install.yml").read_text())
         with tempfile.TemporaryDirectory(prefix="upstream-retry-tags-") as directory:

@@ -19,6 +19,11 @@ selected hypervisor's machine identity, the job installs the bundle under
 address using the platform DNS name as the expected certificate identity. This
 probe sends no application credentials and changes no system trust store.
 
+The delegated SSH address, user and port read
+`hostvars[inventory_hostname].aap_instance_route` explicitly. That route belongs
+to the original guest inventory entry. Ansible otherwise looks for connection
+variables on the delegated hypervisor, where this guest-specific route is absent.
+
 The final nginx frontend enables upstream certificate verification, the
 instance-specific CA bundle, SNI and explicit hostname verification. The full
 nginx configuration must validate before reload. Publication failure restores
