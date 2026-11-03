@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.29.1
+
+Document the shared token, numbered naming and decommissioning decisions with
+implementation reference and validation evidence.
+
 ## 0.29.0
 
 Select destination API/MCP access automatically from the approved shared token

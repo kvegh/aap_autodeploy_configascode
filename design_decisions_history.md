@@ -1994,3 +1994,26 @@ YAML files across the five private repositories had no remaining old deployment
 name references; historical migration evidence remains unchanged. Publication
 and SCM synchronization do not establish a successful project import, and no
 import, application job or activation was run for this naming change.
+
+
+## Shared instance tokens, future public names and complete retirement
+
+Implementation `fda45e8` keeps one generic CaC importer and each project's own
+Git/Vault pair, selecting the destination bearer by inventory instance name from
+the owner-approved temporary shared credential. Base reuses its existing MCP
+token for remote API access, encrypts its per-instance record and updates the
+source credential. This avoids fixed destination bindings; an external secret
+manager remains the deliberate future replacement.
+
+The same change derives future public names from the already consumed global
+number while retaining existing VM keys and completed routes. The owner chose
+future deployments only, then separately authorized retiring the old recovery
+instance and building a fresh one. Decommissioning verifies the recovery host,
+exact guest storage/UUID ownership and versioned DNS before removing related
+guests, website/proxy/auth/cache/certificates and orphaned same-version records.
+It removes obsolete active source inventory/API data but retains allocation
+history. These are explicit owner requirements; production remains excluded.
+
+Validation: 188 full-suite tests passed, plus focused real encrypted Git
+publication/retirement and DNS/storage refusal checks; production lint passed
+23 files. Live decommission/rebuild is a separate tracked verification step.
