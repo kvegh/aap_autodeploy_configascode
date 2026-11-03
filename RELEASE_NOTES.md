@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.26.2
+
+Document the proposed consolidation of all five CaC importers into one shared
+playbook. Compare source behavior with installed CoP/native modules, distinguish
+ordinary data from secret lifecycle and preparation, and retain the unresolved
+credential, self-target and orchestration decisions. An offline activation probe
+identifies a version-sensitive disabled-state mismatch for separate verification
+under `bead-wd-72f.4`. Source references, illustrative YAML and version checks pass;
+no runtime code, configuration or AAP job changes are made.
+
 ## 0.26.1
 
 Document repository-bound access implementation `7e5f672` and capture `4ab587f`.

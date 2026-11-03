@@ -172,6 +172,13 @@ base repository, separate Git write access, client configuration and CA trust.
 
 ## Current implementation
 
+The [proposed importer consolidation](docs/deployment-consolidation-analysis.md)
+compares all five importers, shared helpers and selector against the installed
+CoP roles/modules. It recommends one resource-driven importer playbook, with
+explicit secret lifecycle and preparation boundaries. This is analysis only;
+credential selection, self-targeting and orchestration remain open decisions.
+The existing entry points below are unchanged.
+
 The repository contains the deployment stages and separate use-case imports:
 
 | Stage | Playbook | Purpose |
