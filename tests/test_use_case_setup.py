@@ -33,7 +33,7 @@ class UseCaseSetupTests(unittest.TestCase):
             },
             "configuration_repositories": {
                 key: "https://git.example.invalid/config/" + key + ".git"
-                for key in ("base", "aiops", "windows_disconnected", "orchestrator")
+                for key in ("base", "aiops", "windows_disconnected", "orchestrator", "assistant_team")
             },
         }
 

@@ -1,5 +1,33 @@
 # Release notes
 
+## 0.34.0
+
+The existing base configuration stage now prepares each registered replacement
+AAP guest's management connection to its own hypervisor, using the existing
+Machine credential, recorded primary UUID/disk/MAC/network/bridge/IP and pinned
+destination address/management TCP port. An existing exact HTTPS approval is
+required. Saved and current definitions of all guests, disabled autostart,
+machine identity, assigned destination, libvirt zone and live isolation are
+verified before the exact native rich rule and existing atomic isolation helper
+are used. Forwarding, production protection and unrelated clients are preserved.
+
+The existing publication transaction independently authorizes the addition from
+the encrypted AAP-only reservation and canonical policy. It saves recovery,
+shared and Hactar policy aliases, source API equivalents and primary inventory
+ownership without new jobs, credential types, keys or stores. Strict old/derived
+policy handling supports an interrupted publication retry without rotating the
+saved API/MCP token. Local application failure restores the old policy and only
+removes native rules added by that attempt. Connection values are bound before
+delegation, and a guest-side TCP check uses the existing pinned SSH jump.
+
+Register the already supported Assistant importer in the selection catalog with
+its existing project ID and configuration key.
+
+Validation covers native delegation, exact identity/permission and device guards,
+check mode, rollback, encrypted Git/source API interruption and retry, token
+reuse, decommission and selection. Stage 04 syntax and strict production lint
+pass. No live firewall/deployment job was used as a code validation test.
+
 ## 0.33.1
 
 Document implementation `f0a70c2`: AAP-only central ownership, verified optional

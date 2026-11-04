@@ -794,6 +794,16 @@ reruns can repair synchronization. Other instance records and literal templates
 are preserved. See [instance token storage](docs/instance-token-store.md) for
 requirements, tests and the temporary store's access limitation.
 
+For registered replacement instances, this same base step also configures and
+verifies the AAP guest's management connection to its own hypervisor. The exact
+source identity must already have an approved HTTPS permission; the destination
+address and TCP port come from its registered hypervisor pin. Existing isolation,
+production protection and unrelated clients are preserved. The existing
+publication transaction saves and synchronizes the matching encrypted policy
+aliases, with strict retry handling and no token rotation. See
+[hypervisor management access](docs/hypervisor-management-access.md) for the
+identity checks, atomic application, rollback and decommission behavior.
+
 ### Step 04 debug logging
 
 `debug_logging` defaults to `false` in both the playbook and its Job Template.

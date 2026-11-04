@@ -309,6 +309,10 @@
         follow_redirects: none
         status_code: 200
 
+    - name: Configure and verify this AAP instance connection to its own hypervisor
+      ansible.builtin.include_tasks: aap-hypervisor-access.yml
+      when: aap_instance_key_store.register_inventory | default(false) | bool
+
     - name: Update encrypted CaC and the source AAP token-store credential
       aap_publish_instance_keys:
         instance_name: "{{ aap_instance_key }}"
@@ -316,10 +320,7 @@
         organization: "{{ aap_instance_key_store.source_organization | default('Default') }}"
         inventory_registration: >-
           {{ {'route': aap_instance_route,
-              'policy': aap_instance_route.hypervisor | aap_hypervisor_isolation_policy(
-                aap_hypervisor_isolation_https_clients | default([]),
-                aap_hypervisor_isolation_protected_ipv4 | default([]),
-                aap_hypervisor_isolation_host_clients | default([]))}
+              'policy': aap_hypervisor_management_policy}
              if aap_instance_key_store.register_inventory | default(false) | bool else omit }}
       register: cac_instance_key_publication
   rescue:

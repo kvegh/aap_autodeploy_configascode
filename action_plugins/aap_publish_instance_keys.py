@@ -110,6 +110,7 @@ class ActionModule(ActionBase):
                     git("fetch", "--quiet", "--depth=1", "origin", "main")
                     git("checkout", "--quiet", "--detach", "FETCH_HEAD")
                     retirement_context = None
+                    management_context = None
                     if isolation_retirement is not None:
                         allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
                         keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
@@ -146,6 +147,17 @@ class ActionModule(ActionBase):
                     changes = [(relative, path, before, after, label, secret)]
                     retirement_shared = retirement_hactar = None
                     if registration:
+                        allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
+                        keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
+                                     "Read existing primary ownership before publishing management access.")
+                        allocation = AnsibleLoader(self._loader._vault.decrypt(allocation_path.read_bytes())).get_single_data()
+                        selected_records = [row for row in allocation["aap_vm_allocation"]["reservations"].values()
+                                            if row.get("vm_name") == args["instance_name"]]
+                        keys.require(len(selected_records) == 1, "Resolve one active primary reservation for management access.")
+                        management_context = keys.management_access_context(before, selected_records[0],
+                            args["instance_name"], registered_route, declared)
+                        after = keys.management_inventory_capture(after, management_context, "autodeploy")
+                        changes[0] = (relative, path, before, after, label, secret)
                         extra = "cac/host_inventory.yml"
                         extra_path = checkout / extra
                         keys.require(extra_path.is_file() and not extra_path.is_symlink(),
@@ -153,8 +165,23 @@ class ActionModule(ActionBase):
                         raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
                             extra_path.read_bytes(), filename=str(extra_path))
                         old = AnsibleLoader(raw).get_single_data()
-                        updated = keys.merge_inventory(old, args["instance_name"], registered_route, declared)
+                        updated = keys.management_inventory_capture(old, management_context, "shared")
+                        updated = keys.merge_inventory(updated, args["instance_name"], registered_route, management_context["desired_policy"],
+                            management_context["primary"])
+                        management_shared = updated
                         changes.append((extra, extra_path, old, updated, extra_label, extra_secret))
+                        management_hactar = None
+                        extra = "cac/hactar_recovery.yml"
+                        extra_path = checkout / extra
+                        if extra_path.exists():
+                            keys.require(extra_path.is_file() and not extra_path.is_symlink(),
+                                         "Use the existing encrypted Hactar recovery capture.")
+                            raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
+                                extra_path.read_bytes(), filename=str(extra_path))
+                            old = AnsibleLoader(raw).get_single_data()
+                            management_hactar = keys.management_inventory_capture(old, management_context, "hactar")
+                            changes.append((extra, extra_path, old, management_hactar, extra_label, extra_secret))
+                        keys.source_management_operations(source, management_shared, after, management_hactar, management_context)
                     if retiring:
                         for extra in ("state/aap_vm_allocations_vault.yml", "cac/host_inventory.yml"):
                             extra_path = checkout / extra
@@ -242,6 +269,29 @@ class ActionModule(ActionBase):
                     if registration:
                         inventory = AnsibleLoader(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                        latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        latest_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
+                                          if row.get("vm_name") == args["instance_name"]]
+                        keys.require(len(latest_records) == 1, "Keep the exact primary reservation during source synchronization.")
+                        management_context = keys.management_access_context(latest, latest_records[0],
+                            args["instance_name"], registered_route, declared)
+                        keys.require(keys.management_inventory_capture(latest, management_context, "autodeploy") == latest,
+                            "Canonical recovery management declaration changed during source synchronization.")
+                        keys.require(keys.management_inventory_capture(inventory, management_context, "shared") == inventory,
+                            "Canonical shared management declaration changed during source synchronization.")
+                        hactar_file = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
+                        management_hactar = (AnsibleLoader(self._loader._vault.decrypt(hactar_file.stdout.encode())).get_single_data()
+                                              if hactar_file.returncode == 0 else None)
+                        if management_hactar is not None:
+                            keys.require(keys.management_inventory_capture(management_hactar, management_context, "hactar") == management_hactar,
+                                         "Canonical Hactar management declaration changed during synchronization.")
+                        operations = keys.source_management_operations(source, inventory, latest, management_hactar, management_context)
+                        for method, api_path, body in operations:
+                            source.request(method, api_path, body)
+                            api_changed = True
+                        keys.require(not keys.source_management_operations(source, inventory, latest,
+                            management_hactar, management_context), "Verify every source management policy alias before registration.")
                         api_changed = keys.ensure_source_inventory(source, inventory,
                             args["instance_name"], registered_route) or api_changed
                     if retiring:
@@ -311,6 +361,16 @@ class ActionModule(ActionBase):
                     observed = AnsibleLoader(self._loader._vault.decrypt(
                         git("show", "FETCH_HEAD:" + relative).stdout.encode())).get_single_data()
                     inventory_stable = True
+                    if registration:
+                        observed_inventory = AnsibleLoader(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                        observed_allocation = AnsibleLoader(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        observed_hactar = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
+                        observed_hactar = (AnsibleLoader(self._loader._vault.decrypt(observed_hactar.stdout.encode())).get_single_data()
+                                           if observed_hactar.returncode == 0 else None)
+                        inventory_stable = (observed == latest and observed_inventory == inventory
+                            and observed_allocation == latest_allocation and observed_hactar == management_hactar)
                     if retirement_context is not None:
                         observed_inventory = AnsibleLoader(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()

@@ -1,0 +1,78 @@
+---
+- name: Require the verified primary AAP resource before allowing its management connection
+  ansible.builtin.assert:
+    that:
+      - aap_instance_resources.aap is mapping
+      - aap_instance_resources.aap.verified | bool
+      - aap_instance_route | aap_instance_route is mapping
+    fail_msg: Use the selected verified AAP resource and its registered hypervisor route.
+  no_log: true
+
+- name: Bind the original play credentials and policy before delegation changes variable context
+  ansible.builtin.set_fact:
+    aap_hypervisor_management_login:
+      user: "{{ vault_ansible_user }}"
+      password: "{{ vault_ansible_password }}"
+    aap_hypervisor_management_request:
+      route: "{{ aap_instance_route }}"
+      primary: "{{ aap_instance_resources.aap }}"
+      declared_policy: >-
+        {{ aap_instance_route.hypervisor | aap_hypervisor_isolation_policy(
+             aap_hypervisor_isolation_https_clients | default([]),
+             aap_hypervisor_isolation_protected_ipv4 | default([]),
+             aap_hypervisor_isolation_host_clients | default([])) }}
+      check_mode: "{{ ansible_check_mode | bool }}"
+  no_log: true
+
+- name: Reconcile exactly this AAP guest connection using the existing isolation and firewall tools
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - "{{ lookup('ansible.builtin.file', 'src/aap_hypervisor_access.py') }}"
+    stdin: "{{ hostvars[inventory_hostname].aap_hypervisor_management_request | to_json }}"
+  delegate_to: "{{ aap_instance_route.hypervisor.address }}"
+  become: true
+  vars:
+    ansible_connection: ssh
+    ansible_host: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.address }}"
+    ansible_user: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.user }}"
+    ansible_port: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.port }}"
+    ansible_password: ""
+    ansible_ssh_pass: ""
+    ansible_ssh_common_args: >-
+      -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
+      -o StrictHostKeyChecking=yes
+      -o UserKnownHostsFile={{ hostvars[inventory_hostname].aap_instance_trust.path | quote }}
+      -o GlobalKnownHostsFile=/dev/null
+    ansible_host_key_checking: true
+    ansible_ssh_host_key_checking: true
+  register: aap_hypervisor_management_result
+  changed_when: (aap_hypervisor_management_result.stdout | from_json).changed | bool
+  check_mode: false
+  no_log: true
+
+- name: Retain the exact verified policy for the existing encrypted publication
+  ansible.builtin.set_fact:
+    aap_hypervisor_management_policy: "{{ (aap_hypervisor_management_result.stdout | from_json).desired_policy }}"
+  no_log: true
+
+- name: Verify the management TCP connection from the selected AAP guest
+  ansible.builtin.wait_for:
+    host: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.address }}"
+    port: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.port }}"
+    connect_timeout: 5
+    timeout: 25
+  delegate_to: "{{ aap_instance_route.aap_hostname | urlsplit('hostname') }}"
+  become: false
+  vars:
+    ansible_connection: ssh
+    ansible_host: "{{ hostvars[inventory_hostname].aap_instance_route.vm_ip }}"
+    ansible_user: "{{ hostvars[inventory_hostname].aap_hypervisor_management_login.user }}"
+    ansible_password: "{{ hostvars[inventory_hostname].aap_hypervisor_management_login.password }}"
+    ansible_port: 22
+    ansible_ssh_common_args: "{{ hostvars[inventory_hostname].aap_instance_ssh_args }}"
+    ansible_host_key_checking: true
+    ansible_ssh_host_key_checking: true
+  when: not ansible_check_mode
+  no_log: true

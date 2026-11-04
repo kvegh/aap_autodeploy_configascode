@@ -21,6 +21,9 @@ CREDENTIAL_NAME = "AAP API/MCP Auth Token Store"
 _routing_spec = spec_from_file_location("instance_key_retirement_route", Path(__file__).resolve().parents[1] / "filter_plugins/aap_instance_route.py")
 _routing = module_from_spec(_routing_spec)
 _routing_spec.loader.exec_module(_routing)
+_management_spec = spec_from_file_location("instance_key_management_access", Path(__file__).with_name("aap_hypervisor_access.py"))
+_management = module_from_spec(_management_spec)
+_management_spec.loader.exec_module(_management)
 
 
 class StoreError(ValueError):
@@ -606,7 +609,7 @@ def retire_inventory_capture(configuration, context, kind):
     return result
 
 
-def source_retirement_operations(client, shared, autodeploy, hactar, context):
+def source_inventory_operations(client, shared, autodeploy, hactar, context, policy_variables):
     """Read and validate every exact API target before returning bounded operations."""
     operations = {}
     pin = context["route"]["hypervisor"]
@@ -635,7 +638,7 @@ def source_retirement_operations(client, shared, autodeploy, hactar, context):
                                 ("ansible_user", pin["user"]), ("host_keys", pin["host_keys"])):
             require(field not in current or current[field] == expected,
                     "The live hypervisor inventory identity conflicts with its registered pin.")
-        desired = source_retirement_variables(current, context)
+        desired = policy_variables(current, context)
         if desired != current:
             operations[("PATCH", "hosts/%s/" % row["id"])] = {"variables": json.dumps(desired)}
         return live_inventory
@@ -658,7 +661,7 @@ def source_retirement_operations(client, shared, autodeploy, hactar, context):
     require(len(recovery_rows) == 1, "Resolve one exact pinned recovery inventory for source synchronization.")
     live = inventory(recovery_rows[0]["name"])
     current = inventory_variables(live)
-    desired = source_retirement_variables(current, context, True)
+    desired = policy_variables(current, context, True)
     if current != desired:
         operations[("PATCH", "inventories/%s/" % live["id"])] = {"variables": json.dumps(desired)}
     if hactar is not None:
@@ -669,7 +672,95 @@ def source_retirement_operations(client, shared, autodeploy, hactar, context):
             for (operation, path), body in operations.items() if operation == method]
 
 
-def merge_inventory(configuration, selected, route, policy):
+def source_retirement_operations(client, shared, autodeploy, hactar, context):
+    return source_inventory_operations(client, shared, autodeploy, hactar, context, source_retirement_variables)
+
+
+def management_access_context(configuration, record, selected, route, requested):
+    """Authorize one base-stage addition using existing canonical AAP ownership."""
+    require(_routing.instance_route(record.get("instance_route")) == route
+            and record.get("vm_name") == selected == route["vm_name"]
+            and record.get("hypervisor_id") == route["hypervisor"]["machine_id"]
+            and record.get("number") == int(selected.rsplit("-", 1)[1])
+            and record.get("decommissioned") is not True
+            and set(record.get("instance_resources", {})) == {"aap"},
+            "Management publication requires the active exact AAP-only reservation.")
+    primary = record["instance_resources"]["aap"]
+    require(isinstance(primary, dict) and isinstance(primary.get("uuid"), str)
+            and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", primary["uuid"])
+            and primary.get("vm_name", selected) == selected,
+            "Management publication requires the recorded primary UUID and selected name.")
+    pin = route["hypervisor"]
+    inventories = [row for row in configuration["autodeploy_configuration"]["inventories"]
+                   if inventory_variables(row).get("aap_hypervisor_pin") == pin]
+    require(len(inventories) == 1, "Resolve the canonical pinned recovery policy before management publication.")
+    values = inventory_variables(inventories[0])
+    previous = _routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
+        values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []))
+    try:
+        desired = _management.desired_policy(route, primary, previous)
+    except (ValueError, KeyError):
+        raise StoreError("Management publication differs from the existing selected AAP permission.") from None
+    require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
+            desired.get("guest_host_clients", [])) == desired and requested == desired,
+            "Publish only the independently derived selected AAP management grant; preserve all other clients.")
+    return {"route": deepcopy(route), "primary": deepcopy(primary), "previous_policy": previous,
+            "desired_policy": desired, "guests": [], "removed_rules": set()}
+
+
+def management_inventory_capture(configuration, context, kind):
+    """Reuse exact policy-alias handling without retiring any inventory guests."""
+    return retire_inventory_capture(configuration, context, kind)
+
+
+def source_management_variables(values, context, pinned=False):
+    """Accept a lagging source alias only through the same exact management addition."""
+    result = deepcopy(values)
+    pin, desired = context["route"]["hypervisor"], context["desired_policy"]
+    policies = []
+    if pinned:
+        require(result.get("aap_hypervisor_pin") == pin, "Keep the registered source recovery pin.")
+        policies.append(_routing.isolation_policy(pin, result.get("aap_hypervisor_isolation_https_clients", []),
+            result.get("aap_hypervisor_isolation_protected_ipv4", []), result.get("aap_hypervisor_isolation_host_clients", [])))
+    policies += [result[key] for key in ("isolation_policy", "hactar_isolation_policy") if key in result]
+    for policy in policies:
+        require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
+            policy.get("protected_ipv4"), policy.get("guest_host_clients", [])) == policy,
+            "A source management policy must use the normalized registered schema.")
+        try:
+            expected = _management.desired_policy(context["route"], context["primary"], policy)
+        except (ValueError, KeyError):
+            raise StoreError("A source management alias changed beyond the exact selected grant.") from None
+        require(expected == desired, "A source alias cannot add or remove unrelated guest permissions.")
+    for alias in ("isolation_policy", "hactar_isolation_policy"):
+        result[alias] = deepcopy(desired)
+    if pinned:
+        result.update(aap_hypervisor_isolation_https_clients=deepcopy(desired["https_clients"]),
+            aap_hypervisor_isolation_protected_ipv4=deepcopy(desired["protected_ipv4"]),
+            aap_hypervisor_isolation_host_clients=deepcopy(desired["guest_host_clients"]))
+    return result
+
+
+def source_management_operations(client, shared, autodeploy, hactar, context):
+    operations = source_inventory_operations(client, shared, autodeploy, hactar, context, source_management_variables)
+    host = next(row for row in shared["host_inventory_configuration"]["hosts"]
+                if row.get("name") == context["route"]["vm_name"])
+    inventories = client.rows("inventories/?name=" + quote(host["inventory"]))
+    require(len(inventories) == 1, "Keep the exact shared inventory for primary registration.")
+    rows = client.rows("hosts/?inventory=%s&name=%s" % (inventories[0]["id"], quote(host["name"])))
+    require(len(rows) <= 1 and all(row.get("inventory") == inventories[0]["id"] and row.get("name") == host["name"] for row in rows),
+            "Keep unique primary source placement within the captured inventory.")
+    for row in rows:
+        values = inventory_variables(row)
+        require(values.get("ansible_host") == context["route"]["vm_ip"]
+            and origin("https://" + values.get("ansible_fqdn", "")) == origin(context["route"]["aap_hostname"])
+            and ("vm_uuid" not in values or values["vm_uuid"] == context["primary"]["uuid"])
+            and ("vm_resource" not in values or values["vm_resource"] == context["primary"]),
+            "Existing primary source ownership must match before publishing any management policy.")
+    return operations
+
+
+def merge_inventory(configuration, selected, route, policy, primary=None):
     """Keep VM placement in the existing inventory capture, without any tokens."""
     instance_name(selected)
     require(route.get("vm_name") == selected, "Inventory registration must match the allocated VM.")
@@ -705,6 +796,9 @@ def merge_inventory(configuration, selected, route, policy):
                   hypervisor_host=hypervisor["name"], aap_instance_number=int(match[1]), vm_ip=route["vm_ip"],
                   host_keys=deepcopy(route["guest_host_keys"]))
     set_inventory_variables(host, values)
+    if primary is not None:
+        values.update(vm_uuid=primary["uuid"], vm_resource=deepcopy(primary))
+        set_inventory_variables(host, values)
     groups = [row for row in data["groups"] if row["inventory"] == hypervisor["inventory"]
               and inventory_variables(row).get("hypervisor_host") == hypervisor["name"]]
     require(len(groups) == 1, "Define one VM inventory group mapped to the selected hypervisor.")
@@ -731,6 +825,10 @@ def ensure_source_inventory(client, configuration, selected, route):
             current = inventory_variables(existing[0])
             key = "ansible_fqdn" if desired is host else "ansible_host"
             require(current.get(key) == values[key], "The live source inventory has conflicting placement data.")
+            if desired is host and "vm_resource" in values:
+                require(("vm_uuid" not in current or current["vm_uuid"] == values["vm_uuid"])
+                    and ("vm_resource" not in current or current["vm_resource"] == values["vm_resource"]),
+                    "The selected source AAP ownership differs from the registered primary resource.")
             merged = dict(current, **values)
             if merged != current:
                 client.request("PATCH", "hosts/%s/" % existing[0]["id"], {"variables": json.dumps(merged)})
