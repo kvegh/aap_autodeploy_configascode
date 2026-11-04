@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.37.3
+
+Document fixes `1e89880`, their native module and rule-persistence checks, and the
+requirement to preserve the rebuild declaration alongside live permissions.
+
 ## 0.37.2
 
 Omit empty group variables at the native module boundary, preserving nonempty

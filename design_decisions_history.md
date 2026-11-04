@@ -2324,3 +2324,20 @@ template tags. The protected evidence is retained in the existing Hactar Vault.
 This completes acceptance of the generic Linux deployment hook. Other guest
 restrictions and the broader recovery acceptance work remain; a successful
 selected-guest test is not a reason to lift quarantine for every VM.
+
+## Preserve native firewall rebuild rules and omit empty group inputs
+
+Implementation `1e89880` fixes two boundaries found during the current portable
+deployment. A captured empty group-variable string is omitted before calling the
+dictionary-typed native group module, matching the existing CoP role. Native
+fixtures reproduce the former rejection and verify empty, omitted and nonempty
+inputs in both Ansible modes.
+
+The live guest permission also needs its exact native firewalld declaration in
+the settings consumed by Hactar's base firewall playbook. Publication now saves
+only the current operation's verified source/destination/port rule across the
+three encrypted captures and source aliases. Prior rules, credentials and guest
+identities are retained; conflicting states, priorities and duplicates for that
+endpoint are refused. Three focused persistence tests and 34 related regressions
+passed. Full regression validation of the preceding portable implementation
+passed 275 tests; subsequent focused checks cover these corrections.

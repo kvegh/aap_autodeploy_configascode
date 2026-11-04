@@ -24,6 +24,12 @@ onto the launching AAP or another selected AAP uses the same importer; source
 and destination API credentials remain separate. The launcher creates no
 temporary source token and reads no installer password.
 
+The receiving source CA credential uses the supported RHEL execution image's
+standard trust bundle. It does not copy the original controller's private
+authority as its only trust anchor. Actual HTTPS checks confirm that public
+certificate trust succeeds while that private-only file rejects the new public
+endpoint; hostname and certificate verification remain enabled.
+
 The source's shared and recovery inventories remain mandatory. A Hactar project
 inventory alias is optional when that project is not installed on the receiving
 AAP: only a genuinely empty inventory read together with verified administrator
