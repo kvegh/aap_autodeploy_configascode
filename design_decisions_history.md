@@ -1,5 +1,53 @@
 # Design decisions history
 
+## Make AutoDeploy configuration portable between AAP instances — 2026-11-04
+
+Implementation `a522e7b` follows the owner's decision to retain the four older
+production stage templates and their history while excluding that family from
+future configuration bundles. The same four playbooks remain behind the newer
+stages. Read-only extraction now supports explicit reviewed source exclusions;
+an excluded resource still referenced by a retained object stops extraction.
+It does not delete the original source objects. The coordinated encrypted
+capture changes also remove the original Machine key and clear saved targets;
+their publication and normal import are separate deployment steps.
+
+The existing selected-use-case launcher authenticates to its source using the
+already injected API credential and verifies the actual running job before
+launching its existing prerequisite/import templates. The destination uses the
+existing instance-indexed token store. Self and remote targets share this path;
+no installer-password lookup, temporary token, wrapper or additional store is
+introduced. A receiving AAP's source credential must point to its own API.
+
+Stage 01 now verifies the consumed primary reservation and exact guest identity
+before the existing isolation helper grants public installation HTTPS and
+guest-to-own-hypervisor API TCP 443. The existing Git/API publication transaction
+persists that permission and placement across maintained encrypted captures.
+Other guests, released clients and production protection remain intact. Failed
+early publication restores exact prior runtime/permanent native rules; durable
+publication remains available for an idempotent source-synchronization retry.
+The existing base stage has a bounded installation-access repair tag that ends
+before ordinary base configuration. Its launch must accept the requested tag.
+Mixed destination/port cross products stop rather than add implicit grants.
+
+Inventory display labels use the agreed format while the existing physical
+VM name remains the allocation and token key. Verified `vm_resource` provenance
+connects those identities for authentication, callbacks and retirement. An empty
+saved stage key accepts the existing registered-route handoff. The main and
+recovery inventories remain mandatory. An undeployed optional Hactar inventory
+alias may be absent only with a genuinely empty query and verified administrator
+visibility; present aliases retain identity checks and their canonical encrypted
+policy still updates.
+
+All 275 regression tests passed before the final two empty-key fallback changes;
+the four focused alias tests then passed with native handoff coverage in both
+Jinja modes. Both native importer-render modes, Stage 01/04 syntax, strict
+production lint across 31 files, whitespace and added-text privacy checks passed.
+Tests cover actual native task execution, exact permissions and rollback, real
+encrypted Git publication/retry, physical/display ownership and read-only
+exclusions. These results validate code and candidate rendering. A normal CaC
+import, permission repair and complete independent recovery cycle require their
+own live acceptance; this change did not allocate or remove a VM.
+
 ## Preserve activation variable text during repeat imports — 2026-11-04
 
 Implementation `8c0af1c` fixes a formatting change at the existing activation

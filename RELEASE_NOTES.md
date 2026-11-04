@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.37.1
+
+Document implementation `a522e7b`, receiving-instance API access, reviewed source
+exclusions, exact installation permissions, physical/display inventory ownership
+and the bounded repair operation. Distinguish passing code/render validation from
+normal import and full recovery acceptance.
+
 ## 0.37.0
 
 Prepare the future AutoDeploy bundle without the retained production-only stage,
