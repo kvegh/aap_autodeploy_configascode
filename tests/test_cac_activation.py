@@ -102,9 +102,11 @@ class ActivationImportTests(unittest.TestCase):
                     return owner.Response(200, "{}")
                 if endpoint == "activations":
                     items = [copy.deepcopy(owner.activation)] if owner.activation else []
+                elif endpoint == "rulebooks/2/sources":
+                    items = [{"name": "Synthetic source", "rulebook_hash": "synthetic-hash"}]
                 else:
                     ids = {"projects": 1, "rulebooks": 2, "decision-environments": 3,
-                           "organizations": 4}
+                           "organizations": 4, "event-streams": 5}
                     if endpoint not in ids:
                         raise AssertionError("Unexpected lookup: " + endpoint)
                     items = [{"id": ids[endpoint], "name": kwargs["data"]["name"]}]
@@ -155,6 +157,32 @@ class ActivationImportTests(unittest.TestCase):
 
     def test_enabled_activation_definition_updates_and_remains_enabled(self):
         self.assert_existing_update(True)
+
+    def test_running_activation_keeps_matching_variables_and_stream_but_detects_real_drift(self):
+        import yaml
+
+        self.existing(True)
+        self.activation.update(
+            description="Revised definition", extra_var="{}\n",
+            source_mappings=yaml.dump([{
+                "source_name": "Synthetic source", "rulebook_hash": "synthetic-hash",
+                "event_stream_name": "Synthetic stream", "event_stream_id": 5,
+            }]).rstrip("\n"),
+        )
+        streams = [{"event_stream": "Synthetic stream", "source_name": "Synthetic source"}]
+        result = self.run_import(extra_vars="{}\n", event_streams=streams)
+        self.assertFalse(result.failed)
+        self.assertFalse(result.result["changed"])
+        self.assertTrue(all(method == "GET" for method, _, _ in self.requests))
+        self.assertIs(self.activation["is_enabled"], True)
+
+        self.requests.clear()
+        result = self.run_import(extra_vars="selected: changed\n", event_streams=streams)
+        self.assertFalse(result.failed)
+        self.assertTrue(result.result["changed"])
+        self.assertEqual(self.activation["extra_var"], "selected: changed\n")
+        self.assertIs(self.activation["is_enabled"], True)
+        self.assertEqual([method for method, _, _ in self.requests if method != "GET"], ["PATCH"])
 
     def assert_existing_update(self, enabled):
         self.existing(enabled)
@@ -214,6 +242,69 @@ class ActivationImportTests(unittest.TestCase):
             self.assertIn("only update definitions", output)
             self.assertNotIn("ModuleNotFoundError", output)
             self.assertNotIn("synthetic-secret-canary", output)
+
+    def test_real_import_task_preserves_serialized_variables_in_both_templating_modes(self):
+        import yaml
+
+        task = next(item for item in yaml.safe_load((
+            ROOT / "tasks/cac-resource-definitions.yml").read_text())
+                    if "aap_cac_activation" in item)
+        expected = ["{}\n", "{\"enabled\": false, \"nested\": {\"value\": null}}\n"]
+        definitions = [{
+            "name": "Synthetic activation", "project": "Synthetic project",
+            "rulebook": "example.yml", "decision_environment": "Synthetic environment",
+            "organization": "Synthetic organization", "extra_vars": value,
+        } for value in expected]
+        definitions.append({key: value for key, value in definitions[0].items()
+                            if key != "extra_vars"})
+        definitions.append(dict(definitions[0], extra_vars=None))
+        for native in ("false", "true"):
+            with self.subTest(native=native), tempfile.TemporaryDirectory(
+                    prefix="cac-activation-render-") as temporary:
+                directory = Path(temporary)
+                actions = directory / "actions"
+                actions.mkdir()
+                output_file = directory / "arguments.jsonl"
+                (actions / "aap_cac_activation.py").write_text(
+                    "from ansible.plugins.action import ActionBase\n"
+                    "import json, os\n"
+                    "class ActionModule(ActionBase):\n"
+                    "    TRANSFERS_FILES = False\n"
+                    "    _requires_connection = False\n"
+                    "    def run(self, tmp=None, task_vars=None):\n"
+                    "        with open(os.environ['ACTIVATION_TEST_ARGUMENTS'], 'a') as handle:\n"
+                    "            handle.write(json.dumps(self._task.args) + '\\n')\n"
+                    "        return {'changed': False}\n"
+                )
+                playbook = directory / "play.json"
+                playbook.write_text(json.dumps([{
+                    "hosts": "localhost", "gather_facts": False,
+                    "vars": {
+                        "eda_rulebook_activations": definitions,
+                        "aap_hostname": "https://aap.example.invalid",
+                        "aap_token": "synthetic-secret-canary",
+                        "aap_username": "", "aap_password": "",
+                    },
+                    "tasks": [task],
+                }]))
+                environment = dict(
+                    os.environ, ANSIBLE_ACTION_PLUGINS=str(actions),
+                    ANSIBLE_LOCAL_TEMP=str(directory / "local"),
+                    ANSIBLE_REMOTE_TEMP=str(directory / "remote"),
+                    ANSIBLE_JINJA2_NATIVE=native,
+                    ACTIVATION_TEST_ARGUMENTS=str(output_file),
+                )
+                process = subprocess.run(
+                    [sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,",
+                     "-c", "local", str(playbook)], cwd=ROOT, env=environment,
+                    text=True, capture_output=True, timeout=30,
+                )
+                self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
+                arguments = [json.loads(line) for line in output_file.read_text().splitlines()]
+                self.assertEqual([item["extra_vars"] for item in arguments[:2]], expected)
+                self.assertNotIn("extra_vars", arguments[2])
+                self.assertNotIn("extra_vars", arguments[3])
+                self.assertNotIn("synthetic-secret-canary", process.stdout + process.stderr)
 
 
 if __name__ == "__main__":

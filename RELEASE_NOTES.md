@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.34.2
+
+Preserve serialized activation extra variables at the Ansible task boundary.
+The serialized empty YAML mapping previously became a dictionary and then different text,
+causing a redundant API update that failed when the activation was running.
+The fix retains the declared value without changing enabled-state preservation,
+Event Stream bindings, real drift detection or protected logging.
+
+Regression coverage exercises actual task rendering in both Jinja modes,
+unchanged enabled definitions with Event Streams and genuine variable changes.
+Read-only replay in the source execution image and installed collection confirms
+the redundant update disappears while real changes still request an update.
+
 ## 0.34.1
 
 Document implementation `931edb8`: each registered AAP instance's own hypervisor

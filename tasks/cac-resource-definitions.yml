@@ -124,7 +124,7 @@
     decision_environment: "{{ item.decision_environment }}"
     awx_token: "{{ item.awx_token | default(omit) }}"
     restart_policy: "{{ item.restart_policy | default(omit) }}"
-    extra_vars: "{{ item.extra_vars | default(omit) }}"
+    extra_vars: "{{ item.extra_vars | string if item.extra_vars is defined and item.extra_vars is not none else omit }}"
     organization: "{{ item.organization }}"
     eda_credentials: "{{ item.eda_credentials | default(omit) }}"
     k8s_service_name: "{{ item.k8s_service_name | default(omit) }}"

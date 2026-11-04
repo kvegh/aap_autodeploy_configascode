@@ -874,6 +874,14 @@ activation definitions disabled. Existing activation states and stored Controlle
 access tokens are preserved; mismatches require review. No imported demo Job
 Template or explicit activation action is launched.
 
+Activation extra variables retain their declared serialized string during Ansible
+task rendering. This prevents an unchanged value such as an empty YAML mapping
+from becoming a dictionary and producing an unnecessary API update during a
+repeat import. Genuine definition changes still follow the native module's
+update path and the API's restrictions; the importer never stops or restarts a
+running activation to apply them.
+Missing or null extra variables continue to use the native module's defaults.
+
 The configuration import has been verified on a fresh recovery controller after
 the reviewed prerequisite preparation. Independent API readback checked all
 declared Controller and EDA objects, successful Controller project syncs and both
