@@ -123,8 +123,15 @@ not expose a description saved after startup with `virsh desc --config`; if it
 does expose one, it must match. Both XML definitions still require the exact
 UUID, disk, MAC and network. Failed commands are checked before parsing their
 JSON output or considering rollback. The original implementation passed 249
-repository tests; focused native tests cover these checks. Acceptance through a
-normal AAP guest-configuration job remains tracked in Beads `bead-wd-mcr.1`.
+repository tests; sixteen focused native tests cover these checks. Normal source
+job 3282 passed configuration-only acceptance for an existing test guest. Its
+encrypted publication and source inventory match the exact intended update;
+API tokens, allocation history and existing literal template tags were preserved.
+Independent checks confirmed that only the selected guest was released, all
+four VM definitions and normal host services were unchanged, public connectivity
+worked and production access remained blocked. Other guests retain their
+restrictions. Broader rollout and recovery acceptance remain tracked in Beads
+`bead-wd-mcr.1`.
 
 Local counters are preserved as migration evidence. Fresh guest host keys and
 the exact instance route are retained for the following stages. Stages 02–04

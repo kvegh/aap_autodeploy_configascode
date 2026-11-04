@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.36.4
+
+Document successful normal-job automatic guest release, independent firewall and
+connectivity checks, and exact encrypted/source configuration preservation.
+Keep other guest restrictions and complete recovery acceptance explicitly open.
+Refresh the public task overview and protected full task recovery copy.
+
 ## 0.36.3
 
 Document provenance verification fix `d2d7254` and its native regression and

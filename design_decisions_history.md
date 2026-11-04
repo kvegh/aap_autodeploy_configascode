@@ -2260,3 +2260,19 @@ JSON or deciding on rollback. Sixteen focused runtime, native-role and encrypted
 publication tests pass, including failure-output handling and refusal of missing
 persistent metadata or altered live ownership. A read-only execution against the
 actual target passed with application disabled. Production lint passed.
+
+## Verify automatic release through the normal deployment job
+
+Source job 3282 completed configuration-only acceptance using Assistant revision
+`6098490`, which pins AutoDeploy implementation `d2d7254`. The existing guest was
+verified and released in that same job; no provisioning or package-update stage
+ran. Independent inspection confirmed the selected release only, production
+denies before release and established-connection allowances, unchanged VM
+definitions and normal services, public connectivity and blocked production
+access. Encrypted publication `fb476d1` and source inventory match the intended
+transition, preserving instance tokens, allocation history and existing literal
+template tags. The protected evidence is retained in the existing Hactar Vault.
+
+This completes acceptance of the generic Linux deployment hook. Other guest
+restrictions and the broader recovery acceptance work remain; a successful
+selected-guest test is not a reason to lift quarantine for every VM.

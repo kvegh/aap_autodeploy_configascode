@@ -96,6 +96,16 @@ Live release and the existing encrypted policy/source-inventory copies must be
 reconciled so later runs preserve the decision. See the
 [shared guest release role](../roles/recovery_guest_release/README.md).
 
+The generic Linux deployment's normal configuration-only job 3282 passed live
+acceptance for one existing test guest. Independent checks verified the exact
+saved/live policy, production denial, unchanged VM definitions and ordinary host
+services, and public guest connectivity. Its three encrypted configuration
+updates and source inventory also match the intended transition, with API tokens,
+allocation history and existing literal template tags preserved. This verifies
+that deployment path for the selected guest; the other guests remain restricted.
+It does not establish release integration for every VM type or the complete
+version-to-version recovery cycle.
+
 ## Durable records
 
 | Beads record | Decision or verification scope |
