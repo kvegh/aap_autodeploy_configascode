@@ -25,6 +25,15 @@ contract = module_from_spec(contract_spec)
 contract_spec.loader.exec_module(contract)
 
 
+def source_keys():
+    """Load the existing API helper only for the optional decommission read."""
+    key_spec = spec_from_file_location("read_related_instance_keys",
+        Path(__file__).resolve().parents[1] / "src/aap_instance_keys.py")
+    keys = module_from_spec(key_spec)
+    key_spec.loader.exec_module(keys)
+    return keys
+
+
 class ActionModule(ActionBase):
     TRANSFERS_FILES = False
 
@@ -35,8 +44,10 @@ class ActionModule(ActionBase):
             raise AnsibleActionFail(
                 "Attach the AutoDeploy secrets repository CaC read-token credential."
             )
-        if set(self._task.args) - {"instance_key", "expected_route", "allow_retired"}:
+        if set(self._task.args) - {"instance_key", "expected_route", "allow_retired", "read_related_resources"}:
             raise AnsibleActionFail("The registry repository is fixed by encrypted AutoDeploy configuration.")
+        if type(self._task.args.get("read_related_resources", False)) is not bool:
+            raise AnsibleActionFail("Select source-related ownership explicitly with a boolean option.")
         try:
             repository = contract.autodeploy_repository(
                 self._loader, Path(__file__).resolve().parents[1]
@@ -101,6 +112,23 @@ class ActionModule(ActionBase):
             ownership = next(record.get("instance_resources", {}) for record in
                 configuration["aap_vm_allocation"]["reservations"].values()
                 if record.get("vm_name") == route["vm_name"])
+            proof = None
+            if self._task.args.get("read_related_resources", False):
+                # Normal registry reads never load this source API helper or require its credential.
+                try:
+                    keys = source_keys()
+                    source = keys.SourceClient()
+                    keys.verify_source_job(source, route["aap_hostname"], task_vars or {})
+                    shared = AnsibleLoader(self._loader._vault.decrypt(
+                        git("show", "FETCH_HEAD:cac/host_inventory.yml").encode())).get_single_data()
+                    proof = keys.source_related_resources(source, shared, configuration["aap_vm_allocation"], route["vm_name"])
+                    proof.update(source_job_id=str((task_vars or {}).get("awx_job_id")),
+                                 source_project_revision=(task_vars or {}).get("awx_project_revision"))
+                    ownership = dict(ownership, **proof["related_resources"])
+                except Exception:
+                    raise AnsibleActionFail("Source related-VM ownership could not be verified; no target connection was attempted.") from None
             result.update(changed=False, instance_route=route, registry_repository=repository,
                           instance_resources=ownership)
+            if proof is not None:
+                result["related_resource_proof"] = proof
             return result

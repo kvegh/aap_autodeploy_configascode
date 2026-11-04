@@ -16,6 +16,27 @@
       - not aap_related_disk.stat.islnk | default(false)
   no_log: true
 
+- name: Inspect both bounded related disk variants before any deletion
+  ansible.builtin.stat:
+    path: '{{ item }}'
+    follow: false
+    get_checksum: false
+  loop:
+    - '/opt/vms/{{ aap_related_guest.name }}.disk.qcow2'
+    - '/opt/vms/{{ aap_related_guest.name }}.qcow2'
+  register: aap_related_disk_variants
+  no_log: true
+
+- name: Refuse unrecorded or extra related disks including missing source inventory rows
+  ansible.builtin.assert:
+    that:
+      - not item.stat.islnk | default(false)
+      - >-
+        not item.stat.exists or
+        (aap_related_guest.uuid | default('', true) | length > 0 and item.item == aap_related_guest.disk)
+  loop: '{{ aap_related_disk_variants.results }}'
+  no_log: true
+
 - name: Inspect related domain storage and UUID
   ansible.builtin.command:
     argv: [virsh, -c, 'qemu:///system', dumpxml, "{{ aap_related_guest.name }}"]

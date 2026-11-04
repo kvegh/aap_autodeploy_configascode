@@ -110,7 +110,7 @@ def publish_route(state, request_id, route, instance_resources=None):
             raise ValueError("Route publication may update only its verified primary AAP resource.")
         resource = validate_primary_resource(route, instance_resources["aap"])
         existing = record.get("instance_resources", {})
-        if not isinstance(existing, dict) or existing.get("aap") not in (None, resource):
+        if not isinstance(existing, dict) or set(existing) - {"aap"} or existing.get("aap") not in (None, resource):
             raise ValueError("Existing primary guest ownership cannot be silently replaced.")
         updated["reservations"][request_id].setdefault("instance_resources", {})["aap"] = deepcopy(resource)
     return updated, deepcopy(updated["reservations"][request_id])

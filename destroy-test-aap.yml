@@ -11,6 +11,8 @@
   pre_tasks:
     - name: Read the registered instance before any infrastructure connection
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+      vars:
+        aap_read_related_resources: true
     - name: Require confirmation and the independently pinned recovery hypervisor
       ansible.builtin.assert:
         that:

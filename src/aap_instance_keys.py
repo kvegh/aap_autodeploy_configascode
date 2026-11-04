@@ -1,15 +1,19 @@
-"""Temporary instance-token storage and source-controller synchronization."""
+"""Instance API access, source inventory ownership and synchronization."""
 
 from copy import deepcopy
 from datetime import datetime, timezone
+from ipaddress import IPv4Address
 import hashlib
 from importlib.util import module_from_spec, spec_from_file_location
 import json
+import os
 from pathlib import Path
 import re
+import ssl
 import yaml
 from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote, urlsplit, urljoin
+from urllib.request import HTTPRedirectHandler, Request, build_opener, HTTPSHandler
 
 TYPE_NAME = "Pseudo Instance Key Store"
 CREDENTIAL_NAME = "AAP API/MCP Auth Token Store"
@@ -26,6 +30,57 @@ class StoreError(ValueError):
 def require(condition, message):
     if not condition:
         raise StoreError(message)
+
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+class SourceClient:
+    """The existing injected source API access, with trusted TLS and no redirects."""
+    def __init__(self):
+        self.origin = origin(os.environ.get("AAP_CAC_SOURCE_URL", ""))
+        self.token = os.environ.get("AAP_CAC_SOURCE_TOKEN", "")
+        require(bool(self.token), "Attach the existing source AAP API access credential.")
+        context = ssl.create_default_context()
+        authority = os.environ.get("AAP_CAC_SOURCE_CA_FILE")
+        if authority:
+            context.load_verify_locations(cafile=authority)
+        self.opener = build_opener(NoRedirect(), HTTPSHandler(context=context))
+
+    def request(self, method, path, body=None):
+        relative = path if path.startswith("/") else "/api/controller/v2/" + path
+        url = urljoin(self.origin + "/", relative)
+        require(urlsplit(url).netloc == urlsplit(self.origin).netloc,
+                "Source API pagination must remain on the authenticated source.")
+        request = Request(url, data=json.dumps(body).encode() if body is not None else None,
+            headers={"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}, method=method)
+        try:
+            with self.opener.open(request, timeout=45) as response:
+                raw = response.read()
+            return json.loads(raw) if raw else {}
+        except Exception:
+            raise StoreError("Source AAP API access failed; inspect protected job state before retry.") from None
+
+    def rows(self, path):
+        result = []
+        while path:
+            page = self.request("GET", path)
+            result.extend(page["results"])
+            path = page.get("next")
+        return result
+
+
+def verify_source_job(client, target, variables):
+    require(client.origin != origin(target), "Source API access must identify the AAP running this deployment job.")
+    job_id, template_id, revision = (variables.get(key) for key in ("awx_job_id", "awx_job_template_id", "awx_project_revision"))
+    require(str(job_id).isdigit() and str(template_id).isdigit() and bool(revision),
+            "Read source ownership only from its authenticated running AAP job.")
+    job = client.request("GET", "jobs/%s/" % job_id)
+    require(job.get("status") == "running" and job.get("job_template") == int(template_id)
+            and job.get("scm_revision") == revision,
+            "The source API credential does not identify this running deployment job.")
 
 
 def type_definition():
@@ -165,7 +220,142 @@ def set_inventory_variables(row, values):
         row["variables"] = values
 
 
-def isolation_retirement_context(record, selected, target, transition):
+def source_related_resources(client, shared, allocation, selected, retained=None):
+    """Read optional same-version ownership only from the fixed source inventory."""
+    records = [row for row in allocation["reservations"].values() if row.get("vm_name") == selected]
+    require(len(records) == 1, "Resolve exactly one selected AAP reservation for source ownership.")
+    record = records[0]
+    route = _routing.instance_route(record["instance_route"])
+    pin = route["hypervisor"]
+    number = int(selected.rsplit("-", 1)[1])
+    require(record.get("number") == number and record.get("hypervisor_id") == pin["machine_id"]
+            and set(record.get("instance_resources", {})) <= {"aap"},
+            "The allocation must retain only selected AAP ownership; migrate application data separately.")
+    captured = [row for row in shared["host_inventory_configuration"]["hosts"]
+                if inventory_variables(row).get("ansible_host") == pin["address"]]
+    require(len(captured) == 1, "Resolve the pinned hypervisor in the fixed encrypted shared inventory.")
+    hypervisor = captured[0]
+    inventories = client.rows("inventories/?name=" + quote(hypervisor["inventory"]))
+    require(len(inventories) == 1 and inventories[0].get("name") == hypervisor["inventory"],
+            "Resolve exactly the captured source inventory by name.")
+    inventory_id = inventories[0]["id"]
+    rows = client.rows("hosts/?inventory=%s&page_size=200" % inventory_id)
+    require(isinstance(rows, list) and len(rows) <= 256
+            and all(row.get("inventory") == inventory_id for row in rows)
+            and len({row.get("name") for row in rows}) == len(rows),
+            "Source ownership requires bounded unique rows in the exact captured inventory.")
+    live_hypervisors = [row for row in rows if row.get("name") == hypervisor["name"]]
+    require(len(live_hypervisors) == 1, "Keep the existing pinned source hypervisor entry.")
+    for values in (inventory_variables(hypervisor), inventory_variables(live_hypervisors[0])):
+        require(values.get("ansible_host") == pin["address"] and values.get("machine_id") == pin["machine_id"]
+                and values.get("ansible_port") == pin["port"] and values.get("ansible_user") == pin["user"]
+                and values.get("host_keys") == pin["host_keys"],
+                "Captured and live source hypervisor identity must match the exact registered pin.")
+    names = {role + "-v%02d" % number: role for role in ("zabbix", "testserver1", "tra")}
+    related, owners = {}, []
+
+    def add_owner(resource):
+        identity = {"bridge": resource["bridge"], "ipv4": resource["address"], "mac": resource["mac"]}
+        require(not any(old["ipv4"] == identity["ipv4"] or old["mac"] == identity["mac"] for old in owners),
+                "Remaining inventory guest permission ownership must be unique.")
+        owners.append(identity)
+
+    aap_records = {row["vm_name"]: row for row in allocation["reservations"].values()
+                   if row.get("instance_route", {}).get("hypervisor") == pin}
+    for row in rows:
+        name, values = row.get("name"), inventory_variables(row)
+        if name == hypervisor["name"]:
+            continue
+        if values.get("hypervisor_host") != hypervisor["name"]:
+            require(name not in names, "A selected related VM points to a different hypervisor.")
+            continue
+        if name in aap_records:
+            entry = aap_records[name]
+            resource = entry.get("instance_resources", {}).get("aap")
+            require(isinstance(resource, dict) and resource.get("verified") is True
+                    and resource.get("hypervisor_machine_id") == pin["machine_id"]
+                    and resource.get("address") == entry["instance_route"]["vm_ip"]
+                    and resource.get("bridge") in pin["isolation_bridges"]
+                    and isinstance(resource.get("uuid"), str)
+                    and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", resource["uuid"])
+                    and resource.get("disk") == "/opt/vms/" + name + ".disk.qcow2"
+                    and isinstance(resource.get("mac"), str)
+                    and re.fullmatch(r"(?:[0-9a-f]{2}:){5}[0-9a-f]{2}", resource["mac"])
+                    and not int(resource["mac"][:2], 16) & 1 and resource["mac"] != "00:00:00:00:00:00"
+                    and values.get("ansible_host") == resource["address"]
+                    and values.get("host_keys") == entry["instance_route"]["guest_host_keys"]
+                    and type(values.get("aap_instance_number")) is int
+                    and values["aap_instance_number"] == entry["number"],
+                    "Remaining AAP permission ownership requires its verified source placement and resource.")
+            if not entry.get("decommissioned"):
+                add_owner(resource)
+            continue
+        resource = values.get("vm_resource")
+        require(name not in names or isinstance(resource, dict),
+                "An existing selected related VM requires its complete source vm_resource.")
+        if resource is None:
+            continue
+        required = {"vm_name", "address", "uuid", "disk", "mac", "network", "bridge", "machine_id",
+                    "host_keys", "hypervisor_machine_id", "verified"}
+        require(isinstance(resource, dict) and required <= set(resource),
+                "Source vm_resource must contain the complete verified guest artifact.")
+        match = re.fullmatch(r"[a-z][a-z0-9-]*-v([0-9]{2,})", name or "")
+        require(match is not None and name.endswith("-v%02d" % int(match[1])) and int(match[1]) > 0
+                and resource["vm_name"] == name and resource["verified"] is True
+                and resource["hypervisor_machine_id"] == pin["machine_id"]
+                and resource["bridge"] in pin["isolation_bridges"]
+                and isinstance(resource["network"], str)
+                and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}", resource["network"])
+                and isinstance(resource["uuid"], str)
+                and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", resource["uuid"])
+                and resource["uuid"] != "00000000-0000-0000-0000-000000000000"
+                and isinstance(resource["disk"], str)
+                and re.fullmatch(re.escape("/opt/vms/" + name) + r"(?:\.disk)?\.qcow2", resource["disk"])
+                and isinstance(resource["mac"], str)
+                and re.fullmatch(r"(?:[0-9a-f]{2}:){5}[0-9a-f]{2}", resource["mac"])
+                and not int(resource["mac"][:2], 16) & 1 and resource["mac"] != "00:00:00:00:00:00"
+                and isinstance(resource["machine_id"], str) and re.fullmatch(r"[a-f0-9]{32}", resource["machine_id"])
+                and resource["machine_id"] != pin["machine_id"]
+                and type(values.get("aap_instance_number")) is int
+                and values["aap_instance_number"] == int(match[1])
+                and resource.get("aap_instance_number", int(match[1])) == int(match[1]),
+                "Source vm_resource conflicts with its VM name, number, storage or pinned hypervisor.")
+        _routing.ipv4(resource["address"])
+        address = IPv4Address(resource["address"])
+        require(not (address.is_unspecified or address.is_loopback or address.is_multicast or address.is_reserved),
+                "Verified VM ownership requires a normalized unicast guest IPv4 address.")
+        _routing.host_keys(resource["host_keys"])
+        require(values.get("ansible_host") == resource["address"] and values.get("vm_uuid") == resource["uuid"]
+                and values.get("machine_id") == resource["machine_id"] and values.get("host_keys") == resource["host_keys"],
+                "Source host variables disagree with their verified vm_resource identity.")
+        add_owner(resource)
+        if name in names:
+            require(values["aap_instance_number"] == number, "Selected related VM counter differs from the AAP instance.")
+            related[names[name]] = deepcopy(resource)
+    proof = {"instance_name": selected, "inventory_name": hypervisor["inventory"], "inventory_id": inventory_id,
+             "hypervisor_name": hypervisor["name"], "hypervisor_machine_id": pin["machine_id"],
+             "related_resources": related, "policy_owners": owners,
+             "missing_roles": sorted(set(names.values()) - set(related))}
+    if retained is not None:
+        require(all(proof[key] == retained.get(key) for key in ("instance_name", "inventory_name", "inventory_id",
+                    "hypervisor_name", "hypervisor_machine_id")), "Source resource scope changed during retirement.")
+        for role, resource in retained["related_resources"].items():
+            require(role not in related or related[role] == resource,
+                    "An extant source vm_resource changed during retirement.")
+            related.setdefault(role, deepcopy(resource))
+    return proof
+
+
+def verify_remaining_guest_grants(policy, proof):
+    """A missing optional source row cannot excuse an unowned surviving grant."""
+    if proof["missing_roles"]:
+        owners = {tuple(owner[key] for key in ("bridge", "ipv4", "mac")) for owner in proof["policy_owners"]}
+        require(all(tuple(client[key] for key in ("bridge", "ipv4", "mac")) in owners
+                    for client in policy.get("https_clients", []) + policy.get("guest_host_clients", [])),
+                "Missing related VM rows require every remaining grant to have surviving verified inventory ownership.")
+
+
+def isolation_retirement_context(record, selected, target, transition, related_resources=None):
     """Validate a bounded removal against the selected consumed reservation."""
     require(isinstance(transition, dict) and set(transition) == {"previous_policy", "desired_policy", "identities"},
             "Supply only both isolation policies and verified selected guest identities.")
@@ -190,6 +380,11 @@ def isolation_retirement_context(record, selected, target, transition):
     normalized(desired)
     resources = record.get("instance_resources", {})
     require(isinstance(resources, dict), "Require existing selected guest ownership records.")
+    if related_resources is not None:
+        require(set(resources) <= {"aap"} and isinstance(related_resources, dict)
+                and set(related_resources) <= {"zabbix", "testserver1", "tra"},
+                "Keep application ownership in the existing source inventory, not central allocation.")
+        resources = dict(resources, **deepcopy(related_resources))
     guests = []
     for role in ("aap", "zabbix", "testserver1", "tra"):
         metadata = resources.get(role, {})
@@ -295,6 +490,57 @@ def retirement_policy_variables(values, context, pinned=False):
     return values
 
 
+def source_retirement_variables(values, context, pinned=False):
+    """Reconcile lagging API aliases only by exact verified identity removal."""
+    values = deepcopy(values)
+    pin, desired = context["route"]["hypervisor"], context["desired_policy"]
+    selected = {tuple(identity[key] for key in ("bridge", "ipv4", "mac")) for identity in context["identities"]}
+    policies = []
+    if pinned:
+        require(values.get("aap_hypervisor_pin") == pin, "Keep the exact registered source inventory pin.")
+        policies.append(_routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
+            values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", [])))
+    policies += [values[key] for key in ("isolation_policy", "hactar_isolation_policy") if key in values]
+    removed_rules = set(context["removed_rules"])
+    for policy in policies:
+        require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
+            policy.get("protected_ipv4"), policy.get("guest_host_clients", [])) == policy,
+            "A lagging source policy must retain the normalized registered schema.")
+        reduced = deepcopy(policy)
+        for field in ("https_clients", "guest_host_clients"):
+            if field not in reduced:
+                continue
+            retained = [client for client in reduced[field]
+                        if tuple(client[key] for key in ("bridge", "ipv4", "mac")) not in selected]
+            if retained != reduced[field]:
+                if retained:
+                    reduced[field] = retained
+                else:
+                    reduced.pop(field)
+                    if field == "https_clients":
+                        reduced.pop("protected_ipv4")
+        require(reduced == desired, "A source policy cannot change beyond exact selected identity retirement.")
+        removed_rules.update('rule family="ipv4" priority="0" source address="%s/32" '
+            'destination address="%s/32" port port="%s" protocol="tcp" accept'
+            % (client["ipv4"], destination, port) for client in policy.get("guest_host_clients", [])
+            if tuple(client[key] for key in ("bridge", "ipv4", "mac")) in selected
+            for destination in client["destinations"] for port in client["ports"])
+    # All present aliases have been proved above; absent aliases are populated from canonical policy.
+    for key in ("isolation_policy", "hactar_isolation_policy"):
+        values[key] = deepcopy(desired)
+    if pinned:
+        values.update(aap_hypervisor_isolation_https_clients=deepcopy(desired.get("https_clients", [])),
+            aap_hypervisor_isolation_protected_ipv4=deepcopy(desired.get("protected_ipv4", [])),
+            aap_hypervisor_isolation_host_clients=deepcopy(desired.get("guest_host_clients", [])))
+    if "firewall_additional_zone_rules" in values:
+        rules = values["firewall_additional_zone_rules"]
+        require(isinstance(rules, list) and all(isinstance(rule, dict) for rule in rules),
+                "Require explicit source native rule data before exact retirement.")
+        values["firewall_additional_zone_rules"] = [rule for rule in rules
+            if not (rule.get("zone") == "libvirt" and rule.get("rule") in removed_rules)]
+    return values
+
+
 def retirement_host_matches(row, guest, route, hypervisor_name):
     values = inventory_variables(row)
     require(values.get("ansible_host") == guest["address"]
@@ -389,7 +635,7 @@ def source_retirement_operations(client, shared, autodeploy, hactar, context):
                                 ("ansible_user", pin["user"]), ("host_keys", pin["host_keys"])):
             require(field not in current or current[field] == expected,
                     "The live hypervisor inventory identity conflicts with its registered pin.")
-        desired = retirement_policy_variables(current, context)
+        desired = source_retirement_variables(current, context)
         if desired != current:
             operations[("PATCH", "hosts/%s/" % row["id"])] = {"variables": json.dumps(desired)}
         return live_inventory
@@ -402,6 +648,9 @@ def source_retirement_operations(client, shared, autodeploy, hactar, context):
     for guest in context["guests"]:
         for row in host_rows(guest["name"], shared_inventory["id"]):
             retirement_host_matches(row, guest, context["route"], hypervisor["name"])
+            if guest["role"] != "aap":
+                require(inventory_variables(row).get("vm_resource") == guest["metadata"],
+                        "An extant related source vm_resource changed before deletion.")
             operations[("DELETE", "hosts/%s/" % row["id"])] = None
 
     recovery_rows = [row for row in autodeploy["autodeploy_configuration"]["inventories"]
@@ -409,14 +658,15 @@ def source_retirement_operations(client, shared, autodeploy, hactar, context):
     require(len(recovery_rows) == 1, "Resolve one exact pinned recovery inventory for source synchronization.")
     live = inventory(recovery_rows[0]["name"])
     current = inventory_variables(live)
-    desired = retirement_policy_variables(current, context, True)
+    desired = source_retirement_variables(current, context, True)
     if current != desired:
         operations[("PATCH", "inventories/%s/" % live["id"])] = {"variables": json.dumps(desired)}
     if hactar is not None:
         for captured in hactar.get("controller_hosts_hactar_recovery", []):
             if inventory_variables(captured).get("ansible_host") == pin["address"]:
                 patch_hypervisor(captured)
-    return [(method, path, body) for (method, path), body in operations.items()]
+    return [(method, path, body) for method in ("PATCH", "DELETE")
+            for (operation, path), body in operations.items() if operation == method]
 
 
 def merge_inventory(configuration, selected, route, policy):

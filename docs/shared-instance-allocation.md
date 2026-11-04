@@ -80,11 +80,19 @@ The same route transaction now saves `instance_resources.aap` with exactly
 `hypervisor_machine_id`. Actual domain/network XML must identify the selected
 VM, one expected file-backed disk, one interface and the enforced network
 bridge. The allocator revalidates every field against the consumed route,
-preserves other resource roles, accepts an unchanged retry and refuses replacement
+preserves unrelated AAP allocation history, accepts an unchanged retry and refuses replacement
 of known primary ownership. Decommissioned reservations cannot publish a fresh
 active route. Legacy callers without ownership metadata remain compatible;
 new Stage 01 always supplies it. This retains proof after a failed partial
 decommission has already removed the VM definition, without a new state store.
+
+AutoDeploy allocation retains only `instance_resources.aap`. Application VM
+configuration belongs to its use case; generic teardown reads related ownership
+from the existing source Controller inventory's verified `vm_resource` records.
+It does not copy that data into AutoDeploy secrets. Only decommission enables
+the optional source read, using the existing source API credential; normal
+stage selection remains a registry-only read. See [decommissioning](decommission.md)
+for the fixed-inventory, pin, resource and missing-role checks.
 
 Provisioning is enabled one phase at a time. A successful isolated Stage 01
 proves neither AAP installation nor later API routing. Installation observers

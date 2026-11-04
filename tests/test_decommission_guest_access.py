@@ -51,6 +51,32 @@ def fixture():
 
 
 class GuestAccessRetirementTests(unittest.TestCase):
+    def test_missing_source_guest_checks_both_disk_variants_before_any_vm_operation(self):
+        for orphan in (False, True):
+            with self.subTest(orphan=orphan), tempfile.TemporaryDirectory(prefix="missing-related-disk-") as temporary:
+                directory = Path(temporary)
+                tasks = yaml.safe_load((ROOT / "tasks/decommission-related-check.yml").read_text())
+                for task in tasks:
+                    if task.get("name") == "Inspect both bounded related disk variants before any deletion":
+                        task["loop"] = [path.replace('/opt/vms/', str(directory) + '/') for path in task["loop"]]
+                if orphan:
+                    (directory / "zabbix-v07.qcow2").write_text("synthetic unrecorded image")
+                play = directory / "play.yml"
+                play.write_text(yaml.safe_dump([{"hosts": "localhost", "connection": "local", "become": False,
+                    "gather_facts": False, "vars": {"aap_related_guest": {"name": "zabbix-v07",
+                        "disk": str(directory / "zabbix-v07.disk.qcow2"), "uuid": None},
+                        "aap_retirement_domains": {"stdout_lines": []}}, "tasks": tasks}], sort_keys=False))
+                config = directory / "ansible.cfg"
+                config.write_text("[defaults]\n")
+                env = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_LOCAL_TEMP=str(directory / "local"),
+                           ANSIBLE_REMOTE_TEMP=str(directory / "remote"))
+                result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(play), "--check"],
+                    env=env, text=True, capture_output=True, timeout=60)
+                self.assertEqual(result.returncode, 2 if orphan else 0, result.stdout + result.stderr)
+                self.assertNotIn('"cmd": ["virsh"', result.stdout)
+                if orphan:
+                    self.assertEqual((directory / "zabbix-v07.qcow2").read_text(), "synthetic unrecorded image")
+
     def test_selected_identities_are_removed_from_both_lists_without_other_changes(self):
         inputs = fixture()
         original = copy.deepcopy(inputs)

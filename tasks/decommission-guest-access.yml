@@ -85,7 +85,8 @@
                aap_hypervisor_isolation_host_clients | default([])) |
              aap_decommission_guest_access_plan(aap_retirement, aap_instance_route, aap_instance_resources,
                aap_decommission_guest_xmls, aap_decommission_guest_network_xmls,
-               aap_decommission_isolation_capture.content | b64decode | from_json) }}
+               aap_decommission_isolation_capture.content | b64decode | from_json,
+               aap_related_resource_proof | default(none)) }}
       no_log: true
 
     - name: Expose the protected policy handoff for canonical source retirement

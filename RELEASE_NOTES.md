@@ -1,5 +1,29 @@
 # Release notes
 
+## 0.33.0
+
+Keep AutoDeploy secrets limited to AAP configuration and primary AAP ownership.
+Decommission optionally reads related VM ownership from the existing fixed
+source AAP inventory, with trusted TLS, current-job verification and exact
+hypervisor/name/counter/address/UUID/disk/MAC/bridge/machine/key validation of
+`vm_resource`. Normal stage reads do not load or require source API access.
+
+Never copy application ownership back into central allocation. Optional or
+partially deleted guests require VM and both disk variants absent plus verified
+surviving ownership for every remaining permission. Compare final source facts
+with the same job's protected preflight; recheck extant records during publication.
+Update and verify all source policy aliases before deleting guest ownership rows.
+Retry a lagging API alias only when exact selected-identity removal yields the
+encrypted desired policy, with no new grant or unrelated removal.
+
+Validation includes encrypted Git with AAP-only allocation, optional reader
+authentication and normal-reader independence, tampered resource refusal,
+never-deployed guests, orphaned grants, hidden disk variants and interruption
+after partial source host deletion. No destructive deployment job validates this change.
+Focused checks pass 63 cases: 16 source/key, 21 decommission and 26 allocation/routing;
+syntax and scoped strict production lint pass. A separate GET-only check resolved
+the actual selected source inventory against an in-memory AAP-only allocation.
+
 ## 0.32.1
 
 Document implementation `fc85d29`: automatic verified primary ownership,

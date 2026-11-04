@@ -59,17 +59,18 @@ def primary_fixture():
 
 
 class AllocationTests(unittest.TestCase):
-    def test_primary_ownership_is_published_atomically_and_preserves_other_resource_roles(self):
+    def test_primary_ownership_is_published_atomically_and_preserves_other_aap_state(self):
         request = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
         state, _ = allocation.reserve(self.state(), "aap27-test", request, "1" * 32)
-        state["reservations"][request]["instance_resources"] = {"tra": {"keep": True}}
+        state["unrelated"] = {"keep": True}
         original = copy.deepcopy(state)
         route, domain, network, resource = primary_fixture()
         published, record = allocation.publish_route(state, request, route, {"aap": resource})
         self.assertEqual(state, original)
         self.assertEqual(published["next_number"], state["next_number"])
         self.assertEqual(record["instance_route"], route)
-        self.assertEqual(record["instance_resources"], {"tra": {"keep": True}, "aap": resource})
+        self.assertEqual(record["instance_resources"], {"aap": resource})
+        self.assertEqual(published["unrelated"], state["unrelated"])
         self.assertEqual(allocation.publish_route(published, request, route, {"aap": resource})[0], published)
         self.assertEqual(allocation.publish_route(published, request, route)[0], published)
         changed = dict(resource, uuid="bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
@@ -78,6 +79,10 @@ class AllocationTests(unittest.TestCase):
         published["reservations"][request]["decommissioned"] = True
         with self.assertRaises(ValueError):
             allocation.publish_route(published, request, route, {"aap": resource})
+        app_data = copy.deepcopy(state)
+        app_data["reservations"][request]["instance_resources"] = {"tra": {"keep": True}}
+        with self.assertRaises(ValueError):
+            allocation.publish_route(app_data, request, route, {"aap": resource})
 
     def test_incomplete_foreign_or_extra_primary_ownership_fields_are_refused(self):
         request = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"

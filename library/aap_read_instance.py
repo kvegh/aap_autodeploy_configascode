@@ -11,6 +11,14 @@ options:
     required: true
   expected_route:
     type: dict
+  allow_retired:
+    type: bool
+    default: false
+    description: Read consumed retired history only for an explicit cleanup retry.
+  read_related_resources:
+    type: bool
+    default: false
+    description: For decommission only, verify related ownership in the fixed source AAP inventory.
 author:
   - AAP AutoDeploy maintainers
 """

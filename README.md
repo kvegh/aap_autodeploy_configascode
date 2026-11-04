@@ -274,7 +274,15 @@ VM's complete ownership in its existing encrypted route transaction after a
 read-only authenticated guest check through the pinned hypervisor. Actual domain
 and network XML supply the UUID, disk, address, MAC and bridge; conflicting saved
 identity cannot be silently replaced. This retains proof for a retry after the
-VM definition has already gone. See
+VM definition has already gone. AutoDeploy stores only AAP configuration and
+primary AAP ownership. Decommission reads related VM ownership from verified
+`vm_resource` data in the existing source AAP inventory, using the already
+attached source API access. Normal instance reads require no source API access.
+Optional guests may be absent only when their VM and both disk variants are
+absent and every remaining permission has verified surviving inventory ownership.
+All source policy aliases are updated and read back before guest inventory
+records are deleted, so partial cleanup can be retried without storing
+application ownership in AutoDeploy. See
 [decommission details](docs/decommission.md). Active source inventory/API state
 is retired without reusing its number. These local changes are validated but
 have not been applied by a decommission job. Previous successful

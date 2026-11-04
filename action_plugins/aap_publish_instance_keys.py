@@ -5,11 +5,8 @@ from copy import deepcopy
 import json
 import os
 from pathlib import Path
-import ssl
 import subprocess
 import tempfile
-from urllib.parse import urljoin, urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener, HTTPSHandler
 
 import yaml
 from ansible.errors import AnsibleActionFail
@@ -32,44 +29,7 @@ vault_yaml = load("publish_cac_yaml", ROOT / "src/cac_yaml.py")
 routing = load("publish_inventory_routing", ROOT / "filter_plugins/aap_instance_route.py")
 
 
-class NoRedirect(HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
-class SourceClient:
-    def __init__(self):
-        self.origin = keys.origin(os.environ.get("AAP_CAC_SOURCE_URL", ""))
-        self.token = os.environ.get("AAP_CAC_SOURCE_TOKEN", "")
-        keys.require(bool(self.token), "Attach the existing source AAP API access credential.")
-        context = ssl.create_default_context()
-        authority = os.environ.get("AAP_CAC_SOURCE_CA_FILE")
-        if authority:
-            context.load_verify_locations(cafile=authority)
-        self.opener = build_opener(NoRedirect(), HTTPSHandler(context=context))
-
-    def request(self, method, path, body=None):
-        relative = path if path.startswith("/") else "/api/controller/v2/" + path
-        url = urljoin(self.origin + "/", relative)
-        keys.require(urlsplit(url).netloc == urlsplit(self.origin).netloc,
-                     "Source API pagination must remain on the authenticated source.")
-        request = Request(url, data=json.dumps(body).encode() if body is not None else None,
-            headers={"Authorization": "Bearer " + self.token, "Content-Type": "application/json"}, method=method)
-        try:
-            with self.opener.open(request, timeout=45) as response:
-                raw = response.read()
-            return json.loads(raw) if raw else {}
-        except Exception:
-            raise keys.StoreError("Source token-store API synchronization failed; the saved target token is preserved.") from None
-
-    def rows(self, path):
-        result = []
-        while path:
-            page = self.request("GET", path)
-            result.extend(page["results"])
-            path = page.get("next")
-        return result
-
+SourceClient = keys.SourceClient
 
 class ActionModule(ActionBase):
     TRANSFERS_FILES = False
@@ -111,6 +71,7 @@ class ActionModule(ActionBase):
             keys.require(source.origin != keys.origin(args["record"].get("target")),
                          "Source API access must identify the AAP running this fresh deployment.")
             variables = task_vars or {}
+            preflight_ownership = variables.get("aap_registered_target", {}).get("related_resource_proof")
             job_id = variables.get("awx_job_id")
             template_id = variables.get("awx_job_template_id")
             revision = variables.get("awx_project_revision")
@@ -132,6 +93,7 @@ class ActionModule(ActionBase):
                     GIT_CONFIG_KEY_1="http.followRedirects", GIT_CONFIG_VALUE_1="false",
                     GIT_CONFIG_KEY_2="http.sslVerify", GIT_CONFIG_VALUE_2="true", LC_ALL="C")
                 published = False
+                source_ownership_snapshot = None
                 for attempt in range(8):
                     checkout = workspace / str(attempt)
                     checkout.mkdir(mode=0o700)
@@ -156,8 +118,23 @@ class ActionModule(ActionBase):
                         selected_records = [row for row in allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == args["instance_name"]]
                         keys.require(len(selected_records) == 1, "Resolve exactly one consumed selected reservation.")
+                        ownership_path = checkout / "cac/host_inventory.yml"
+                        keys.require(ownership_path.is_file() and not ownership_path.is_symlink(),
+                                     "Use the fixed encrypted shared inventory for source ownership lookup.")
+                        ownership_capture = AnsibleLoader(self._loader._vault.decrypt(ownership_path.read_bytes())).get_single_data()
+                        source_ownership_snapshot = keys.source_related_resources(source, ownership_capture,
+                            allocation["aap_vm_allocation"], args["instance_name"], source_ownership_snapshot)
+                        if attempt == 0:
+                            keys.require(isinstance(preflight_ownership, dict)
+                                and preflight_ownership.get("source_job_id") == str(job_id)
+                                and preflight_ownership.get("source_project_revision") == revision
+                                and all(preflight_ownership.get(key) == source_ownership_snapshot[key] for key in (
+                                    "instance_name", "inventory_name", "inventory_id", "hypervisor_name",
+                                    "hypervisor_machine_id", "related_resources")),
+                                "Final source ownership differs from this running job's verified preflight.")
                         retirement_context = keys.isolation_retirement_context(selected_records[0], args["instance_name"],
-                            args["record"].get("target"), isolation_retirement)
+                            args["record"].get("target"), isolation_retirement, source_ownership_snapshot["related_resources"])
+                        keys.verify_remaining_guest_grants(retirement_context["desired_policy"], source_ownership_snapshot)
                     path = checkout / relative
                     keys.require(path.is_file() and not path.is_symlink(), "Require the existing encrypted AutoDeploy CaC file.")
                     plain, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes(), filename=str(path))
@@ -273,9 +250,15 @@ class ActionModule(ActionBase):
                                 git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
                             latest_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
                                               if row.get("vm_name") == args["instance_name"]]
+                            ownership_capture = AnsibleLoader(self._loader._vault.decrypt(
+                                git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                            source_ownership_snapshot = keys.source_related_resources(source, ownership_capture,
+                                latest_allocation["aap_vm_allocation"], args["instance_name"], source_ownership_snapshot)
+                            keys.verify_remaining_guest_grants(retirement_context["desired_policy"], source_ownership_snapshot)
                             keys.require(len(latest_records) == 1 and latest_records[0].get("decommissioned") is True
                                 and keys.isolation_retirement_context(latest_records[0], args["instance_name"],
-                                    args["record"].get("target"), isolation_retirement) == retirement_context,
+                                    args["record"].get("target"), isolation_retirement,
+                                    source_ownership_snapshot["related_resources"]) == retirement_context,
                                 "Selected retirement ownership changed during source synchronization.")
                             keys.require(keys.retire_inventory_capture(latest, retirement_context, "autodeploy") == latest,
                                          "Canonical recovery inventory changed after retirement publication.")
@@ -289,10 +272,23 @@ class ActionModule(ActionBase):
                                 retirement_hactar = AnsibleLoader(self._loader._vault.decrypt(hactar_file.stdout.encode())).get_single_data()
                                 keys.require(keys.retire_inventory_capture(retirement_hactar, retirement_context, "hactar") == retirement_hactar,
                                              "Canonical Hactar capture changed after retirement publication.")
-                            for method, api_path, body in keys.source_retirement_operations(source, retirement_shared,
-                                    latest, retirement_hactar, retirement_context):
+                            source_operations = keys.source_retirement_operations(source, retirement_shared,
+                                latest, retirement_hactar, retirement_context)
+                            for method, api_path, body in source_operations:
+                                if method != "PATCH":
+                                    continue
                                 source.request(method, api_path, body)
                                 api_changed = True
+                            remaining_operations = keys.source_retirement_operations(source, retirement_shared,
+                                latest, retirement_hactar, retirement_context)
+                            keys.require(all(method == "DELETE" for method, _, _ in remaining_operations),
+                                         "Verify every source policy alias before deleting guest ownership records.")
+                            for method, api_path, body in remaining_operations:
+                                source.request(method, api_path, body)
+                                api_changed = True
+                            keys.require(not keys.source_retirement_operations(source, retirement_shared,
+                                latest, retirement_hactar, retirement_context),
+                                "Verify completed source inventory retirement before returning success.")
                         else:
                             for host in source.rows("hosts/?name=" + args["instance_name"]):
                                 variables = yaml.safe_load(host.get("variables", "{}")) or {}

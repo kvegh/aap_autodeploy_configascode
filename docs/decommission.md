@@ -5,6 +5,8 @@ and runs `destroy-test-aap.yml`. Select the registered `aap_instance_key` and ty
 that same value as `aap_decommission_confirmation`. The job uses the one-host
 recovery inventory and its Machine credential, environment Vault and private
 AutoDeploy CaC reader/Vault. It is separate from the deployment workflow.
+The existing source API credential and its configured CA trust are also required
+for the decommission-only related-ownership read and final source cleanup.
 
 Before deletion it verifies SSH keys, the actual hypervisor machine ID and
 persistent isolation. It checks the selected domain's exact disk and refuses
@@ -13,7 +15,8 @@ step. An unexpected destination stops the job for review.
 
 The complete deployment scope includes AAP, matching versioned Zabbix,
 testserver and TRA guests, and the demo website. Related guests require recorded
-UUID/disk ownership in the existing encrypted reservation before deletion.
+UUID/disk ownership in the existing source AAP inventory before deletion.
+AutoDeploy's encrypted reservation retains only primary AAP ownership.
 Known website content/cache/checkout, nginx vhosts/rate-limit/Basic-auth files,
 certificate lineages and upstream CA files are removed only for that version.
 
@@ -23,13 +26,40 @@ immediately before deletion and verifies provider absence. Conflicting addresses
 unexpected IPv6 or unreviewed record types stop before VM deletion. Other
 versions and production records are preserved.
 
+## Read related ownership from the existing source inventory
+
+Only this playbook enables `aap_read_instance.read_related_resources`. Ordinary
+stage selection remains registry-only and never constructs the source API client.
+The optional reader verifies trusted source HTTPS and that its credential can
+identify the current running job/template/revision. Its inventory name comes
+from the fixed encrypted shared capture, selecting the independently pinned
+hypervisor; callers cannot provide another inventory, endpoint or resource map.
+
+Present related guests require a full verified `vm_resource` on their source
+inventory row. Required fields are `vm_name`, `address`, `uuid`, `disk`, `mac`,
+`network`, `bridge`, `machine_id`, `host_keys`, `hypervisor_machine_id` and
+`verified: true`. The row's address, UUID, machine ID, keys, hypervisor placement
+and integer `aap_instance_number` must agree with that artifact and the selected
+counter. Exact same-counter role names and bounded disk paths are required.
+Other artifact fields are retained in protected memory, never copied into the
+AutoDeploy secrets repository. Application CaC stays with its own use case.
+
+A role can legitimately be undeployed. A missing source row is accepted only
+after the existing target preflight proves no corresponding VM and neither
+bounded disk variant exists. Every permission left after the selected cleanup
+must resolve to a surviving verified source VM or proper AAP resource on this
+same hypervisor. Unknown or orphaned permissions fail closed. An extant row
+without valid `vm_resource` fails even if its VM is absent. This also permits a
+new cleanup job after some source host rows were already deleted, without
+persisting application ownership in central allocation.
+
 ## Retire only the selected guests' permissions
 
 Before stopping any VM, the job reads the existing root-owned protected
 isolation JSON, verifies its live policy, and captures the selected domain and
 libvirt network XML. Guest bridge/MAC values come from those checked definitions;
 the AAP address comes from its registered route, and related addresses come from
-their existing verified resource records. Recorded UUID, disk, MAC, bridge,
+their verified source inventory artifacts. Recorded UUID, disk, MAC, bridge,
 network, address and hypervisor identity must agree when supplied. A legacy
 primary VM without recorded UUID retains the existing exact-name/single-disk
 guard. A missing VM with remaining grants needs its full recorded identity;
@@ -96,18 +126,28 @@ that pin and proves the desired policy is exactly removal of the selected
 recorded identities. It rejects omitted selected permissions, foreign identities,
 new grants and conflicting current policy. Current encrypted policy may equal
 only the captured previous or desired value for an idempotent retry.
+It independently rereads source ownership, compares extant records with this
+same running job's protected reader result and retains those verified facts only
+in memory while its own API deletions progress. No caller resource argument or
+encrypted application-metadata fallback is accepted.
 
 The same encrypted commit updates the canonical recovery inventory, both
 hypervisor policy aliases in the shared capture, and equivalent metadata in the
 existing fixed Hactar recovery capture. Exact retired rich-rule entries are
 removed from saved additional-rule data so a later firewall deployment cannot
 add them back. Captured literal JSON variable wrappers remain literal. Only
-matching same-version guest rows and memberships in the captured shared
-inventory are removed, with recorded address/UUID/machine-identity checks;
+matching AAP rows and memberships in the captured shared inventory are removed;
+related application rows are retired from the source API using verified source
+address/UUID/machine-identity checks. Application metadata is never added to the
+encrypted central captures. Existing unrelated rows and memberships remain;
 other inventories, versions, credentials and resource history are preserved.
 
 All source API targets are read and validated before encrypted publication or
 source writes. Synchronization updates only those policy fields and removes
-the verified guest hosts in that exact shared inventory. A failed source update
+the verified guest hosts in that exact shared inventory. All policy aliases are
+patched and reread before any guest host deletion. A lagging API policy is
+accepted only when its normalized state, minus exactly this job's verified
+selected identities, equals the encrypted desired policy. Unrelated changes or
+new permissions are refused. A failed source update
 after successful encrypted publication can be rerun without a second Git change.
 Concurrent changes are reread and checked rather than overwritten.

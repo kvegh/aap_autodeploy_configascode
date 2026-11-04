@@ -108,7 +108,7 @@ def guest_networks(xmls, related):
         raise AnsibleFilterError("Resolve only the selected guests' recorded libvirt networks.") from None
 
 
-def guest_access_plan(previous, retirement, route, related, xmls, networks, actual_policy=None):
+def guest_access_plan(previous, retirement, route, related, xmls, networks, actual_policy=None, source_proof=None):
     """Remove only proven selected VM identities; never infer ownership from a name/IP alone."""
     try:
         if not all(isinstance(value, dict) for value in (previous, retirement, route, related, xmls, networks)):
@@ -255,6 +255,25 @@ def guest_access_plan(previous, retirement, route, related, xmls, networks, actu
                 if field == "https_clients":
                     desired.pop("protected_ipv4")
         validate_policy(desired)
+        if source_proof is not None:
+            if (not isinstance(source_proof, dict) or source_proof.get("instance_name") != route["vm_name"]
+                    or source_proof.get("hypervisor_machine_id") != pin["machine_id"]
+                    or not isinstance(source_proof.get("missing_roles"), list)
+                    or set(source_proof["missing_roles"]) - {"zabbix", "testserver1", "tra"}
+                    or not isinstance(source_proof.get("policy_owners"), list)):
+                raise ValueError
+            owners = source_proof["policy_owners"]
+            for owner in owners:
+                if (not isinstance(owner, dict) or set(owner) != {"bridge", "ipv4", "mac"}
+                        or owner["bridge"] not in previous["bridges"]):
+                    raise ValueError
+                ipv4(owner["ipv4"])
+                mac_address(owner["mac"])
+            if source_proof["missing_roles"]:
+                owner_keys = {tuple(owner[key] for key in ("bridge", "ipv4", "mac")) for owner in owners}
+                if any(tuple(client[key] for key in ("bridge", "ipv4", "mac")) not in owner_keys
+                       for client in desired.get("guest_host_clients", []) + desired.get("https_clients", [])):
+                    raise ValueError
         actual = previous if actual_policy is None else actual_policy
         validate_policy(actual)
         if actual != previous and actual != desired:
