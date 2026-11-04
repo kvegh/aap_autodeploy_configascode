@@ -158,6 +158,13 @@ parallel image-based recovery from inherited production integrations; successful
 VM creation alone does not authorize release before guest setup and identity
 checks finish.
 
+For an explicitly approved package bootstrap, that same role accepts
+`recovery_release_operation: guest_bootstrap_https`. It adds only public IPv4
+HTTPS for the verified generic guest, retaining production/private blocks and
+all other permissions. It grants no hypervisor-service or full-release access.
+Full release follows successful complete deployment and validation. See
+[bootstrap and portability](docs/autodeploy-portability.md).
+
 The existing `aap_publish_instance_keys` action plans and saves the release using
 existing source API, writer and Vault credentials. It updates the three maintained
 encrypted policy captures and source inventory aliases without changing target
@@ -729,7 +736,8 @@ repository. Stage 04 always uses `main`; it requires these Vault-encrypted files
 - `cac/manifest.zip.vault`: the complete subscription manifest ZIP, encrypted as
   a whole file. Keep the original archive intact before encrypting it.
 
-Use a read-only token with access to that repository.
+Use a repository-scoped read-only token for configuration downloads. The two
+approved write exceptions are described below.
 Do not put the token in the URL or extra variables.
 
 Private-repository read tokens are bootstrap credentials: the job needs one
@@ -755,6 +763,24 @@ that download. Keep the initial recovery copy separately.
 | `automation-orchestrator-secrets` | `automation-orchestrator-secrets CaC repo read token` | `automation-orchestrator-secrets CaC vault cred` |
 | `aiops-selfhealing-demo-secrets` | `aiops-selfhealing-demo-secrets CaC repo read token` | `aiops-selfhealing-demo-secrets CaC vault cred` |
 
+Repository tokens are read-only by default, with two approved exceptions:
+
+- The existing `VM allocation git Pseudo CMDB writer` has read/write access to
+  the AutoDeploy/base CaC secrets repository. It saves encrypted allocations,
+  instance access and verified inventory/isolation updates. Its separate
+  configuration-download token remains read-only.
+- The existing AIOps secrets token has repository-scoped **Contents: Read and
+  write** permission, approved for saving encrypted settings and verified
+  resource details for each new instance. Its credential retains the existing
+  `CaC repo read token` display name; that name does not describe its current
+  write permission. The preparation automation remains work in progress.
+
+Both use the existing `Cac_git_token_type`; no additional credential type or
+repository is introduced. Other companion repository tokens remain read-only.
+Changing permissions on the same token does not require replacing its encrypted
+value. Every saved secret remains Vault-encrypted, and writer permissions are
+limited to the corresponding private repository.
+
 Bootstrap inputs use the same keys (`base`, `assistant_team`,
 `windows_disconnected`, `orchestrator`, `aiops`) in
 `cac_bootstrap_git_credentials` and `cac_bootstrap_vault_credentials`.
@@ -769,7 +795,7 @@ maintenance leaves current registry routing intact. Inventory-driven destination
 lookup and automatic per-instance API token selection are implemented in the shared project importer.
 
 `Cac_git_token_type` is the reusable custom schema, not a credential containing a
-token. Its `CAC_GIT_TOKEN` injector supplies the separate per-repository read
+token. Its `CAC_GIT_TOKEN` injector supplies the separate per-repository access
 tokens and the dedicated `VM allocation git Pseudo CMDB writer` token. The writer
 uses this same type; it does not share the read token or change its permissions.
 The encrypted shared base stores the writer under `controller_credentials_base`,

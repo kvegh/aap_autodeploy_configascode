@@ -1089,8 +1089,9 @@ def released_guest_resource(guest, pin):
     return deepcopy(guest)
 
 
-def guest_release_context(configuration, shared, guest, pin, transition=None):
+def guest_release_context(configuration, shared, guest, pin, transition=None, access="release"):
     """Derive one addition from canonical policy; never infer target ownership from an IP."""
+    require(access in ("release", "bootstrap_https"), "Choose full release or bounded guest bootstrap HTTPS.")
     pin = _routing.hypervisor_pin(pin)
     resource = released_guest_resource(guest, pin)
     inventories = [row for row in configuration["autodeploy_configuration"]["inventories"]
@@ -1106,7 +1107,8 @@ def guest_release_context(configuration, shared, guest, pin, transition=None):
             "Release must preserve independently declared production exclusions.")
     identity = {key: resource[field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
     desired = deepcopy(previous)
-    released = desired.setdefault("released_clients", [])
+    field = "released_clients" if access == "release" else "https_clients"
+    released = desired.setdefault(field, [])
     matching = [item for item in released if item["ipv4"] == identity["ipv4"] or item["mac"] == identity["mac"]]
     require(not matching or matching == [identity], "An existing released guest identity conflicts with verified provenance.")
     if not matching:
@@ -1123,8 +1125,8 @@ def guest_release_context(configuration, shared, guest, pin, transition=None):
             original.get("protected_ipv4"), original.get("guest_host_clients", []), original.get("released_clients", [])) == original,
             "Keep the normalized policy captured before the live release.")
         derived = deepcopy(original)
-        if identity not in derived.setdefault("released_clients", []):
-            derived["released_clients"].append(identity)
+        if identity not in derived.setdefault(field, []):
+            derived[field].append(identity)
         require(derived == desired and previous in (original, desired),
                 "A release cannot overwrite another guest permission or production exclusion.")
         previous = original
@@ -1146,7 +1148,8 @@ def guest_release_context(configuration, shared, guest, pin, transition=None):
         require(hypervisor_values.get(field) == expected, "Shared hypervisor identity conflicts with the release pin.")
     context = {"route": {"hypervisor": deepcopy(pin)}, "previous_policy": deepcopy(previous),
                "desired_policy": desired, "guests": [], "removed_rules": set(), "guest": resource,
-               "hypervisor_name": hypervisor["name"], "inventory_name": hypervisor["inventory"]}
+               "hypervisor_name": hypervisor["name"], "inventory_name": hypervisor["inventory"],
+               "access_mode": access}
     # Validate capture placement and any extant guest identity before returning a plan.
     guest_release_inventory_capture(shared, context, "shared")
     return context
@@ -1163,13 +1166,14 @@ def guest_release_variables(values, context, pinned=False):
             result.get("aap_hypervisor_isolation_protected_ipv4", []), result.get("aap_hypervisor_isolation_host_clients", []),
             result.get("aap_hypervisor_isolation_released_clients", [])))
     identity = {key: context["guest"][field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
+    field = "https_clients" if context.get("access_mode") == "bootstrap_https" else "released_clients"
     for policy in policies:
         require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
             policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", [])) == policy,
             "A source release alias must keep the normalized production-protected schema.")
         derived = deepcopy(policy)
-        if identity not in derived.setdefault("released_clients", []):
-            derived["released_clients"].append(identity)
+        if identity not in derived.setdefault(field, []):
+            derived[field].append(identity)
         require(derived == desired, "A policy alias changed beyond this exact verified guest release.")
     for key in ("isolation_policy", "hactar_isolation_policy"):
         result[key] = deepcopy(desired)
@@ -1177,7 +1181,7 @@ def guest_release_variables(values, context, pinned=False):
         result.update(aap_hypervisor_isolation_https_clients=deepcopy(desired.get("https_clients", [])),
             aap_hypervisor_isolation_protected_ipv4=deepcopy(desired["protected_ipv4"]),
             aap_hypervisor_isolation_host_clients=deepcopy(desired.get("guest_host_clients", [])),
-            aap_hypervisor_isolation_released_clients=deepcopy(desired["released_clients"]))
+            aap_hypervisor_isolation_released_clients=deepcopy(desired.get("released_clients", [])))
     return result
 
 

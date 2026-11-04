@@ -159,6 +159,12 @@ class GuestReleaseTests(unittest.TestCase):
         self.assertEqual(planned['desired_policy']['protected_ipv4'], policy['protected_ipv4'])
 
     def test_native_action_real_encrypted_git_plan_publish_api_interruption_retry_and_idempotence(self):
+        self.exercise_action('release_guest')
+
+    def test_native_bootstrap_https_action_uses_same_encrypted_transaction_and_safe_retry(self):
+        self.exercise_action('guest_bootstrap_https')
+
+    def exercise_action(self, operation):
         module = load('test_guest_release_action', 'action_plugins/aap_publish_instance_keys.py')
         guest, pin, main, shared, hactar, allocation = fixture(new=True)
         source = Source(main, shared, hactar)
@@ -191,7 +197,7 @@ class GuestReleaseTests(unittest.TestCase):
                 return real_run(command, *args, **kwargs)
             def run(phase, transition=None, check=False):
                 plugin = module.ActionModule.__new__(module.ActionModule)
-                args = {'operation': 'release_guest', 'phase': phase, 'guest': guest, 'hypervisor': pin}
+                args = {'operation': operation, 'phase': phase, 'guest': guest, 'hypervisor': pin}
                 if transition is not None: args['transition'] = transition
                 plugin._task = SimpleNamespace(args=args, check_mode=check); plugin._loader = loader
                 return plugin.run(task_vars={'awx_job_id': 123, 'awx_job_template_id': 456, 'awx_project_revision': 'a' * 40})
@@ -202,6 +208,11 @@ class GuestReleaseTests(unittest.TestCase):
                 planned = run('plan', check=True)
                 self.assertFalse(planned.get('failed'), planned)
                 transition = planned['transition']
+                selected = {'bridge': guest['bridge'], 'ipv4': guest['address'], 'mac': guest['mac']}
+                expected = deepcopy(transition['previous_policy'])
+                field = 'https_clients' if operation == 'guest_bootstrap_https' else 'released_clients'
+                expected.setdefault(field, []).append(selected)
+                self.assertEqual(transition['desired_policy'], expected)
                 self.assertEqual(source.calls, [])
                 self.assertEqual(git(remote, 'rev-list', '--count', 'main').stdout.strip(), '1')
                 original_request = source.request

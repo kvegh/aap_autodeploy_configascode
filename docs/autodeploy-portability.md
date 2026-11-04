@@ -91,6 +91,27 @@ The base template must have tag prompting enabled so AAP accepts the requested
 tag instead of ignoring it. Check the launch metadata first and verify the launch
 accepted `job_tags: aap_installation_access`; no ignored tag is a valid repair run.
 
+## Bootstrap HTTPS for a freshly configured generic guest
+
+The existing `recovery_guest_release` role also accepts
+`recovery_release_operation: guest_bootstrap_https`. It requires the same verified
+generic-clone UUID, disk, MAC, DHCP address, SSH host keys and hypervisor machine
+identity as full guest release. It adds only the exact guest's `https_clients`
+entry, preserving production/private exclusions and every other guest. It does
+not add a full `released_clients` entry or access to hypervisor services.
+
+This operation supports the approved package-download bootstrap for a disposable
+Assistant guest. The caller must invoke it only where that bootstrap permission
+is authorized, then invoke ordinary full release after software deployment and
+validation succeed. It does not change the separate AAP installation-access
+operation, which still requires the exact consumed AAP reservation.
+
+The same plan/apply/encrypted-publication transaction, strict native guest checks,
+source inventory reconciliation and unpublished-change rollback apply. Focused
+tests exercise actual encrypted Git publication, API interruption/retry and
+repeated execution. Live Assistant acceptance and exact-guest retirement remain
+separate unfinished checks.
+
 ## Inventory names and lifecycle ownership
 
 The inventory display name follows `aapNN-vNN`. The existing physical libvirt

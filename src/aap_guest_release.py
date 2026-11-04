@@ -23,10 +23,13 @@ def require(condition, message):
 
 
 def plan(request, state):
-    require(set(request) == {'operation', 'guest', 'hypervisor', 'transition', 'check_mode'}
+    require({'operation', 'guest', 'hypervisor', 'transition', 'check_mode'} <= set(request)
+            and set(request) <= {'operation', 'guest', 'hypervisor', 'transition', 'check_mode', 'mode'}
             and request['operation'] in {'apply', 'rollback'}
             and type(request['check_mode']) is bool,
             'Choose one exact verified recovery guest transition.')
+    mode = request.get('mode', 'release')
+    require(mode in {'release', 'bootstrap_https'}, 'Choose full release or bounded guest bootstrap HTTPS.')
     guest, pin, transition = (request[key] for key in ('guest', 'hypervisor', 'transition'))
     require(isinstance(guest, dict) and guest.get('verified') is True
             and re.fullmatch(r'[a-z][a-z0-9-]{0,62}', guest.get('vm_name', ''))
@@ -46,7 +49,8 @@ def plan(request, state):
             'Retain production denial, all enforced bridges and disabled autostart.')
     identity = {'bridge': guest['bridge'], 'ipv4': guest['address'], 'mac': guest['mac']}
     expected = deepcopy(previous)
-    released = expected.setdefault('released_clients', [])
+    field = 'released_clients' if mode == 'release' else 'https_clients'
+    released = expected.setdefault(field, [])
     matching = [row for row in released if row['ipv4'] == identity['ipv4'] or row['mac'] == identity['mac']]
     require(not matching or matching == [identity], 'An existing conflicting release requires review.')
     if not matching:

@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.38.0
+
+Extend the existing verified-guest isolation transaction with an explicit public
+HTTPS bootstrap operation for approved generic guests. Preserve full-release
+defaults, native ownership checks, production exclusions, encrypted three-capture
+publication and safe rollback/retry. The separate AAP installation operation
+retains its consumed-reservation guard. Nineteen focused tests pass, including
+real encrypted Git/API interruption and native role failure handling; no live
+guest permission is changed by this implementation.
+
+Document the two repository write exceptions: the existing AutoDeploy/base CaC
+state writer and the owner-updated AIOps secrets token. Other companion readers
+remain read-only. Automatic preparation of new AIOps instances, final lifecycle
+hooks and disposable-guest retirement remain unfinished.
+
 ## 0.37.7
 
 Document the agreed functional test order: verify the source use cases, pause

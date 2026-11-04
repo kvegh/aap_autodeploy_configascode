@@ -37,7 +37,7 @@ class ActionModule(ActionBase):
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
         try:
-            if self._task.args.get("operation") in ("release_guest", "installation_access"):
+            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "installation_access"):
                 return self.release_guest(result, task_vars or {})
             if self._task.check_mode:
                 result.update(changed=False, published=False)
@@ -461,7 +461,8 @@ class ActionModule(ActionBase):
                         source_operations = keys.source_installation_operations
                     else:
                         context = keys.guest_release_context(documents["autodeploy"], documents["shared"],
-                            args["guest"], args["hypervisor"], args.get("transition") if phase == "publish" else None)
+                            args["guest"], args["hypervisor"], args.get("transition") if phase == "publish" else None,
+                            "bootstrap_https" if args["operation"] == "guest_bootstrap_https" else "release")
                         capture = keys.guest_release_inventory_capture
                         source_operations = keys.source_guest_release_operations
                     desired = {kind: capture(value, context, kind) if value is not None else None
