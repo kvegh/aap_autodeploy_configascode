@@ -2244,3 +2244,19 @@ and four version checks. Actual scoped export, comments, exact decryption,
 unchanged-record checks, prior task-ID retention and ownership-table preservation
 were verified. README, restart instructions and project working rules describe
 mandatory Git refresh and recovery without the current Beads database.
+
+## Verify persistent bootstrap metadata and running guest ownership
+
+Generic guest bootstrap saves its public provenance using `virsh desc --config`
+after startup. Libvirt may therefore omit that description from running XML.
+Implementation `d2d7254` requires the saved provenance in persistent XML and
+checks any live copy if present. Both definitions must still match the exact
+UUID, disk, network and MAC, and all hypervisor and guest identity checks remain.
+This corrects verification of the existing native bootstrap behavior without
+restarting guests or broadening the release policy.
+
+The same fix checks command success and nonempty output before parsing runtime
+JSON or deciding on rollback. Sixteen focused runtime, native-role and encrypted
+publication tests pass, including failure-output handling and refusal of missing
+persistent metadata or altered live ownership. A read-only execution against the
+actual target passed with application disabled. Production lint passed.

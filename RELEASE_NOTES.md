@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.36.3
+
+Document provenance verification fix `d2d7254` and its native regression and
+read-only target checks.
+
 ## 0.36.2
 
 Read generic guest bootstrap provenance from persistent libvirt XML and validate
