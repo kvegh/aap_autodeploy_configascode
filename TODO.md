@@ -1,92 +1,92 @@
-# TODO
+# AutoDeploy tasks
 
-Beads is the source of truth. This file mirrors selected AutoDeploy backlog
-entries for Git readers; it is not the complete workspace backlog. Update the
-Beads issue first and refresh its mirrored entry when its scope or status changes.
+Beads is authoritative. This generated overview includes only sanitized task metadata.
+Full selected AutoDeploy and hypervisor task records, decisions and comments are
+preserved in the separate Ansible Vault-encrypted recovery export. Refresh both
+outputs together with `python3 scripts/sync_todo.py --snapshot-file <protected-export> --vault-password-file <existing-password-file>`;
+add `--check` to detect stale output without writing. Review public titles before committing.
 
-## bead-wd-72v — Design complete CaC object ownership beyond labels
+Scope, notes, acceptance criteria, outcomes, comment bodies and personal metadata
+are excluded here. Hypervisor-only tasks remain in that project's own overview.
+See [object ownership and label coverage](docs/cac-object-ownership.md) and
+[recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-- [ ] Status: **open**; priority: **P2**; type: **feature**.
+68 tasks: 17 outstanding; 51 closed.
 
-Inspect the authoritative issue with `bd show bead-wd-72v`.
+## Outstanding tasks
 
-### Requirement and unresolved decision
+| Task | Title | Status | Priority | Type | Parent / dependency IDs |
+|---|---|---|---|---|---|
+| bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
+| bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
+| bead-wd-72f.15 | Deploy the versioned AIOps website on the selected recovery hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.16 |
+| bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f |
+| bead-wd-72f.30 | Deploy AAP AutoDeploy CaC to the current test AAP | in_progress | P1 | task | bead-wd-72f |
+| bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
+| bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | blocked | P1 | task | bead-wd-72f |
+| bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
+| bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
+| bead-wd-72f.24 | Review legacy project settings in shared AutoDeploy inventory | open | P2 | task | bead-wd-72f |
+| bead-wd-72f.25 | Rename the new AAP inventory host after AIOps import | open | P2 | task | bead-wd-72f |
+| bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
+| bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
+| bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | blocked | P2 | task | bead-wd-mcr |
+| bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
+| bead-wd-zau | Review copied testserver monitoring and agent remediation readiness | open | P2 | task | — |
+| bead-wd-x9a | Consider automating AAP updates | open | P3 | task | — |
 
-Every managed AAP CaC object must have a clear owning AAP Project/use case,
-including a defined owner for shared platform resources and references from
-their consumers. Ownership must remain recoverable across CaC deployment and
-later API extraction so additions, changes and removals reach the correct
-configuration file and private companion repository.
+## Tasks already done/implemented/decided against
 
-The proposed universal ownership label cannot cover every object type. Keep
-existing useful labels, but choose another ownership mechanism before claiming
-complete coverage. No replacement mechanism has been selected or implemented.
-
-Project-specific CaC files already establish ownership for their definitions,
-even where several files share a private repository. They do not by themselves
-classify a newly created, previously uncaptured production object. A custom key
-ignored or removed before the CoP role is not persisted in AAP and cannot be
-recovered from its API.
-
-### Verified label coverage
-
-Checked on 2026-11-02 using read-only Controller API GET/OPTIONS responses and
-the JavaScript served by the current production UI. Recheck on another version;
-this table covers Controller resources, not all Automation Hub or EDA objects.
-
-| Object | API labels | UI label controls | UI label filter |
-|---|---|---|---|
-| Job Templates / Workflow Templates | Yes | Create/Edit | Yes |
-| Inventories | Yes | Standard inventories only | No |
-| Schedules | Yes | Conditional launch prompts* | No |
-| Workflow nodes | Yes | Conditional node prompts* | No |
-| Jobs / workflow runs | Read-only | Supplied at launch* | Yes |
-| SCM Projects | No | No | No |
-| Credentials / credential types | No | No | No |
-| Execution environments | No | No | No |
-| Hosts / groups / inventory sources | No | No | No |
-| Organizations / teams / users | No | No | No |
-| Notification templates / instance groups | No | No | No |
-
-*Label prompts appear only when the referenced template enables Labels > Prompt
-on launch. Schedule/node labels configure the future job's labels; they are not
-a universal object ownership field. Runtime job label associations are read-only.
-
-All API-supported types accepted labels__name filtering, including inventories
-and schedules whose overview filters omit labels. Standard inventory Create/Edit
-exposes Labels; smart/constructed inventory editors do not. Inventory and template
-Details pages hide labels when none are assigned. The installed CoP inventory
-role does not manage inventory label associations, despite API support.
-For inventory sources and notification templates there were no existing objects
-to probe: the negative checks used create schemas and UI code, not an instance
-label endpoint. No labels or other AAP resources were changed during the audit.
-
-### Ownership ideas to evaluate
-
-1. An encrypted ownership registry keyed by resource kind and stable logical
-   identity, mapping to the owning project, CaC file and companion repository.
-   Shared resources have one owner and explicitly declared consumers.
-2. Reserved description markers where the object supports descriptions, with
-   an external mapping for resource types without suitable metadata. Preserve
-   human descriptions and check field support for each resource type.
-3. Ownership derived from existing relationships, such as a Job Template's
-   project or a host's inventory. Treat dependencies as evidence, not proof of
-   unique ownership: a credential or execution environment can be shared.
-4. A hybrid: the registry is authoritative, existing relationships suggest
-   assignments, and labels/markers provide visibility only where supported.
-
-Compare these ideas for deployment/API roundtrips, complete resource coverage,
-new manually created objects, shared dependencies, renames, confirmed removals,
-and differing runtime IDs across AAP instances. Define a review path for missing
-or ambiguous ownership rather than silently assigning it to a project.
-
-### Completion criteria
-
-Review the alternatives and select the ownership design with the owner before
-implementation. Define a read-only coverage audit against production that reports
-uncaptured resources, unassigned objects, conflicting ownership and missing
-dependencies. Preserve encrypted secrets, CoP deployment compatibility and
-existing labels. This backlog entry does not authorize live metadata changes,
-use-case imports or implementation of a new ownership architecture.
-
-**Acceptance criteria:** Document the verified API/UI capability matrix, compare alternative ownership mechanisms, select a design with the owner, and define a complete read-only ownership/coverage audit before implementation.
+| Task | Title | Status | Priority | Type | Parent / dependency IDs |
+|---|---|---|---|---|---|
+| bead-wd-2i1 | Separate AIOps CaC into its private companion repository | closed | P1 | task | — |
+| bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
+| bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
+| bead-wd-72f.1 | Split per-repository CaC Vault credentials and rename all CaC Git readers | closed | P1 | feature | bead-wd-72f |
+| bead-wd-72f.11 | Publish deployed AAP API access using the existing shared MCP token | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.12 | Diagnose AIOps CaC deployment failure on test instance | closed | P1 | bug | bead-wd-72f |
+| bead-wd-72f.14 | Apply the agreed numbered AAP DNS naming scheme | closed | P1 | bug | bead-wd-72f |
+| bead-wd-72f.15.1 | Deploy the Linux and Zabbix MCP servers on the new TRA VM | closed | P1 | task | bead-wd-72f.15 |
+| bead-wd-72f.17 | Deploy versioned Zabbix VM and AIOps monitoring on the replacement hypervisor | closed | P1 | feature | bead-wd-72f, bead-wd-72f.16 |
+| bead-wd-72f.18 | Deploy versioned testserver1 and TRA Linux VMs on the recovery hypervisor | closed | P1 | task | bead-wd-72f, bead-wd-72f.16 |
+| bead-wd-72f.18.1 | Verify current VM SSH and sudo access to the replacement TRA guest | closed | P1 | task | bead-wd-72f.18 |
+| bead-wd-72f.18.2 | Stage signed offline runtime packages and MCP images for the replacement TRA guest | closed | P1 | task | bead-wd-72f.18 |
+| bead-wd-72f.19 | Deploy Linux MCP on TRA for the matching testserver | closed | P1 | task | bead-wd-72f.15.1, bead-wd-72f.18 |
+| bead-wd-72f.20 | Deploy Zabbix MCP on TRA for the matching Zabbix instance | closed | P1 | task | bead-wd-72f.15.1, bead-wd-72f.17, bead-wd-72f.18 |
+| bead-wd-72f.21 | Diagnose the fresh AAP platform MCP endpoint returning HTTP405 | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.22 | Audit non-AAP configuration in AutoDeploy secrets | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.23 | Separate AIOps configuration from AutoDeploy secrets | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.26 | Automate each AAP instance connection to its hypervisor | closed | P1 | feature | bead-wd-72f |
+| bead-wd-72f.27 | Deploy Assistant Team CaC to the current test AAP | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.28 | Deploy Disconnected Windows Patching CaC to the current test AAP | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.29 | Deploy Automation Orchestrator CaC to the current test AAP | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.3 | Analyse consolidation of all AAP use-case deployment playbooks | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.4 | Verify and correct disabled EDA activation semantics before importer migration | closed | P1 | bug | bead-wd-72f |
+| bead-wd-72f.5 | Implement project-ID-based generic CaC deployment | closed | P1 | feature | bead-wd-72f |
+| bead-wd-72f.5.1 | Rename all five CaC captures and migrate repository references | closed | P1 | task | bead-wd-72f.5 |
+| bead-wd-72f.5.2 | Consolidate CaC importers and retarget five production Job Templates | closed | P1 | feature | bead-wd-72f.5 |
+| bead-wd-72f.5.3 | Apply project-derived deployment JT names everywhere after consolidation | closed | P1 | task | bead-wd-72f.5, bead-wd-72f.5.1, bead-wd-72f.5.2 |
+| bead-wd-8di | Audit registered guest installation prerequisites before AAP install | closed | P1 | task | — |
+| bead-wd-8lc | Add preview and three-way encrypted CaC update automation | closed | P1 | feature | bead-wd-9yq |
+| bead-wd-9kn | Add inventory VM-to-hypervisor groups for use-case target selection | closed | P1 | feature | — |
+| bead-wd-9yq | Refresh autodeploy CaC template labels and newly defined jobs | closed | P1 | task | — |
+| bead-wd-bld | Reconcile cloned Zabbix and verify website EDA recovery | closed | P1 | feature | bead-wd-x7k |
+| bead-wd-c65 | Reserve test AAP names in shared encrypted allocation state | closed | P1 | feature | — |
+| bead-wd-euh | Refresh AutoDeploy DNS token from current authorized Hactar Vault | closed | P1 | task | — |
+| bead-wd-fmk | Repair literal injector tags in optional CaC captures | closed | P1 | bug | bead-wd-qyc |
+| bead-wd-nld | Diagnose Zabbix reaction to the website test | closed | P1 | task | — |
+| bead-wd-nt3 | Verify and test Zabbix agent deployment on the new testserver | closed | P1 | task | — |
+| bead-wd-qyc | Fix actual fresh AAP base configuration variable merge failure | closed | P1 | bug | — |
+| bead-wd-sur | Propagate verified seed CA trust for selected AIOps configuration setup | closed | P1 | bug | — |
+| bead-wd-x7k | Preserve running EDA activations during repeat CaC import | closed | P1 | bug | — |
+| bead-wd-xzi | Confirm public AAP access policy and future-only TLS scope | closed | P1 | task | — |
+| bead-wd-xzi.1 | Verify upstream TLS for future AAP deployments only | closed | P1 | bug | bead-wd-xzi |
+| bead-wd-2uk | Compare production and test website launch settings | closed | P2 | task | — |
+| bead-wd-72f.10 | Use existing Git credential type for the dedicated allocation writer | closed | P2 | task | bead-wd-72f |
+| bead-wd-72f.6 | Review AutoDeploy allocator and registry credential design with owner | closed | P2 | task | bead-wd-72f |
+| bead-wd-72f.7 | Prefix project deployment Job Template names with Deploy | closed | P2 | task | bead-wd-72f |
+| bead-wd-72f.8 | Reuse AutoDeploy CaC Vault credential for registry encryption and decryption | closed | P2 | task | bead-wd-72f |
+| bead-wd-72f.9 | Reuse AutoDeploy repository read token for registry reads | closed | P2 | task | bead-wd-72f |
+| bead-wd-b3t | Store explicit AAP FQDNs in the shared host inventory | closed | P2 | task | — |
+| bead-wd-ddq | Disable website launch-variable prompt in CaC | closed | P2 | task | — |
+| bead-wd-wgn | Verify AutoDeploy infrastructure prerequisites from Hactar base | closed | P2 | task | — |

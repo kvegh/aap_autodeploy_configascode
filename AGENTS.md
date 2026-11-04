@@ -47,3 +47,18 @@ git diff --check
 
 Use focused Ansible validation for playbook changes. Do not launch deployment,
 configuration, or teardown jobs merely to validate documentation or version tools.
+
+## Task and decision records in Git
+
+Beads remains authoritative, and the project must be recoverable without its
+current database. After changing scoped tasks, statuses, dependencies or decisions,
+run `scripts/sync_todo.py` with both the protected snapshot destination in the
+existing Hactar repository and the existing CaC Vault password file. Verify the
+same command with `--check`, and refresh Hactar's existing TODO mirror as needed.
+Review and commit the public overview and encrypted full records with the work.
+Never copy private task notes or personal/environment data into the public TODO.
+
+Keep agreed decisions readable in README-linked guides and the decision history.
+Distinguish requirements, implemented changes and successful live verification.
+Follow `RESTART_HERE.md` when recovering context after a reinstall; the encrypted
+export is a recovery copy, not a replacement task authority or a native Dolt backup.

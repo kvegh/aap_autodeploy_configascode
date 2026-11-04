@@ -2,6 +2,12 @@
 
 Resuming in a new session? Start with [RESTART_HERE.md](RESTART_HERE.md).
 
+The [agreed recovery and deployment targets](docs/recovery-and-use-case-targets.md)
+describe the external-AAP recovery goal, version-to-version acceptance test,
+older template retention, self/remote CaC installation and use-case runtime
+targets. These are requirements; the guide distinguishes them from verified
+implementation and points to the durable Beads records.
+
 Recreate Ansible Automation Platform from configuration as code so that a new
 instance can take over the production platform's tasks, including deploying and
 configuring further AAP instances. An existing trusted AAP acts as the initial
@@ -42,9 +48,17 @@ compatibility change does not switch production templates or run any imports.
 
 Complete CaC object ownership remains an open design task. Labels cannot cover
 every Controller resource, and API label support does not imply that the UI can
-edit or filter it. [The TODO backlog](TODO.md) mirrors Beads `bead-wd-72v`, with
-the verified API/UI table and alternative ownership approaches to evaluate.
+edit or filter it. The [ownership review](docs/cac-object-ownership.md) preserves
+the verified API/UI table and alternative approaches from Beads `bead-wd-72v`.
 No universal ownership mechanism has been selected or deployed.
+
+[TODO.md](TODO.md) is generated from current Beads task metadata; complete scoped
+records are retained as Vault ciphertext in the existing Hactar repository.
+After every task change, run `scripts/sync_todo.py` with the snapshot path and
+existing CaC Vault password file, then commit both mirrors. Use `--check` to
+detect stale output. [Restart instructions](RESTART_HERE.md) explain the refresh
+and recovery procedure. Agreed decisions remain readable in the linked guides
+and `design_decisions_history.md`, even when the original tracker is unavailable.
 
 Stage 03 allows the containerized installer up to two hours. Its existing-job
 observer waits for the same ceiling without starting another installer. Set the
@@ -104,6 +118,9 @@ MAC, address, policy or ownership record stops the operation. Git updates use
 ordinary compare-and-retry pushes; a failed source API synchronization after
 publication retains the published live policy for an idempotent retry. Existing
 VMs can run the guest-verification phase without recreating their disks.
+The implementation passed 249 repository tests. Acceptance through a normal AAP
+guest-configuration job is still pending code publication and remains tracked in
+Beads `bead-wd-mcr.1`; local tests are not a completed live release.
 
 Local counters are preserved as migration evidence. Fresh guest host keys and
 the exact instance route are retained for the following stages. Stages 02–04
@@ -221,7 +238,7 @@ the Controller content-source credentials and organization attachments that use
 those repositories. Base does not synchronize collection content. Each use case
 declares which collections its own PAH preparation needs.
 
-[Beads](PLAN.md) tracks current work; the older plan retains its historical
+[Beads and its Git overview](TODO.md) track current work; the older plan retains its historical
 backlog pending migration. Each open area explains
 its context, purpose and completion goal; completed work is collected at
 [Done:](PLAN.md#done). It includes the step-by-step operator guide and review

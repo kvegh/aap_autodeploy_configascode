@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.36.0
+
+Document the agreed independent recovery goal, version-to-version acceptance,
+older template retention, self/remote CaC installation and per-use-case runtime
+targets. Distinguish decisions from verified deployment behavior. Add a read-only
+Beads exporter producing a sanitized public TODO and complete Vault-encrypted task
+recovery copy, with deterministic stale checks and unchanged-ciphertext reruns.
+Preserve the ownership capability table and document offline recovery.
+
 ## 0.35.1
 
 Document implementation `183d3ce`, production protection during guest release,
