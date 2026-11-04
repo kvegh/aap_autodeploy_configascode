@@ -1,5 +1,39 @@
 # Design decisions history
 
+## Bootstrap approved generic guests without granting full release — 2026-11-04
+
+Implementation `2795c133507ee5affdaf8e420807496cd2299899` extends the existing
+verified-guest policy transaction with `guest_bootstrap_https`. The disposable
+Assistant installation needs package downloads before it can complete software
+configuration. The owner approved public IPv4 TCP 443 for that exact guest while
+retaining private/reserved and production blocks; complete deployment and
+validation must precede full release. The same source-job, native libvirt,
+encrypted-capture and source inventory checks apply. The separate consumed-AAP
+installation guard is unchanged, and no new service or credential type is added.
+
+Nineteen guest/publication/native-role checks and eight existing AAP installation
+regressions pass; focused offline production lint passes. These checks changed
+no live permissions. Final lifecycle hooks and exact disposable-guest retirement
+remain unfinished, and a static encrypted test profile must be refreshed from
+canonical policy before a retry after a successful policy transition.
+
+That implementation also documents the owner's two repository write exceptions.
+The existing AutoDeploy/base CaC writer persists encrypted state. The owner
+changed the existing AIOps token to Contents read/write for its own companion
+repository so new instance settings can be persisted there. Other companions
+retain read-only tokens. This reuses the existing credential/type and preserves
+the token value and name; the external permission change was owner-confirmed,
+not yet established by a new runtime publication test. Automated AIOps instance
+preparation remains a separate task.
+
+The owner approved reusing the reference Vertex authentication on the new TRA,
+with any persisted copy encrypted in the private AIOps Vault and one short
+read-only Claude/private-MCP test. Its implementation and live result are still
+pending. Automation Orchestrator's functional test is explicitly waiting because
+the owner currently has no OpenShift access. Another worker owns Command Center
+on the shared TRA and another owns the additional RHEL configuration import;
+their objects and running guests must be preserved.
+
 ## Verify source use cases before the successor deployment test — 2026-11-04
 
 The owner clarified the order after the verified configuration acceptance

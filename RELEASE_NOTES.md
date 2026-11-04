@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.38.1
+
+Document implementation `2795c13`, its approved bootstrap-versus-final-release
+ordering, twenty-seven focused checks and remaining lifecycle acceptance.
+Document owner-confirmed repository write exceptions, encrypted Vertex-auth
+reuse approval, the unavailable OpenShift prerequisite and shared-guest ownership.
+
 ## 0.38.0
 
 Extend the existing verified-guest isolation transaction with an explicit public
