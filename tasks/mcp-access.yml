@@ -315,7 +315,7 @@
 
     - name: Update encrypted CaC and the source AAP token-store credential
       aap_publish_instance_keys:
-        instance_name: "{{ aap_instance_key }}"
+        instance_name: "{{ aap_instance_route.vm_name }}"
         record: "{{ cac_instance_api_record }}"
         organization: "{{ aap_instance_key_store.source_organization | default('Default') }}"
         inventory_registration: >-

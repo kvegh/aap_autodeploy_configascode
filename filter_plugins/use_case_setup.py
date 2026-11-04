@@ -68,13 +68,10 @@ def git_url(value):
 
 
 def setup_plan(selected, catalog, protected, seed, target):
-    require(isinstance(protected, Mapping)
-            and https_origin(seed) == https_origin(protected.get('seed_hostname')),
-            'The orchestration seed must match the reviewed protected controller origin.')
-    require(
-        https_origin(seed) != https_origin(target),
-        "The fresh target must differ from the seed AAP.",
-    )
+    # Source ownership is proved by the actual running job through its injected
+    # API credential. A source URL or password from the capture is not authority.
+    https_origin(seed)
+    https_origin(target)
     require(
         isinstance(selected, list)
         and selected
@@ -143,6 +140,27 @@ def distinct_controllers(seed_instances, target_instances):
         and not seed.intersection(target),
         "The fresh target and seed must have distinct verified controller instances.",
     )
+    return True
+
+
+def verified_controllers(source_instances, target_instances, source, target):
+    """Permit self-targeting only when both reads identify the same controller."""
+    require(isinstance(source_instances, list) and isinstance(target_instances, list),
+            "Read both selected controllers before configuration setup.")
+    identities = []
+    for rows in (source_instances, target_instances):
+        require(bool(rows) and all(isinstance(row, Mapping)
+                and isinstance(row.get("uuid"), str) and bool(row["uuid"]) for row in rows),
+                "Both controller identity reads must be complete and nonempty.")
+        values = {row["uuid"] for row in rows}
+        require(len(values) == len(rows), "Controller identity reads must not contain duplicates.")
+        identities.append(values)
+    if https_origin(source) == https_origin(target):
+        require(identities[0] == identities[1],
+                "Self-targeting requires identical source and destination controller identities.")
+    else:
+        require(not identities[0].intersection(identities[1]),
+                "Different API origins must identify distinct controllers.")
     return True
 
 
@@ -321,6 +339,7 @@ class FilterModule:
             "aap_use_case_setup_plan": setup_plan,
             "aap_cac_project_display_name": project_display_name,
             "aap_distinct_controllers": distinct_controllers,
+            "aap_verified_controllers": verified_controllers,
             "aap_normalized_git_url": git_url,
             "aap_https_origin": https_origin,
             "aap_scoped_launch_credentials": scoped_launch_credentials,

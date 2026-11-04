@@ -1,5 +1,24 @@
 # Release notes
 
+## 0.37.0
+
+Prepare the future AutoDeploy bundle without the retained production-only stage,
+destroy, workflow and original Machine-key definitions. Bind the receiving AAP's
+source credential to its selected API access and clear captured instance defaults.
+Stage 01 now grants and durably publishes only the verified guest's installation
+HTTPS and own-hypervisor API HTTPS access before the installer; the existing base
+template also offers an isolated installation-access repair tag. Preserve other
+guest permissions, production protection and prior releases, with bounded rollback.
+
+Keep inventory display labels separate from immutable physical registry/token
+keys through existing VM provenance. Preserve renamed rows during callbacks and
+retire the actual label only after ownership verification. The selected-use-case
+launcher uses its existing injected source API access and destination token store,
+supports self or remote targets, and no longer mints temporary source tokens.
+Add explicit read-only extraction exclusions so retained production objects are
+not rediscovered into future bundles. Configuration installation and full runtime
+recovery acceptance remain distinct checks.
+
 ## 0.36.4
 
 Document successful normal-job automatic guest release, independent firewall and

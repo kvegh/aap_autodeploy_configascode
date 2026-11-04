@@ -391,6 +391,13 @@
       become: false
       no_log: true
 
+    - name: Grant and persist only the verified new AAP installation connections
+      ansible.builtin.include_tasks: tasks/aap-installation-access.yml
+      vars:
+        aap_installation_primary: >-
+          {{ aap_instance_route | aap_primary_instance_resources(aap_primary_domain_ownership.stdout,
+               aap_primary_network_ownership.stdout, vm_network) }}
+
     - name: Pass only the verified new instance handoff to downstream jobs
       ansible.builtin.set_stats:
         data:

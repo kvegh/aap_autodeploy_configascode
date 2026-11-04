@@ -1,7 +1,9 @@
 ---
 - name: Resolve the exact registered target before making any instance connection
   aap_read_instance:
-    instance_key: "{{ aap_instance_key | default(aap_instance_route.vm_name | default('')) }}"
+    instance_key: >-
+      {{ aap_instance_key | default(aap_instance_route.vm_name | default(''), true) |
+         aap_inventory_instance_name((hostvars[aap_instance_key] if aap_instance_key is defined and aap_instance_key in hostvars else {})) }}
     expected_route: "{{ aap_instance_route | default(omit) }}"
     allow_retired: "{{ aap_allow_retired_instance | default(false) | bool }}"
     read_related_resources: "{{ aap_read_related_resources | default(false) | bool }}"
@@ -18,10 +20,21 @@
     fail_msg: Select the registered instance key; its protected route determines all connection targets.
   no_log: true
 
+- name: Require existing AAP inventory identity to agree with the registered route
+  ansible.builtin.assert:
+    that: >-
+      {{ aap_instance_key | default(aap_registered_target.instance_route.vm_name, true) |
+         aap_inventory_route_matches((hostvars[aap_instance_key] if aap_instance_key is defined and aap_instance_key in hostvars else {}),
+           aap_registered_target.instance_route, aap_registered_target.instance_resources | default({})) }}
+    fail_msg: The selected inventory entry must match its verified registered VM.
+  no_log: true
+
 - name: Use only the registered instance's complete connection handoff
   ansible.builtin.set_fact:
     aap_instance_route: "{{ aap_registered_target.instance_route }}"
-    aap_instance_key: "{{ aap_registered_target.instance_route.vm_name }}"
+    aap_instance_key: >-
+      {{ aap_instance_key if aap_instance_key is defined and
+         aap_instance_key in hostvars and hostvars[aap_instance_key].vm_resource is defined else aap_registered_target.instance_route.vm_name }}
     vm_name: "{{ aap_registered_target.instance_route.vm_name }}"
     vm_ip: "{{ aap_registered_target.instance_route.vm_ip }}"
     aap_hostname: "{{ aap_registered_target.instance_route.aap_hostname }}"

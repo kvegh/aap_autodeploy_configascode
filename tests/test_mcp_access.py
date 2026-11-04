@@ -137,7 +137,8 @@ class McpAccessTests(unittest.TestCase):
                      "ansible_python_interpreter": sys.executable}
         actions = str(ROOT / "action_plugins")
         if publication:
-            variables.update(aap_instance_key="fixture-instance", aap_instance_key_store={"publish": True,
+            variables.update(aap_instance_key="fixture-instance-display", aap_instance_route={"vm_name": "fixture-instance"},
+                             aap_instance_key_store={"publish": True,
                                                                                          "source_organization": "Example"})
             action_directory = self.root / "action_plugins"
             action_directory.mkdir(exist_ok=True)
@@ -280,7 +281,8 @@ class McpAccessTests(unittest.TestCase):
 
     def test_base_provisions_persistent_mcp_after_final_login_and_preserves_run_cleanup(self):
         source = yaml.safe_load((ROOT / "04-aap-config.yml").read_text())[0]
-        configured = next(task for task in source["pre_tasks"] if "block" in task)
+        configured = next(task for task in source["pre_tasks"]
+                          if task["name"] == "Retrieve and load the encrypted shared configuration")
         names = [task["name"] for task in configured["block"]]
         self.assertLess(names.index("Verify the configured administrator password after applying base"),
                         names.index("Prepare persistent administrator MCP access"))

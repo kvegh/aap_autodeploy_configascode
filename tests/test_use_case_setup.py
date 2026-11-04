@@ -197,11 +197,12 @@ class UseCaseSetupTests(unittest.TestCase):
                 with self.assertRaises(AnsibleFilterError):
                     self.plan(["AIOps_selfhealing_demo"])
 
-    def test_seed_url_aliases_and_shared_controller_instances_are_refused(self):
-        for seed, target in (
-            ("https://same.example.invalid", "https://SAME.example.invalid:443/"),
-            ("https://seed.example.invalid/path", "https://fresh.example.invalid"),
-        ):
+    def test_self_target_plan_is_allowed_and_invalid_api_origins_are_refused(self):
+        result = setup.setup_plan(["AIOps_selfhealing_demo"], self.catalog, self.protected,
+                                  "https://same.example.invalid", "https://SAME.example.invalid:443/")
+        self.assertEqual(len(result["importers"]), 1)
+        for seed, target in (("https://seed.example.invalid/path", "https://fresh.example.invalid"),
+                             ("https://seed.example.invalid", "http://fresh.example.invalid")):
             with self.subTest(seed=seed), self.assertRaises(AnsibleFilterError):
                 setup.setup_plan(
                     ["AIOps_selfhealing_demo"],
@@ -220,6 +221,22 @@ class UseCaseSetupTests(unittest.TestCase):
         self.assertTrue(
             setup.distinct_controllers([{"uuid": "seed"}], [{"uuid": "fresh"}])
         )
+
+    def test_verified_controller_identity_matches_local_or_remote_selection(self):
+        local = [{"uuid": "controller-a"}]
+        remote = [{"uuid": "controller-b"}]
+        source = "https://source.example.invalid"
+        self.assertTrue(setup.verified_controllers(local, local, source, "https://SOURCE.example.invalid:443/"))
+        self.assertTrue(setup.verified_controllers(local, remote, source, "https://remote.example.invalid"))
+        for first, second, destination in (
+            (local, remote, source),
+            (local, local, "https://remote.example.invalid"),
+            ([], local, source),
+            ([{}], local, source),
+            (local * 2, local, source),
+        ):
+            with self.subTest(destination=destination), self.assertRaises(AnsibleFilterError):
+                setup.verified_controllers(first, second, source, destination)
 
     def test_each_repository_uses_only_its_pinned_source_vault(self):
         repositories = [

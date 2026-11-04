@@ -265,6 +265,17 @@ class Snapshot:
         self.retained_dependencies = deepcopy(scope.get("dependency_names", {}))
         self.retained_labels = []
         self.source_dependency_names = {}
+        excluded = scope.get("source_exclusions", {})
+        if (not isinstance(excluded, dict) or set(excluded) - {"job_templates", "workflows", "inventories", "credentials"}
+                or any(not isinstance(names, list) or len(names) > 250
+                       or any(not isinstance(name, str) or not 1 <= len(name) <= 512 for name in names)
+                       or len(names) != len(set(names))
+                       for names in excluded.values())):
+            raise CaptureError("Declare bounded explicit source exclusions by resource kind and exact name.")
+        self.source_exclusions = excluded
+
+    def excluded(self, kind, name):
+        return name in self.source_exclusions.get(kind, [])
 
     def alias(self, kind, name):
         return self.aliases.get(kind, {}).get(name, name)
@@ -365,6 +376,7 @@ class Snapshot:
                     selected_projects[job["project"]] = self.detail(
                         "projects", job["project"]
                     )
+        jobs = {identity: job for identity, job in jobs.items() if not self.excluded("job_templates", job["name"])}
         if len(jobs) > self.scope.get("max_job_templates", 250):
             raise CaptureError("The discovered scope exceeds its reviewed size bound.")
         self.raw_by_kind["projects"] = list(selected_projects.values())
@@ -402,6 +414,8 @@ class Snapshot:
                 ("execution_environment", "execution_environments"),
             ]:
                 if job.get(field) is not None:
+                    if self.excluded(kind, self.detail(kind, job[field])["name"]):
+                        raise CaptureError("A retained job still references an intentionally excluded source dependency.")
                     value[field] = self.reference(kind, job[field])
                     if field == 'inventory':
                         overrides = self.scope.get('template_inventory_references', {})
@@ -417,6 +431,8 @@ class Snapshot:
                     if kind in dependencies:
                         dependencies[kind].add(job[field])
             associated = self.related(job, "credentials")
+            if any(self.excluded("credentials", credential["name"]) for credential in associated):
+                raise CaptureError("A retained job still references an intentionally excluded source credential.")
             dependencies["credentials"].update(x["id"] for x in associated)
             value["credentials"] = [
                 self.alias("credentials", x["name"]) for x in associated
@@ -489,6 +505,8 @@ class Snapshot:
             self.source_dependency_names[kind] = []
             for identifier in sorted(identifiers):
                 raw = self.detail(kind, identifier)
+                if self.excluded(kind, raw["name"]):
+                    continue
                 if self.external_dependency(kind, raw['name']):
                     continue
                 self.source_dependency_names[kind].append(raw["name"])
@@ -637,6 +655,8 @@ class Snapshot:
                     raise CaptureError("The workflow name filter was not honored.")
                 selected[raw["id"]] = raw
         for raw in selected.values():
+            if self.excluded("workflows", raw["name"]):
+                continue
             value = self.fields("workflows", raw)
             value.update(
                 {
@@ -678,6 +698,9 @@ class Snapshot:
                     raise CaptureError(
                         "Approval/empty workflow nodes require a reviewed serializer."
                     )
+                summary = node.get("summary_fields", {}).get("unified_job_template", {})
+                if self.excluded("job_templates", summary.get("name")):
+                    raise CaptureError("A retained workflow still references an intentionally excluded source job.")
                 unified_type = (
                     node.get("summary_fields", {})
                     .get("unified_job_template", {})

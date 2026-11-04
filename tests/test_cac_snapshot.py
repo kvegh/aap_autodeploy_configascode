@@ -247,6 +247,19 @@ class FakeAPI:
 
 
 class SnapshotTests(unittest.TestCase):
+    def test_intentional_source_exclusions_do_not_rediscover_retained_legacy_jobs(self):
+        import json
+        scope = self.scope()
+        scope['source_exclusions'] = {'job_templates': ['Original job']}
+        api = FakeAPI()
+        original = deepcopy(api.jobs)
+        result = snapshot.Snapshot(api, scope, json.loads).collect()
+        self.assertEqual(api.jobs, original, 'Extraction is read-only; source objects remain present.')
+        self.assertEqual({row['name'] for row in result['job_templates'].values()}, {'New discovered job'})
+        for malformed in ({'unsupported': []}, {'job_templates': ['same', 'same']}, {'job_templates': [{}]}):
+            with self.subTest(malformed=malformed), self.assertRaises(core.CaptureError):
+                snapshot.Snapshot(api, dict(scope, source_exclusions=malformed), json.loads)
+
     def test_shared_inventory_override_preserves_older_owned_alias_definition(self):
         import json
 

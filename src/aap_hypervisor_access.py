@@ -45,7 +45,7 @@ def isolated(xml, networks, bridges):
                 and source.find('host') is None, 'Remote host-backed guest devices are outside isolation.')
 
 
-def desired_policy(route, primary, declared):
+def desired_policy(route, primary, declared, mode='management'):
     """Derive exactly one management permission from an existing HTTPS identity."""
     pin = route['hypervisor']
     require(primary.get('verified') is True and primary['hypervisor_machine_id'] == pin['machine_id']
@@ -57,15 +57,34 @@ def desired_policy(route, primary, declared):
             and type(pin['port']) is int and 1 <= pin['port'] <= 65535,
             'Management access must remain on the nonproduction pinned hypervisor.')
     identity = {key: primary[field] for key, field in (('bridge', 'bridge'), ('ipv4', 'address'), ('mac', 'mac'))}
-    require(identity in declared.get('https_clients', []),
-            'Management access requires this exact already-approved HTTPS client.')
-    client = dict(identity, destinations=[pin['address']], ports=[pin['port']])
+    require(mode in ('management', 'installation'), 'Choose one bounded AAP installation or management permission.')
     desired = deepcopy(declared)
+    if mode == 'installation':
+        clients = desired.setdefault('https_clients', [])
+        matches = [item for item in clients if item['ipv4'] == identity['ipv4'] or item['mac'] == identity['mac']]
+        require(not matches or matches == [identity], 'An installation permission conflicts with existing guest ownership.')
+        if not matches:
+            clients.append(identity)
+        destination, port = pin['public_ip'], 443
+    else:
+        require(identity in declared.get('https_clients', []),
+                'Management access requires this exact already-approved HTTPS client.')
+        destination, port = pin['address'], pin['port']
+    client = dict(identity, destinations=[destination], ports=[port])
     local = desired.setdefault('guest_host_clients', [])
     matching = [item for item in local if item['ipv4'] == identity['ipv4'] or item['mac'] == identity['mac']]
-    require(not matching or matching == [client],
-            'An existing primary local permission needs explicit review before expansion.')
-    if not matching:
+    require(not matching or (len(matching) == 1
+        and all(matching[0][key] == identity[key] for key in identity)),
+        'An existing primary local permission conflicts with selected guest ownership.')
+    if matching:
+        old = matching[0]
+        requested = {(address, value) for address in old['destinations'] for value in old['ports']} | {(destination, port)}
+        destinations = old['destinations'] + ([] if destination in old['destinations'] else [destination])
+        ports = old['ports'] + ([] if port in old['ports'] else [port])
+        require({(address, value) for address in destinations for value in ports} == requested,
+                'Separate management and public addresses require reviewed exact destination-port pairs.')
+        old.update(destinations=destinations, ports=ports)
+    else:
         local.append(client)
     return desired
 
@@ -114,12 +133,19 @@ def plan(expected, probe):
                 'Primary storage, MAC and network must match actual libvirt ownership.')
     leases = re.findall(r'([0-9a-f]{2}(?::[0-9a-f]{2}){5})\s+ipv4\s+([0-9.]+)/[0-9]+', probe['leases'].lower())
     require(set(leases) == {(primary['mac'], primary['address'])}, 'Require the exact selected guest DHCP identity.')
-    desired = desired_policy(route, primary, declared)
+    mode = expected.get('mode', 'management')
+    desired = desired_policy(route, primary, declared, mode)
     client = next(item for item in desired['guest_host_clients'] if item['ipv4'] == primary['address'])
     actual = probe['policy']
     require(actual == declared or actual == desired, 'Live policy must equal declared state or this exact derived management grant.')
+    if expected.get('operation', 'apply') == 'rollback':
+        require(mode == 'installation' and actual == desired,
+                'Installation rollback requires exactly this job\'s applied policy.')
+        desired = deepcopy(declared)
+    destination, port = (pin['public_ip'], 443) if mode == 'installation' else (pin['address'], pin['port'])
+    require(destination in probe['addresses'], 'The exact AAP host destination must belong to this hypervisor.')
     rule = ('rule family="ipv4" priority="0" source address="%s/32" destination address="%s/32" '
-            'port port="%s" protocol="tcp" accept' % (primary['address'], pin['address'], pin['port']))
+            'port port="%s" protocol="tcp" accept' % (primary['address'], destination, port))
     return {'previous_policy': deepcopy(actual), 'desired_policy': desired, 'client': client,
             'rich_rule': rule, 'changed': actual != desired}
 
@@ -165,8 +191,17 @@ def save(content):
 
 
 def reconcile(expected):
-    require(set(expected) == {'route', 'primary', 'declared_policy', 'check_mode'}
+    require({'route', 'primary', 'declared_policy', 'check_mode'} <= set(expected)
+            and set(expected) <= {'route', 'primary', 'declared_policy', 'check_mode', 'mode', 'operation', 'native_rule_previous'}
             and type(expected['check_mode']) is bool, 'Use only the fixed verified management request.')
+    rollback = expected.get('operation', 'apply') == 'rollback'
+    require(expected.get('operation', 'apply') in ('apply', 'rollback')
+            and (not rollback or expected.get('mode') == 'installation'), 'Rollback is bounded to selected installation access.')
+    if rollback:
+        require(isinstance(expected.get('native_rule_previous'), dict)
+                and set(expected['native_rule_previous']) == {'runtime', 'permanent'}
+                and all(type(value) is bool for value in expected['native_rule_previous'].values()),
+                'Retain exact original native rule states for installation rollback.')
     lock = os.open(DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
     try:
         deadline = time.monotonic() + 5
@@ -196,18 +231,23 @@ def reconcile(expected):
         for permanent in (False, True):
             prefix = ['firewall-cmd'] + (['--permanent'] if permanent else []) + ['--zone=libvirt']
             states[permanent] = command(prefix + ['--query-rich-rule=' + change['rich_rule']], allowed=(0, 1)).returncode == 0
-        changed = change['changed'] or not all(states.values())
+        previous_states = {name: states[permanent] for name, permanent in (('runtime', False), ('permanent', True))}
+        wanted = {permanent: expected['native_rule_previous'][name] if rollback else True
+                  for name, permanent in (('runtime', False), ('permanent', True))}
+        changed = change['changed'] or any(states[key] != wanted[key] for key in states)
         if expected['check_mode']:
-            return dict(change, changed=changed, applied=False)
+            return dict(change, changed=changed, applied=False, native_rule_previous=previous_states)
         original = CONFIG.read_bytes()
-        added = []
+        native_changes = []
         try:
             for permanent, present in states.items():
                 prefix = ['firewall-cmd'] + (['--permanent'] if permanent else []) + ['--zone=libvirt']
-                if not present:
-                    command(prefix + ['--add-rich-rule=' + change['rich_rule']])
-                    added.append(prefix)
-                command(prefix + ['--query-rich-rule=' + change['rich_rule']])
+                if present != wanted[permanent]:
+                    action = '--add-rich-rule=' if wanted[permanent] else '--remove-rich-rule='
+                    command(prefix + [action + change['rich_rule']])
+                    native_changes.append((prefix, present))
+                verified = command(prefix + ['--query-rich-rule=' + change['rich_rule']], allowed=(0, 1)).returncode == 0
+                require(verified == wanted[permanent], 'Native rule readback differs from the exact selected transition.')
             command([str(HELPER), 'check'], json.dumps(current['policy']))
             if change['changed']:
                 save(json.dumps(change['desired_policy']).encode())
@@ -216,11 +256,11 @@ def reconcile(expected):
         except Exception:
             save(original)
             command([str(HELPER), 'apply'])
-            for prefix in reversed(added):
-                command(prefix + ['--remove-rich-rule=' + change['rich_rule']])
+            for prefix, prior in reversed(native_changes):
+                command(prefix + [('--add-rich-rule=' if prior else '--remove-rich-rule=') + change['rich_rule']])
             command([str(HELPER), 'check'], json.dumps(current['policy']))
             raise
-        return dict(change, changed=changed, applied=True)
+        return dict(change, changed=changed, applied=True, native_rule_previous=previous_states)
     finally:
         os.close(lock)
 

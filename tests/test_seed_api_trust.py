@@ -1,6 +1,5 @@
 """Exercise real source authentication, launch/wait and cleanup over private TLS."""
 
-import base64
 import copy
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
@@ -58,6 +57,8 @@ class SeedApiTrustTests(unittest.TestCase):
 
             def do_GET(self):
                 path = urlsplit(self.path).path.rstrip("/")
+                if self.headers.get("Authorization") != "Bearer synthetic-seed-token":
+                    return self.respond(401, {})
                 job = {"id": 7, "name": "Synthetic configuration importer",
                        "related": {"launch": "/api/controller/v2/job_templates/7/launch/"},
                        "ask_variables_on_launch": False, "survey_enabled": True}
@@ -65,6 +66,9 @@ class SeedApiTrustTests(unittest.TestCase):
                     data = job
                 elif path.endswith("/job_templates"):
                     data = {"count": 1, "results": [job], "next": None, "previous": None}
+                elif path.endswith("/jobs/81"):
+                    data = {"id": 81, "status": "running", "job_template": cls.source_template,
+                            "scm_revision": "fixture-revision"}
                 elif path.endswith("/jobs/99"):
                     data = {"id": 99, "status": "successful", "failed": False,
                             "finished": "2000-01-01T00:00:00Z", "elapsed": 0}
@@ -79,12 +83,9 @@ class SeedApiTrustTests(unittest.TestCase):
             def do_POST(self):
                 self.rfile.read(int(self.headers.get("Content-Length", "0")))
                 path = urlsplit(self.path).path.rstrip("/")
-                if path.endswith("/tokens"):
-                    expected = base64.b64encode(b"synthetic-seed-user:synthetic-seed-password").decode()
-                    if self.headers.get("Authorization") != "Basic " + expected:
-                        return self.respond(401, {})
-                    return self.respond(201, {"id": 42, "token": "synthetic-seed-token"})
                 if path.endswith("/job_templates/7/launch"):
+                    if self.headers.get("Authorization") != "Bearer synthetic-seed-token":
+                        return self.respond(401, {})
                     return self.respond(201, {"id": 99, "status": "pending",
                                              "url": "/api/controller/v2/jobs/99/"})
                 self.respond(404, {})
@@ -106,14 +107,18 @@ class SeedApiTrustTests(unittest.TestCase):
         cls.thread.join(timeout=5)
         cls.directory.cleanup()
 
-    def run_source_tasks(self, *, ca=True, hostname="127.0.0.1", seed_login=True):
+    def run_source_tasks(self, *, ca=True, hostname="127.0.0.1", source_token=True, source_template=90):
         self.requests.clear()
+        type(self).source_template = source_template
         source = yaml.safe_load((ROOT / "deploy-selected-use-cases.yml").read_text())[0]
         block = source["tasks"][0]["block"]
-        names = ["Require explicit seed credentials separately from target base",
-                 "Create this run's source orchestration session using only its explicit API login",
-                 "Read the seed controller's current instance identities"]
-        tasks = [copy.deepcopy(next(task for task in block if task["name"] == name)) for name in names]
+        names = ["Require the existing source API credential and running job identity",
+                 "Bind orchestration to the API credential of the AAP running this job",
+                 "Read this running job through its source API credential",
+                 "Require the credential to identify the actual running source job"]
+        tasks = [copy.deepcopy(next(task for task in source["pre_tasks"] if task["name"] == name)) for name in names]
+        tasks.append(copy.deepcopy(next(task for task in block if task["name"] ==
+                                       "Read the seed controller's current instance identities")))
         importer = yaml.safe_load((ROOT / "tasks/selected-use-case-import.yml").read_text())
         tasks.extend(copy.deepcopy([
             next(task for task in importer if "ansible.controller.job_launch" in task),
@@ -122,7 +127,7 @@ class SeedApiTrustTests(unittest.TestCase):
         ]))
         tasks.extend([
             {"name": "Source module environment must not change default trust",
-             "ansible.builtin.uri": {"url": "{{ aap_seed_hostname }}/untrusted-default-probe",
+             "ansible.builtin.uri": {"url": "{{ aap_selected_source_auth.hostname }}/untrusted-default-probe",
                                      "validate_certs": True},
              "failed_when": False, "register": "default_trust_probe", "no_log": True},
             {"name": "Keep target credentials and default trust independent",
@@ -134,12 +139,10 @@ class SeedApiTrustTests(unittest.TestCase):
             copy.deepcopy(source["tasks"][0]["always"][0]),
         ])
         variables = {
-            "aap_seed_hostname": f"https://{hostname}:{self.server.server_port}",
+            "awx_job_id": 81, "awx_job_template_id": 90, "awx_project_revision": "fixture-revision",
             "aap_seed_ca_path": str(self.certificate) if ca else "",
             "aap_validate_certs": True, "aap_username": "synthetic-target-user",
             "aap_password": "synthetic-target-password", "aap_instance_key": "synthetic-target",
-            "cac_use_case_selector": {"seed_username": "synthetic-seed-user",
-                                       "seed_password": "synthetic-seed-password"} if seed_login else {},
             "aap_selected_importer": {"json": {"results": [{"id": 7}]},
                                       "item": {"repository": "https://git.example.invalid/test/config.git",
                                                "playbook": "deploy-cac-project.yml"}},
@@ -154,6 +157,9 @@ class SeedApiTrustTests(unittest.TestCase):
                                             "gather_facts": False, "vars": variables,
                                             "tasks": tasks}], sort_keys=False))
             env = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_NOCOLOR="1",
+                       AAP_CAC_SOURCE_URL=f"https://{hostname}:{self.server.server_port}",
+                       AAP_CAC_SOURCE_TOKEN="synthetic-seed-token" if source_token else "",
+                       ANSIBLE_FILTER_PLUGINS=str(ROOT / "filter_plugins"),
                        ANSIBLE_LOCAL_TEMP=str(path / "local"), ANSIBLE_REMOTE_TEMP=str(path / "remote"))
             result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(play)],
                                     cwd=path, env=env, capture_output=True, text=True, timeout=90)
@@ -167,7 +173,8 @@ class SeedApiTrustTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, output)
         self.assertIn(("POST", "/api/controller/v2/job_templates/7/launch/"), self.requests)
         self.assertIn(("GET", "/api/controller/v2/jobs/99/"), self.requests)
-        self.assertIn(("DELETE", "/api/gateway/v1/tokens/42/"), self.requests)
+        self.assertIn(("GET", "/api/controller/v2/jobs/81/"), self.requests)
+        self.assertFalse(any(method == "DELETE" or "/tokens" in path for method, path in self.requests))
         self.assertNotIn(("GET", "/untrusted-default-probe"), self.requests)
 
     def test_missing_ca_refuses_private_source_before_any_http(self):
@@ -180,10 +187,15 @@ class SeedApiTrustTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, output)
         self.assertEqual(self.requests, [])
 
-    def test_target_password_is_not_a_fallback_for_missing_seed_login(self):
-        result, output = self.run_source_tasks(seed_login=False)
+    def test_target_password_is_not_a_fallback_for_missing_source_token(self):
+        result, output = self.run_source_tasks(source_token=False)
         self.assertNotEqual(result.returncode, 0, output)
         self.assertEqual(self.requests, [])
+
+    def test_wrong_source_job_identity_refuses_orchestration_before_launch(self):
+        result, output = self.run_source_tasks(source_template=91)
+        self.assertNotEqual(result.returncode, 0, output)
+        self.assertEqual(self.requests, [("GET", "/api/controller/v2/jobs/81/")])
 
 
 if __name__ == "__main__":

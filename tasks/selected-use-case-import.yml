@@ -42,8 +42,8 @@
     wait: true
     interval: 10
     timeout: 10800
-    controller_host: "{{ aap_seed_hostname }}"
-    controller_oauthtoken: "{{ cac_gateway_token.json.token }}"
+    controller_host: "{{ aap_selected_source_auth.hostname }}"
+    controller_oauthtoken: "{{ aap_selected_source_auth.token }}"
     validate_certs: "{{ aap_validate_certs }}"
   environment: "{{ {'SSL_CERT_FILE': aap_seed_ca_path} if aap_seed_ca_path | default('') | length > 0 else {} }}"
   register: aap_selected_import_job
@@ -52,9 +52,9 @@
 - name: Read the completed job's actual credential associations
   ansible.builtin.uri:
     url: >-
-      {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ aap_selected_import_job.id }}/credentials/?page_size=200
+      {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ aap_selected_import_job.id }}/credentials/?page_size=200
     headers:
-      Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+      Authorization: "Bearer {{ aap_selected_source_auth.token }}"
     validate_certs: true
     ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
     follow_redirects: none

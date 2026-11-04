@@ -360,7 +360,8 @@ class ManagementAccessTests(unittest.TestCase):
             self.assertEqual(updated['autodeploy_configuration']['credentials'], main['autodeploy_configuration']['credentials'])
             self.assertTrue(all(method != 'DELETE' for method, path in client.calls))
             self.assertEqual(len(client.hosts), len(shared['host_inventory_configuration']['hosts']) + 1)
-            self.assertEqual(json.loads(next(row for row in client.hosts.values() if row['name'] == expected['route']['vm_name'])['variables'])['vm_resource'], expected['primary'])
+            self.assertEqual(json.loads(next(row for row in client.hosts.values() if row['name'] == expected['route']['vm_name'])['variables'])['vm_resource'],
+                             dict(expected['primary'], vm_name=expected['route']['vm_name']))
             self.assertFalse(keys.source_management_operations(client, restored['cac/host_inventory.yml'], updated,
                 restored['cac/hactar_recovery.yml'], keys.management_access_context(updated,
                 allocation['aap_vm_allocation']['reservations']['selected-request'], expected['route']['vm_name'], expected['route'], desired)))

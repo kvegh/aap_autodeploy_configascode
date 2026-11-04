@@ -2,6 +2,15 @@
 
 Resuming in a new session? Start with [RESTART_HERE.md](RESTART_HERE.md).
 
+The [portable AutoDeploy bundle](docs/autodeploy-portability.md) retains the newer
+four-stage templates, excludes the older production-only family from future
+installations, binds source API access to the receiving AAP, and preserves
+inventory labels separately from immutable VM/registry identities. Stage 01 now
+grants and durably publishes the verified new guest's bounded installation HTTPS
+and self-API connection before installation begins. The existing base template
+also supports the isolated `aap_installation_access` repair tag. These changes
+add no wrapper playbook, job template, credential type or secret store.
+
 The [agreed recovery and deployment targets](docs/recovery-and-use-case-targets.md)
 describe the external-AAP recovery goal, version-to-version acceptance test,
 older template retention, self/remote CaC installation and use-case runtime

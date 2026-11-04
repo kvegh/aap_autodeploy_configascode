@@ -1,8 +1,8 @@
 ---
-# Configure only deliberately selected umbrella use cases on a separate AAP.
+# Configure only deliberately selected umbrella use cases on the selected AAP.
 # Existing seed importer templates retain their own scoped Git/Vault credentials.
 # This launches configuration imports, never application/deployment/demo jobs.
-- name: Install selected project definitions and saved CaC on a fresh AAP
+- name: Install selected project definitions and saved CaC on a selected AAP
   hosts: localhost
   connection: local
   gather_facts: false
@@ -25,15 +25,51 @@
         fail_msg: Run this launcher in AAP with the shared inventory and an explicit destination host.
       no_log: true
 
-    - name: Bind the explicitly selected native API credential to the inventory destination
+    - name: Require the existing source API credential and running job identity
+      ansible.builtin.assert:
+        that:
+          - lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_URL') | aap_https_origin | length == 2
+          - lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_TOKEN') | length > 0
+          - awx_job_template_id is defined
+          - awx_project_revision is defined
+        fail_msg: Attach the source AAP API credential and run this template in AAP.
+      no_log: true
+
+    - name: Bind orchestration to the API credential of the AAP running this job
       ansible.builtin.set_fact:
-        aap_selected_target_auth: >-
-          {{ hostvars[aap_instance_key] | aap_cac_api_target({
-               'hostname': lookup('ansible.builtin.env', 'AAP_HOSTNAME'),
-               'username': lookup('ansible.builtin.env', 'AAP_USERNAME'),
-               'password': lookup('ansible.builtin.env', 'AAP_PASSWORD'),
-               'token': lookup('ansible.builtin.env', 'AAP_TOKEN'),
-               'validate_certs': lookup('ansible.builtin.env', 'AAP_VALIDATE_CERTS')}) }}
+        aap_selected_source_auth:
+          hostname: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_URL') }}"
+          token: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_TOKEN') }}"
+      no_log: true
+
+    - name: Read this running job through its source API credential
+      ansible.builtin.uri:
+        url: >-
+          {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ awx_job_id }}/
+        headers:
+          Authorization: "Bearer {{ aap_selected_source_auth.token }}"
+        validate_certs: true
+        ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
+        follow_redirects: none
+      register: aap_selected_source_job
+      no_log: true
+
+    - name: Require the credential to identify the actual running source job
+      ansible.builtin.assert:
+        that:
+          - aap_selected_source_job.json.status == 'running'
+          - aap_selected_source_job.json.id | int == awx_job_id | int
+          - aap_selected_source_job.json.job_template | int == awx_job_template_id | int
+          - aap_selected_source_job.json.scm_revision == awx_project_revision
+        fail_msg: The source API credential must identify the AAP running this job.
+      no_log: true
+
+    - name: Select destination API authentication from the existing instance token store
+      ansible.builtin.include_tasks: tasks/cac-api-auth.yml
+
+    - name: Retain only the selected destination API authentication
+      ansible.builtin.set_fact:
+        aap_selected_target_auth: "{{ cac_api_auth }}"
       no_log: true
 
     - name: Resolve the explicit instance key before any setup orchestration
@@ -63,7 +99,7 @@
         - name: Retrieve the reviewed encrypted selector and authentication inputs
           ansible.builtin.include_tasks: tasks/private-config-checkout.yml
           vars:
-            aap_hostname: "{{ aap_seed_hostname }}"
+            aap_hostname: "{{ aap_selected_source_auth.hostname }}"
             aap_config_repo_url: "{{ aap_use_case_catalog_repo_url }}"
 
         - name: Resolve only explicit supported umbrella selections
@@ -71,45 +107,16 @@
             aap_selected_setup_plan: >-
               {{ aap_selected_use_cases | aap_use_case_setup_plan(
                    aap_use_case_catalog, cac_use_case_selector,
-                   aap_seed_hostname, aap_target_hostname) }}
+                   aap_selected_source_auth.hostname, aap_target_hostname) }}
             aap_selected_setup_results: []
-          no_log: true
-
-        - name: Require explicit seed credentials separately from target base
-          ansible.builtin.assert:
-            that:
-              - cac_use_case_selector.seed_username is string
-              - cac_use_case_selector.seed_username | length > 0
-              - cac_use_case_selector.seed_password is string
-              - cac_use_case_selector.seed_password | length > 0
-            fail_msg: Supply the source seed login in the encrypted selector catalog; target base credentials are separate.
-          no_log: true
-
-        - name: Create this run's source orchestration session using only its explicit API login
-          ansible.builtin.uri:
-            url: "{{ aap_seed_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/"
-            method: POST
-            url_username: "{{ cac_use_case_selector.seed_username }}"
-            url_password: "{{ cac_use_case_selector.seed_password }}"
-            force_basic_auth: true
-            body_format: json
-            body:
-              description: Temporary selected-use-case orchestration session
-              scope: write
-              application: null
-            status_code: 201
-            validate_certs: true
-            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
-            follow_redirects: none
-          register: cac_gateway_token
           no_log: true
 
         - name: Read the credentials actually attached to this launcher job
           ansible.builtin.uri:
             url: >-
-              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ awx_job_id }}/credentials/?page_size=200
+              {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ awx_job_id }}/credentials/?page_size=200
             headers:
-              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
             validate_certs: true
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
@@ -124,9 +131,10 @@
         - name: Read the selected store credential type
           ansible.builtin.uri:
             url: >-
-              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/credential_types/{{ aap_selected_api_credentials[0].credential_type }}/
+              {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/credential_types/{{
+              aap_selected_api_credentials[0].credential_type }}/
             headers:
-              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
             validate_certs: true
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
@@ -144,9 +152,9 @@
 
         - name: Read the seed controller's current instance identities
           ansible.builtin.uri:
-            url: "{{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/instances/?page_size=200"
+            url: "{{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/instances/?page_size=200"
             headers:
-              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
             validate_certs: "{{ aap_validate_certs }}"
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
@@ -165,21 +173,23 @@
           register: aap_target_instances
           no_log: true
 
-        - name: Refuse production-seed aliases and incomplete identity reads
+        - name: Verify the selected local or remote controller identities
           ansible.builtin.assert:
             that:
               - aap_seed_instances.json.next is none
               - aap_target_instances.json.next is none
-              - aap_seed_instances.json.results | aap_distinct_controllers(aap_target_instances.json.results)
-            fail_msg: The fresh target must be independently identified and distinct from the seed AAP.
+              - >-
+                aap_seed_instances.json.results | aap_verified_controllers(
+                  aap_target_instances.json.results, aap_selected_source_auth.hostname, aap_target_hostname)
+            fail_msg: The selected source and destination controller identities must match their verified API origins.
           no_log: true
 
         - name: Resolve only the fixed preparation and selected importer templates
           ansible.builtin.uri:
             url: >-
-              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/job_templates/?name={{ item.name | urlencode }}&page_size=200
+              {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/job_templates/?name={{ item.name | urlencode }}&page_size=200
             headers:
-              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
             validate_certs: "{{ aap_validate_certs }}"
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
@@ -211,10 +221,10 @@
         - name: Read the importers' actual source project
           ansible.builtin.uri:
             url: >-
-              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/projects/{{
+              {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/projects/{{
               aap_selected_importer_lookups.results[0].json.results[0].project }}/
             headers:
-              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
             validate_certs: "{{ aap_validate_certs }}"
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
@@ -232,9 +242,9 @@
         - name: Check the bounded surveys before sending target variables
           ansible.builtin.uri:
             url: >-
-              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/job_templates/{{ item.json.results[0].id }}/survey_spec/
+              {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/job_templates/{{ item.json.results[0].id }}/survey_spec/
             headers:
-              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
             validate_certs: "{{ aap_validate_certs }}"
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
@@ -261,9 +271,10 @@
         - name: Read the actual scoped credential associations on each importer
           ansible.builtin.uri:
             url: >-
-              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/job_templates/{{ item.json.results[0].id }}/credentials/?page_size=200
+              {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/job_templates/{{
+              item.json.results[0].id }}/credentials/?page_size=200
             headers:
-              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
             validate_certs: true
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
@@ -292,9 +303,9 @@
         - name: Resolve only the bound Machine credential
           ansible.builtin.uri:
             url: >-
-              {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/controller/v2/credentials/?name={{ item | urlencode }}&page_size=200
+              {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/credentials/?name={{ item | urlencode }}&page_size=200
             headers:
-              Authorization: "Bearer {{ cac_gateway_token.json.token }}"
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
             validate_certs: true
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
@@ -346,24 +357,8 @@
             aggregate: false
             per_host: false
       always:
-        - name: Revoke only this run's source orchestration session
-          block:
-            - name: Delete the temporary source session without touching destination credentials
-              ansible.builtin.uri:
-                url: >-
-                  {{ aap_seed_hostname | regex_replace('/+$', '') }}/api/gateway/v1/tokens/{{ cac_gateway_token.json.id }}/
-                method: DELETE
-                headers:
-                  Authorization: "Bearer {{ cac_gateway_token.json.token }}"
-                status_code: [204, 404]
-                validate_certs: true
-                ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
-                follow_redirects: none
-              when: cac_gateway_token.json.id is defined
-              no_log: true
-          always:
-            - name: Remove the private checkout on success or failure
-              ansible.builtin.file:
-                path: "{{ cac_workspace.path }}"
-                state: absent
-              when: cac_workspace.path is defined
+        - name: Remove the private checkout on success or failure
+          ansible.builtin.file:
+            path: "{{ cac_workspace.path }}"
+            state: absent
+          when: cac_workspace.path is defined

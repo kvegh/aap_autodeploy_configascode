@@ -7,7 +7,7 @@
 
 - name: Select API access by inventory instance name from the injected token store
   aap_instance_access:
-    instance_name: "{{ aap_instance_key }}"
+    instance_name: "{{ aap_instance_key | aap_inventory_instance_name(hostvars[aap_instance_key]) }}"
     fqdn: "{{ hostvars[aap_instance_key].ansible_fqdn }}"
   register: cac_selected_instance_access
   no_log: true

@@ -232,7 +232,7 @@
       no_log: true
     - name: Retire encrypted and source AAP access while retaining allocation history
       aap_publish_instance_keys:
-        instance_name: '{{ aap_instance_key }}'
+        instance_name: '{{ aap_instance_route.vm_name }}'
         record:
           target: '{{ aap_instance_route.aap_hostname }}'
         organization: Default
