@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.35.1
+
+Document implementation `183d3ce`, production protection during guest release,
+existing credential reuse, safe publication retries and the 249 passing checks.
+
 ## 0.35.0
 
 Release a successfully configured generic Linux guest from additional recovery

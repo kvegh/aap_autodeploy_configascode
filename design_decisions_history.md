@@ -2199,3 +2199,22 @@ history. These are explicit owner requirements; production remains excluded.
 Validation: 188 full-suite tests passed, plus focused real encrypted Git
 publication/retirement and DNS/storage refusal checks; production lint passed
 23 files. Live decommission/rebuild is a separate tracked verification step.
+
+## Release verified generic guests through the existing deployment
+
+The operator approved automatic removal of a successfully configured guest's
+extra IPv4 recovery quarantine while retaining production destination denial.
+The existing generic Linux job calls a shared role from an exact public source
+revision. The existing publication action preflights source-job identity and
+current policy, records verified ownership in the existing shared inventory, and
+saves the release in the existing encrypted recovery captures and API metadata.
+No new job, service, credential type, secret store or allocation record is added.
+An unpublished failed release rolls back; a durably published release remains
+for an idempotent source-inventory retry. Decommissioning retires only exact
+selected identities and preserves production protection for other releases.
+
+Implementation `183d3ce` passed all 249 repository tests, including native role
+loading, encrypted-Git publication, interrupted source update/retry, exact guest
+ownership, runtime rollback and unchanged token/allocation tests. Focused Ansible
+syntax and production lint passed. Actual guest acceptance is checked separately
+through the existing normal deployment template.
