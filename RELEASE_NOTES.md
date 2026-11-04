@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.35.0
+
+Release a successfully configured generic Linux guest from additional recovery
+isolation while retaining explicit production destination blocks and the normal
+host firewall. Preserve released clients through base reconciliation and retire
+only selected identities during decommission. The existing publication action
+preflights source ownership, registers verified guest provenance in the shared
+inventory, and synchronizes encrypted policy captures and API aliases without
+modifying instance tokens or allocation history. Interrupted source synchronization
+can retry after a successful Git publication without rolling live rules back.
+
 ## 0.34.3
 
 Record implementation `8c0af1c`, its source execution-environment reproduction

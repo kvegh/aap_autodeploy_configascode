@@ -37,6 +37,8 @@ class ActionModule(ActionBase):
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
         try:
+            if self._task.args.get("operation") == "release_guest":
+                return self.release_guest(result, task_vars or {})
             if self._task.check_mode:
                 result.update(changed=False, published=False)
                 return result
@@ -62,7 +64,7 @@ class ActionModule(ActionBase):
                 declared = registration["policy"]
                 keys.require(routing.isolation_policy(registered_route["hypervisor"],
                     declared.get("https_clients", []), declared.get("protected_ipv4"),
-                    declared.get("guest_host_clients", [])) == declared,
+                    declared.get("guest_host_clients", []), declared.get("released_clients", [])) == declared,
                     "Publish the current declared recovery isolation policy without changing its scope.")
             token = os.environ.get("CAC_GIT_TOKEN", "")
             keys.require(bool(token), "Attach VM allocation git Pseudo CMDB writer for token publication.")
@@ -392,3 +394,124 @@ class ActionModule(ActionBase):
             raise AnsibleActionFail(str(error)) from None
         except Exception:
             raise AnsibleActionFail("Protected instance-token publication failed; the target token remains saved for review.") from None
+
+
+    def release_guest(self, result, variables):
+        """Plan then publish one verified guest release using existing Git/API access."""
+        durable = False
+        try:
+            args = self._task.args
+            keys.require(set(args) >= {"operation", "guest", "hypervisor"}
+                and set(args) <= {"operation", "guest", "hypervisor", "phase", "transition"}
+                and args.get("phase", "publish") in ("plan", "publish"),
+                "Use only the fixed verified guest release request.")
+            phase = "plan" if self._task.check_mode else args.get("phase", "publish")
+            keys.require(phase == "plan" or isinstance(args.get("transition"), dict),
+                "Publish only after protected source preflight and live guest verification.")
+            keys.require(bool(os.environ.get("CAC_GIT_TOKEN")),
+                "Attach the existing VM allocation git Pseudo CMDB writer for durable release.")
+            source = SourceClient()
+            keys.verify_source_job(source, None, variables)
+            repository = contract.autodeploy_repository(self._loader, ROOT)
+            names = {"autodeploy": "vaults/cac/aap_autodeploy_configascode-cac-vault.yml",
+                     "shared": "cac/host_inventory.yml", "hactar": "cac/hactar_recovery.yml"}
+            with tempfile.TemporaryDirectory(prefix="aap-guest-release-") as temporary:
+                workspace = Path(temporary)
+                helper = workspace / "askpass"
+                helper.write_text('#!/bin/sh\ncase "$1" in\n*Username*) printf "%s\\n" x-access-token ;;\n*Password*) printf "%s\\n" "$CAC_GIT_TOKEN" ;;\n*) exit 1 ;;\nesac\n')
+                helper.chmod(0o700)
+                environment = dict(os.environ, GIT_ASKPASS=str(helper), GIT_TERMINAL_PROMPT="0",
+                    GIT_CONFIG_COUNT="3", GIT_CONFIG_KEY_0="credential.helper", GIT_CONFIG_VALUE_0="",
+                    GIT_CONFIG_KEY_1="http.followRedirects", GIT_CONFIG_VALUE_1="false",
+                    GIT_CONFIG_KEY_2="http.sslVerify", GIT_CONFIG_VALUE_2="true", LC_ALL="C")
+                synchronized = False
+                for attempt in range(8):
+                    checkout = workspace / str(attempt)
+                    checkout.mkdir(mode=0o700)
+                    def git(*arguments, optional=False):
+                        response = subprocess.run(["git", "-C", str(checkout), *arguments], env=environment,
+                            text=True, capture_output=True, timeout=60)
+                        if response.returncode and not optional:
+                            raise keys.StoreError("Protected guest release Git operation failed; no force push was attempted.")
+                        return response
+                    git("init", "--quiet")
+                    git("remote", "add", "origin", repository)
+                    git("fetch", "--quiet", "--depth=1", "origin", "main")
+                    git("checkout", "--quiet", "--detach", "FETCH_HEAD")
+                    documents, seals = {}, {}
+                    for kind, relative in names.items():
+                        path = checkout / relative
+                        if kind == "hactar" and not path.exists():
+                            documents[kind] = None
+                            continue
+                        keys.require(path.is_file() and not path.is_symlink(), "Use the existing fixed encrypted policy captures.")
+                        raw, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes(), filename=str(path))
+                        documents[kind] = AnsibleLoader(raw).get_single_data()
+                        seals[kind] = (label, secret)
+                    context = keys.guest_release_context(documents["autodeploy"], documents["shared"],
+                        args["guest"], args["hypervisor"], args.get("transition") if phase == "publish" else None)
+                    desired = {kind: keys.guest_release_inventory_capture(value, context, kind) if value is not None else None
+                               for kind, value in documents.items()}
+                    operations = keys.source_guest_release_operations(source, desired["shared"], desired["autodeploy"],
+                        desired["hactar"], context)
+                    transition = {key: context[key] for key in ("previous_policy", "desired_policy")}
+                    if phase == "plan":
+                        result.update(changed=False, published=False, transition=transition,
+                                      durable_policy_published=False)
+                        return result
+                    # Recheck the running source job before any durable or API mutation.
+                    keys.verify_source_job(source, None, variables)
+                    changed = []
+                    for kind, value in desired.items():
+                        if value is None or value == documents[kind]:
+                            continue
+                        label, secret = seals[kind]
+                        sealed = self._loader._vault.encrypt(yaml.dump(value, Dumper=vault_yaml.VaultDumper,
+                            sort_keys=False, width=110), secret=secret, vault_id=label)
+                        restored = AnsibleLoader(self._loader._vault.decrypt(sealed)).get_single_data()
+                        keys.require(restored == value and vault_yaml.literal_paths(restored) == vault_yaml.literal_paths(value),
+                            "Guest release must preserve literals, keys and unrelated configuration.")
+                        (checkout / names[kind]).write_bytes(sealed)
+                        changed.append(names[kind])
+                    if changed:
+                        git("add", "--", *changed)
+                        git("-c", "user.name=AAP AutoDeploy", "-c", "user.email=automation@example.invalid",
+                            "commit", "--quiet", "-m", "Publish verified guest recovery isolation release")
+                        if git("push", "origin", "HEAD:refs/heads/main", optional=True).returncode:
+                            continue
+                        durable = True
+                    else:
+                        durable = True
+                    # Exact preflight already validated every API destination. A failed API write leaves
+                    # the published policy intact; an idempotent retry completes the source aliases.
+                    for method, path, body in operations:
+                        if method == "ASSOCIATE":
+                            rows = source.rows("hosts/?inventory=%s&name=%s" % (body["inventory"], keys.quote(body["name"])))
+                            keys.require(len(rows) == 1, "Associate only the just-verified source guest identity.")
+                            source.request("POST", path, {"id": rows[0]["id"]})
+                        else:
+                            source.request(method, path, body)
+                    remaining = keys.source_guest_release_operations(source, desired["shared"], desired["autodeploy"],
+                        desired["hactar"], context)
+                    keys.require(not remaining, "Verify source guest placement and policy aliases after publication.")
+                    git("fetch", "--quiet", "--depth=1", "origin", "main")
+                    observed = {}
+                    for kind, relative in names.items():
+                        raw = git("show", "FETCH_HEAD:" + relative, optional=kind == "hactar")
+                        observed[kind] = (AnsibleLoader(self._loader._vault.decrypt(raw.stdout.encode())).get_single_data()
+                                          if raw.returncode == 0 else None)
+                    if observed != desired:
+                        # Restart from fresh state; exact transition checks reject unrelated changes.
+                        continue
+                    synchronized = True
+                    result.update(changed=bool(changed or operations), published=True,
+                                  transition=transition, durable_policy_published=True)
+                    return result
+                keys.require(synchronized, "Concurrent policy updates prevented exact guest release synchronization; retry safely.")
+        except keys.StoreError as error:
+            result.update(failed=True, msg=str(error), durable_policy_published=durable)
+            return result
+        except Exception:
+            result.update(failed=True, msg="Protected guest release publication failed; inspect protected source state before retry.",
+                          durable_policy_published=durable)
+            return result

@@ -1,7 +1,7 @@
 """Bind private guest connections and public APIs to one verified hypervisor."""
 
 from collections.abc import Mapping
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, IPv4Network
 import re
 import shlex
 from urllib.parse import urlsplit
@@ -206,7 +206,7 @@ def local_host_policy(result, pin, clients):
     return result
 
 
-def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_clients=None):
+def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_clients=None, released_clients=None):
     pin = hypervisor_pin(pin)
     result = {
         "bridges": list(pin["isolation_bridges"]),
@@ -217,7 +217,10 @@ def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_cl
         isinstance(clients, list),
         "Declare approved HTTPS clients explicitly as a list.",
     )
-    if not clients:
+    released = [] if released_clients is None else released_clients
+    require(isinstance(released, list) and len(released) <= 64,
+            "Declare a bounded list of verified released guest identities.")
+    if not clients and not released:
         return local_host_policy(result, pin, guest_host_clients)
     require(
         isinstance(protected_ipv4, list) and protected_ipv4,
@@ -251,8 +254,31 @@ def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_cl
         len({(x["bridge"], x["ipv4"], x["mac"]) for x in approved}) == len(approved),
         "Duplicate HTTPS approvals are refused.",
     )
-    result.update(https_clients=approved, protected_ipv4=list(protected_ipv4))
-    return local_host_policy(result, pin, guest_host_clients)
+    if approved:
+        result["https_clients"] = approved
+    result["protected_ipv4"] = list(protected_ipv4)
+    result = local_host_policy(result, pin, guest_host_clients)
+    identities = []
+    private = [IPv4Network(value) for value in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")]
+    for client in released:
+        require(isinstance(client, Mapping) and set(client) == {"bridge", "ipv4", "mac"},
+                "Release only an exact bridge, IPv4 and MAC identity.")
+        ipv4(client["ipv4"])
+        mac = client["mac"]
+        require(client["bridge"] in pin["isolation_bridges"]
+                and any(IPv4Address(client["ipv4"]) in network for network in private)
+                and isinstance(mac, str) and re.fullmatch(r"[0-9a-f]{2}(?::[0-9a-f]{2}){5}", mac)
+                and not int(mac[:2], 16) & 1 and mac != "00:00:00:00:00:00"
+                and not any(old["ipv4"] == client["ipv4"] or old["mac"] == mac for old in identities),
+                "Release only unique normalized private guest identities on enforced bridges.")
+        for old in result.get("https_clients", []) + result.get("guest_host_clients", []):
+            require(not (old["ipv4"] == client["ipv4"] or old["mac"] == mac)
+                    or all(old[key] == client[key] for key in client),
+                    "A released identity conflicts with an existing guest grant.")
+        identities.append(dict(client))
+    if identities:
+        result["released_clients"] = identities
+    return result
 
 
 def safe_instance_dns(records, name, address):

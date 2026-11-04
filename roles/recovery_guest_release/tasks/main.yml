@@ -1,0 +1,129 @@
+---
+- name: Retain verified guest release inputs before delegation changes connection context
+  ansible.builtin.set_fact:
+    __recovery_release_guest: "{{ recovery_release_guest }}"
+    __recovery_release_pin: "{{ recovery_release_hypervisor }}"
+    __recovery_release_trust: "{{ recovery_release_trust_file }}"
+  no_log: true
+
+- name: Preflight the source job and exact saved policy before changing the hypervisor
+  aap_publish_instance_keys:
+    operation: release_guest
+    phase: plan
+    guest: "{{ __recovery_release_guest }}"
+    hypervisor: "{{ __recovery_release_pin }}"
+  delegate_to: localhost
+  become: false
+  register: __recovery_release_plan
+  no_log: true
+
+- name: Allocate protected temporary runtime code on the pinned hypervisor
+  ansible.builtin.tempfile:
+    state: directory
+    path: /tmp
+    prefix: aap-guest-release-
+  delegate_to: "{{ __recovery_release_pin.address }}"
+  become: true
+  vars: &recovery_release_connection
+    ansible_connection: ssh
+    ansible_host: "{{ hostvars[inventory_hostname].__recovery_release_pin.address }}"
+    ansible_user: "{{ hostvars[inventory_hostname].__recovery_release_pin.user }}"
+    ansible_port: "{{ hostvars[inventory_hostname].__recovery_release_pin.port }}"
+    ansible_password: ''
+    ansible_ssh_pass: ''
+    ansible_become_password: ''
+    ansible_ssh_common_args: >-
+      -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
+      -o StrictHostKeyChecking=yes
+      -o UserKnownHostsFile={{ hostvars[inventory_hostname].__recovery_release_trust | quote }}
+      -o GlobalKnownHostsFile=/dev/null
+    ansible_host_key_checking: true
+    ansible_ssh_host_key_checking: true
+  check_mode: false
+  register: __recovery_release_runtime
+  no_log: true
+
+- name: Apply and durably publish only the verified guest release
+  block:
+    - name: Stage the existing management primitives and the selected guest release helper
+      ansible.builtin.copy:
+        src: "{{ role_path }}/../../src/{{ item }}"
+        dest: "{{ __recovery_release_runtime.path }}/{{ item }}"
+        owner: root
+        group: root
+        mode: '0600'
+      loop: [aap_hypervisor_access.py, aap_guest_release.py]
+      delegate_to: "{{ __recovery_release_pin.address }}"
+      become: true
+      vars: *recovery_release_connection
+      check_mode: false
+      no_log: true
+
+    - name: Verify exact live VM identity and atomically apply its production-blocked release
+      ansible.builtin.command:
+        argv: [python3, "{{ __recovery_release_runtime.path }}/aap_guest_release.py"]
+        stdin: >-
+          {{ {'operation': 'apply', 'guest': __recovery_release_guest,
+              'hypervisor': __recovery_release_pin,
+              'transition': __recovery_release_plan.transition,
+              'check_mode': ansible_check_mode | bool} | to_json }}
+      delegate_to: "{{ __recovery_release_pin.address }}"
+      become: true
+      vars: *recovery_release_connection
+      check_mode: false
+      register: __recovery_release_apply
+      changed_when: (__recovery_release_apply.stdout | from_json).changed | bool
+      no_log: true
+
+    - name: Save the verified transition in existing encrypted CaC and source inventory
+      aap_publish_instance_keys:
+        operation: release_guest
+        phase: publish
+        guest: "{{ __recovery_release_guest }}"
+        hypervisor: "{{ __recovery_release_pin }}"
+        transition: "{{ __recovery_release_plan.transition }}"
+      delegate_to: localhost
+      become: false
+      register: __recovery_release_publish
+      when: not ansible_check_mode
+      no_log: true
+
+  rescue:
+    - name: Roll back only this runtime transition when encrypted publication did not succeed
+      ansible.builtin.command:
+        argv: [python3, "{{ __recovery_release_runtime.path }}/aap_guest_release.py"]
+        stdin: >-
+          {{ {'operation': 'rollback', 'guest': __recovery_release_guest,
+              'hypervisor': __recovery_release_pin,
+              'transition': __recovery_release_plan.transition,
+              'check_mode': false} | to_json }}
+      delegate_to: "{{ __recovery_release_pin.address }}"
+      become: true
+      vars: *recovery_release_connection
+      register: __recovery_release_rollback
+      changed_when: (__recovery_release_rollback.stdout | from_json).changed | bool
+      when:
+        - __recovery_release_apply is defined
+        - __recovery_release_apply is succeeded
+        - (__recovery_release_apply.stdout | from_json).changed | bool
+        - not (__recovery_release_publish.durable_policy_published | default(false) | bool)
+        - not ansible_check_mode
+      no_log: true
+
+    - name: Stop after an incomplete guest release publication
+      ansible.builtin.fail:
+        msg: >-
+          Guest release did not finish. Any newly applied unpublished change was restored.
+          A durably saved release is retained for an idempotent source-inventory retry.
+
+  always:
+    - name: Remove this job's protected hypervisor runtime directory
+      ansible.builtin.file:
+        path: "{{ __recovery_release_runtime.path }}"
+        state: absent
+      delegate_to: "{{ __recovery_release_pin.address }}"
+      become: true
+      vars: *recovery_release_connection
+      check_mode: false
+      when: __recovery_release_runtime.path is match('^/tmp/aap-guest-release-[A-Za-z0-9_]+$')
+      no_log: true

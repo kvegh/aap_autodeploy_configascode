@@ -9,7 +9,8 @@
       {{ aap_hypervisor_pin | aap_hypervisor_isolation_policy(
            aap_hypervisor_isolation_https_clients | default([]),
            aap_hypervisor_isolation_protected_ipv4 | default([]),
-           aap_hypervisor_isolation_host_clients | default([])) | to_json }}
+           aap_hypervisor_isolation_host_clients | default([]),
+           aap_hypervisor_isolation_released_clients | default([])) | to_json }}
   changed_when: false
   check_mode: false
   no_log: true

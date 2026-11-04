@@ -79,7 +79,33 @@ pin remains unchanged. Independently approved local guest-to-hypervisor grants
 may also declare exact host IPv4 destinations and TCP ports through
 `aap_hypervisor_isolation_host_clients`. The guard verifies the complete existing
 policy; it never applies a new permission. Empty optional lists retain the
-original isolation policy. Local counters are preserved as migration evidence. Fresh guest host keys and
+original isolation policy.
+
+The generic Linux deployment can release its verified guest from the additional
+recovery isolation after guest configuration succeeds. The shared
+`recovery_guest_release` role first verifies the running source job, exact
+hypervisor and complete guest provenance, then validates the live UUID, disk,
+network, DHCP identity and guest machine ID. It adds only that bridge/IPv4/MAC
+to `released_clients`, exposed in recovery inventory as
+`aap_hypervisor_isolation_released_clients`. Production destinations remain
+blocked in both guest forwarding and guest-to-host traffic before any release
+allowance. Ordinary firewalld, private MCP exposure rules, other guests, IPv6
+restrictions and disabled autostart remain in force. The extra isolation protects
+parallel image-based recovery from inherited production integrations; successful
+VM creation alone does not authorize release before guest setup and identity
+checks finish.
+
+The existing `aap_publish_instance_keys` action plans and saves the release using
+existing source API, writer and Vault credentials. It updates the three maintained
+encrypted policy captures and source inventory aliases without changing target
+API tokens or allocation history. New guest provenance goes into the existing
+shared host inventory, not the AAP-only allocator. A conflicting existing host,
+MAC, address, policy or ownership record stops the operation. Git updates use
+ordinary compare-and-retry pushes; a failed source API synchronization after
+publication retains the published live policy for an idempotent retry. Existing
+VMs can run the guest-verification phase without recreating their disks.
+
+Local counters are preserved as migration evidence. Fresh guest host keys and
 the exact instance route are retained for the following stages. Stages 02–04
 resolve an exact instance key from that registry before any target connection;
 SSH uses the pinned hypervisor jump route and API access uses verified public
@@ -262,8 +288,9 @@ Job Template selects the common importer and fixes its project ID in extra varia
 instance confirmation, pinned recovery identity and exact disk/DNS/TLS/nginx cleanup, related versioned guests and an orphaned DNS
 scan. Disk ownership checks accept libvirt's generated disk-index metadata while
 requiring the exact single file-backed disk. Before deletion, verified guest
-identities select only their local and installation HTTPS permissions for
-retirement. Exact native rules and the existing persistent isolation policy are
+identities select only their local, installation HTTPS and released-client permissions for
+retirement. Protected production addresses remain declared while any installation
+HTTPS or released guest survives. Exact native rules and the existing persistent isolation policy are
 cleaned after guest shutdown; normal deployment guards remain strict. The final
 existing writer updates encrypted policy aliases and inventory captures, removes
 only owned same-version source inventory entries and preserves literal variable

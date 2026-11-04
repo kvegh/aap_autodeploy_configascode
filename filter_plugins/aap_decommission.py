@@ -133,11 +133,11 @@ def guest_access_plan(previous, retirement, route, related, xmls, networks, actu
 
         def validate_policy(policy):
             if _routing.isolation_policy(pin, policy.get("https_clients", []),
-                    policy.get("protected_ipv4"), policy.get("guest_host_clients", [])) != policy:
+                    policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", [])) != policy:
                 raise ValueError
 
         validate_policy(previous)
-        old_clients = previous.get("guest_host_clients", []) + previous.get("https_clients", [])
+        old_clients = previous.get("guest_host_clients", []) + previous.get("https_clients", []) + previous.get("released_clients", [])
 
         def ipv4(address):
             parsed = IPv4Address(address)
@@ -241,7 +241,7 @@ def guest_access_plan(previous, retirement, route, related, xmls, networks, actu
 
         selected = {tuple(identity[key] for key in ("bridge", "ipv4", "mac")) for identity in identities}
         desired = deepcopy(previous)
-        for field in ("guest_host_clients", "https_clients"):
+        for field in ("guest_host_clients", "https_clients", "released_clients"):
             if field not in desired:
                 continue
             retained = [client for client in desired[field]
@@ -252,8 +252,8 @@ def guest_access_plan(previous, retirement, route, related, xmls, networks, actu
                 desired[field] = retained
             else:
                 desired.pop(field)
-                if field == "https_clients":
-                    desired.pop("protected_ipv4")
+                if not desired.get("https_clients") and not desired.get("released_clients"):
+                    desired.pop("protected_ipv4", None)
         validate_policy(desired)
         if source_proof is not None:
             if (not isinstance(source_proof, dict) or source_proof.get("instance_name") != route["vm_name"]
@@ -272,7 +272,7 @@ def guest_access_plan(previous, retirement, route, related, xmls, networks, actu
             if source_proof["missing_roles"]:
                 owner_keys = {tuple(owner[key] for key in ("bridge", "ipv4", "mac")) for owner in owners}
                 if any(tuple(client[key] for key in ("bridge", "ipv4", "mac")) not in owner_keys
-                       for client in desired.get("guest_host_clients", []) + desired.get("https_clients", [])):
+                       for client in desired.get("guest_host_clients", []) + desired.get("https_clients", []) + desired.get("released_clients", [])):
                     raise ValueError
         actual = previous if actual_policy is None else actual_policy
         validate_policy(actual)
