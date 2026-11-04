@@ -1,5 +1,43 @@
 # Design decisions history
 
+## Keep complete ownership and retire only verified deployment permissions — 2026-11-03
+
+Implementation `fc85d29` completes the selected deployment's permission cleanup
+within the existing decommission job. The recovery layer protects restored
+production state, so retirement must remove only the proven selected guests'
+local and installation HTTPS permissions while preserving other clients and
+normal isolation checks. Ownership preflight precedes shutdown; exact native
+runtime/permanent rules and the existing atomic isolation policy are cleaned
+before VM definitions and external resources are removed. Failed local application
+restores the captured policy and stops before deletion.
+
+The owner required retryable cleanup without a new service, state store or
+publication phase. Decommission therefore accepts only the declared canonical
+policy or its exact removal result derived from recorded guest identities. The
+existing final Git/API action updates the maintained encrypted policy aliases,
+shared and recovery captures, related guest rows and source inventory. It checks
+all source targets before publication, preserves literal JSON variable wrappers,
+shared credentials and consumed allocation history, and rereads concurrent state.
+It refuses foreign identities, omitted selected grants and new permissions.
+
+Future primary VMs now retain complete ownership automatically in the same
+encrypted route transaction. Stage 01 first authenticates read-only through its
+generated guest keys and pinned hypervisor jump, using the existing environment
+login. Original-host variable references prevent delegation from losing the
+route; effective connection overrides fail before authentication. Actual domain
+and network XML supply exact UUID, disk, address, MAC and bridge evidence.
+The allocator preserves other resource roles and refuses conflicting known
+identity. This retains proof after a later partial cleanup has removed the VM
+definition, without another registry or credential design.
+
+The complete vendor-path suite passed 218 cases without skips. Subsequent guard
+changes passed all 26 allocation/routing and 12 instance-key cases; the coordinator
+independently passed 20 decommission and 12 instance-key cases before approval.
+Both playbooks pass syntax and scoped strict production lint passes 12 files.
+Tests include real encrypted Git, fake source APIs, native delegated SSH option
+resolution, check mode and local rollback. No new VM or live decommission was
+launched for validation; successful code publication does not claim those proofs.
+
 ## Register instance inventory alongside existing token publication — 2026-11-03
 
 Implementation `3dd7f5a` uses the same approved base callback to register the new

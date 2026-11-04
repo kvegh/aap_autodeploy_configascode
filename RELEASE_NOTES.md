@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.32.1
+
+Document implementation `fc85d29`: automatic verified primary ownership,
+selected permission retirement, strict retries and final encrypted/source
+inventory synchronization, including preservation and validation boundaries.
+
 ## 0.32.0
 
 Persist complete primary VM ownership in Stage 01's existing encrypted route
