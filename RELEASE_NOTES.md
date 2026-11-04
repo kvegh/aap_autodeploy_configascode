@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.36.2
+
+Read generic guest bootstrap provenance from persistent libvirt XML and validate
+any live copy, while retaining exact ownership checks on both definitions.
+Check command success and output before JSON parsing or rollback decisions.
+Preserve closed Git-record task status in the generated overview.
+
 ## 0.36.1
 
 Document task recovery implementation `d74a61b`, its Hactar companion, native

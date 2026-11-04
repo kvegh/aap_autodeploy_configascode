@@ -72,7 +72,10 @@
       vars: *recovery_release_connection
       check_mode: false
       register: __recovery_release_apply
-      changed_when: (__recovery_release_apply.stdout | from_json).changed | bool
+      changed_when: >-
+        __recovery_release_apply.rc | default(1) | int == 0 and
+        __recovery_release_apply.stdout | default('') | length > 0 and
+        (__recovery_release_apply.stdout | from_json).changed | bool
       no_log: true
 
     - name: Save the verified transition in existing encrypted CaC and source inventory
@@ -101,10 +104,15 @@
       become: true
       vars: *recovery_release_connection
       register: __recovery_release_rollback
-      changed_when: (__recovery_release_rollback.stdout | from_json).changed | bool
+      changed_when: >-
+        __recovery_release_rollback.rc | default(1) | int == 0 and
+        __recovery_release_rollback.stdout | default('') | length > 0 and
+        (__recovery_release_rollback.stdout | from_json).changed | bool
       when:
         - __recovery_release_apply is defined
         - __recovery_release_apply is succeeded
+        - __recovery_release_apply.rc | default(1) | int == 0
+        - __recovery_release_apply.stdout | default('') | length > 0
         - (__recovery_release_apply.stdout | from_json).changed | bool
         - not (__recovery_release_publish.durable_policy_published | default(false) | bool)
         - not ansible_check_mode

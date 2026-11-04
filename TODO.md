@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-68 tasks: 17 outstanding; 51 closed.
+68 tasks: 16 outstanding; 52 closed.
 
 ## Outstanding tasks
 
@@ -23,14 +23,13 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f |
 | bead-wd-72f.30 | Deploy AAP AutoDeploy CaC to the current test AAP | in_progress | P1 | task | bead-wd-72f |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
-| bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | blocked | P1 | task | bead-wd-72f |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
 | bead-wd-72f.24 | Review legacy project settings in shared AutoDeploy inventory | open | P2 | task | bead-wd-72f |
 | bead-wd-72f.25 | Rename the new AAP inventory host after AIOps import | open | P2 | task | bead-wd-72f |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
-| bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | blocked | P2 | task | bead-wd-mcr |
+| bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | in_progress | P2 | task | bead-wd-mcr |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
 | bead-wd-zau | Review copied testserver monitoring and agent remediation readiness | open | P2 | task | — |
 | bead-wd-x9a | Consider automating AAP updates | open | P3 | task | — |
@@ -61,6 +60,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.28 | Deploy Disconnected Windows Patching CaC to the current test AAP | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.29 | Deploy Automation Orchestrator CaC to the current test AAP | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.3 | Analyse consolidation of all AAP use-case deployment playbooks | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.4 | Verify and correct disabled EDA activation semantics before importer migration | closed | P1 | bug | bead-wd-72f |
 | bead-wd-72f.5 | Implement project-ID-based generic CaC deployment | closed | P1 | feature | bead-wd-72f |
 | bead-wd-72f.5.1 | Rename all five CaC captures and migrate repository references | closed | P1 | task | bead-wd-72f.5 |

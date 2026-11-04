@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from unittest.mock import patch
+import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
 import yaml
@@ -55,6 +56,33 @@ class RuntimeReleaseTests(unittest.TestCase):
         self.assertTrue(runtime.plan(request, state)['changed'])
         state['policy'] = deepcopy(request['transition']['desired_policy'])
         self.assertFalse(runtime.plan(request, state)['changed'])
+
+    def test_config_only_provenance_is_valid_and_both_live_ownership_and_present_metadata_remain_checked(self):
+        request, state = fixture()
+        live = ET.fromstring(state['domains'][request['guest']['vm_name']]['current'])
+        live.remove(live.find('description'))
+        state['domains'][request['guest']['vm_name']]['current'] = ET.tostring(live, encoding='unicode')
+        self.assertTrue(runtime.plan(request, state)['changed'])
+        for variant in ('missing-persistent', 'foreign-live-metadata', 'foreign-live-uuid',
+                        'missing-live-state', 'missing-persistent-state'):
+            with self.subTest(variant=variant):
+                changed = deepcopy(state)
+                if variant == 'missing-persistent':
+                    changed['domains'][request['guest']['vm_name']]['persistent'] = ET.tostring(live, encoding='unicode')
+                elif variant == 'foreign-live-metadata':
+                    description = ET.SubElement(live, 'description')
+                    description.text = '{}'
+                    changed['domains'][request['guest']['vm_name']]['current'] = ET.tostring(live, encoding='unicode')
+                    live.remove(description)
+                elif variant == 'foreign-live-uuid':
+                    forged = deepcopy(live)
+                    forged.find('uuid').text = 'foreign'
+                    changed['domains'][request['guest']['vm_name']]['current'] = ET.tostring(forged, encoding='unicode')
+                else:
+                    key = 'current' if variant == 'missing-live-state' else 'persistent'
+                    del changed['domains'][request['guest']['vm_name']][key]
+                with self.assertRaises(ValueError):
+                    runtime.plan(request, changed)
 
     def test_forged_machine_vm_network_and_saved_provenance_stop_release(self):
         for key, value in [('machine_id', '3' * 32), ('uuid', 'foreign'), ('disk', '/foreign'),
@@ -167,7 +195,10 @@ class RuntimeReleaseTests(unittest.TestCase):
             with self.subTest(durable=durable):
                 self.native_role_failure(durable)
 
-    def native_role_failure(self, durable):
+    def test_native_role_skips_rollback_after_failed_empty_runtime_result(self):
+        self.native_role_failure(False, runtime_failure=True)
+
+    def native_role_failure(self, durable, runtime_failure=False):
         request, _ = fixture()
         with tempfile.TemporaryDirectory(prefix='guest-release-role-rollback-') as directory:
             root = Path(directory)
@@ -183,7 +214,7 @@ class RuntimeReleaseTests(unittest.TestCase):
             stub.write_text("import json,pathlib,sys\nrequest=json.load(sys.stdin)\n"
                 "request['_runtime_directory']=str(pathlib.Path(sys.argv[1]).parent)\n"
                 "with pathlib.Path(" + repr(str(trace)) + ").open('a') as f:f.write(json.dumps(request)+'\\n')\n"
-                "print(json.dumps({'changed':True,'applied':True}))\n")
+                + ("raise SystemExit(1)\n" if runtime_failure else "print(json.dumps({'changed':True,'applied':True}))\n"))
             (role / 'action_plugins/aap_publish_instance_keys.py').write_text(
                 "from ansible.plugins.action import ActionBase\n"
                 "class ActionModule(ActionBase):\n"
@@ -220,9 +251,11 @@ class RuntimeReleaseTests(unittest.TestCase):
                 env=env, cwd=ROOT, capture_output=True, text=True, timeout=60)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('Stop after an incomplete guest release publication', result.stdout)
+            self.assertNotIn('Expecting value', result.stdout + result.stderr)
             self.assertTrue(trace.exists(), result.stdout + result.stderr)
             operations = [json.loads(line) for line in trace.read_text().splitlines()]
-            self.assertEqual([row['operation'] for row in operations], ['apply'] if durable else ['apply', 'rollback'])
+            self.assertEqual([row['operation'] for row in operations],
+                             ['apply'] if durable or runtime_failure else ['apply', 'rollback'])
             self.assertEqual(operations[0]['transition'], request['transition'])
             # Native tempfile/copy/file tasks must remove their actual staging directory on failure.
             self.assertFalse(Path(operations[0]['_runtime_directory']).exists())

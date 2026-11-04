@@ -118,9 +118,13 @@ MAC, address, policy or ownership record stops the operation. Git updates use
 ordinary compare-and-retry pushes; a failed source API synchronization after
 publication retains the published live policy for an idempotent retry. Existing
 VMs can run the guest-verification phase without recreating their disks.
-The implementation passed 249 repository tests. Acceptance through a normal AAP
-guest-configuration job is still pending code publication and remains tracked in
-Beads `bead-wd-mcr.1`; local tests are not a completed live release.
+Bootstrap provenance is required in persistent libvirt XML. A running guest need
+not expose a description saved after startup with `virsh desc --config`; if it
+does expose one, it must match. Both XML definitions still require the exact
+UUID, disk, MAC and network. Failed commands are checked before parsing their
+JSON output or considering rollback. The original implementation passed 249
+repository tests; focused native tests cover these checks. Acceptance through a
+normal AAP guest-configuration job remains tracked in Beads `bead-wd-mcr.1`.
 
 Local counters are preserved as migration evidence. Fresh guest host keys and
 the exact instance route are retained for the following stages. Stages 02–04

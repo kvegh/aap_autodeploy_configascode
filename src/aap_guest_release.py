@@ -73,7 +73,9 @@ def plan(request, state):
                 require(address not in mac_owners or mac_owners[address] == name,
                         'A released MAC must have exactly one owner.')
                 mac_owners[address] = name
-    for xml in state['domains'][guest['vm_name']].values():
+    selected_states = state['domains'][guest['vm_name']]
+    require(set(selected_states) == {'persistent', 'current'}, 'Inspect both persistent and live guest ownership.')
+    for kind, xml in selected_states.items():
         domain = ET.fromstring(xml)
         disks, interfaces = domain.findall("./devices/disk[@device='disk']"), domain.findall('./devices/interface')
         require(domain.findtext('uuid') == guest['uuid'] and len(disks) == len(interfaces) == 1,
@@ -85,11 +87,16 @@ def plan(request, state):
                 and interface.find('source').get('network') == guest['network']
                 and interface.find('mac') is not None and interface.find('mac').get('address') == guest['mac'],
                 'Disk, MAC and network must match actual verified guest ownership.')
-        description = json.loads(domain.findtext('description') or '{}')
-        require(description.get('schema_version') == 1 and description.get('deployment_type') == 'generic-recovery'
-                and all(description.get(key) == guest[key] for key in (
-                    'vm_name', 'uuid', 'hypervisor_machine_id', 'source_image_sha256', 'host_keys')),
-                'Require the native generic-clone public provenance from guest bootstrap.')
+        # Bootstrap records public provenance with `virsh desc --config` after
+        # start. Libvirt therefore need not expose that metadata in live XML.
+        # Both XMLs still need the exact UUID, disk, MAC and network above;
+        # persistent provenance is mandatory and any live copy must also match.
+        if kind == 'persistent' or domain.find('description') is not None:
+            description = json.loads(domain.findtext('description') or '{}')
+            require(description.get('schema_version') == 1 and description.get('deployment_type') == 'generic-recovery'
+                    and all(description.get(key) == guest[key] for key in (
+                        'vm_name', 'uuid', 'hypervisor_machine_id', 'source_image_sha256', 'host_keys')),
+                    'Require the native generic-clone public provenance from guest bootstrap.')
     leases = re.findall(r'([0-9a-f]{2}(?::[0-9a-f]{2}){5})\s+ipv4\s+([0-9.]+)/[0-9]+', state['leases'].lower())
     require(set(leases) == {(guest['mac'], guest['address'])}, 'The DHCP identity must match the verified guest.')
     if request['operation'] == 'rollback':
