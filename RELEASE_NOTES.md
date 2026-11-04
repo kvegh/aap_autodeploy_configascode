@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.33.1
+
+Document implementation `f0a70c2`: AAP-only central ownership, verified optional
+source-inventory reads, strict missing-role proof and policy synchronization
+before ownership deletion, with the tested migration/retry boundaries.
+
 ## 0.33.0
 
 Keep AutoDeploy secrets limited to AAP configuration and primary AAP ownership.

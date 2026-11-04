@@ -1,5 +1,41 @@
 # Design decisions history
 
+## Read application VM ownership from the existing source inventory — 2026-11-03
+
+Implementation `f0a70c2` follows the owner's decision that AutoDeploy secrets
+contain only AAP configuration and primary AAP ownership. Application CaC
+belongs to its use case. Generic decommission therefore reads related ownership
+from verified `vm_resource` data in the existing source AAP inventory, using the
+already attached API credential rather than another repository/token/store.
+Only decommission enables this read; ordinary registry lookup does not load the
+API client or gain an API dependency.
+
+The fixed encrypted shared capture identifies the inventory and pinned
+hypervisor. Related names, counters, address, UUID, disk, MAC, bridge, machine ID
+and keys must agree across the source row and its complete verified artifact.
+Final publication independently rereads those records and compares them with
+the same running job's protected preflight. Application ownership is retained
+only in job memory and never written back to central allocation. Existing
+credential types, job templates and ordinary import logic remain in place.
+
+Optional guests can be undeployed, and later cleanup may find source rows
+already deleted. Such absence requires no actual VM or either bounded disk
+variant, plus verified surviving ownership of every remaining permission.
+Unknown grants and tampered extant rows stop cleanup. Source policy aliases
+are patched and read back before any guest ownership deletion; this preserves
+the evidence needed if an API update fails. A fresh retry can reconcile a
+lagging API policy only when removal of its verified selected identities yields
+the exact encrypted desired policy, preserving all unrelated permissions.
+
+All 63 focused cases pass: 16 key/source, 21 decommission and 26 allocation/routing.
+They include real encrypted Git with AAP-only central data, API independence of
+normal reads, foreign metadata refusal, absent optional roles, hidden disk
+variants and fresh-job recovery after partial source deletion. Syntax, strict
+production lint and added-text privacy checks pass. The coordinator also
+verified actual source metadata with a GET-only lookup against an in-memory
+AAP-only allocation. No destructive job or inventory naming change was run;
+the separately coordinated private-data migration remains a distinct step.
+
 ## Keep complete ownership and retire only verified deployment permissions — 2026-11-03
 
 Implementation `fc85d29` completes the selected deployment's permission cleanup
