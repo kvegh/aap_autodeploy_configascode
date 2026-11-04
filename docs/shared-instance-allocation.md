@@ -67,6 +67,25 @@ stored in the encrypted registry and passed as an AAP artifact. It binds VM name
 private IP, fresh public host keys, the verified hypervisor and the VM's unique
 public HTTPS hostname. Passwords, private keys and tokens are excluded.
 
+Before publishing the route, new Stage 01 runs wait for authenticated guest
+readiness through the already pinned hypervisor jump. They use the generated
+guest public keys, the existing environment Vault login and a read-only machine-ID
+check; another account, direct private-network route or host-key exception is
+not tried. Connection settings explicitly read the original inventory host's
+route so delegation cannot accidentally lose its placement data. Conflicting
+caller routes or effective connection overrides fail before guest authentication.
+
+The same route transaction now saves `instance_resources.aap` with exactly
+`uuid`, `disk`, `address`, `mac`, `network`, `bridge`, `verified` and
+`hypervisor_machine_id`. Actual domain/network XML must identify the selected
+VM, one expected file-backed disk, one interface and the enforced network
+bridge. The allocator revalidates every field against the consumed route,
+preserves other resource roles, accepts an unchanged retry and refuses replacement
+of known primary ownership. Decommissioned reservations cannot publish a fresh
+active route. Legacy callers without ownership metadata remain compatible;
+new Stage 01 always supplies it. This retains proof after a failed partial
+decommission has already removed the VM definition, without a new state store.
+
 Provisioning is enabled one phase at a time. A successful isolated Stage 01
 proves neither AAP installation nor later API routing. Installation observers
 must use the pinned hypervisor jump route for overlapping private subnets, and

@@ -1,6 +1,7 @@
 """Reserve global test-VM names before provisioning; reservations never roll back."""
 
 from copy import deepcopy
+from ipaddress import IPv4Address
 import re
 
 
@@ -61,12 +62,38 @@ def reserve(state, prefix, request_id, hypervisor_id, observed_floor=1):
     return result, deepcopy(record)
 
 
-def publish_route(state, request_id, route):
+def validate_primary_resource(route, resource):
+    """Bind the existing primary ownership record to this exact verified route."""
+    if not isinstance(resource, dict) or set(resource) != {
+            "uuid", "disk", "address", "mac", "network", "bridge", "verified", "hypervisor_machine_id"}:
+        raise ValueError("Publish only the complete verified primary guest ownership fields.")
+    if (not isinstance(resource["uuid"], str)
+            or not re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", resource["uuid"])
+            or resource["uuid"] == "00000000-0000-0000-0000-000000000000"
+            or resource["disk"] != "/opt/vms/" + route["vm_name"] + ".disk.qcow2"
+            or resource["address"] != route["vm_ip"]
+            or not isinstance(resource["address"], str)
+            or str(IPv4Address(resource["address"])) != resource["address"]
+            or not isinstance(resource["mac"], str)
+            or not re.fullmatch(r"(?:[0-9a-f]{2}:){5}[0-9a-f]{2}", resource["mac"])
+            or int(resource["mac"][:2], 16) & 1 or resource["mac"] == "00:00:00:00:00:00"
+            or not isinstance(resource["network"], str)
+            or not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}", resource["network"])
+            or resource["bridge"] not in route["hypervisor"]["isolation_bridges"]
+            or resource["hypervisor_machine_id"] != route["hypervisor"]["machine_id"]
+            or resource["verified"] is not True):
+        raise ValueError("Primary guest ownership must match the exact selected route, disk and pinned hypervisor.")
+    return resource
+
+
+def publish_route(state, request_id, route, instance_resources=None):
     if request_id not in state["reservations"]:
         raise ValueError(
             "Reserve the name before publishing its verified instance route."
         )
     record = state["reservations"][request_id]
+    if record.get("decommissioned"):
+        raise ValueError("A decommissioned reservation cannot publish an active guest route.")
     if (
         route["vm_name"] != record["vm_name"]
         or route["hypervisor"]["machine_id"] != record["hypervisor_id"]
@@ -78,4 +105,12 @@ def publish_route(state, request_id, route):
         )
     updated = deepcopy(state)
     updated["reservations"][request_id]["instance_route"] = deepcopy(route)
+    if instance_resources is not None:
+        if not isinstance(instance_resources, dict) or set(instance_resources) != {"aap"}:
+            raise ValueError("Route publication may update only its verified primary AAP resource.")
+        resource = validate_primary_resource(route, instance_resources["aap"])
+        existing = record.get("instance_resources", {})
+        if not isinstance(existing, dict) or existing.get("aap") not in (None, resource):
+            raise ValueError("Existing primary guest ownership cannot be silently replaced.")
+        updated["reservations"][request_id].setdefault("instance_resources", {})["aap"] = deepcopy(resource)
     return updated, deepcopy(updated["reservations"][request_id])

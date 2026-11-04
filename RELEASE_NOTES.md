@@ -1,5 +1,42 @@
 # Release notes
 
+## 0.32.0
+
+Persist complete primary VM ownership in Stage 01's existing encrypted route
+publication after read-only authenticated readiness through the pinned guest
+keys and hypervisor jump. Derive exact UUID/disk/address/MAC/network/bridge from
+live readback; retain other resource roles and refuse conflicting saved identity.
+Reject a caller's changed route or effective SSH destination before guest authentication.
+Legacy route-only callers remain supported. This preserves teardown retry proof
+after the primary domain definition is gone.
+
+Retire a selected deployment's exact local and installation HTTPS permissions
+before VM deletion. Verify recorded/live guest ownership, stop selected guests,
+remove only previous-owned native runtime/permanent rich rules and apply/check
+the reduced existing isolation policy. Restore the captured local policy after
+failed application. Check mode performs protected reads and planning only.
+
+Keep ordinary hypervisor guards unchanged. Decommission retries accept only the
+declared canonical policy or its exact verified retirement result, retaining
+canonical ownership so leftover native rules can still be removed.
+
+The existing final writer updates encrypted AutoDeploy, shared inventory and
+fixed Hactar recovery policy aliases, removes only proven same-version guest
+rows/memberships and synchronizes the exact source inventory targets. Preserve
+unsafe JSON wrappers, other deployments, shared Machine credentials and consumed
+allocation history. Validate every source target before publication; partial
+source synchronization remains repeatable without another Git change.
+
+Focused validation covers real encrypted Git with a fake source API, foreign
+identity refusal before mutation, literal preservation, partial-sync retry,
+native rule cleanup, local rollback and check-mode refusal of writes. Live
+firewall application and complete deployed decommission remain separate checks.
+Primary ownership tests include actual encrypted native action publication,
+invalid/conflicting field refusal, preservation and a native delegated SSH
+fixture that requires the original host's pinned jump rather than a direct
+connection to an overlapping private address and refuses an overridden target
+before any SSH call. No new VM is launched by validation.
+
 ## 0.31.1
 
 Document automatic inventory registration and exact declared local-policy

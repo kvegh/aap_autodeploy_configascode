@@ -6,9 +6,6 @@ module: aap_reserve_vm_name
 short_description: Reserve an AAP test-VM name in shared encrypted Git state
 description: Uses conditional non-force Git publication and the attached CaC Vault secret before provisioning.
 options:
-  repository:
-    type: str
-    required: true
   prefix:
     type: str
     required: true
@@ -22,6 +19,9 @@ options:
     type: str
   instance_route:
     type: dict
+  instance_resources:
+    type: dict
+    description: Complete verified primary AAP ownership, published with its consumed route only.
 author:
   - AAP AutoDeploy maintainers
 """

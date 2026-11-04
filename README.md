@@ -261,7 +261,23 @@ Job Template selects the common importer and fixes its project ID in extra varia
 `destroy-test-aap.yml` backs **Decommission AAP Test Instance**, with explicit
 instance confirmation, pinned recovery identity and exact disk/DNS/TLS/nginx cleanup, related versioned guests and an orphaned DNS
 scan. Disk ownership checks accept libvirt's generated disk-index metadata while
-requiring the exact single file-backed disk. Active source inventory/API state is retired without reusing its number. Previous successful
+requiring the exact single file-backed disk. Before deletion, verified guest
+identities select only their local and installation HTTPS permissions for
+retirement. Exact native rules and the existing persistent isolation policy are
+cleaned after guest shutdown; normal deployment guards remain strict. The final
+existing writer updates encrypted policy aliases and inventory captures, removes
+only owned same-version source inventory entries and preserves literal variable
+templates, other guests, shared Machine credentials and consumed allocation
+history. Retries accept only the canonical policy or its exact verified removal
+result; no generic policy-check bypass is provided. Stage 01 records the primary
+VM's complete ownership in its existing encrypted route transaction after a
+read-only authenticated guest check through the pinned hypervisor. Actual domain
+and network XML supply the UUID, disk, address, MAC and bridge; conflicting saved
+identity cannot be silently replaced. This retains proof for a retry after the
+VM definition has already gone. See
+[decommission details](docs/decommission.md). Active source inventory/API state
+is retired without reusing its number. These local changes are validated but
+have not been applied by a decommission job. Previous successful
 imports below are historical evidence, not claims that this new importer has run
 against a target.
 

@@ -3,7 +3,9 @@
 from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+from importlib.util import module_from_spec, spec_from_file_location
 import json
+from pathlib import Path
 import re
 import yaml
 from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
@@ -11,6 +13,10 @@ from urllib.parse import quote, urlsplit
 
 TYPE_NAME = "Pseudo Instance Key Store"
 CREDENTIAL_NAME = "AAP API/MCP Auth Token Store"
+
+_routing_spec = spec_from_file_location("instance_key_retirement_route", Path(__file__).resolve().parents[1] / "filter_plugins/aap_instance_route.py")
+_routing = module_from_spec(_routing_spec)
+_routing_spec.loader.exec_module(_routing)
 
 
 class StoreError(ValueError):
@@ -157,6 +163,260 @@ def set_inventory_variables(row, values):
         row["variables"] = json.dumps(values)
     else:
         row["variables"] = values
+
+
+def isolation_retirement_context(record, selected, target, transition):
+    """Validate a bounded removal against the selected consumed reservation."""
+    require(isinstance(transition, dict) and set(transition) == {"previous_policy", "desired_policy", "identities"},
+            "Supply only both isolation policies and verified selected guest identities.")
+    route = _routing.instance_route(record.get("instance_route"))
+    require(record.get("vm_name") == selected == route["vm_name"]
+            and origin(route["aap_hostname"]) == origin(target),
+            "Retirement must match the selected consumed reservation and public URL.")
+    match = re.fullmatch(r"aap[0-9]+-test-([0-9]+)", selected)
+    require(match is not None and int(match[1]) > 0, "Retire only a numbered test deployment.")
+    version = "v%02d" % int(match[1])
+    pin = route["hypervisor"]
+    require(record.get("hypervisor_id") == pin["machine_id"] and record.get("number") == int(match[1])
+            and record.get("prefix") == selected.rsplit("-", 1)[0],
+            "Selected isolation retirement must match its consumed allocation number and hypervisor.")
+    previous, desired, identities = (transition[key] for key in ("previous_policy", "desired_policy", "identities"))
+
+    def normalized(policy):
+        require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
+            policy.get("protected_ipv4"), policy.get("guest_host_clients", [])) == policy,
+            "Retirement policies must preserve the registered hypervisor's normalized isolation schema.")
+    normalized(previous)
+    normalized(desired)
+    resources = record.get("instance_resources", {})
+    require(isinstance(resources, dict), "Require existing selected guest ownership records.")
+    guests = []
+    for role in ("aap", "zabbix", "testserver1", "tra"):
+        metadata = resources.get(role, {})
+        require(isinstance(metadata, dict), "Require mapping resource ownership records.")
+        name = selected if role == "aap" else role + "-" + version
+        address = route["vm_ip"] if role == "aap" else metadata.get("address")
+        require(metadata.get("vm_name", name) == name and metadata.get("address", address) == address
+                and metadata.get("hypervisor_machine_id", pin["machine_id"]) == pin["machine_id"]
+                and metadata.get("verified", True) is True,
+                "Related resource ownership must belong to this selected verified deployment.")
+        if metadata:
+            require(isinstance(metadata.get("uuid"), str)
+                and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", metadata["uuid"])
+                and isinstance(metadata.get("disk"), str)
+                and re.fullmatch(re.escape("/opt/vms/" + name) + r"(?:\.disk)?\.qcow2", metadata["disk"]),
+                "Recorded guests require their exact selected UUID and disk.")
+        guests.append({"name": name, "role": role, "address": address, "metadata": deepcopy(metadata)})
+    require(isinstance(identities, list) and len(identities) <= 4,
+            "Retire only the four selected deployment identities.")
+    selected_keys = set()
+    addresses, macs = set(), set()
+    for identity in identities:
+        require(isinstance(identity, dict) and set(identity) == {"bridge", "ipv4", "mac"},
+                "Retire only exact bridge, IPv4 and MAC identities.")
+        require(identity["bridge"] in pin["isolation_bridges"]
+                and isinstance(identity["mac"], str)
+                and re.fullmatch(r"(?:[0-9a-f]{2}:){5}[0-9a-f]{2}", identity["mac"])
+                and not int(identity["mac"][:2], 16) & 1
+                and identity["mac"] != "00:00:00:00:00:00",
+                "Retire only normalized selected bridge and unicast MAC identities.")
+        _routing.ipv4(identity["ipv4"])
+        matches = [guest for guest in guests if guest["address"] == identity["ipv4"]]
+        require(len(matches) == 1, "An isolation identity does not belong to a selected recorded guest.")
+        guest = matches[0]
+        metadata = guest["metadata"]
+        require((guest["role"] == "aap" or metadata)
+                and metadata.get("mac", identity["mac"]) == identity["mac"]
+                and metadata.get("bridge", identity["bridge"]) == identity["bridge"],
+                "An isolation identity differs from its existing selected guest record.")
+        require(identity["ipv4"] not in addresses and identity["mac"] not in macs,
+                "Selected guest retirement identities must be unique.")
+        addresses.add(identity["ipv4"])
+        macs.add(identity["mac"])
+        key = tuple(identity[field] for field in ("bridge", "ipv4", "mac"))
+        for client in previous.get("guest_host_clients", []) + previous.get("https_clients", []):
+            require(not ((client["ipv4"] == identity["ipv4"] or client["mac"] == identity["mac"])
+                         and tuple(client[field] for field in ("bridge", "ipv4", "mac")) != key),
+                    "An isolation identity conflicts with an existing guest permission.")
+        selected_keys.add(key)
+    for client in previous.get("guest_host_clients", []) + previous.get("https_clients", []):
+        if any(client["ipv4"] == guest["address"] or client["mac"] == guest["metadata"].get("mac") for guest in guests):
+            require(tuple(client[field] for field in ("bridge", "ipv4", "mac")) in selected_keys,
+                    "Retirement must include every existing permission of the selected recorded guests.")
+    expected = deepcopy(previous)
+    for field in ("https_clients", "guest_host_clients"):
+        if field not in expected:
+            continue
+        retained = [client for client in expected[field]
+                    if tuple(client[key] for key in ("bridge", "ipv4", "mac")) not in selected_keys]
+        if retained != expected[field]:
+            if retained:
+                expected[field] = retained
+            else:
+                expected.pop(field)
+                if field == "https_clients":
+                    expected.pop("protected_ipv4")
+    require(expected == desired, "Desired isolation must be exactly selected identity removal without new grants.")
+    removed_rules = {'rule family="ipv4" priority="0" source address="%s/32" '
+        'destination address="%s/32" port port="%s" protocol="tcp" accept'
+        % (client["ipv4"], destination, port)
+        for client in previous.get("guest_host_clients", [])
+        if tuple(client[key] for key in ("bridge", "ipv4", "mac")) in selected_keys
+        for destination in client["destinations"] for port in client["ports"]}
+    return {"route": route, "guests": guests, "previous_policy": deepcopy(previous),
+            "desired_policy": deepcopy(desired), "identities": deepcopy(identities), "removed_rules": removed_rules}
+
+
+def retirement_policy_variables(values, context, pinned=False):
+    """Change only the declared policy aliases and exact previous-owned rich rules."""
+    values = deepcopy(values)
+    old, new = context["previous_policy"], context["desired_policy"]
+    if pinned:
+        require(values.get("aap_hypervisor_pin") == context["route"]["hypervisor"],
+                "Recovery inventory must retain the exact registered hypervisor pin.")
+        current = _routing.isolation_policy(values["aap_hypervisor_pin"],
+            values.get("aap_hypervisor_isolation_https_clients", []),
+            values.get("aap_hypervisor_isolation_protected_ipv4", []),
+            values.get("aap_hypervisor_isolation_host_clients", []))
+        require(current in (old, new), "Canonical recovery policy changed beyond this exact retirement.")
+        values.update(aap_hypervisor_isolation_https_clients=deepcopy(new.get("https_clients", [])),
+            aap_hypervisor_isolation_protected_ipv4=deepcopy(new.get("protected_ipv4", [])),
+            aap_hypervisor_isolation_host_clients=deepcopy(new.get("guest_host_clients", [])))
+    for alias in ("isolation_policy", "hactar_isolation_policy"):
+        require(alias not in values or values[alias] in (old, new),
+                "An existing hypervisor policy alias conflicts with selected retirement.")
+        values[alias] = deepcopy(new)
+    if "firewall_additional_zone_rules" in values:
+        rules = values["firewall_additional_zone_rules"]
+        require(isinstance(rules, list) and all(isinstance(rule, dict) for rule in rules),
+                "Require explicit native zone-rule data before removing owned entries.")
+        values["firewall_additional_zone_rules"] = [rule for rule in rules
+            if not (rule.get("zone") == "libvirt" and rule.get("rule") in context["removed_rules"])]
+    return values
+
+
+def retirement_host_matches(row, guest, route, hypervisor_name):
+    values = inventory_variables(row)
+    require(values.get("ansible_host") == guest["address"]
+            and values.get("hypervisor_host", hypervisor_name) == hypervisor_name,
+            "A selected inventory guest has conflicting address or placement data.")
+    metadata = guest["metadata"]
+    if guest["role"] == "aap":
+        require(origin("https://" + values.get("ansible_fqdn", "")) == origin(route["aap_hostname"]),
+                "The selected inventory AAP host has a conflicting public URL.")
+        for field, expected in (("vm_uuid", metadata.get("uuid")), ("machine_id", metadata.get("machine_id")),
+                                ("host_keys", route.get("guest_host_keys"))):
+            require(field not in values or expected is None or values[field] == expected,
+                    "The selected inventory AAP host conflicts with recorded identity.")
+    else:
+        require(metadata and metadata.get("uuid") and values.get("vm_uuid") == metadata["uuid"],
+                "Related inventory retirement requires its exact recorded UUID.")
+        for field in ("machine_id", "host_keys"):
+            require(field not in metadata or values.get(field) == metadata[field],
+                    "Related inventory retirement requires its exact recorded machine identity.")
+
+
+def retire_inventory_capture(configuration, context, kind):
+    """Retire scoped rows/policy in the fixed existing encrypted capture formats."""
+    require(kind in ("autodeploy", "shared", "hactar"), "Use only the fixed maintained retirement captures.")
+    result = deepcopy(configuration)
+    pin = context["route"]["hypervisor"]
+    if kind == "autodeploy":
+        inventories = result["autodeploy_configuration"]["inventories"]
+        matches = [row for row in inventories if inventory_variables(row).get("aap_hypervisor_pin") == pin]
+        require(len(matches) == 1, "Resolve the canonical recovery inventory for the exact registered pin.")
+        set_inventory_variables(matches[0], retirement_policy_variables(inventory_variables(matches[0]), context, True))
+        return result
+    data = result["host_inventory_configuration"] if kind == "shared" else {
+        "hosts": result.get("controller_hosts_hactar_recovery", []),
+        "groups": result.get("controller_groups_hactar_recovery", [])}
+    matches = [row for row in data["hosts"] if inventory_variables(row).get("ansible_host") == pin["address"]]
+    require(len(matches) == 1 or (kind == "hactar" and not matches),
+            "Resolve only the exact hypervisor in its captured inventory.")
+    if not matches:
+        return result
+    hypervisor = matches[0]
+    values = inventory_variables(hypervisor)
+    for field, expected in (("machine_id", pin["machine_id"]), ("ansible_port", pin["port"]),
+                            ("ansible_user", pin["user"]), ("host_keys", pin["host_keys"])):
+        require(field not in values or values[field] == expected,
+                "Captured hypervisor identity differs from the selected registered pin.")
+    set_inventory_variables(hypervisor, retirement_policy_variables(values, context))
+    if kind == "shared":
+        removed = {guest["name"] for guest in context["guests"] if guest["role"] == "aap" or guest["metadata"]}
+        for guest in context["guests"]:
+            rows = [row for row in data["hosts"] if row.get("name") == guest["name"]
+                    and row.get("inventory") == hypervisor["inventory"]]
+            require(len(rows) <= 1, "Require unique guest rows in the exact captured shared inventory.")
+            for row in rows:
+                retirement_host_matches(row, guest, context["route"], hypervisor["name"])
+                data["hosts"].remove(row)
+        for group in data["groups"]:
+            if group.get("inventory") == hypervisor["inventory"]:
+                require(not any(guest["name"] in group.get("hosts", []) and guest["name"] not in removed
+                                for guest in context["guests"]),
+                        "Related group membership requires its existing recorded resource ownership.")
+                group["hosts"] = [name for name in group.get("hosts", []) if name not in removed]
+    return result
+
+
+def source_retirement_operations(client, shared, autodeploy, hactar, context):
+    """Read and validate every exact API target before returning bounded operations."""
+    operations = {}
+    pin = context["route"]["hypervisor"]
+
+    def inventory(name):
+        matches = client.rows("inventories/?name=" + quote(name))
+        require(len(matches) == 1 and matches[0].get("name") == name,
+                "Resolve exactly the captured source inventory before retirement.")
+        return matches[0]
+
+    def host_rows(name, identity):
+        rows = client.rows("hosts/?inventory=%s&name=%s" % (identity, quote(name)))
+        require(len(rows) <= 1 and all(row.get("inventory") == identity and row.get("name") == name for row in rows),
+                "Source retirement must remain in the exact captured inventory and host name.")
+        return rows
+
+    def patch_hypervisor(captured):
+        live_inventory = inventory(captured["inventory"])
+        rows = host_rows(captured["name"], live_inventory["id"])
+        require(len(rows) == 1, "Keep the existing pinned hypervisor inventory host.")
+        row = rows[0]
+        current = inventory_variables(row)
+        require(current.get("ansible_host") == pin["address"],
+                "The live hypervisor inventory address conflicts with its registered pin.")
+        for field, expected in (("machine_id", pin["machine_id"]), ("ansible_port", pin["port"]),
+                                ("ansible_user", pin["user"]), ("host_keys", pin["host_keys"])):
+            require(field not in current or current[field] == expected,
+                    "The live hypervisor inventory identity conflicts with its registered pin.")
+        desired = retirement_policy_variables(current, context)
+        if desired != current:
+            operations[("PATCH", "hosts/%s/" % row["id"])] = {"variables": json.dumps(desired)}
+        return live_inventory
+
+    hosts = shared["host_inventory_configuration"]["hosts"]
+    selected_hypervisors = [row for row in hosts if inventory_variables(row).get("ansible_host") == pin["address"]]
+    require(len(selected_hypervisors) == 1, "Resolve one captured shared hypervisor for source retirement.")
+    hypervisor = selected_hypervisors[0]
+    shared_inventory = patch_hypervisor(hypervisor)
+    for guest in context["guests"]:
+        for row in host_rows(guest["name"], shared_inventory["id"]):
+            retirement_host_matches(row, guest, context["route"], hypervisor["name"])
+            operations[("DELETE", "hosts/%s/" % row["id"])] = None
+
+    recovery_rows = [row for row in autodeploy["autodeploy_configuration"]["inventories"]
+                     if inventory_variables(row).get("aap_hypervisor_pin") == pin]
+    require(len(recovery_rows) == 1, "Resolve one exact pinned recovery inventory for source synchronization.")
+    live = inventory(recovery_rows[0]["name"])
+    current = inventory_variables(live)
+    desired = retirement_policy_variables(current, context, True)
+    if current != desired:
+        operations[("PATCH", "inventories/%s/" % live["id"])] = {"variables": json.dumps(desired)}
+    if hactar is not None:
+        for captured in hactar.get("controller_hosts_hactar_recovery", []):
+            if inventory_variables(captured).get("ansible_host") == pin["address"]:
+                patch_hypervisor(captured)
+    return [(method, path, body) for (method, path), body in operations.items()]
 
 
 def merge_inventory(configuration, selected, route, policy):

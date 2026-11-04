@@ -13,6 +13,14 @@
     - name: Prove the selected recovery hypervisor and persistent isolation
       ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
 
+    - name: Require the managed disk directory and existing protected guest login
+      ansible.builtin.assert:
+        that:
+          - vm_dir == '/opt/vms'
+          - vault_ansible_user is string and vault_ansible_user | trim | length > 0
+          - vault_ansible_password is string and vault_ansible_password | length > 0
+      no_log: true
+
     - name: Read existing domain names without changing them
       ansible.builtin.command:
         argv: [virsh, -c, 'qemu:///system', list, --all, --name]
@@ -270,12 +278,115 @@
           guest_host_keys: "{{ aap_fresh_guest_keys }}"
       no_log: true
 
+    - name: Refuse caller replacement of the actual newly created guest route
+      ansible.builtin.assert:
+        that:
+          - >-
+            aap_instance_route == {'vm_name': aap_vm_reservation.vm_name,
+              'vm_ip': new_vm_ip, 'aap_hostname': 'https://' + (vm_name | aap_instance_public_name(vault_domain)),
+              'hypervisor': aap_hypervisor_pin, 'guest_host_keys': aap_fresh_guest_keys}
+      no_log: true
+
+    - name: Keep the protected readiness login on the original inventory host
+      ansible.builtin.set_fact:
+        aap_primary_guest_login:
+          user: '{{ vault_ansible_user }}'
+          password: '{{ vault_ansible_password }}'
+      no_log: true
+
+    - name: Add only the provisioned guest keys to the existing pinned trust file
+      ansible.builtin.copy:
+        dest: '{{ hostvars[inventory_hostname].aap_hypervisor_trust.path }}'
+        content: |
+          {% set route = hostvars[inventory_hostname].aap_instance_route %}
+          {% for key in route.hypervisor.host_keys %}
+          {{ route.hypervisor.address }} {{ key }}
+          [{{ route.hypervisor.address }}]:{{ route.hypervisor.port }} {{ key }}
+          {% endfor %}
+          {% for key in route.guest_host_keys %}
+          {{ route.aap_hostname | urlsplit('hostname') }} {{ key }}
+          {% endfor %}
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+      vars:
+        ansible_connection: local
+      no_log: true
+
+    - name: Verify the fresh guest through its exact pinned hypervisor route
+      delegate_to: '{{ hostvars[inventory_hostname].aap_instance_route.vm_ip }}'
+      become: false
+      vars:
+        ansible_connection: ssh
+        ansible_host: '{{ hostvars[inventory_hostname].aap_instance_route.vm_ip }}'
+        ansible_port: 22
+        ansible_user: '{{ hostvars[inventory_hostname].aap_primary_guest_login.user }}'
+        ansible_password: '{{ hostvars[inventory_hostname].aap_primary_guest_login.password }}'
+        ansible_become: false
+        ansible_host_key_checking: true
+        ansible_ssh_host_key_checking: true
+        ansible_ssh_common_args: >-
+          {{ hostvars[inventory_hostname].aap_instance_route |
+             aap_instance_ssh_args(hostvars[inventory_hostname].aap_hypervisor_trust.path) }}
+        ansible_ssh_extra_args: -o PreferredAuthentications=password -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no
+      no_log: true
+      block:
+        - name: Refuse effective connection overrides before any guest authentication
+          ansible.builtin.assert:
+            that:
+              - ansible_host == hostvars[inventory_hostname].aap_instance_route.vm_ip
+              - ansible_port | int == 22
+              - ansible_user == hostvars[inventory_hostname].aap_primary_guest_login.user
+              - ansible_password == hostvars[inventory_hostname].aap_primary_guest_login.password
+              - ansible_host_key_checking | bool
+              - ansible_ssh_host_key_checking | bool
+              - >-
+                ansible_ssh_common_args == (hostvars[inventory_hostname].aap_instance_route |
+                  aap_instance_ssh_args(hostvars[inventory_hostname].aap_hypervisor_trust.path))
+              - ansible_ssh_extra_args == '-o PreferredAuthentications=password -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no'
+
+        - name: Wait for authenticated guest readiness without another connection path
+          ansible.builtin.wait_for_connection:
+            connect_timeout: 10
+            sleep: 5
+            timeout: 300
+
+        - name: Read the freshly booted guest identity without changing it
+          ansible.builtin.command:
+            argv: [cat, /etc/machine-id]
+          register: aap_primary_guest_machine_id
+          changed_when: false
+
+        - name: Require a valid guest identity distinct from the hypervisor
+          ansible.builtin.assert:
+            that:
+              - aap_primary_guest_machine_id.stdout | trim is match('^[0-9a-f]{32}$')
+              - aap_primary_guest_machine_id.stdout | trim != hostvars[inventory_hostname].aap_hypervisor_pin.machine_id
+
+    - name: Read the actual primary domain ownership after guest verification
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', dumpxml, '{{ vm_name }}']
+      register: aap_primary_domain_ownership
+      changed_when: false
+      no_log: true
+
+    - name: Recheck the actual selected network for primary ownership publication
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', net-dumpxml, '{{ vm_network }}']
+      register: aap_primary_network_ownership
+      changed_when: false
+      no_log: true
+
     - name: Publish the verified route into the shared encrypted instance registry
       aap_reserve_vm_name:
         prefix: "aap{{ aap_version_short }}-{{ vm_suffix }}"
         hypervisor_id: "{{ aap_hypervisor_pin.machine_id }}"
         request_id: "{{ aap_vm_reservation.request_id }}"
         instance_route: "{{ aap_instance_route | aap_instance_route }}"
+        instance_resources:
+          aap: >-
+            {{ aap_instance_route | aap_primary_instance_resources(aap_primary_domain_ownership.stdout,
+                 aap_primary_network_ownership.stdout, vm_network) }}
       delegate_to: localhost
       become: false
       no_log: true

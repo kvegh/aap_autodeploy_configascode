@@ -82,11 +82,15 @@ class ActionModule(ActionBase):
                 return result
             args = self._task.args
             keys.require(set(args) >= {"instance_name", "record", "organization"} and
-                         set(args) <= {"instance_name", "record", "organization", "operation", "inventory_registration"},
+                         set(args) <= {"instance_name", "record", "organization", "operation", "inventory_registration",
+                                      "isolation_retirement"},
                          "Publish only the selected instance's verified saved token.")
             retiring = args.get("operation", "publish") == "retire"
             keys.require(args.get("operation", "publish") in ("publish", "retire"),
                          "Choose instance access publication or retirement.")
+            isolation_retirement = args.get("isolation_retirement")
+            keys.require("isolation_retirement" not in args or (retiring and isinstance(isolation_retirement, dict)),
+                         "Isolation retirement is permitted only during final selected instance retirement.")
             registration = args.get("inventory_registration")
             if registration:
                 keys.require(not retiring and set(registration) == {"route", "policy"},
@@ -143,13 +147,27 @@ class ActionModule(ActionBase):
                     git("remote", "add", "origin", repository)
                     git("fetch", "--quiet", "--depth=1", "origin", "main")
                     git("checkout", "--quiet", "--detach", "FETCH_HEAD")
+                    retirement_context = None
+                    if isolation_retirement is not None:
+                        allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
+                        keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
+                                     "Read the selected encrypted reservation before planning source retirement.")
+                        allocation = AnsibleLoader(self._loader._vault.decrypt(allocation_path.read_bytes())).get_single_data()
+                        selected_records = [row for row in allocation["aap_vm_allocation"]["reservations"].values()
+                                            if row.get("vm_name") == args["instance_name"]]
+                        keys.require(len(selected_records) == 1, "Resolve exactly one consumed selected reservation.")
+                        retirement_context = keys.isolation_retirement_context(selected_records[0], args["instance_name"],
+                            args["record"].get("target"), isolation_retirement)
                     path = checkout / relative
                     keys.require(path.is_file() and not path.is_symlink(), "Require the existing encrypted AutoDeploy CaC file.")
                     plain, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes(), filename=str(path))
                     before = AnsibleLoader(plain).get_single_data()
                     after = (keys.retire_record(before, args["instance_name"], args["record"].get("target"))
                              if retiring else keys.merge_record(before, args["instance_name"], args["record"]))
+                    if retirement_context is not None:
+                        after = keys.retire_inventory_capture(after, retirement_context, "autodeploy")
                     changes = [(relative, path, before, after, label, secret)]
+                    retirement_shared = retirement_hactar = None
                     if registration:
                         extra = "cac/host_inventory.yml"
                         extra_path = checkout / extra
@@ -178,13 +196,30 @@ class ActionModule(ActionBase):
                                     "Retirement must match exactly one consumed allocation and public URL.")
                                 matches[0]["decommissioned"] = True
                             else:
-                                inventory = updated["host_inventory_configuration"]
-                                inventory["hosts"] = [row for row in inventory["hosts"]
-                                    if row.get("name") != args["instance_name"]]
-                                for group in inventory["groups"]:
-                                    group["hosts"] = [name for name in group.get("hosts", [])
-                                                      if name != args["instance_name"]]
+                                if retirement_context is not None:
+                                    updated = keys.retire_inventory_capture(updated, retirement_context, "shared")
+                                    retirement_shared = updated
+                                else:
+                                    inventory = updated["host_inventory_configuration"]
+                                    inventory["hosts"] = [row for row in inventory["hosts"]
+                                        if row.get("name") != args["instance_name"]]
+                                    for group in inventory["groups"]:
+                                        group["hosts"] = [name for name in group.get("hosts", [])
+                                                          if name != args["instance_name"]]
                             changes.append((extra, extra_path, old, updated, extra_label, extra_secret))
+                    if retirement_context is not None:
+                        extra = "cac/hactar_recovery.yml"
+                        extra_path = checkout / extra
+                        if extra_path.exists():
+                            keys.require(extra_path.is_file() and not extra_path.is_symlink(),
+                                         "Use only the maintained encrypted Hactar recovery capture.")
+                            raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
+                                extra_path.read_bytes(), filename=str(extra_path))
+                            old = AnsibleLoader(raw).get_single_data()
+                            retirement_hactar = keys.retire_inventory_capture(old, retirement_context, "hactar")
+                            changes.append((extra, extra_path, old, retirement_hactar, extra_label, extra_secret))
+                        # Validate every current API target before any encrypted publication or source write.
+                        keys.source_retirement_operations(source, retirement_shared, after, retirement_hactar, retirement_context)
                     changed_files = []
                     for changed_relative, changed_path, old, desired, changed_label, changed_secret in changes:
                         if old == desired:
@@ -233,13 +268,39 @@ class ActionModule(ActionBase):
                         api_changed = keys.ensure_source_inventory(source, inventory,
                             args["instance_name"], registered_route) or api_changed
                     if retiring:
-                        for host in source.rows("hosts/?name=" + args["instance_name"]):
-                            variables = yaml.safe_load(host.get("variables", "{}")) or {}
-                            keys.require(keys.origin("https://" + variables.get("ansible_fqdn", "")) ==
-                                         keys.origin(args["record"].get("target")),
-                                         "The source inventory entry does not identify the retired instance.")
-                            source.request("DELETE", "hosts/%s/" % host["id"])
-                            api_changed = True
+                        if retirement_context is not None:
+                            latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
+                                git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                            latest_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
+                                              if row.get("vm_name") == args["instance_name"]]
+                            keys.require(len(latest_records) == 1 and latest_records[0].get("decommissioned") is True
+                                and keys.isolation_retirement_context(latest_records[0], args["instance_name"],
+                                    args["record"].get("target"), isolation_retirement) == retirement_context,
+                                "Selected retirement ownership changed during source synchronization.")
+                            keys.require(keys.retire_inventory_capture(latest, retirement_context, "autodeploy") == latest,
+                                         "Canonical recovery inventory changed after retirement publication.")
+                            retirement_shared = AnsibleLoader(self._loader._vault.decrypt(
+                                git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                            keys.require(keys.retire_inventory_capture(retirement_shared, retirement_context, "shared") == retirement_shared,
+                                         "Canonical shared inventory changed after retirement publication.")
+                            retirement_hactar = None
+                            hactar_file = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
+                            if hactar_file.returncode == 0:
+                                retirement_hactar = AnsibleLoader(self._loader._vault.decrypt(hactar_file.stdout.encode())).get_single_data()
+                                keys.require(keys.retire_inventory_capture(retirement_hactar, retirement_context, "hactar") == retirement_hactar,
+                                             "Canonical Hactar capture changed after retirement publication.")
+                            for method, api_path, body in keys.source_retirement_operations(source, retirement_shared,
+                                    latest, retirement_hactar, retirement_context):
+                                source.request(method, api_path, body)
+                                api_changed = True
+                        else:
+                            for host in source.rows("hosts/?name=" + args["instance_name"]):
+                                variables = yaml.safe_load(host.get("variables", "{}")) or {}
+                                keys.require(keys.origin("https://" + variables.get("ansible_fqdn", "")) ==
+                                             keys.origin(args["record"].get("target")),
+                                             "The source inventory entry does not identify the retired instance.")
+                                source.request("DELETE", "hosts/%s/" % host["id"])
+                                api_changed = True
                         native_name = args["instance_name"] + " MCP and API token"
                         for credential in source.rows("credentials/?name=" + native_name.replace(" ", "%20")):
                             keys.require(keys.origin(credential.get("inputs", {}).get("host", "")) ==
@@ -253,7 +314,20 @@ class ActionModule(ActionBase):
                     git("fetch", "--quiet", "--depth=1", "origin", "main")
                     observed = AnsibleLoader(self._loader._vault.decrypt(
                         git("show", "FETCH_HEAD:" + relative).stdout.encode())).get_single_data()
-                    if observed.get("aap_instance_api_credentials") == records:
+                    inventory_stable = True
+                    if retirement_context is not None:
+                        observed_inventory = AnsibleLoader(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                        observed_hactar = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
+                        observed_hactar = (AnsibleLoader(self._loader._vault.decrypt(observed_hactar.stdout.encode())).get_single_data()
+                                           if observed_hactar.returncode == 0 else None)
+                        observed_allocation = AnsibleLoader(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        observed_records = [row for row in observed_allocation["aap_vm_allocation"]["reservations"].values()
+                                            if row.get("vm_name") == args["instance_name"]]
+                        inventory_stable = (observed == latest and observed_inventory == retirement_shared
+                                            and observed_hactar == retirement_hactar and observed_records == latest_records)
+                    if observed.get("aap_instance_api_credentials") == records and inventory_stable:
                         result.update(changed=published or api_changed, published=True,
                             source_credential_id=synchronized["credential_id"])
                         return result

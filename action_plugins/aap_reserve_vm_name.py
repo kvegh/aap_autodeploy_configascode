@@ -40,6 +40,9 @@ class ActionModule(ActionBase):
             raise AnsibleActionFail(
                 "The allocation repository is fixed by encrypted AutoDeploy configuration."
             )
+        if "instance_resources" in args and (args.get("instance_route") is None
+                or not isinstance(args["instance_resources"], dict) or set(args["instance_resources"]) != {"aap"}):
+            raise AnsibleActionFail("Primary ownership is published only with its existing consumed instance route.")
         token = os.environ.get("CAC_GIT_TOKEN", "")
         if not token:
             raise AnsibleActionFail(
@@ -119,7 +122,7 @@ class ActionModule(ActionBase):
                             "A verified route requires an existing consumed reservation."
                         )
                     updated, record = allocator.publish_route(
-                        state, request_id, args["instance_route"]
+                        state, request_id, args["instance_route"], args.get("instance_resources")
                     )
                 if self._task.check_mode:
                     git(checkout, "push", "--dry-run", "origin", "HEAD:refs/heads/main")

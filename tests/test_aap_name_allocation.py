@@ -47,7 +47,146 @@ def writer_project(directory, vault):
     return project
 
 
+def primary_fixture():
+    route = RoutingTests().route()
+    domain = ('<domain><name>aap27-test-15</name><uuid>aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee</uuid>'
+        '<devices><disk device="disk"><source file="/opt/vms/aap27-test-15.disk.qcow2" index="1"/></disk>'
+        '<interface type="network"><mac address="52:54:00:00:00:15"/>'
+        '<source network="isolated" bridge="virbr0"/></interface></devices></domain>')
+    network = '<network><name>isolated</name><bridge name="virbr0"/></network>'
+    resource = routing.primary_resources(route, domain, network, 'isolated')
+    return route, domain, network, resource
+
+
 class AllocationTests(unittest.TestCase):
+    def test_primary_ownership_is_published_atomically_and_preserves_other_resource_roles(self):
+        request = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        state, _ = allocation.reserve(self.state(), "aap27-test", request, "1" * 32)
+        state["reservations"][request]["instance_resources"] = {"tra": {"keep": True}}
+        original = copy.deepcopy(state)
+        route, domain, network, resource = primary_fixture()
+        published, record = allocation.publish_route(state, request, route, {"aap": resource})
+        self.assertEqual(state, original)
+        self.assertEqual(published["next_number"], state["next_number"])
+        self.assertEqual(record["instance_route"], route)
+        self.assertEqual(record["instance_resources"], {"tra": {"keep": True}, "aap": resource})
+        self.assertEqual(allocation.publish_route(published, request, route, {"aap": resource})[0], published)
+        self.assertEqual(allocation.publish_route(published, request, route)[0], published)
+        changed = dict(resource, uuid="bbbbbbbb-cccc-dddd-eeee-ffffffffffff")
+        with self.assertRaises(ValueError):
+            allocation.publish_route(published, request, route, {"aap": changed})
+        published["reservations"][request]["decommissioned"] = True
+        with self.assertRaises(ValueError):
+            allocation.publish_route(published, request, route, {"aap": resource})
+
+    def test_incomplete_foreign_or_extra_primary_ownership_fields_are_refused(self):
+        request = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        state, _ = allocation.reserve(self.state(), "aap27-test", request, "1" * 32)
+        route, domain, network, resource = primary_fixture()
+        for field, value in (("uuid", "invalid"), ("disk", "/opt/vms/other.disk.qcow2"),
+                             ("address", "192.0.2.99"), ("mac", "ff:ff:ff:ff:ff:ff"),
+                             ("bridge", "foreign0"), ("network", "--all"),
+                             ("verified", "true"), ("hypervisor_machine_id", "2" * 32),
+                             ("private_key", "forbidden")):
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                allocation.publish_route(state, request, route, {"aap": dict(resource, **{field: value})})
+        for invalid in ({}, {"tra": resource}, {"aap": {}}, {"aap": resource, "tra": {}}):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                allocation.publish_route(state, request, route, invalid)
+
+    def test_primary_metadata_argument_needs_route_before_any_git_access(self):
+        action = load("primary_resource_argument", ROOT / "action_plugins/aap_reserve_vm_name.py")
+        plugin = action.ActionModule.__new__(action.ActionModule)
+        plugin._task = SimpleNamespace(args={"instance_resources": {"aap": {}}})
+        with mock.patch.object(ActionBase, "run", return_value={}), mock.patch.object(
+                action.subprocess, "run", side_effect=AssertionError("No Git operation allowed")):
+            with self.assertRaisesRegex(AnsibleActionFail, "only with"):
+                plugin.run(task_vars={})
+
+    def test_live_primary_xml_requires_exact_name_disk_uuid_mac_and_pinned_network(self):
+        route, domain, network, resource = primary_fixture()
+        self.assertTrue(resource["verified"])
+        for changed_domain, changed_network in (
+                (domain.replace('<name>aap27-test-15', '<name>other'), network),
+                (domain.replace('aap27-test-15.disk', 'other.disk'), network),
+                (domain.replace('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', 'invalid'), network),
+                (domain.replace('52:54:00:00:00:15', 'ff:ff:ff:ff:ff:ff'), network),
+                (domain.replace('</devices>', '<disk device="disk"/></devices>'), network),
+                (domain.replace('</devices>', '<interface type="network"/></devices>'), network),
+                (domain.replace('network="isolated"', 'network="foreign"'), network),
+                (domain, network.replace('name="virbr0"', 'name="foreign0"')),
+                (domain, network.replace('<name>isolated', '<name>other'))):
+            with self.subTest(domain=changed_domain, network=changed_network), self.assertRaises(routing.AnsibleFilterError):
+                routing.primary_resources(route, changed_domain, changed_network, 'isolated')
+
+    def test_stage_one_publishes_only_actual_xml_resource_after_pinned_guest_probe(self):
+        from ansible.parsing.dataloader import DataLoader
+        from ansible.template import Templar
+        source = yaml.safe_load((ROOT / "01-linux-vm-setup.yml").read_text())[0]["tasks"]
+        publication = next(task for task in source if "aap_reserve_vm_name" in task)
+        probe = next(index for index, task in enumerate(source) if task["name"] ==
+                     "Verify the fresh guest through its exact pinned hypervisor route")
+        self.assertLess(probe, source.index(publication))
+        self.assertTrue(source[probe]["no_log"])
+        route, domain, network, resource = primary_fixture()
+        variables = {"aap_instance_route": route, "aap_primary_domain_ownership": {"stdout": domain},
+            "aap_primary_network_ownership": {"stdout": network}, "vm_network": "isolated",
+            "instance_resources": {"aap": {"uuid": "caller-supplied"}}, "aap_primary_resource": {"uuid": "caller-supplied"}}
+        templar = Templar(loader=DataLoader(), variables=variables)
+        templar.environment.filters["aap_primary_instance_resources"] = routing.primary_resources
+        self.assertEqual(templar.template(publication["aap_reserve_vm_name"]["instance_resources"]), {"aap": resource})
+
+    def test_native_primary_probe_uses_original_host_route_and_pinned_jump_without_direct_ssh(self):
+        import sys
+        source = yaml.safe_load((ROOT / "01-linux-vm-setup.yml").read_text())[0]["tasks"]
+        block = copy.deepcopy(next(task for task in source if task["name"] ==
+                                   "Verify the fresh guest through its exact pinned hypervisor route"))
+        block["block"] = [task for task in block["block"]
+                          if task["name"] != "Wait for authenticated guest readiness without another connection path"]
+        task = next(task for task in block["block"] if "ansible.builtin.command" in task)
+        task.pop("ansible.builtin.command")
+        task["ansible.builtin.raw"] = "cat /etc/machine-id"
+        block["no_log"] = False  # Synthetic inputs only; production inherits protected logging.
+        with tempfile.TemporaryDirectory(prefix="primary-probe-route-") as temporary:
+            directory = Path(temporary)
+            calls, executable = directory / "ssh.json", directory / "ssh"
+            identity = "b" * 32
+            executable.write_text("#!" + sys.executable + "\nimport json,sys\nfrom pathlib import Path\n"
+                + "Path(%r).write_text(json.dumps(sys.argv[1:]))\nprint(%r)\n" % (str(calls), identity))
+            executable.chmod(0o700)
+            route = primary_fixture()[0]
+            route["hypervisor"]["port"] = 2222
+            trust = directory / "known-hosts"
+            trust.write_text("synthetic fixture only\n")
+            inventory = {"all": {"hosts": {"original_hypervisor": {"aap_instance_route": route,
+                "aap_hypervisor_pin": route["hypervisor"], "aap_hypervisor_trust": {"path": str(trust)},
+                "aap_primary_guest_login": {"user": "synthetic_guest", "password": "synthetic-guest-password"}}}}}
+            (directory / "inventory.yml").write_text(yaml.safe_dump(inventory))
+            play = [{"hosts": "original_hypervisor", "gather_facts": False,
+                "vars": {"ansible_ssh_executable": str(executable), "ansible_user": "wrong_outer_user"}, "tasks": [block]}]
+            (directory / "play.yml").write_text(yaml.safe_dump(play, sort_keys=False))
+            env = dict(os.environ, ANSIBLE_NOCOLOR="1", ANSIBLE_FILTER_PLUGINS=str(ROOT / "filter_plugins"),
+                ANSIBLE_SSH_CONTROL_PATH_DIR=str(directory / "cp"), ANSIBLE_LOCAL_TEMP=str(directory / "local"))
+            result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", str(directory / "inventory.yml"),
+                str(directory / "play.yml")], env=env, text=True, capture_output=True, timeout=60)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            arguments = calls.read_text()
+            self.assertIn('ProxyCommand=', arguments)
+            self.assertIn(' -W %h:%p ', arguments)
+            self.assertIn(route["hypervisor"]["address"], arguments)
+            self.assertIn('2222', arguments)
+            self.assertIn('StrictHostKeyChecking=yes', arguments)
+            self.assertIn('HostKeyAlias=aap27-test-15.example.invalid', arguments)
+            self.assertIn('synthetic_guest', arguments)
+            self.assertNotIn('wrong_outer_user', arguments)
+            self.assertNotIn('synthetic-guest-password', arguments)
+            calls.unlink()
+            refused = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", str(directory / "inventory.yml"),
+                str(directory / "play.yml"), "-e", json.dumps({"ansible_host": "198.51.100.99"})],
+                env=env, text=True, capture_output=True, timeout=60)
+            self.assertNotEqual(refused.returncode, 0)
+            self.assertFalse(calls.exists(), refused.stdout + refused.stderr)
+
     def test_writer_refuses_repository_overrides_and_obsolete_token_injection(self):
         action = load("reserve_binding", ROOT / "action_plugins/aap_reserve_vm_name.py")
         plugin = action.ActionModule.__new__(action.ActionModule)
@@ -306,6 +445,16 @@ class AllocationTests(unittest.TestCase):
                                         ]
                                     }
                                 },
+                                {
+                                    "name": "Publish the verified fixture primary ownership in the same route transaction",
+                                    "aap_reserve_vm_name": {
+                                        "prefix": "aap27-test", "hypervisor_id": "1" * 32,
+                                        "request_id": "{{ reservation.request_id }}",
+                                        "instance_route": primary_fixture()[0],
+                                        "instance_resources": {"aap": primary_fixture()[3]},
+                                    },
+                                    "when": "not ansible_check_mode", "no_log": True,
+                                },
                             ],
                         }
                     ]
@@ -357,6 +506,8 @@ class AllocationTests(unittest.TestCase):
                 ]["next_number"],
                 16,
             )
+            published = AnsibleLoader(vault.decrypt(accepted)).get_single_data()["aap_vm_allocation"]
+            self.assertEqual(next(iter(published["reservations"].values()))["instance_resources"]["aap"], primary_fixture()[3])
 
 
 class RoutingTests(unittest.TestCase):

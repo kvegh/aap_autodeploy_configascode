@@ -19,7 +19,7 @@
         fail_msg: Confirm the instance name and select its pinned recovery-only inventory.
       no_log: true
     - name: Verify the actual recovery hypervisor before any deletion
-      ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
+      ansible.builtin.include_tasks: tasks/aap-hypervisor-identity.yml
     - name: Derive only the selected reservation's resource paths
       ansible.builtin.set_fact:
         aap_retirement: '{{ aap_instance_route | aap_decommission_resources(vault_domain, vm_dir, aap_instance_resources)
@@ -105,65 +105,87 @@
           - -t
       changed_when: false
       check_mode: false
+    - name: Preflight exact selected guest permissions before any VM stop
+      ansible.builtin.include_tasks: tasks/decommission-guest-access.yml
+      vars:
+        aap_decommission_guest_access_phase: preflight
     - name: Stop after ownership inspection in check mode
       ansible.builtin.meta: end_play
       when: ansible_check_mode
   tasks:
-    - name: Request graceful shutdown of only the selected guest
+    - name: Request graceful shutdown of all verified selected guests
       ansible.builtin.command:
         argv:
           - virsh
           - -c
           - qemu:///system
           - shutdown
-          - '{{ vm_name }}'
-      when: vm_name in aap_retirement_domains.stdout_lines
+          - '{{ item.name }}'
+      loop: '{{ aap_retirement.domains }}'
+      when: item.name in aap_retirement_domains.stdout_lines
       register: aap_retirement_shutdown
       failed_when: false
       changed_when: aap_retirement_shutdown.rc == 0
-    - name: Observe the selected guest shutdown
+      no_log: true
+    - name: Observe each verified selected guest shutdown
       ansible.builtin.command:
         argv:
           - virsh
           - -c
           - qemu:///system
           - domstate
-          - '{{ vm_name }}'
-      when: vm_name in aap_retirement_domains.stdout_lines
+          - '{{ item.name }}'
+      loop: '{{ aap_retirement.domains }}'
+      when: item.name in aap_retirement_domains.stdout_lines
       register: aap_retirement_state
       until: aap_retirement_state.stdout | trim == 'shut off'
       retries: 12
       delay: 5
       failed_when: false
       changed_when: false
-    - name: Force stop only the confirmed guest if necessary
+      no_log: true
+    - name: Force stop only a verified selected guest still running
       ansible.builtin.command:
         argv:
           - virsh
           - -c
           - qemu:///system
           - destroy
-          - '{{ vm_name }}'
+          - '{{ item.item.name }}'
+      loop: '{{ aap_retirement_state.results }}'
       when:
-        - vm_name in aap_retirement_domains.stdout_lines
-        - aap_retirement_state.stdout | trim != 'shut off'
+        - not item.skipped | default(false)
+        - item.stdout | trim != 'shut off'
       changed_when: true
-    - name: Remove only the selected domain definition
+      no_log: true
+    - name: Verify every selected existing guest is stopped before removing permissions
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', domstate, '{{ item.name }}']
+      loop: '{{ aap_retirement.domains }}'
+      when: item.name in aap_retirement_domains.stdout_lines
+      register: aap_retirement_stopped
+      changed_when: false
+      failed_when: aap_retirement_stopped.stdout | trim != 'shut off'
+      no_log: true
+    - name: Retain successful stopped-state proof for the permission cleanup
+      ansible.builtin.set_fact:
+        aap_decommission_selected_guests_stopped: true
+      no_log: true
+    - name: Retire only exact permissions of those stopped verified guests
+      ansible.builtin.include_tasks: tasks/decommission-guest-access.yml
+      vars:
+        aap_decommission_guest_access_phase: apply
+    - name: Remove only verified selected domain definitions after permission cleanup
       ansible.builtin.command:
         argv:
           - virsh
           - -c
           - qemu:///system
           - undefine
-          - '{{ vm_name }}'
-      when: vm_name in aap_retirement_domains.stdout_lines
+          - '{{ item.name }}'
+      loop: '{{ aap_retirement.domains }}'
+      when: item.name in aap_retirement_domains.stdout_lines
       changed_when: true
-    - name: Retire only the verified related guests
-      ansible.builtin.include_tasks: tasks/decommission-related-delete.yml
-      loop: '{{ aap_retirement.domains[1:] }}'
-      loop_control:
-        loop_var: aap_related_guest
-      when: aap_related_guest.name in aap_retirement_domains.stdout_lines
       no_log: true
     - name: Remove only the selected disk, proxy files and upstream authority
       ansible.builtin.file:
@@ -213,6 +235,7 @@
           target: '{{ aap_instance_route.aap_hostname }}'
         organization: Default
         operation: retire
+        isolation_retirement: '{{ aap_decommission_isolation_retirement }}'
       delegate_to: localhost
       become: false
       no_log: true

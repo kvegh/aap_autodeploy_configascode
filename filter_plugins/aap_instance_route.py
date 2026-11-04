@@ -338,6 +338,42 @@ def network_bridge(xml):
         raise AnsibleFilterError("The live libvirt network XML is invalid.") from None
 
 
+def primary_resources(route, domain_xml, network_xml, network):
+    """Capture only the new route's exact single-disk/single-interface live VM."""
+    route = instance_route(route)
+    try:
+        root, net = ET.fromstring(domain_xml), ET.fromstring(network_xml)
+        disks, interfaces = root.findall("./devices/disk[@device='disk']"), root.findall("./devices/interface")
+        require(root.tag == "domain" and root.findtext("name") == route["vm_name"]
+                and len(disks) == 1 and len(interfaces) == 1,
+                "Inspect exactly the newly allocated primary guest and its single disk/interface.")
+        source = disks[0].find("source")
+        interface, bridge = interfaces[0], net.find("bridge")
+        interface_source, mac = interface.find("source"), interface.find("mac")
+        uuid = root.findtext("uuid")
+        expected_disk = "/opt/vms/" + route["vm_name"] + ".disk.qcow2"
+        require(isinstance(uuid, str) and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", uuid)
+                and uuid != "00000000-0000-0000-0000-000000000000"
+                and source is not None and source.get("file") == expected_disk
+                and set(source.attrib) <= {"file", "index"}
+                and interface.get("type") == "network" and interface_source is not None
+                and interface_source.get("network") == network
+                and isinstance(network, str) and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}", network)
+                and net.tag == "network" and net.findtext("name") == network and bridge is not None
+                and bridge.get("name") in route["hypervisor"]["isolation_bridges"]
+                and interface_source.get("bridge", bridge.get("name")) == bridge.get("name")
+                and mac is not None and isinstance(mac.get("address"), str)
+                and re.fullmatch(r"(?:[0-9a-f]{2}:){5}[0-9a-f]{2}", mac.get("address"))
+                and not int(mac.get("address")[:2], 16) & 1
+                and mac.get("address") != "00:00:00:00:00:00",
+                "Primary guest ownership must match the exact route, UUID, disk, network and enforced bridge.")
+        return {"uuid": uuid, "disk": expected_disk, "address": route["vm_ip"], "mac": mac.get("address"),
+                "network": network, "bridge": bridge.get("name"), "verified": True,
+                "hypervisor_machine_id": route["hypervisor"]["machine_id"]}
+    except (ET.ParseError, TypeError, AttributeError):
+        raise AnsibleFilterError("Read complete primary guest and network XML before publishing ownership.") from None
+
+
 def guest_ipv4(output):
     values = re.findall(r"\bipv4\s+((?:[0-9]{1,3}\.){3}[0-9]{1,3})/[0-9]+", output)
     require(
@@ -357,6 +393,7 @@ class FilterModule:
             "aap_instance_ssh_args": ssh_args,
             "aap_observed_allocation_floor": observed_floor,
             "aap_network_bridge": network_bridge,
+            "aap_primary_instance_resources": primary_resources,
             "aap_public_host_key": public_host_key,
             "aap_registered_instance": registered_instance,
             "aap_guest_ipv4": guest_ipv4,
