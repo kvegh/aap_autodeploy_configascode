@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.36.1
+
+Document task recovery implementation `d74a61b`, its Hactar companion, native
+Vault validation and the agreed deployment/recovery requirements.
+
 ## 0.36.0
 
 Document the agreed independent recovery goal, version-to-version acceptance,

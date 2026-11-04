@@ -2218,3 +2218,29 @@ loading, encrypted-Git publication, interrupted source update/retry, exact guest
 ownership, runtime rollback and unchanged token/allocation tests. Focused Ansible
 syntax and production lint passed. Actual guest acceptance is checked separately
 through the existing normal deployment template.
+
+## Preserve project tasks and decisions independently of the running hypervisor
+
+The operator requires Git copies of task progress and decisions because the
+original host may be reinstalled. Beads remains authoritative. Implementation
+`d74a61b` adds a generated public metadata overview and a complete scoped native
+Ansible Vault recovery export in the existing Hactar repository. Private task
+bodies and comments are encrypted; source data is read-only and both outputs
+have stale checks. Unchanged decrypted data retains its ciphertext. No new
+tracker, secret store, credential type or automatic database restoration is added.
+The Hactar companion implementation is `40198b0`.
+
+The agreed guide records external AAP recovery, independent version-to-version
+acceptance, retention of the four older production stages while excluding them
+from future CaC, newer-stage own/remote hypervisor requirements, self/remote CaC
+installation and use-case-specific runtime targets. AO's deployment origin,
+OpenShift destination and selected AAP integration are independent. AIOps must
+use the intended versioned environment consistently. Requirements are separated
+from successful live proof, and the older destroy-template review preserves the
+original-host teardown limitation without deleting objects.
+
+Validation passed nine exporter/native-Vault checks, six Hactar metadata checks
+and four version checks. Actual scoped export, comments, exact decryption,
+unchanged-record checks, prior task-ID retention and ownership-table preservation
+were verified. README, restart instructions and project working rules describe
+mandatory Git refresh and recovery without the current Beads database.
