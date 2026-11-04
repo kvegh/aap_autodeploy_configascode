@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.37.6
+
+Document normal portable AutoDeploy import and refresh, fourteen new templates
+with fifty-five preserved, successful receiving-instance self-selection with
+its prerequisite/import children, verified inventory display-name cleanup and bounded
+installation access. Correct obsolete selected-setup instructions to describe
+self/remote API authentication, retained trust and exact saved credential checks.
+Document completed testserver monitoring and the separate private Claude runtime
+prerequisites. Refresh the Beads-derived overview and protected recovery records;
+complete independent recovery and a next-version VM cycle remain separate.
+
 ## 0.37.5
 
 Document implementation `2ef4d42`, the receiving execution environment's native

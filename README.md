@@ -17,6 +17,27 @@ and source SDK calls use that private combined bundle, retaining the receiving
 AAP's own installed authority. Authentication and checkout share one temporary
 workspace, which is removed after success or failure. Global trust is unchanged.
 
+Normal remote import 3296 installed all fourteen future AutoDeploy templates,
+preserving the fifty-five existing templates: sixty-nine total. Independent
+readback checked projects, inventories, execution environment, credentials,
+labels and saved variables, with the older production-only family absent on
+the receiving AAP. Refresh 3300 then verified the five credential-forwarding
+flags while preserving every template ID and other setting. Existing production
+objects remain in place. These results prove configuration installation; a
+complete next-version VM installation and independent recovery remain separate.
+
+Normal selector 84 then completed on the receiving AAP itself using revision
+`8c5a05c`: prerequisite job 86 and AutoDeploy importer 88 both succeeded. It used
+the existing source API bearer, trusted combined CA bundle, registered inventory
+identity and scoped credentials; no application or VM deployment job was run.
+
+The selected inventory entry is now renamed in place. Physical VM, disk, public
+DNS, allocation and token keys remain unchanged; normal AIOps refresh 3298
+verified its lookup, existing runtime ciphertext and running website recovery.
+The future shared capture removes twelve duplicate Windows settings and two
+obsolete AIOps values. Existing production variables remain until their older
+consumers migrate. See [inventory ownership](docs/shared-inventory-ownership.md).
+
 The group-creation preflight omits empty variables, matching the configuration
 role and the native module's mapping requirement. Installation and management
 publication also save the exact approved native firewalld rule in the three
@@ -959,11 +980,19 @@ update path and the API's restrictions; the importer never stops or restarts a
 running activation to apply them.
 Missing or null extra variables continue to use the native module's defaults.
 
-The configuration import has been verified on a fresh recovery controller after
+The first configuration import was verified on a fresh recovery controller after
 the reviewed prerequisite preparation. Independent API readback checked all
 declared Controller and EDA objects, successful Controller project syncs and both
 activation definitions remaining disabled. This verifies configuration deployment;
 application execution and end-to-end remediation remain separate checks.
+
+Subsequent normal deployment and live verification established the selected
+website's restore/rearm loop and the testserver's Linux/ICMP monitoring. Copied
+Apache checks are disabled in place on the minimal guest. General AI repair is
+still disabled: its Claude runtime, provider authentication, workspace
+instructions, private target AAP MCP and reviewed provider egress remain in
+`bead-wd-72f.33`. Configuration refresh preserves the running website activation
+and existing runtime ciphertext rather than enabling the general activation.
 
 ### Disconnected Windows configuration deployment
 
@@ -1212,6 +1241,6 @@ No standalone formatter or linter dependency is required for the version helper.
 - `src/`: version-maintenance helper; `tests/`: version-tool and dispatch regressions.
 - `VERSION`, `RELEASE_NOTES.md`, and `AGENTS.md`: version and working rules.
 - `documentation.md`: deployment overview; `Configuration_as_Code.md`: CaC reference.
-- `PLAN.md`: the single current TODO list, with context/goals and completed work
-  under `Done:`. Git and decision history preserve earlier plans.
+- Beads: authoritative current tasks; `TODO.md`: generated public overview.
+  `PLAN.md` and Git history preserve the earlier implementation plans.
 - `design_decisions_history.md`: documented decisions and implementation references.

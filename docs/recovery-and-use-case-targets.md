@@ -42,8 +42,10 @@ reason to transfer its production Machine key to future installations.
 
 The older workflow, destroy template, inventory and credential references must
 be reviewed consistently when excluding the four stages. This does not authorize
-deleting their existing production objects. Future-bundle exclusion and the
-complete source-local deployment cycle remain to be verified.
+deleting their existing production objects. A normal configuration import has
+now verified fourteen future AutoDeploy templates and the older family's
+absence on the receiving AAP, preserving all fifty-five existing templates.
+The complete source-local deployment cycle remains to be verified.
 
 The separate [older destroy-template review](legacy-decommission-review.md)
 found that both destroy templates use the same current decommission playbook.
@@ -115,6 +117,7 @@ version-to-version recovery cycle.
 | `bead-wd-72f.31` | Destination-specific runtime behavior for all use cases |
 | `bead-wd-mcr.1` | Automatic guest release with production protection |
 | `bead-wd-72f.32` | Git TODO synchronization, encrypted full records and recovery instructions |
+| `bead-wd-72f.33` | Missing private Claude runtime prerequisites and controlled agent repair |
 
 Read the latest descriptions and notes: earlier exploratory alternatives remain
 in the history, while later explicit operator decisions take precedence. Current

@@ -4,8 +4,9 @@ Base deployment ends after stages01–04. The separate
 `deploy-selected-use-cases.yml` selector prepares only selected use-case
 requirements, then launches their existing configuration Job Templates. All
 five project Job Templates use [the common API-only driver](cac-project-import.md).
-The selector retains a distinct fresh-target check and infrastructure preparation;
-the standalone importer also supports existing and self-target AAP instances.
+The selector and standalone importer support existing, remote and self-target
+AAP instances. The selector retains the registered-route and infrastructure
+checks required by its separate prerequisite preparation.
 Application jobs are not launched. New activation definitions are disabled and
 existing activation states are preserved.
 
@@ -34,8 +35,9 @@ versions stay in `vaults/cac/aap_autodeploy_configascode-cac-vault.yml`.
 Use its AAP Job Template with the shared `main inventory`. Choose the exact
 `aap_instance_key` and supported use cases. Keep the saved source/catalog
 credentials and **AAP API/MCP Auth Token Store**. Its injected JSON contains
-per-instance API/MCP tokens; the selected inventory name determines which bearer
-and HTTPS origin are used. That origin must match inventory `ansible_fqdn`. The
+per-instance API/MCP tokens; the selected inventory entry's verified
+`vm_resource.vm_name` determines the physical instance's bearer and HTTPS origin.
+That origin must match inventory `ansible_fqdn`. The
 selector checks that the saved shared-store credential is forwarded unchanged.
 Its Verify SSL flag must be true. It never selects a source bearer as target auth.
 
@@ -44,15 +46,18 @@ carry `hypervisor_host`. The separate preparation stage still requires the
 completed protected instance route and pinned infrastructure SSH credentials.
 Its saved AutoDeploy CaC Vault credential also decrypts the instance registry;
 only the reader and Machine credentials are added for preparation routing.
-Public origin/DNS and distinct controller checks remain. There is no guessed
+Public origin/DNS and selected Controller identity checks remain. Source and
+destination may be the same verified Controller. There is no guessed
 hostname suffix, free-form destination URL or SSH API-login fallback.
 
-Source orchestration uses only the encrypted catalog's explicit seed login and,
-if supplied, its dedicated CA file. Source token creation, reads, job waits and
-cleanup use this source trust context. Destination token selection cannot
-replace the source login through extra-variable precedence. TLS verification
-remains enabled. The source session is revoked; the operator's destination API
-credential is preserved.
+Source orchestration uses the existing injected source API bearer and verifies
+that the source owns the actual running job and template. Its existing source
+CA supplements the execution environment's active trust bundle in a private
+temporary file; native HTTPS and source SDK calls use the same combined trust.
+Destination token selection cannot replace source authentication through
+extra-variable precedence. TLS verification remains enabled. No installer
+password is read and no temporary source token is created or revoked. The
+workspace is removed after success or failure; existing tokens are preserved.
 
 Before any child launch, the selector verifies unique importer identity,
 organization, labels, reviewed SCM Project, common playbook, fixed project ID,
@@ -62,6 +67,12 @@ widened. Each generic child receives its saved Git/Vault/environment credentials
 including the same saved shared API/MCP token-store credential. It receives
 only the destination instance and diagnostic choice as launch variables: its
 project ID, repository and capture file remain fixed on its saved template.
+
+The five generic templates must permit launch-time credential selection so the
+selector can forward those exact saved sets. Keep the existing environment Vault
+name consistent in its credential definition, template references and protected
+expected-name lists. A label mismatch stops setup before a child starts; aligning
+the label must preserve the credential ID, secret inputs and job assignments.
 
 The separate prerequisite child additionally receives only the pinned Machine
 credential. Its saved AutoDeploy repository read token and CaC Vault also read

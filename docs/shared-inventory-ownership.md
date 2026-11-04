@@ -7,7 +7,7 @@ identifies it. Hactar's AAP-object CaC capture also remains with Hactar.
 
 ## Project runtime settings
 
-| Fields | Owning project and actual consumer | Future shared-capture treatment |
+| Fields | Owning project and actual consumer | Desired shared-capture treatment |
 | --- | --- | --- |
 | `zabbix_server` | AIOps `playbooks/deploy_zabbix_agent.yml` | Remove the obsolete original-environment inventory default. Selected runtime settings remain in the existing private AIOps capture. |
 | `claude_agent_user` | AIOps `playbooks/run_claude_analyse_fix.yml` | Remove the obsolete original-environment host value. Selected runtime settings remain in the existing private AIOps capture. |
@@ -45,4 +45,11 @@ stages continue to take the immutable registered VM name; they do not guess a
 physical name from a display alias. Lifecycle publication and retirement must
 match any renamed AAP inventory entry through its existing `vm_resource`, so a
 later base run cannot recreate the old display entry or overlook it during
-cleanup. These coordinated code and capture changes precede a live rename.
+cleanup.
+
+The selected entry has now been renamed in place, preserving its host ID,
+variables and group memberships. A normal AIOps refresh verified the renamed
+lookup and retained all existing template identities, runtime ciphertext and
+monitoring policy. Physical VM, disk, public DNS, allocation and token keys were
+not renamed. The future shared capture also removes the fourteen fields listed
+above; the old live production variables remain until their consumers migrate.

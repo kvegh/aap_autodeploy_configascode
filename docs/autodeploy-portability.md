@@ -38,8 +38,10 @@ Authentication runs inside the existing cleanup block. The later private Git
 checkout reuses its workspace, and the trust file is removed after success or
 failure, including failure of the first authenticated request. The supported
 execution environment must expose its active default PEM trust bundle. Code and
-read-only TLS checks validate this behavior; a normal selector rerun provides
-separate end-to-end authentication acceptance.
+read-only TLS checks validate this behavior. Normal selector 84 on revision
+`8c5a05c` subsequently provided end-to-end self-target acceptance: the existing
+prerequisite job 86 and AutoDeploy importer 88 both completed successfully.
+This configuration-only run created no VM and proves no successor installation.
 
 The source's shared and recovery inventories remain mandatory. A Hactar project
 inventory alias is optional when that project is not installed on the receiving

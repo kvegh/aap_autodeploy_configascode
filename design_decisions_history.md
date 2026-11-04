@@ -1,5 +1,43 @@
 # Design decisions history
 
+## Verify remote and self-target AutoDeploy configuration — 2026-11-04
+
+Portable implementation `a522e7b`, group/native-rule fix `1e89880` and trust/counter
+fix `2ef4d42` now have normal configuration acceptance. Remote import 3296 added
+fourteen AutoDeploy templates while retaining all fifty-five existing templates.
+Refresh 3300 verified the five credential-forwarding flags from private
+configuration `df6882a`, preserving every template ID and other setting. Existing
+production-only objects remain on production and outside the receiving bundle.
+
+Private correction `3104552` retains the existing environment Vault name in its
+definition, fourteen template references and extraction dependency. The receiver
+had no conflicting credential; its ID, secret inputs and assignments were
+preserved. The exact name and ownership guards remain unchanged. All nine
+remaining selector guards and six launch-credential plans passed in both native
+modes using actual API metadata. Returned injector strings retain their native
+unsafe treatment in those fixtures.
+
+Normal receiving-instance selector 84 then succeeded on `8c5a05c`, with existing
+prerequisite job 86 and importer 88 both successful. Independent readback verified
+trusted source API access, actual running-job and self-target identity, exact
+child credentials, shared token store and cleanup. All sixty-nine template IDs
+and project, inventory, execution-environment, credential and label bindings
+were preserved. No application or VM deployment was launched. The full successor
+installation and independent recovery remain separate requirements.
+
+Private capture `9647f70` also applies the inventory display rename and removes
+twelve duplicate Windows fields plus two obsolete AIOps fields. Physical VM,
+DNS, allocator and token identities remain unchanged; live legacy consumers
+still retain their required variables. Normal AIOps refresh 3298 verified the
+renamed lookup, existing runtime ciphertext, monitoring policy and website
+activation. Monitoring jobs 69/72 verified fresh Linux/ICMP data and disabled
+inherited Apache checks in place. AIOps problem guard `ba7785d` rejects recovery
+and unknown events; general AI repair remains disabled pending the concrete
+private-runtime prerequisites in `bead-wd-72f.33`.
+
+The current Beads overview and full encrypted recovery records are refreshed
+together. These documentation changes do not alter the tested runtime revision.
+
 ## Preserve receiving-instance trust during selected configuration setup — 2026-11-04
 
 Implementation `2ef4d42` fixes the first authenticated request in the normal
