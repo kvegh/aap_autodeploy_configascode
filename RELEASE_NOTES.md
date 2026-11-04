@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.34.3
+
+Record implementation `8c0af1c`, its source execution-environment reproduction
+and the activation variable preservation checks in the decision history.
+
 ## 0.34.2
 
 Preserve serialized activation extra variables at the Ansible task boundary.

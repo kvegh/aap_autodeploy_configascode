@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Preserve activation variable text during repeat imports — 2026-11-04
+
+Implementation `8c0af1c` fixes a formatting change at the existing activation
+task boundary. A declared serialized empty mapping with its trailing newline
+became a dictionary during Ansible templating. The native string argument then
+contained different text, so an unchanged activation appeared to need an API
+update. The disabled definition accepted that update; the running website
+definition failed during the normal configuration refresh.
+
+The task now explicitly preserves non-null values as strings. Null and omitted
+values retain the native module defaults. The existing module, API transport,
+enabled-state guard, Event Stream bindings and protected logging are unchanged.
+Genuine definition differences still follow the native update path; no automatic
+stop or restart is added to make an update succeed.
+
+Read-only reproduction used the source execution image, Core 2.16.19 and
+ansible.eda 2.13.0 with recorded GET responses. Preserved arguments produced no
+writes for both real definitions, while deliberately changed variables still
+requested an update. Eight focused regressions pass, including actual task
+rendering in both Jinja modes, null/omitted values and native Event Stream/state
+handling. Syntax, production lint and whitespace checks also pass. Live
+acceptance is checked through the existing normal configuration import job.
+
 ## Configure each AAP instance's own hypervisor connection during base — 2026-11-03
 
 Implementation `931edb8` follows the owner's explicit request to fix the
