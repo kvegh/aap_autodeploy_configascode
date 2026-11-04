@@ -31,7 +31,14 @@
   ansible.builtin.tempfile:
     state: directory
     prefix: aap-autodeploy-cac-
-  register: cac_workspace
+  register: cac_new_workspace
+  when: cac_workspace.path is not defined
+
+- name: Use the newly allocated configuration workspace
+  ansible.builtin.set_fact:
+    cac_workspace: "{{ cac_new_workspace }}"
+  when: cac_new_workspace.path is defined
+  no_log: true
 
 - name: Prepare the temporary Git authentication helper
   ansible.builtin.copy:

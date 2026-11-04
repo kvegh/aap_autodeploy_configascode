@@ -24,11 +24,22 @@ onto the launching AAP or another selected AAP uses the same importer; source
 and destination API credentials remain separate. The launcher creates no
 temporary source token and reads no installer password.
 
-The receiving source CA credential uses the supported RHEL execution image's
+The receiving source CA credential carries the supported RHEL execution image's
 standard trust bundle. It does not copy the original controller's private
-authority as its only trust anchor. Actual HTTPS checks confirm that public
-certificate trust succeeds while that private-only file rejects the new public
-endpoint; hostname and certificate verification remain enabled.
+authority as its only trust anchor. An installed AAP can resolve its own public
+hostname to its internal listener; the base installation already mounts that
+listener's authority into its execution environment. Source API tasks preserve
+the active default PEM bundle and append the declared supplemental CA without
+rewriting certificate or trust metadata. Native HTTPS and source SDK calls use
+the same private combined file. Hostname and certificate verification remain
+enabled. No hosts entry, DNS answer or global trust configuration is changed.
+
+Authentication runs inside the existing cleanup block. The later private Git
+checkout reuses its workspace, and the trust file is removed after success or
+failure, including failure of the first authenticated request. The supported
+execution environment must expose its active default PEM trust bundle. Code and
+read-only TLS checks validate this behavior; a normal selector rerun provides
+separate end-to-end authentication acceptance.
 
 The source's shared and recovery inventories remain mandatory. A Hactar project
 inventory alias is optional when that project is not installed on the receiving
@@ -91,6 +102,11 @@ an existing display label and its placement-group membership instead of
 recreating the former name. Token publication and retirement use the route's
 physical name. Decommissioning resolves and verifies the same physical owner
 before removing its actual inventory label and group membership.
+
+The native configuration role can serialize an inventory counter as decimal
+text. Identity validation accepts its canonical integer representation while
+retaining all recorded address, UUID, disk, key and hypervisor checks. It does
+not infer aliases, rename a physical VM or rekey token records.
 
 The imported shared inventory contains selected AAP/hypervisor placement and
 preserves existing members. Full lifecycle cleanup additionally needs verified

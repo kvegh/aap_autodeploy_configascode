@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.37.4
+
+Supplement the execution environment's active trust bundle with the existing
+source CA for selected-use-case HTTPS and SDK calls. Preserve the receiving AAP's
+installed authority and hostname validation. Move authentication into the existing
+cleanup block and reuse its private workspace for checkout, including cleanup
+after early authentication failure. No global trust or name-resolution change.
+Accept a verified inventory counter serialized as canonical decimal text by the
+native configuration role, preserving the physical VM and token identities.
+
 ## 0.37.3
 
 Document fixes `1e89880`, their native module and rule-persistence checks, and the

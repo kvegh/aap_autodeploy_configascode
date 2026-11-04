@@ -11,6 +11,12 @@ and self-API connection before installation begins. The existing base template
 also supports the isolated `aap_installation_access` repair tag. These changes
 add no wrapper playbook, job template, credential type or secret store.
 
+The selected-use-case launcher supplements its execution environment's active
+trust bundle with the existing source CA credential. Both native HTTPS requests
+and source SDK calls use that private combined bundle, retaining the receiving
+AAP's own installed authority. Authentication and checkout share one temporary
+workspace, which is removed after success or failure. Global trust is unchanged.
+
 The group-creation preflight omits empty variables, matching the configuration
 role and the native module's mapping requirement. Installation and management
 publication also save the exact approved native firewalld rule in the three

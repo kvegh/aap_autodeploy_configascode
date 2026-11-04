@@ -61,6 +61,19 @@ class InventoryIdentityTests(unittest.TestCase):
             bad = deepcopy(host); mutation(bad)
             with self.assertRaises(AnsibleFilterError): identity.inventory_instance_name('aap27-v07', bad)
 
+    def test_canonical_positive_string_counter_is_normalized_without_changing_inventory(self):
+        physical, host, route, resources = fixture()
+        host['aap_instance_number'] = '7'
+        original = deepcopy(host)
+        self.assertEqual(identity.inventory_instance_name('aap27-v07', host), physical)
+        self.assertTrue(identity.inventory_route_matches('aap27-v07', host, route, resources))
+        self.assertEqual(host, original)
+        for counter in (True, False, 7.0, -1, 0, None, '07', '+7', '-7', ' 7', '7 ', '7.0',
+                        '7\n', '0', '７', '٧', '7' * 64):
+            bad = deepcopy(host); bad['aap_instance_number'] = counter
+            with self.subTest(counter=counter), self.assertRaises(AnsibleFilterError):
+                identity.inventory_instance_name('aap27-v07', bad)
+
     def test_existing_inventory_provenance_must_match_every_registered_route_identity(self):
         _, host, route, resources = fixture()
         self.assertTrue(identity.inventory_route_matches('aap27-v07', host, route, resources))
@@ -102,8 +115,8 @@ class InventoryIdentityTests(unittest.TestCase):
     def test_actual_select_tasks_keep_main_inventory_alias_but_registry_only_stages_keep_physical_key(self):
         physical, host, route, resources = fixture()
         for native in ('true', 'false'):
-            for selected, has_entry in [('aap27-v07', True), (physical, False), ('', False)]:
-                with self.subTest(native=native, selected=selected), tempfile.TemporaryDirectory(prefix='inventory-route-') as temporary:
+            for selected, has_entry, counter in [('aap27-v07', True, 7), ('aap27-v07', True, '7'), (physical, False, 7), ('', False, 7)]:
+                with self.subTest(native=native, selected=selected, counter=counter), tempfile.TemporaryDirectory(prefix='inventory-route-') as temporary:
                     directory = Path(temporary)
                     plugins = directory / 'action_plugins'; plugins.mkdir()
                     plugins.joinpath('aap_read_instance.py').write_text(
@@ -112,9 +125,15 @@ class InventoryIdentityTests(unittest.TestCase):
                         ' def run(self,tmp=None,task_vars=None):\n'
                         '  assert self._task.args["instance_key"]==task_vars["fixture_physical"]\n'
                         '  return {"changed":False,"instance_route":task_vars["fixture_route"],"instance_resources":task_vars["fixture_resources"]}\n')
-                    tasks = []
+                    inventory = directory / 'inventory.json'
+                    hosts = {'localhost': {'ansible_connection': 'local'}}
                     if has_entry:
-                        tasks.append({'ansible.builtin.add_host': dict(host, name=selected)})
+                        hosts[selected] = dict(deepcopy(host), aap_instance_number=counter)
+                    inventory.write_text(json.dumps({'all': {'hosts': hosts}}))
+                    tasks = []
+                    if has_entry and isinstance(counter, str):
+                        tasks.append({'ansible.builtin.assert': {'that':
+                            ["hostvars[fixture_selected].aap_instance_number is string"]}})
                     supplied = {'aap_instance_key': selected}
                     if not selected:
                         supplied['aap_instance_route'] = route
@@ -130,7 +149,7 @@ class InventoryIdentityTests(unittest.TestCase):
                     env = dict(os.environ, ANSIBLE_CONFIG=str(cfg), ANSIBLE_JINJA2_NATIVE=native,
                                ANSIBLE_ACTION_PLUGINS=str(plugins), ANSIBLE_FILTER_PLUGINS=str(ROOT / 'filter_plugins'),
                                ANSIBLE_LOCAL_TEMP=str(directory / 'local'), ANSIBLE_REMOTE_TEMP=str(directory / 'remote'))
-                    result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(play)],
+                    result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', str(inventory), str(play)],
                                             capture_output=True, text=True, env=env, timeout=40)
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

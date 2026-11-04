@@ -26,6 +26,10 @@ def inventory_instance_name(selected, host=None):
     physical = resource.get('vm_name')
     match = re.fullmatch(r'(aap[0-9]+)-test-([0-9]+)', physical if isinstance(physical, str) else '')
     number = host.get('aap_instance_number')
+    # Controller may serialize this scalar as text in a nonnative CaC import.
+    # Normalize only canonical positive ASCII decimals; never coerce bools/floats.
+    if isinstance(number, str) and len(number) <= 63 and re.fullmatch(r'[1-9][0-9]*', number):
+        number = int(number)
     if (match is None or type(number) is not int or number <= 0 or number != int(match[2])
             or resource.get('verified') is not True
             or selected not in (physical, match[1] + '-v%02d' % number)

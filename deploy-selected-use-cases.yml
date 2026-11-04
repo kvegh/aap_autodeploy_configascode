@@ -15,87 +15,127 @@
     aap_validate_certs: true
     debug_logging: false
     aap_seed_ca_path: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_CA_FILE') }}"
-  pre_tasks:
-    - name: Require the destination host in the shared inventory
-      ansible.builtin.assert:
-        that:
-          - aap_instance_key is defined
-          - aap_instance_key in hostvars
-          - awx_job_id is defined
-        fail_msg: Run this launcher in AAP with the shared inventory and an explicit destination host.
-      no_log: true
-
-    - name: Require the existing source API credential and running job identity
-      ansible.builtin.assert:
-        that:
-          - lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_URL') | aap_https_origin | length == 2
-          - lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_TOKEN') | length > 0
-          - awx_job_template_id is defined
-          - awx_project_revision is defined
-        fail_msg: Attach the source AAP API credential and run this template in AAP.
-      no_log: true
-
-    - name: Bind orchestration to the API credential of the AAP running this job
-      ansible.builtin.set_fact:
-        aap_selected_source_auth:
-          hostname: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_URL') }}"
-          token: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_TOKEN') }}"
-      no_log: true
-
-    - name: Read this running job through its source API credential
-      ansible.builtin.uri:
-        url: >-
-          {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ awx_job_id }}/
-        headers:
-          Authorization: "Bearer {{ aap_selected_source_auth.token }}"
-        validate_certs: true
-        ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
-        follow_redirects: none
-      register: aap_selected_source_job
-      no_log: true
-
-    - name: Require the credential to identify the actual running source job
-      ansible.builtin.assert:
-        that:
-          - aap_selected_source_job.json.status == 'running'
-          - aap_selected_source_job.json.id | int == awx_job_id | int
-          - aap_selected_source_job.json.job_template | int == awx_job_template_id | int
-          - aap_selected_source_job.json.scm_revision == awx_project_revision
-        fail_msg: The source API credential must identify the AAP running this job.
-      no_log: true
-
-    - name: Select destination API authentication from the existing instance token store
-      ansible.builtin.include_tasks: tasks/cac-api-auth.yml
-
-    - name: Retain only the selected destination API authentication
-      ansible.builtin.set_fact:
-        aap_selected_target_auth: "{{ cac_api_auth }}"
-      no_log: true
-
-    - name: Resolve the explicit instance key before any setup orchestration
-      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
-
-    - name: Keep catalog authentication on the encrypted AutoDeploy repository
-      ansible.builtin.assert:
-        that: >-
-          (aap_use_case_catalog_repo_url | aap_normalized_git_url) ==
-          (aap_registered_target.registry_repository | aap_normalized_git_url)
-        fail_msg: Use the AutoDeploy repository selected by encrypted configuration.
-      no_log: true
-
-    - name: Require inventory and registered preparation routes to identify the same API
-      ansible.builtin.assert:
-        that:
-          - (aap_target_hostname | aap_https_origin) == (aap_selected_target_auth.hostname | aap_https_origin)
-        fail_msg: The selected inventory destination and registered preparation route must agree.
-      no_log: true
-
-    - name: Verify the registered target public API before sending credentials
-      ansible.builtin.include_tasks: tasks/aap-instance-api.yml
-
   tasks:
     - name: Configure only the selected use cases through owned seed importers
       block:
+        - name: Require the destination host in the shared inventory
+          ansible.builtin.assert:
+            that:
+              - aap_instance_key is defined
+              - aap_instance_key in hostvars
+              - awx_job_id is defined
+            fail_msg: Run this launcher in AAP with the shared inventory and an explicit destination host.
+          no_log: true
+
+        - name: Require the existing source API credential and running job identity
+          ansible.builtin.assert:
+            that:
+              - lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_URL') | aap_https_origin | length == 2
+              - lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_TOKEN') | length > 0
+              - awx_job_template_id is defined
+              - awx_project_revision is defined
+            fail_msg: Attach the source AAP API credential and run this template in AAP.
+          no_log: true
+
+        - name: Bind orchestration to the API credential of the AAP running this job
+          ansible.builtin.set_fact:
+            aap_selected_source_auth:
+              hostname: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_URL') }}"
+              token: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_TOKEN') }}"
+          no_log: true
+
+        - name: Supplement the execution environment's trust with the existing source CA
+          when: aap_seed_ca_path | default('') | length > 0
+          no_log: true
+          block:
+            - name: Create the private workspace before using supplemental source trust
+              ansible.builtin.tempfile:
+                state: directory
+                prefix: aap-autodeploy-cac-
+              register: cac_workspace
+
+            - name: Read the execution environment's active default trust bundle path
+              ansible.builtin.command:
+                argv:
+                  - "{{ ansible_playbook_python }}"
+                  - -c
+                  - >-
+                    import ssl, sys; context = ssl.create_default_context();
+                    context.load_verify_locations(cafile=sys.argv[1]);
+                    print(ssl.get_default_verify_paths().cafile or '')
+                  - "{{ aap_seed_ca_path }}"
+              register: aap_source_default_ca
+              changed_when: false
+
+            - name: Require the supported execution environment's default PEM trust bundle
+              ansible.builtin.assert:
+                that: aap_source_default_ca.stdout | trim | length > 0
+                fail_msg: Source API access requires the execution environment's default PEM trust bundle.
+
+            - name: Preserve default trust and append only the declared supplemental CA
+              ansible.builtin.copy:
+                dest: "{{ cac_workspace.path }}/source-api-ca.pem"
+                mode: '0600'
+                content: |
+                  {{ lookup('ansible.builtin.file', aap_source_default_ca.stdout | trim, rstrip=false) }}
+                  {{ lookup('ansible.builtin.file', aap_seed_ca_path, rstrip=false) }}
+              diff: false
+
+            - name: Use the private combined trust only for source API operations
+              ansible.builtin.set_fact:
+                aap_seed_ca_path: "{{ cac_workspace.path }}/source-api-ca.pem"
+
+        - name: Read this running job through its source API credential
+          ansible.builtin.uri:
+            url: >-
+              {{ aap_selected_source_auth.hostname | regex_replace('/+$', '') }}/api/controller/v2/jobs/{{ awx_job_id }}/
+            headers:
+              Authorization: "Bearer {{ aap_selected_source_auth.token }}"
+            validate_certs: true
+            ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
+            follow_redirects: none
+          register: aap_selected_source_job
+          no_log: true
+
+        - name: Require the credential to identify the actual running source job
+          ansible.builtin.assert:
+            that:
+              - aap_selected_source_job.json.status == 'running'
+              - aap_selected_source_job.json.id | int == awx_job_id | int
+              - aap_selected_source_job.json.job_template | int == awx_job_template_id | int
+              - aap_selected_source_job.json.scm_revision == awx_project_revision
+            fail_msg: The source API credential must identify the AAP running this job.
+          no_log: true
+
+        - name: Select destination API authentication from the existing instance token store
+          ansible.builtin.include_tasks: tasks/cac-api-auth.yml
+
+        - name: Retain only the selected destination API authentication
+          ansible.builtin.set_fact:
+            aap_selected_target_auth: "{{ cac_api_auth }}"
+          no_log: true
+
+        - name: Resolve the explicit instance key before any setup orchestration
+          ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+
+        - name: Keep catalog authentication on the encrypted AutoDeploy repository
+          ansible.builtin.assert:
+            that: >-
+              (aap_use_case_catalog_repo_url | aap_normalized_git_url) ==
+              (aap_registered_target.registry_repository | aap_normalized_git_url)
+            fail_msg: Use the AutoDeploy repository selected by encrypted configuration.
+          no_log: true
+
+        - name: Require inventory and registered preparation routes to identify the same API
+          ansible.builtin.assert:
+            that:
+              - (aap_target_hostname | aap_https_origin) == (aap_selected_target_auth.hostname | aap_https_origin)
+            fail_msg: The selected inventory destination and registered preparation route must agree.
+          no_log: true
+
+        - name: Verify the registered target public API before sending credentials
+          ansible.builtin.include_tasks: tasks/aap-instance-api.yml
+
         - name: Retrieve the reviewed encrypted selector and authentication inputs
           ansible.builtin.include_tasks: tasks/private-config-checkout.yml
           vars:
