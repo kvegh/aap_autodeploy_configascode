@@ -51,6 +51,12 @@ older template retention, self/remote CaC installation and use-case runtime
 targets. These are requirements; the guide distinguishes them from verified
 implementation and points to the durable Beads records.
 
+The agreed functional test order is to prove the source environment's other
+use cases first, then pause its three demo guests while keeping its AAP running
+to build and verify the successor. That successor deployment is itself a source
+AAP functionality test. See the [verification sequence](docs/recovery-and-use-case-targets.md#order-of-functional-verification)
+and account separately for any additional Windows or Assistant guests.
+
 Recreate Ansible Automation Platform from configuration as code so that a new
 instance can take over the production platform's tasks, including deploying and
 configuring further AAP instances. An existing trusted AAP acts as the initial

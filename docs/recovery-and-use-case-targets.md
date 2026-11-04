@@ -23,6 +23,33 @@ The current production hypervisor is excluded from the versioned test chain.
 The acceptance criterion does not itself authorize a new allocation, another
 live rebuild or destruction of the current environment.
 
+## Order of functional verification
+
+First prove the source environment's remaining use cases through their actual
+runtime jobs and service checks. Include the selected website recovery loop,
+monitoring, private MCP integrations and authorized agent-remediation tests,
+alongside the other installed use cases. Successful configuration imports alone
+do not establish this functional result.
+
+After those checks pass, pause the source environment's monitoring, TRA and
+testserver guests to reduce simultaneous RAM use. Keep its AAP and hypervisor
+services running, and preserve the paused guests' definitions and disks for
+restart. Additional guests created for Windows or Assistant tests require their
+own memory accounting and an explicit place in this pause sequence.
+
+Use the still-running source AAP to build the next AAP, install its selected CaC
+and deploy and verify the next environment's services. This is itself a required
+functional test of the source AAP; the complete deployment capability is proved
+only after that successor works. Verify both own-hypervisor and remote-target
+paths where the acceptance plan requires them.
+
+Before executing the transition, check actual host capacity, all running guest
+allocations and normal host/VM overhead. Current protected capacity evidence
+belongs in the existing encrypted task records. Reclaimable cache or memory
+deduplication must not be treated as guaranteed capacity for every guest's peak.
+This sequence records the agreed plan; live shutdown and allocation remain
+separate execution steps after their prerequisites are verified.
+
 ## Existing and future AAP deployment templates
 
 Keep the four older AAP deployment Job Templates on the existing production AAP
@@ -86,6 +113,14 @@ website/DNS/proxy configuration, monitoring targets, EDA bindings and private
 MCP connections. URLs, credentials and restoration jobs must refer to the
 intended environment. Working local behavior does not prove remote runtime
 deployment.
+
+A fresh AIOps destination also needs its own verified guest ownership/artifacts,
+target-local website/EDA credentials and encrypted runtime settings in the
+existing private AIOps companion. The current capture has a prepared instance;
+automatic preparation of another instance is still tracked in
+`bead-wd-72f.31.2`. The ciphertext embedding helper copies prepared settings and
+does not generate those new identities or credentials. Agree that lifecycle
+before adding any persistence or writer mechanism.
 
 ## Recovery isolation policy
 

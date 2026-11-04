@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.37.7
+
+Document the agreed functional test order: verify the source use cases, pause
+its three demo guests, retain its AAP and use it to build and prove the next
+environment. Include additional use-case guests in capacity accounting and keep
+live shutdown/allocation separate from this plan. Refresh the task overview and
+protected full task records for the new Claude/MCP installation and read-only
+runtime-readiness work. Record the remaining per-instance AIOps preparation
+prerequisite for a complete successor environment.
+
 ## 0.37.6
 
 Document normal portable AutoDeploy import and refresh, fourteen new templates

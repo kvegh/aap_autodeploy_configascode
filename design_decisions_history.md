@@ -1,5 +1,33 @@
 # Design decisions history
 
+## Verify source use cases before the successor deployment test — 2026-11-04
+
+The owner clarified the order after the verified configuration acceptance
+documented in `ce2ab03`. First exercise the source environment's remaining
+functionality. Then pause its monitoring, TRA and testserver guests while keeping
+the source AAP running to install and verify the successor. Building that next
+environment is itself part of proving the source AAP's functionality, rather
+than a capability that can be fully verified beforehand.
+
+The protected capacity check accounts for all guest allocations and host
+overhead. Additional Windows or Assistant test guests need their own allowance;
+reclaimable cache and deduplication do not guarantee peak capacity. Paused
+source guests retain their definitions and disks for restart. These are planning
+and documentation changes, with no VM shutdown or allocation executed.
+
+The first missing source functionality is tracked in `bead-wd-72f.33.1`: add
+Claude installation and reuse both existing private MCP deployments through one
+AIOps application entry point. Read-only runtime test preparation is tracked in
+`bead-wd-72f.31.1`; it identifies actual targets and prerequisites separately from
+the already successful configuration imports. Existing authentication, private
+MCP and architecture approval boundaries remain in effect.
+
+That read-only assessment also identified inherited Windows/Assistant runtime
+targets, missing Orchestrator inputs and unverified login TLS, plus a missing
+automatic AIOps per-instance preparation path (`bead-wd-72f.31.2`). Existing
+website, monitoring and private MCP results remain valid. The assessment did
+not launch those other runtime jobs or select a new writer/storage design.
+
 ## Verify remote and self-target AutoDeploy configuration — 2026-11-04
 
 Portable implementation `a522e7b`, group/native-rule fix `1e89880` and trust/counter

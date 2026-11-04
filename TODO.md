@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-69 tasks: 14 outstanding; 55 closed.
+72 tasks: 16 outstanding; 56 closed.
 
 ## Outstanding tasks
 
@@ -20,12 +20,14 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.15 | Deploy the versioned AIOps website on the selected recovery hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.16 |
-| bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f |
+| bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
+| bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | open | P1 | feature | bead-wd-72f.31 |
+| bead-wd-72f.33.1 | Add Claude installation with private Linux and Zabbix MCP setup | in_progress | P1 | feature | bead-wd-72f.33 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
 | bead-wd-72f.24 | Review legacy project settings in shared AutoDeploy inventory | open | P2 | task | bead-wd-72f |
-| bead-wd-72f.33 | Prepare the private Claude runtime and verify agent remediation | open | P2 | task | bead-wd-72f |
+| bead-wd-72f.33 | Prepare the private Claude runtime and verify agent remediation | in_progress | P2 | task | bead-wd-72f |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | in_progress | P2 | task | bead-wd-mcr |
@@ -59,6 +61,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.29 | Deploy Automation Orchestrator CaC to the current test AAP | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.3 | Analyse consolidation of all AAP use-case deployment playbooks | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.30 | Deploy AAP AutoDeploy CaC to the current test AAP | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.31.1 | Assess v16 runtime test prerequisites and targets | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.4 | Verify and correct disabled EDA activation semantics before importer migration | closed | P1 | bug | bead-wd-72f |
 | bead-wd-72f.5 | Implement project-ID-based generic CaC deployment | closed | P1 | feature | bead-wd-72f |
