@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.34.1
+
+Document implementation `931edb8`: each registered AAP instance's own hypervisor
+management connection is configured through the existing base stage, preserving
+global Hactar deployment guards, exact guest ownership, isolation, saved tokens
+and existing publication/retry behavior. The decision history records 68 focused
+passing checks and distinguishes code validation from live deployment proof.
+
 ## 0.34.0
 
 The existing base configuration stage now prepares each registered replacement

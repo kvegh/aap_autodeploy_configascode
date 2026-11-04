@@ -1,5 +1,43 @@
 # Design decisions history
 
+## Configure each AAP instance's own hypervisor connection during base — 2026-11-03
+
+Implementation `931edb8` follows the owner's explicit request to fix the
+automation rather than rely on a manual firewall exception. Existing Hactar
+base jobs correctly enforce empty-host or complete saved-VM recovery guards;
+neither describes an already running hypervisor containing newly created CaC
+guests. Those global guards remain unchanged. The normal AAP base stage already
+has the selected primary ownership, pinned Machine connection and existing
+encrypted/source publication credentials, so the necessary connection belongs
+in that stage's existing inventory publication block.
+
+The selected AAP identity must match its existing HTTPS approval, actual guest
+UUID/disk/interface/network/lease and the pinned hypervisor. Every saved and
+running guest definition is checked against enforced bridges and device
+restrictions before changing only the guest-to-own-host management TCP grant.
+The existing native firewall and atomic nftables isolation helper apply and
+verify it. Local failure restores prior state; interrupted later publication
+can retry only the exact independently derived permission. No new job, scope,
+credential type, key, persistent store or installed service is introduced.
+
+The same existing compare-and-swap callback independently reads primary AAP
+ownership and updates encrypted recovery/shared/Hactar policy declarations and
+their source API equivalents. Existing token records and unrelated use cases
+are retained. Native Ansible testing also established why original play-level
+credentials and policy must be captured before delegation: `vars_files` values
+are not automatically available through `hostvars`. Protected, noncached job
+facts carry those existing values through the pinned connection.
+
+The already implemented Assistant importer was also registered in the existing
+selection catalog using its existing project ID and configuration key.
+
+Sixty-eight focused checks passed, including native effective SSH/delegation,
+identity/device and policy guards, check mode, local rollback, real encrypted
+Git with interrupted source synchronization, token reuse, decommission and
+selection. Stage 04 syntax and strict production lint passed. These are code
+validation results; live application and connection proof are separate normal
+job outcomes controlled by the coordinator.
+
 ## Read application VM ownership from the existing source inventory — 2026-11-03
 
 Implementation `f0a70c2` follows the owner's decision that AutoDeploy secrets
