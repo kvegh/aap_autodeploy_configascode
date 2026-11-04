@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.37.5
+
+Document implementation `2ef4d42`, the receiving execution environment's native
+trust behavior, scoped supplemental trust, private workspace reuse and strict
+inventory counter normalization. Distinguish passing read-only/code checks from
+the normal selector's pending end-to-end authentication acceptance.
+
 ## 0.37.4
 
 Supplement the execution environment's active trust bundle with the existing

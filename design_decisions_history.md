@@ -1,5 +1,46 @@
 # Design decisions history
 
+## Preserve receiving-instance trust during selected configuration setup — 2026-11-04
+
+Implementation `2ef4d42` fixes the first authenticated request in the normal
+self-target selector. The installed AAP resolves its public hostname to its
+internal listener, as required by the existing installer configuration. Its
+execution environment already receives the matching authority through the base
+installation's trust mounts. Supplying a public-only file as the native HTTP
+module's complete CA bundle replaced that valid runtime trust and rejected the
+internal certificate before any child configuration job could launch.
+
+Read-only inspection reproduced the actual cached execution image, network mode
+and trust mounts. Its default trust and the installed instance authority both
+verified the internal peer; the public-only supplemental bundle did not. Their
+union verified the same peer. No HTTP credentials were sent during that probe,
+and neither name resolution nor certificate validation was bypassed.
+
+The selector now validates the declared supplemental CA, preserves the active
+default PEM trust bundle and appends the existing source credential's CA material
+in a private temporary file. Certificate and trust metadata are retained. Native
+HTTPS requests and source SDK operations use that same scoped bundle, matching
+the existing Python source client's additive trust behavior. Global trust,
+installer host entries, source credentials and target authentication are unchanged.
+Authentication now runs inside the existing cleanup block, and the later private
+checkout reuses that workspace. Separate allocation results prevent a skipped
+Ansible register from discarding the existing workspace and leaking its file.
+
+The native configuration role also serialized a verified inventory counter as
+canonical decimal text. The identity filter now normalizes that representation
+locally, retaining physical VM, route, UUID, address, key and hypervisor checks.
+It rejects booleans, floats, zero, leading zeros, signs, whitespace, Unicode
+digits and oversized values without modifying inventory or token records.
+
+Twenty-six focused tests passed: eight real TLS/native cases, thirteen selector
+checks and five inventory identity checks. Fixtures cover both native modes,
+default trust with an unrelated supplemental CA, declared private trust,
+malformed/untrusted certificates, hostname and running-job rejection, actual
+SDK launch/wait, private file permissions, workspace reuse and early-failure
+cleanup. Syntax, strict production lint across six files, whitespace and
+added-text privacy checks passed. A normal target selector retry remains the
+separate end-to-end acceptance step; this implementation launched no job.
+
 ## Make AutoDeploy configuration portable between AAP instances — 2026-11-04
 
 Implementation `a522e7b` follows the owner's decision to retain the four older
