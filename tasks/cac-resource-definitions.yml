@@ -43,7 +43,7 @@
   ansible.controller.group:
     name: "{{ item.name }}"
     inventory: "{{ item.inventory }}"
-    variables: "{{ item.variables | default(omit) }}"
+    variables: "{{ item.variables | default(omit, true) }}"
     description: "{{ item.description | default(omit) }}"
     state: present
     controller_host: "{{ aap_hostname }}"

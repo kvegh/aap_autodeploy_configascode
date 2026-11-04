@@ -3,9 +3,12 @@
 import copy
 import importlib
 import importlib.util
+import json
 import os
 from pathlib import Path
+import subprocess
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -20,6 +23,84 @@ PLAYBOOK = Path(__file__).resolve().parents[1] / "deploy-cac-project.yml"
 
 @unittest.skipUnless(yaml and importlib.util.find_spec("ansible"), "requires Ansible and PyYAML")
 class WindowsGroupTests(unittest.TestCase):
+    def test_native_group_skeleton_handles_empty_variables_before_real_module_validation(self):
+        roots = os.environ.get("ANSIBLE_COLLECTIONS_PATH", "").split(os.pathsep)
+        if not any((Path(root) / "ansible_collections/ansible/controller/plugins/modules/group.py").is_file()
+                   for root in roots if root):
+            self.skipTest("requires installed ansible.controller")
+        definitions = [
+            {"name": "empty-string", "inventory": "Synthetic inventory", "variables": ""},
+            {"name": "omitted", "inventory": "Synthetic inventory"},
+            {"name": "empty-mapping", "inventory": "Synthetic inventory", "variables": {}},
+            {"name": "nonempty-mapping", "inventory": "Synthetic inventory", "variables": {"setting": "synthetic"}},
+            {"name": "serialized-mapping", "inventory": "Synthetic inventory", "variables": '{"setting":"synthetic"}'},
+        ]
+        source = yaml.safe_load((PLAYBOOK.parent / "tasks/cac-resource-definitions.yml").read_text())
+        skeleton = copy.deepcopy(next(task for task in source if task["name"] ==
+                                     "Create all group skeletons before establishing group relationships"))
+        skeleton["group_argument_proof"] = skeleton.pop("ansible.controller.group")
+        previous = copy.deepcopy(skeleton)
+        previous.update(name="Reproduce the previous empty-string module rejection", loop=definitions[:1],
+                        register="previous_group_argument", ignore_errors=True)
+        previous["group_argument_proof"]["variables"] = "{{ item.variables | default(omit) }}"
+        plugin = '''import json
+from pathlib import Path
+from unittest.mock import patch
+from ansible.plugins.action import ActionBase
+from ansible.module_utils.common.arg_spec import ArgumentSpecValidator
+from ansible_collections.ansible.controller.plugins.modules import group
+
+class Captured(Exception):
+    pass
+
+class ActionModule(ActionBase):
+    def run(self, tmp=None, task_vars=None):
+        specification = {}
+        def capture(argument_spec):
+            specification.update(argument_spec)
+            raise Captured()
+        with patch.object(group, "ControllerAPIModule", capture):
+            try:
+                group.main()
+            except Captured:
+                pass
+        arguments = {key: value for key, value in self._task.args.items() if key in specification}
+        result = ArgumentSpecValidator(specification).validate(arguments)
+        if result.errors.errors:
+            return {"failed": True, "msg": "Actual group-module argument validation failed."}
+        with Path(task_vars["proof_file"]).open("a") as output:
+            output.write(json.dumps({"name": arguments["name"],
+                "variables_present": "variables" in arguments,
+                "validated_variables": result.validated_parameters.get("variables")}) + "\\n")
+        return {"changed": False}
+'''
+        for native in ("false", "true"):
+            with self.subTest(native=native), tempfile.TemporaryDirectory(prefix="group-empty-vars-") as temporary:
+                root = Path(temporary)
+                plugins = root / "action_plugins"
+                plugins.mkdir()
+                (plugins / "group_argument_proof.py").write_text(plugin)
+                proof = root / "proof.jsonl"
+                play = root / "play.yml"
+                play.write_text(yaml.safe_dump([{"hosts": "localhost", "connection": "local",
+                    "gather_facts": False, "vars": {"controller_groups": definitions,
+                    "proof_file": str(proof), "aap_hostname": "https://aap.example.invalid",
+                    "aap_token": "synthetic-token"}, "tasks": [previous,
+                    {"ansible.builtin.assert": {"that": ["previous_group_argument is failed"]}},
+                    skeleton]}], sort_keys=False))
+                config = root / "ansible.cfg"
+                config.write_text("[defaults]\n")
+                environment = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_JINJA2_NATIVE=native,
+                    ANSIBLE_ACTION_PLUGINS=str(plugins), ANSIBLE_LOCAL_TEMP=str(root / "local"),
+                    ANSIBLE_REMOTE_TEMP=str(root / "remote"))
+                result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(play)],
+                    capture_output=True, text=True, env=environment, timeout=40)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                rows = [json.loads(line) for line in proof.read_text().splitlines()]
+                self.assertEqual([row["variables_present"] for row in rows], [False, False, False, True, True])
+                self.assertTrue(all(row["validated_variables"] is None for row in rows[:3]))
+                self.assertEqual([row["validated_variables"] for row in rows[3:]], [{"setting": "synthetic"}] * 2)
+
     def test_parent_groups_can_precede_their_children_on_a_clean_target(self):
         # Load already-installed collections only. No dependency installation.
         roots = os.environ.get("ANSIBLE_COLLECTIONS_PATH", "").split(os.pathsep)

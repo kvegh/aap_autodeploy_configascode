@@ -62,6 +62,12 @@ only `--tags aap_installation_access` as a bounded repair operation. This resolv
 its saved route and SSH trust, reconciles those same permissions and removes its
 temporary trust file. It does not allocate a name, create/restart a VM, install
 AAP, apply a subscription, rotate a token or run the ordinary base dispatcher.
+
+The same publication saves the current operation's exact native rule in
+`firewall_additional_zone_rules`, which Hactar's base firewall playbook consumes.
+It preserves prior declarations, adds the selected pair idempotently and refuses
+conflicting or duplicate declarations for that pair. Updating only the live
+firewall and the isolation-policy aliases would leave a fresh rebuild incomplete.
 The base template must have tag prompting enabled so AAP accepts the requested
 tag instead of ignoring it. Check the launch metadata first and verify the launch
 accepted `job_tags: aap_installation_access`; no ignored tag is a valid repair run.

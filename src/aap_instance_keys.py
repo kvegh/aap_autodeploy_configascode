@@ -737,8 +737,19 @@ def management_access_context(configuration, record, selected, route, requested,
 
 
 def management_inventory_capture(configuration, context, kind):
-    """Reuse exact policy-alias handling without retiring any inventory guests."""
-    return retire_inventory_capture(configuration, context, kind)
+    """Persist the selected policy and native rule without retiring inventory guests."""
+    result = retire_inventory_capture(configuration, context, kind)
+    pin = context["route"]["hypervisor"]
+    if kind == "autodeploy":
+        rows = [row for row in result["autodeploy_configuration"]["inventories"]
+                if inventory_variables(row).get("aap_hypervisor_pin") == pin]
+    else:
+        hosts = (result["host_inventory_configuration"]["hosts"] if kind == "shared"
+                 else result.get("controller_hosts_hactar_recovery", []))
+        rows = [row for row in hosts if inventory_variables(row).get("ansible_host") == pin["address"]]
+    for row in rows:
+        set_inventory_variables(row, source_management_variables(inventory_variables(row), context, kind == "autodeploy"))
+    return result
 
 
 def source_management_variables(values, context, pinned=False):
@@ -770,6 +781,49 @@ def source_management_variables(values, context, pinned=False):
             **({"aap_hypervisor_isolation_released_clients": deepcopy(desired["released_clients"])}
                if desired.get("released_clients") else ({"aap_hypervisor_isolation_released_clients": []}
                if "aap_hypervisor_isolation_released_clients" in result else {})))
+    # firewalld's base playbook consumes this explicit native-rule list, not
+    # guest_host_clients. Persist only the current operation's approved pair.
+    import shlex
+    mode = context.get("access_mode", "management")
+    require(mode in ("management", "installation"), "Choose one approved native management or installation grant.")
+    primary = context["primary"]
+    destination, port = (pin["public_ip"], 443) if mode == "installation" else (pin["address"], pin["port"])
+    require(primary.get("verified") is True and primary.get("hypervisor_machine_id") == pin["machine_id"]
+            and primary.get("address") == context["route"]["vm_ip"]
+            and any(all(client.get(key) == primary.get(field) for key, field in (
+                ("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac")))
+                and destination in client.get("destinations", []) and port in client.get("ports", [])
+                for client in desired.get("guest_host_clients", [])),
+            "Persist a native rule only for the verified selected guest's exact approved destination and port.")
+    rule = ('rule family="ipv4" priority="0" source address="%s/32" destination address="%s/32" '
+            'port port="%s" protocol="tcp" accept' % (primary["address"], destination, port))
+    rules = result.setdefault("firewall_additional_zone_rules", [])
+    require(isinstance(rules, list) and all(isinstance(row, dict) for row in rules),
+            "Preserve explicit native zone-rule declarations before adding the selected grant.")
+    tokens = shlex.split(rule)
+    matching = []
+    for row in rules:
+        if row.get("zone") != "libvirt" or not isinstance(row.get("rule"), str):
+            continue
+        try:
+            existing = shlex.split(row["rule"])
+        except ValueError:
+            raise StoreError("An existing native libvirt rule cannot be interpreted safely.") from None
+        selected_source = any(existing[index] == "source" and index + 1 < len(existing)
+            and existing[index + 1] in ("address=" + primary["address"], "address=" + primary["address"] + "/32")
+            for index in range(len(existing)))
+        selected_destination = any(existing[index] == "destination" and index + 1 < len(existing)
+            and existing[index + 1] in ("address=" + destination, "address=" + destination + "/32")
+            for index in range(len(existing)))
+        selected_port = any(existing[index] == "port" and set(existing[index + 1:index + 3]) ==
+            {"port=" + str(port), "protocol=tcp"} for index in range(len(existing)))
+        if selected_source and selected_destination and selected_port:
+            require(existing == tokens and row.get("state", "enabled") == "enabled",
+                    "An existing selected native grant has a conflicting action or desired state.")
+            matching.append(row)
+    require(len(matching) <= 1, "Duplicate selected native rule declarations require review.")
+    if not matching:
+        rules.append({"zone": "libvirt", "rule": rule})
     return result
 
 

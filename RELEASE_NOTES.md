@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.37.2
+
+Omit empty group variables at the native module boundary, preserving nonempty
+mappings and matching the CoP role. Persist only the selected operation's exact
+native firewalld rule across all three encrypted captures and source aliases,
+preserving prior rules and rejecting conflicting declarations. Native group
+tests in both modes and focused publication/regression checks pass.
+
 ## 0.37.1
 
 Document implementation `a522e7b`, receiving-instance API access, reviewed source

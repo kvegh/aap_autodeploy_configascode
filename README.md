@@ -11,6 +11,13 @@ and self-API connection before installation begins. The existing base template
 also supports the isolated `aap_installation_access` repair tag. These changes
 add no wrapper playbook, job template, credential type or secret store.
 
+The group-creation preflight omits empty variables, matching the configuration
+role and the native module's mapping requirement. Installation and management
+publication also save the exact approved native firewalld rule in the three
+encrypted captures and source aliases. This keeps the host rebuild declaration
+aligned with the permission applied live; unrelated rules and credentials remain
+unchanged.
+
 The [agreed recovery and deployment targets](docs/recovery-and-use-case-targets.md)
 describe the external-AAP recovery goal, version-to-version acceptance test,
 older template retention, self/remote CaC installation and use-case runtime
