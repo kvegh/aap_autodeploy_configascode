@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.39.1
+
+Document implementation `1976a5a`, its exact saved-ownership retirement and retry
+boundaries, fifty-eight focused checks and separate live acceptance requirement.
+
 ## 0.39.0
 
 Add exact generic-guest retirement to the existing publication transaction and

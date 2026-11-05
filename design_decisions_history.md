@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Retire one verified generic guest through the existing transaction — 2026-11-05
+
+Implementation `1976a5aae2f70a5455dda9032820889369849183` adds `retire_guest`
+and the reusable two-phase `recovery_guest_retire` role. The owner requires
+disposable use-case VMs to be removed after successful testing, including their
+saved inventory and isolation permissions. Domain-and-disk deletion alone would
+leave those permissions behind. The existing source API, Git writer, CaC Vault
+and three encrypted captures provide the required ownership and publication;
+no separate state store, credential type, service or job is introduced.
+
+Planning resolves exact persisted clone provenance before deletion and refuses
+unsupported selected host-service grants. Publication requires the domain and
+both canonical disk paths absent, removes only its static DHCP reservations and
+HTTPS/full-release entries, then reconciles source inventory. The caller retains
+its own application inventory row until shared publication completes. A surviving
+canonical/API resource record supports retries without guest SSH. With both
+records absent, only physical absence with no additional policy or unknown DHCP
+removal is accepted. Dynamic lease cache is reported separately and is not
+edited. Existing AAP management and installation paths keep their default strict
+guest-presence behavior.
+
+Fifty-eight focused tests pass, including real encrypted publication and API
+interruption recovery, exact native ownership/DHCP cleanup, both native template
+modes and existing management/installation regressions. Scoped production lint
+passes. These checks prove code behavior; the serialized live disposable-guest
+deployment and decommission acceptance remain separate.
+
 ## Bootstrap approved generic guests without granting full release — 2026-11-04
 
 Implementation `2795c133507ee5affdaf8e420807496cd2299899` extends the existing
