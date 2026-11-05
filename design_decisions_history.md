@@ -1,5 +1,14 @@
 # Design decisions history
 
+## Verify the existing native Claude installer separately from model access — 2026-11-05
+
+The AIOps implementation `80b7dff`, published in `86d3cb5`, passed its normal
+native Claude installation with both private MCP diagnostics. Independent checks
+verified the pinned binary, actual job user's command path, protected guardrails,
+approved provider configuration and preservation of the original client data.
+This verifies software readiness; no model call or isolation release occurred.
+Those checks and the complete successor environment remain separate work.
+
 ## Retain the approved Windows demo certificate policy — 2026-11-05
 
 Implementation `276ad84e257453d14a729d9cc806c0b65771e2e8` follows the operator's

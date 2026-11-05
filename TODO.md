@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-79 tasks: 22 outstanding; 57 closed.
+79 tasks: 21 outstanding; 58 closed.
 
 ## Outstanding tasks
 
@@ -26,7 +26,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
 | bead-wd-72f.31.3 | Prepare and verify Assistant Team on the selected test environment | blocked | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | blocked | P1 | task | bead-wd-72f.31 |
-| bead-wd-72f.33.1 | Add Claude installation with private Linux and Zabbix MCP setup | blocked | P1 | feature | bead-wd-72f.33 |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
@@ -70,6 +69,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.1 | Assess v16 runtime test prerequisites and targets | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.33.1 | Add Claude installation with private Linux and Zabbix MCP setup | closed | P1 | feature | bead-wd-72f.33 |
 | bead-wd-72f.4 | Verify and correct disabled EDA activation semantics before importer migration | closed | P1 | bug | bead-wd-72f |
 | bead-wd-72f.5 | Implement project-ID-based generic CaC deployment | closed | P1 | feature | bead-wd-72f |
 | bead-wd-72f.5.1 | Rename all five CaC captures and migrate repository references | closed | P1 | task | bead-wd-72f.5 |

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.42.6
+
+Document successful native Claude installation and private MCP checks, retain
+separate model/successor acceptance, and synchronize the Git-visible task states.
+The Windows lab-policy implementation remains `276ad84`; its runtime import
+and isolated-network connection are not represented as completed.
+
 ## 0.42.5
 
 Document implementation `276ad84`, the operator-approved Windows demo policy,

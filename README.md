@@ -71,6 +71,10 @@ for actual certificate validation. Authenticated Windows facts and all native
 ownership checks still precede release. AAP HTTPS and SSH verification retain
 their existing settings.
 
+The separate native Claude installer has passed a normal deployment and both
+private MCP diagnostics. Provider configuration recognition is verified; a model
+invocation and the complete successor-environment test remain separate checks.
+
 Explicit Windows retirement retains saved provenance through physical deletion,
 then removes only its clone's DHCP/DNS, policy and shared inventory records using
 the existing encrypted transaction. Absent retries require the Windows clone and
