@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.44.2
+
+Document the verified RHEL configuration import, seven-template/six-survey
+readback, preservation of existing definitions and successful receiving-runtime
+diagnostic. Synchronize completed CaC task records. Registration implementation
+remains `d12d5a4`; host SSH and workload proof are distinguished from import.
+
 ## 0.44.1
 
 Document implementation `d12d5a4ab72082d7de63637fe7ae400c703c8924`, canonical RHEL naming, optional

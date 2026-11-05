@@ -146,6 +146,13 @@ AIOps, AAP and RHEL retain their capitalization.
 The selector derives these names from the same rule. Existing template IDs,
 repository credentials and workflow links are preserved. See the
 [project import guide](docs/cac-project-import.md) for the full mapping.
+
+The RHEL configuration import has passed on a separate receiving AAP. Readback
+verified seven templates, six surveys and their inventory/runtime/API credential
+bindings while preserving existing templates. Its imported read-only runtime
+diagnostic also passed. The selected Machine credential is a binding; host SSH
+access from that receiving AAP remains a separate check.
+
 The naming change passed focused selector, extraction and version regressions;
 production readback preserved credentials, permissions, schedules and workflow links.
 

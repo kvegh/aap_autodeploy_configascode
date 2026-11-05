@@ -134,3 +134,11 @@ relationships, masked-secret preservation, token failure cleanup, explicit
 instance-token selection and selector forwarding. SCM synchronization and Job Template
 metadata verification establish publication only. AIOps CaC was subsequently verified live on a disposable target; that proof is
 separate from application deployment and EDA activation.
+
+The RHEL configuration import and receiving-runtime diagnostic have now passed.
+Independent readback verified the seven project templates, six surveys, owned
+host pair and API/runtime resources while preserving existing template
+definitions. These checks establish configuration and Satellite connectivity;
+targeted host patching on the original demonstration Controller was verified
+separately. The chosen receiving Machine credential's SSH key was not exported
+or equated with the original key.

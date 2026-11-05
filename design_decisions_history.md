@@ -2733,3 +2733,13 @@ checks and production lint passed. Live import and host/application acceptance
 remain separate.
 
 Implementation commit: `d12d5a4ab72082d7de63637fe7ae400c703c8924`.
+
+## 2026-11-05 — Verify the RHEL configuration deployment
+
+The shared importer completed on the explicitly selected receiving AAP using
+implementation `d12d5a4` and published source `0d52fc1`. Readback verified all
+seven RHEL templates, six surveys and inventory/runtime/credential bindings,
+while preserving existing template definitions. The imported read-only runtime
+diagnostic then confirmed execution-environment, collection and Satellite API
+readiness. Existing Machine selection remains separate from SSH-key equivalence
+and receiving-host login. No wrapper or authentication mechanism changed.
