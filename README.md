@@ -165,6 +165,26 @@ all other permissions. It grants no hypervisor-service or full-release access.
 Full release follows successful complete deployment and validation. See
 [bootstrap and portability](docs/autodeploy-portability.md).
 
+The shared [exact guest retirement role](roles/recovery_guest_retire/README.md)
+supports the existing disposable-guest retirement job in two phases. Its plan
+resolves saved generic-clone ownership from existing encrypted CaC and source
+inventory, then verifies the native UUID, exclusive disk, MAC, network and
+provenance before deletion. After the caller removes that exact domain and clone,
+publication requires both canonical disk paths absent. It removes only that
+guest's static DHCP reservations, HTTPS/full-release entries and shared inventory
+record, preserving other guests and source images. Unsupported selected
+host-service grants refuse preflight. Dynamic DHCP lease cache is reported
+separately and is not edited.
+
+Retirement reuses the existing source API, writer, Vault and three-capture
+transaction. Keep the calling application's inventory row until shared
+publication succeeds. A surviving canonical or source API resource record allows
+an interrupted retry without connecting to the deleted guest. Once both records
+are gone, the only permitted repeat is verified physical absence with no policy
+or unknown DHCP removal. Normal management/installation paths retain their
+existing strict guest-presence checks. Native and encrypted-transaction tests
+verify this behavior; live disposable-guest acceptance is a separate result.
+
 The existing `aap_publish_instance_keys` action plans and saves the release using
 existing source API, writer and Vault credentials. It updates the three maintained
 encrypted policy captures and source inventory aliases without changing target

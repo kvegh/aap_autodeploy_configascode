@@ -1274,3 +1274,173 @@ def source_guest_release_operations(client, shared, autodeploy, hactar, context)
         # Resolve a freshly created ID only after the preflighted create completes.
         operations.append(("ASSOCIATE", "groups/%s/hosts/" % group["id"], {"name": name, "inventory": inventory_id}))
     return operations
+
+
+def generic_retirement_name(name):
+    """Use only a canonical generic guest name, never an AAP allocation name."""
+    match = re.fullmatch(r"[a-z][a-z0-9-]{0,58}-v([0-9]{2,})", name or "")
+    require(match is not None and int(match[1]) > 0 and name.endswith("-v%02d" % int(match[1]))
+            and len(name) <= 63, "Select one exact canonical versioned generic guest.")
+    return name
+
+
+def generic_retirement_no_host_grants(values, guest):
+    """Unknown selected host-service grants require review before physical deletion."""
+    if guest is None:
+        return
+    for alias in ("isolation_policy", "hactar_isolation_policy"):
+        for row in values.get(alias, {}).get("guest_host_clients", []):
+            require(row.get("ipv4") != guest["address"] and row.get("mac") != guest["mac"],
+                    "Selected guest host-service grants require explicit supported cleanup before retirement.")
+    for row in values.get("aap_hypervisor_isolation_host_clients", []):
+        require(row.get("ipv4") != guest["address"] and row.get("mac") != guest["mac"],
+                "Selected guest host-service grants require explicit supported cleanup before retirement.")
+    rules = values.get("firewall_additional_zone_rules", [])
+    require(isinstance(rules, list) and all(isinstance(row, dict) for row in rules),
+            "Inspect declared native grants before exact guest retirement.")
+    for row in rules:
+        rule = row.get("rule", "")
+        require(isinstance(rule, str), "Inspect declared native rule text before retirement.")
+        require(not re.search(r'\bsource\s+address="' + re.escape(guest["address"]) + r'(?:/32)?"', rule),
+                "Selected native host-service rules require explicit supported cleanup before retirement.")
+
+
+def generic_retirement_policy(policy, guest):
+    """Remove this exact guest's HTTPS/full-release entries and no other permission."""
+    result = deepcopy(policy)
+    if guest is None:
+        return result
+    identity = {key: guest[field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
+    generic_retirement_no_host_grants({"isolation_policy": result}, guest)
+    for field in ("https_clients", "released_clients"):
+        retained = []
+        for row in result.get(field, []):
+            if row["ipv4"] == identity["ipv4"] or row["mac"] == identity["mac"]:
+                require(row == identity, "A selected retirement identity conflicts with another guest permission.")
+            else:
+                retained.append(row)
+        if field in result and retained != result[field]:
+            if retained:
+                result[field] = retained
+            else:
+                result.pop(field)
+    if not result.get("https_clients") and not result.get("released_clients"):
+        result.pop("protected_ipv4", None)
+    return result
+
+
+def generic_retirement_context(configuration, shared, client, name, pin, transition=None):
+    """Resolve persisted exact ownership before deletion; a gone guest needs no SSH."""
+    name, pin = generic_retirement_name(name), _routing.hypervisor_pin(pin)
+    recovery = [row for row in configuration["autodeploy_configuration"]["inventories"]
+                if inventory_variables(row).get("aap_hypervisor_pin") == pin]
+    require(len(recovery) == 1, "Resolve one canonical pinned recovery inventory before guest retirement.")
+    values = inventory_variables(recovery[0])
+    previous = _routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
+        values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []),
+        values.get("aap_hypervisor_isolation_released_clients", []))
+    data = shared["host_inventory_configuration"]
+    hypervisors = [row for row in data["hosts"] if inventory_variables(row).get("ansible_host") == pin["address"]]
+    require(len(hypervisors) == 1, "Resolve the fixed main-inventory hypervisor before exact guest retirement.")
+    hypervisor = hypervisors[0]
+    hypervisor_values = inventory_variables(hypervisor)
+    for field, expected in (("machine_id", pin["machine_id"]), ("ansible_user", pin["user"]),
+                            ("ansible_port", pin["port"]), ("host_keys", pin["host_keys"])):
+        require(hypervisor_values.get(field) == expected, "The canonical retirement hypervisor identity changed.")
+    captured = [row for row in data["hosts"] if row.get("inventory") == hypervisor["inventory"] and row.get("name") == name]
+    require(len(captured) <= 1, "Resolve at most one exact canonical generic guest record.")
+    inventories = client.rows("inventories/?name=" + quote(hypervisor["inventory"]))
+    require(len(inventories) == 1 and inventories[0].get("name") == hypervisor["inventory"],
+            "Resolve exactly the fixed source main inventory before retirement.")
+    inventory_id = inventories[0]["id"]
+    live = client.rows("hosts/?inventory=%s&page_size=200" % inventory_id)
+    require(len(live) <= 256 and all(row.get("inventory") == inventory_id for row in live),
+            "Read complete bounded source guest ownership before retirement.")
+    matches = [row for row in live if row.get("name") == name]
+    require(len(matches) <= 1, "Resolve at most one exact live generic guest record.")
+    candidates = [inventory_variables(row).get("vm_resource") for row in captured + matches]
+    require(all(isinstance(row, dict) for row in candidates), "Every extant guest record requires saved verified vm_resource.")
+    require(not candidates or all(row == candidates[0] for row in candidates),
+            "Canonical and source guest ownership disagree; resolve drift before retirement.")
+    guest = deepcopy(candidates[0]) if candidates else None
+    if transition is not None:
+        require(isinstance(transition, dict) and set(transition) == {"previous_policy", "desired_policy", "guest"},
+                "Publish only the exact preflighted generic guest retirement transition.")
+        retained = transition["guest"]
+        require(guest is None or guest == retained, "Guest ownership changed during the retirement transaction.")
+        # A successful Git/API removal can precede final readback in this same job.
+        # Retain only that already-preflighted resource, never an independently guessed record.
+        if guest is None and retained is not None:
+            require(previous == transition["desired_policy"], "A missing record cannot authorize a new policy change.")
+            guest = deepcopy(retained)
+    if guest is not None:
+        guest = released_guest_resource(guest, pin)
+        require(guest["vm_name"] == name and isinstance(guest.get("source_image_sha256"), str)
+                and re.fullmatch(r"[a-f0-9]{64}", guest["source_image_sha256"]),
+                "Retire only the saved generic-clone provenance for this exact name.")
+        for row in captured + matches:
+            row_values = inventory_variables(row)
+            require(row_values.get("ansible_host") == guest["address"]
+                    and row_values.get("hypervisor_host") == hypervisor["name"]
+                    and row_values.get("vm_uuid") == guest["uuid"]
+                    and row_values.get("machine_id") == guest["machine_id"]
+                    and row_values.get("host_keys") == guest["host_keys"],
+                    "Exact guest ownership and placement must agree before retirement.")
+        for row in data["hosts"] + live:
+            if row.get("name") == name:
+                continue
+            row_values = inventory_variables(row)
+            metadata = row_values.get("vm_resource", {})
+            require(row_values.get("ansible_host") != guest["address"]
+                    and not any(metadata.get(field) == guest[field] for field in ("uuid", "mac", "machine_id", "disk")),
+                    "Another inventory host owns the selected guest identity or disk.")
+    elif not captured:
+        require(not any(name in row.get("hosts", []) for row in data["groups"]
+                        if row.get("inventory") == hypervisor["inventory"]),
+                "A missing guest record has orphaned captured group membership requiring review.")
+    desired = generic_retirement_policy(previous, guest)
+    if transition is not None:
+        old = transition["previous_policy"]
+        require(isinstance(old, dict) and _routing.isolation_policy(pin, old.get("https_clients", []),
+                old.get("protected_ipv4"), old.get("guest_host_clients", []), old.get("released_clients", [])) == old
+                and generic_retirement_policy(old, guest) == transition["desired_policy"] == desired
+                and previous in (old, desired), "A retirement transition changed beyond the exact selected guest.")
+        previous = old
+    require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
+            desired.get("guest_host_clients", []), desired.get("released_clients", [])) == desired,
+            "Retirement must preserve normalized production protection and other guest permissions.")
+    identity = ({key: guest[field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
+                if guest is not None else None)
+    context = {"route": {"hypervisor": deepcopy(pin)}, "guest": guest, "guest_name": name,
+        "guests": ([{"name": name, "role": "generic", "address": guest["address"], "metadata": deepcopy(guest)}]
+                   if guest is not None else []), "identities": [identity] if identity else [], "removed_rules": set(),
+        "previous_policy": deepcopy(previous), "desired_policy": deepcopy(desired),
+        "inventory_name": hypervisor["inventory"], "hypervisor_name": hypervisor["name"],
+        "records_absent": not captured and not matches}
+    generic_retirement_no_host_grants(values, guest)
+    generic_retirement_no_host_grants(hypervisor_values, guest)
+    return context
+
+
+def generic_retirement_capture(configuration, context, kind):
+    """Reuse exact existing capture removal, refusing unsupported native grants."""
+    if kind == "autodeploy":
+        rows = configuration["autodeploy_configuration"]["inventories"]
+    elif kind == "shared":
+        rows = configuration["host_inventory_configuration"]["hosts"]
+    else:
+        rows = configuration.get("controller_hosts_hactar_recovery", [])
+    for row in rows:
+        values = inventory_variables(row)
+        if values.get("ansible_host") == context["route"]["hypervisor"]["address"] or values.get("aap_hypervisor_pin") == context["route"]["hypervisor"]:
+            generic_retirement_no_host_grants(values, context["guest"])
+    return retire_inventory_capture(configuration, context, kind)
+
+
+def source_generic_retirement_variables(values, context, pinned=False):
+    generic_retirement_no_host_grants(values, context["guest"])
+    return source_retirement_variables(values, context, pinned)
+
+
+def source_generic_retirement_operations(client, shared, autodeploy, hactar, context):
+    return source_inventory_operations(client, shared, autodeploy, hactar, context, source_generic_retirement_variables)

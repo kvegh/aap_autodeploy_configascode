@@ -1,0 +1,212 @@
+---
+- name: Require one exact generic guest retirement phase
+  ansible.builtin.assert:
+    that:
+      - recovery_retire_phase in ['plan', 'publish']
+      - recovery_retire_guest_name is string
+      - recovery_retire_hypervisor is mapping
+    fail_msg: Select the exact generic guest, verified hypervisor and retirement phase.
+
+- name: Preserve retirement connection inputs before delegation
+  ansible.builtin.set_fact:
+    __recovery_retire_pin: "{{ recovery_retire_hypervisor }}"
+    __recovery_retire_name: "{{ recovery_retire_guest_name }}"
+    __recovery_retire_trust: {}
+    __recovery_retire_runtime: {}
+    __recovery_retire_native: {}
+    __recovery_retire_published: {}
+  no_log: true
+
+- name: Preflight canonical and source ownership before any physical deletion
+  aap_publish_instance_keys:
+    operation: retire_guest
+    phase: plan
+    guest_name: "{{ __recovery_retire_name }}"
+    hypervisor: "{{ __recovery_retire_pin }}"
+  delegate_to: localhost
+  become: false
+  register: __recovery_retire_source_plan
+  when: recovery_retire_phase == 'plan'
+  no_log: true
+
+- name: Retain the source-preflighted retirement transition
+  ansible.builtin.set_fact:
+    recovery_guest_retire_plan:
+      guest_name: "{{ __recovery_retire_name }}"
+      hypervisor: "{{ __recovery_retire_pin }}"
+      guest: "{{ __recovery_retire_source_plan.guest }}"
+      transition: "{{ __recovery_retire_source_plan.transition }}"
+      records_absent: "{{ __recovery_retire_source_plan.records_absent }}"
+  when: recovery_retire_phase == 'plan'
+  no_log: true
+
+- name: Require the same successful source plan for final retirement publication
+  ansible.builtin.assert:
+    that:
+      - recovery_guest_retire_plan.guest_name == __recovery_retire_name
+      - recovery_guest_retire_plan.hypervisor == __recovery_retire_pin
+      - recovery_guest_retire_plan.transition is mapping
+    fail_msg: Plan exact generic guest retirement before deleting or publishing anything.
+  no_log: true
+
+- name: Verify native ownership or absence and publish only completed retirement
+  block:
+    - name: Allocate private controller trust for this phase
+      ansible.builtin.tempfile:
+        state: file
+        path: /tmp
+        prefix: aap-guest-retire-known-hosts-
+      delegate_to: localhost
+      become: false
+      check_mode: false
+      register: __recovery_retire_trust
+
+    - name: Write only independently verified hypervisor SSH public keys
+      ansible.builtin.copy:
+        dest: "{{ __recovery_retire_trust.path }}"
+        mode: '0600'
+        content: |
+          {% for key in __recovery_retire_pin.host_keys %}
+          {{ __recovery_retire_pin.address }} {{ key }}
+          [{{ __recovery_retire_pin.address }}]:{{ __recovery_retire_pin.port }} {{ key }}
+          {% endfor %}
+      delegate_to: localhost
+      become: false
+      check_mode: false
+      no_log: true
+
+    - name: Allocate a private temporary native verifier on the exact hypervisor
+      ansible.builtin.tempfile:
+        state: directory
+        path: /tmp
+        prefix: aap-guest-retire-
+      delegate_to: "{{ __recovery_retire_pin.address }}"
+      become: true
+      vars: &recovery_retire_connection
+        ansible_connection: ssh
+        ansible_host: "{{ hostvars[inventory_hostname].__recovery_retire_pin.address }}"
+        ansible_user: "{{ hostvars[inventory_hostname].__recovery_retire_pin.user }}"
+        ansible_port: "{{ hostvars[inventory_hostname].__recovery_retire_pin.port }}"
+        ansible_password: ''
+        ansible_ssh_pass: ''
+        ansible_become_password: ''
+        ansible_ssh_common_args: >-
+          -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
+          -o StrictHostKeyChecking=yes
+          -o UserKnownHostsFile={{ hostvars[inventory_hostname].__recovery_retire_trust.path | quote }}
+          -o GlobalKnownHostsFile=/dev/null
+        ansible_host_key_checking: true
+        ansible_ssh_host_key_checking: true
+      check_mode: false
+      register: __recovery_retire_runtime
+      no_log: true
+
+    - name: Stage the same existing native management and guest lifecycle primitives
+      ansible.builtin.copy:
+        src: "{{ role_path }}/../../src/{{ item }}"
+        dest: "{{ __recovery_retire_runtime.path }}/{{ item }}"
+        owner: root
+        group: root
+        mode: '0600'
+      loop: [aap_hypervisor_access.py, aap_guest_release.py]
+      delegate_to: "{{ __recovery_retire_pin.address }}"
+      become: true
+      vars: *recovery_retire_connection
+      check_mode: false
+      no_log: true
+
+    - name: Prove selected native ownership before deletion or complete absence afterward
+      ansible.builtin.command:
+        argv: [python3, "{{ __recovery_retire_runtime.path }}/aap_guest_release.py"]
+        stdin: >-
+          {{ {'operation': 'retire_plan' if recovery_retire_phase == 'plan' else 'retire_apply',
+              'guest_name': __recovery_retire_name, 'guest': recovery_guest_retire_plan.guest,
+              'hypervisor': __recovery_retire_pin, 'transition': recovery_guest_retire_plan.transition,
+              'check_mode': ansible_check_mode | bool} | to_json }}
+      delegate_to: "{{ __recovery_retire_pin.address }}"
+      become: true
+      vars: *recovery_retire_connection
+      check_mode: false
+      register: __recovery_retire_native
+      changed_when: >-
+        recovery_retire_phase == 'publish' and
+        __recovery_retire_native.rc | default(1) | int == 0 and
+        __recovery_retire_native.stdout | default('') | length > 0 and
+        (__recovery_retire_native.stdout | from_json).changed | bool
+      no_log: true
+
+    - name: Retain only verified native retirement metadata for the existing caller
+      ansible.builtin.set_fact:
+        recovery_guest_retire_plan: >-
+          {{ recovery_guest_retire_plan | combine({'native': __recovery_retire_native.stdout | from_json}) }}
+      no_log: true
+
+    - name: Publish exact absence and policy removal to existing encrypted captures and source inventory
+      aap_publish_instance_keys:
+        operation: retire_guest
+        phase: publish
+        guest_name: "{{ __recovery_retire_name }}"
+        hypervisor: "{{ __recovery_retire_pin }}"
+        transition: "{{ recovery_guest_retire_plan.transition }}"
+      delegate_to: localhost
+      become: false
+      register: __recovery_retire_published
+      when:
+        - recovery_retire_phase == 'publish'
+        - not ansible_check_mode
+      no_log: true
+
+  rescue:
+    - name: Restore only an unpublished policy reduction after verified physical absence
+      ansible.builtin.command:
+        argv: [python3, "{{ __recovery_retire_runtime.path }}/aap_guest_release.py"]
+        stdin: >-
+          {{ {'operation': 'retire_rollback', 'guest_name': __recovery_retire_name,
+              'guest': recovery_guest_retire_plan.guest, 'hypervisor': __recovery_retire_pin,
+              'transition': recovery_guest_retire_plan.transition, 'check_mode': false} | to_json }}
+      delegate_to: "{{ __recovery_retire_pin.address }}"
+      become: true
+      vars: *recovery_retire_connection
+      register: __recovery_retire_rollback
+      changed_when: >-
+        __recovery_retire_rollback.rc | default(1) | int == 0 and
+        __recovery_retire_rollback.stdout | default('') | length > 0 and
+        (__recovery_retire_rollback.stdout | from_json).changed | bool
+      when:
+        - recovery_retire_phase == 'publish'
+        - __recovery_retire_native is defined
+        - __recovery_retire_native is succeeded
+        - __recovery_retire_native.rc | default(1) | int == 0
+        - __recovery_retire_native.stdout | default('') | length > 0
+        - (__recovery_retire_native.stdout | from_json).changed | bool
+        - not (__recovery_retire_published.durable_policy_published | default(false) | bool)
+        - not ansible_check_mode
+      no_log: true
+
+    - name: Stop after incomplete exact generic guest retirement
+      ansible.builtin.fail:
+        msg: >-
+          Exact guest retirement did not finish. Keep its deployment inventory binding
+          and retry from saved canonical/API ownership. A durably published policy is retained.
+
+  always:
+    - name: Remove only this phase's temporary verifier directory
+      ansible.builtin.file:
+        path: "{{ __recovery_retire_runtime.path }}"
+        state: absent
+      delegate_to: "{{ __recovery_retire_pin.address }}"
+      become: true
+      vars: *recovery_retire_connection
+      check_mode: false
+      when: __recovery_retire_runtime.path | default('') is match('^/tmp/aap-guest-retire-[A-Za-z0-9_]+$')
+      no_log: true
+
+    - name: Remove only this phase's controller public-key trust file
+      ansible.builtin.file:
+        path: "{{ __recovery_retire_trust.path }}"
+        state: absent
+      delegate_to: localhost
+      become: false
+      check_mode: false
+      when: __recovery_retire_trust.path | default('') is match('^/tmp/aap-guest-retire-known-hosts-[A-Za-z0-9_]+$')
+      no_log: true

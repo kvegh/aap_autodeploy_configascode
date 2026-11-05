@@ -5,6 +5,7 @@ the existing protected-file, libvirt readback and atomic-write primitives.
 """
 
 from copy import deepcopy
+from datetime import datetime
 import fcntl
 import importlib.util
 from importlib.machinery import SourceFileLoader
@@ -114,6 +115,8 @@ def plan(request, state):
 
 
 def reconcile(request):
+    if request.get('operation') in {'retire_plan', 'retire_apply', 'retire_rollback'}:
+        return reconcile_retirement(request)
     pin, guest = request['hypervisor'], request['guest']
     route = {'hypervisor': pin, 'vm_name': guest['vm_name']}
     descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
@@ -144,6 +147,251 @@ def reconcile(request):
             base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
             raise
         return dict(change, applied=True)
+    finally:
+        os.close(descriptor)
+
+
+def _retirement_policy(policy, guest):
+    result = deepcopy(policy)
+    if guest is None:
+        return result
+    identity = {'bridge': guest['bridge'], 'ipv4': guest['address'], 'mac': guest['mac']}
+    require(not any(row['ipv4'] == guest['address'] or row['mac'] == guest['mac']
+                    for row in policy.get('guest_host_clients', [])),
+            'Selected host-service grants require supported exact cleanup before retirement.')
+    for field in ('https_clients', 'released_clients'):
+        retained = []
+        for row in result.get(field, []):
+            if row['ipv4'] == guest['address'] or row['mac'] == guest['mac']:
+                require(row == identity, 'A selected permission conflicts with another guest identity.')
+            else:
+                retained.append(row)
+        if field in result and retained != result[field]:
+            if retained:
+                result[field] = retained
+            else:
+                result.pop(field)
+    if not result.get('https_clients') and not result.get('released_clients'):
+        result.pop('protected_ipv4', None)
+    return result
+
+
+def _retirement_dhcp(state, name, guest):
+    selected = []
+    for network, scopes in state['network_definitions'].items():
+        for scope, xml in scopes.items():
+            root = ET.fromstring(xml)
+            require(root.findtext('name') == network, 'Read exact persistent and live DHCP network ownership.')
+            for item in root.findall('./ip/dhcp/host'):
+                mac, address = item.get('mac', '').lower(), item.get('ip', '')
+                hostname = item.get('name', '').split('.', 1)[0]
+                matching = hostname == name or (guest is not None and (mac == guest['mac'] or address == guest['address']))
+                if not matching:
+                    continue
+                require(guest is not None and network == guest['network'] and mac == guest['mac']
+                        and address == guest['address'] and (not hostname or hostname == name),
+                        'A selected DHCP name, address or MAC has conflicting ownership.')
+                selected.append({'network': network, 'scope': scope, 'xml': ET.tostring(item, encoding='unicode')})
+    return selected
+
+
+def _retirement_lease_cache(state, name, guest):
+    result = {'rows': 0, 'expired': 0, 'unexpired': 0}
+    for text in state.get('dhcp_leases', {}).values():
+        for line in text.splitlines():
+            match = re.search(r'([0-9a-f]{2}(?::[0-9a-f]{2}){5})\s+ipv4\s+([0-9.]+)/[0-9]+\s+(\S+)', line.lower())
+            if not match:
+                continue
+            mac, address, hostname = match.groups()
+            if guest is not None and address == guest['address']:
+                require(mac == guest['mac'], 'The selected address has a foreign DHCP lease owner.')
+            matching = hostname.split('.', 1)[0] == name or (guest is not None and mac == guest['mac'])
+            if not matching:
+                continue
+            result['rows'] += 1
+            try:
+                expired = datetime.strptime(line.strip()[:19], '%Y-%m-%d %H:%M:%S') <= datetime.now()
+            except ValueError:
+                expired = False
+            result['expired' if expired else 'unexpired'] += 1
+    return result
+
+
+def retirement_plan(request, state):
+    require(set(request) == {'operation', 'guest_name', 'guest', 'hypervisor', 'transition', 'check_mode'}
+            and request['operation'] in {'retire_plan', 'retire_apply', 'retire_rollback'}
+            and type(request['check_mode']) is bool, 'Use only an exact generic guest retirement request.')
+    name, guest, pin, transition = (request[key] for key in ('guest_name', 'guest', 'hypervisor', 'transition'))
+    version = re.fullmatch(r'[a-z][a-z0-9-]*-v([0-9]{2,})', name or '')
+    require(version is not None and int(version[1]) > 0 and name.endswith('-v%02d' % int(version[1]))
+            and len(name) <= 63 and state['machine_id'] == pin['machine_id']
+            and pin['address'] in state['addresses'] and not state['autostart'],
+            'Pin one canonical generic guest and the actual nonproduction hypervisor.')
+    require(isinstance(transition, dict) and set(transition) == {'previous_policy', 'desired_policy', 'guest'}
+            and transition['guest'] == guest, 'Retire only the source-preflighted saved guest provenance.')
+    previous, desired = transition['previous_policy'], transition['desired_policy']
+    require(previous['bridges'] == desired['bridges'] == pin['isolation_bridges']
+            and previous['dns_bridges'] == desired['dns_bridges'] == pin['isolation_dns_bridges']
+            and pin['address'] not in previous.get('protected_ipv4', [])
+            and pin['public_ip'] not in previous.get('protected_ipv4', [])
+            and state['policy'] in (previous, desired),
+            'Retain canonical production exclusions, enforced networks and exact live policy.')
+    require(_retirement_policy(previous, guest) == desired,
+            'Retirement may remove only the selected guest permission entries.')
+    paths = {'/opt/vms/' + name + '.disk.qcow2', '/opt/vms/' + name + '.qcow2'}
+    require(set(state['disk_states']) == paths, 'Inspect both exact canonical guest disk paths without following links.')
+    present = name in state['domains']
+    if guest is None:
+        require(not present and not any(row['exists'] for row in state['disk_states'].values()) and previous == desired,
+                'Missing managed ownership permits only verified physical absence and no policy change.')
+    else:
+        require(guest.get('verified') is True and guest.get('vm_name') == name and guest.get('disk') in paths
+                and guest.get('hypervisor_machine_id') == pin['machine_id']
+                and guest.get('machine_id') != pin['machine_id']
+                and re.fullmatch(r'[a-f0-9]{32}', guest.get('machine_id', ''))
+                and re.fullmatch(r'[a-f0-9]{64}', guest.get('source_image_sha256', '')),
+                'Require complete saved generic-clone machine and source provenance.')
+        for rules in state['native_rich_rules'].values():
+            require(not any(re.search(r'\bsource\s+address="' + re.escape(guest['address']) + r'(?:/32)?"', rule)
+                            for rule in rules), 'Selected native host-service rules require explicit cleanup before retirement.')
+        alternate = next(path for path in paths if path != guest['disk'])
+        require(not state['disk_states'][alternate]['exists'], 'An additional canonical disk requires explicit ownership review.')
+        if present:
+            disk = state['disk_states'][guest['disk']]
+            require(disk['exists'] and disk.get('regular') and not disk.get('symlink') and disk.get('links') == 1,
+                    'The exact selected clone must remain a regular exclusively owned disk.')
+        else:
+            require(not any(row['exists'] for row in state['disk_states'].values()),
+                    'A missing domain with remaining storage requires explicit recovery review.')
+    networks = {}
+    for network, xml in state['networks'].items():
+        root = ET.fromstring(xml)
+        require(root.findtext('name') == network and root.find('bridge') is not None,
+                'Read actual enforced guest network bridges before retirement.')
+        networks[network] = root.find('bridge').get('name')
+    if guest is not None:
+        require(networks.get(guest['network']) == guest['bridge'] and guest['bridge'] in previous['bridges'],
+                'The saved guest network must match its actual enforced bridge.')
+    mac_owners = {}
+    for domain_name, scopes in state['domains'].items():
+        for scope, xml in scopes.items():
+            root = ET.fromstring(xml)
+            require(root.findtext('name') == domain_name, 'Inspect the exact current domain set without name substitution.')
+            base.isolated(xml, networks, previous['bridges'])
+            for item in root.findall('./devices/interface/mac'):
+                mac = item.get('address')
+                require(mac not in mac_owners or mac_owners[mac] == domain_name, 'A guest MAC has conflicting domain ownership.')
+                mac_owners[mac] = domain_name
+            if guest is not None and domain_name != name:
+                require(root.findtext('uuid') != guest['uuid']
+                        and not any(item.get('file') in paths for item in root.findall('./devices/disk/source'))
+                        and not any(item.get('address') == guest['mac'] for item in root.findall('./devices/interface/mac')),
+                        'Another domain owns the selected UUID, storage or MAC.')
+    if present:
+        require(guest is not None and set(state['domains'][name]) == {'persistent', 'current'},
+                'A present guest requires both saved and current native ownership.')
+        for scope, xml in state['domains'][name].items():
+            root = ET.fromstring(xml)
+            disks, interfaces = root.findall("./devices/disk[@device='disk']"), root.findall('./devices/interface')
+            require(root.findtext('uuid') == guest['uuid'] and len(disks) == len(interfaces) == 1,
+                    'The exact saved UUID must own one disk and one guest interface.')
+            disk, interface = disks[0].find('source'), interfaces[0]
+            require(disk is not None and disk.get('file') == guest['disk']
+                    and interface.get('type') == 'network' and interface.find('source') is not None
+                    and interface.find('source').get('network') == guest['network']
+                    and interface.find('mac') is not None and interface.find('mac').get('address') == guest['mac'],
+                    'Native disk, MAC and network differ from saved generic guest ownership.')
+            if scope == 'persistent' or root.find('description') is not None:
+                description = json.loads(root.findtext('description') or '{}')
+                require(description.get('schema_version') == 1 and description.get('deployment_type') == 'generic-recovery'
+                        and all(description.get(key) == guest[key] for key in (
+                            'vm_name', 'uuid', 'hypervisor_machine_id', 'source_image_sha256', 'host_keys')),
+                        'Native generic-clone provenance changed before retirement.')
+    if request['operation'] in {'retire_apply', 'retire_rollback'}:
+        require(not present and not any(row['exists'] for row in state['disk_states'].values()),
+                'Publish retirement only after the selected domain and both canonical disks are absent.')
+    reservations = _retirement_dhcp(state, name, guest)
+    lease_cache = _retirement_lease_cache(state, name, guest)
+    return {'guest_name': name, 'domain_present': present, 'disks_absent': not any(
+        row['exists'] for row in state['disk_states'].values()), 'already_absent': guest is None,
+        'disk_identity': deepcopy(state['disk_states'][guest['disk']]) if present and guest is not None else None,
+        'reservations': reservations, 'dynamic_lease_cache': lease_cache,
+        'previous_policy': deepcopy(state['policy']), 'desired_policy': deepcopy(desired),
+        'changed': state['policy'] != desired or bool(reservations)}
+
+
+def _network_shape(root):
+    return (root.tag, sorted(root.attrib.items()), (root.text or '').strip(),
+            tuple(_network_shape(child) for child in root))
+
+
+def reconcile_retirement(request):
+    route = {'hypervisor': request['hypervisor'], 'vm_name': request['guest_name']}
+    descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        state = base.probe(route, allow_absent_guest=True)
+        change = retirement_plan(request, state)
+        base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
+        if request['operation'] == 'retire_plan':
+            return dict(change, applied=False, retirement_verified=True)
+        target = (request['transition']['previous_policy'] if request['operation'] == 'retire_rollback'
+                  else request['transition']['desired_policy'])
+        if request['operation'] == 'retire_rollback':
+            require(state['policy'] == request['transition']['desired_policy'],
+                    'Retirement rollback cannot overwrite a later policy change.')
+        spec = importlib.util.spec_from_loader('installed_guest_retirement_isolation',
+            SourceFileLoader('installed_guest_retirement_isolation', str(base.HELPER)))
+        helper = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(helper)
+        helper.validate_configuration(target)
+        commands = [{'delete': {'table': {'family': 'inet', 'name': helper.TABLE}}}]
+        commands += [{'add': {kind: value}} for kind, value in helper.policy(target)]
+        base.command(['/usr/sbin/nft', '--check', '-j', '-f', '-'], json.dumps({'nftables': commands}))
+        if request['check_mode']:
+            return dict(change, applied=False, retirement_verified=True)
+        expected_networks = deepcopy(state['network_definitions'])
+        removed = 0
+        if request['operation'] == 'retire_apply':
+            for reservation in change['reservations']:
+                network, scope = reservation['network'], reservation['scope']
+                root = ET.fromstring(expected_networks[network][scope])
+                matching = [item for item in root.findall('./ip/dhcp/host')
+                            if ET.tostring(item, encoding='unicode') == reservation['xml']]
+                require(len(matching) == 1, 'Remove only one exact selected static DHCP reservation.')
+                for parent in root.findall('./ip/dhcp'):
+                    if matching[0] in list(parent):
+                        parent.remove(matching[0])
+                expected_networks[network][scope] = ET.tostring(root, encoding='unicode')
+                flag = '--config' if scope == 'persistent' else '--live'
+                base.command(['virsh', '-c', 'qemu:///system', 'net-update', network,
+                              'delete', 'ip-dhcp-host', reservation['xml'], flag])
+                removed += 1
+            observed = base.probe(route, allow_absent_guest=True)
+            retirement_plan(request, observed)
+            require(set(observed['domains']) == set(state['domains'])
+                    and set(observed['network_definitions']) == set(expected_networks),
+                    'Other domain or network identities changed during exact DHCP cleanup.')
+            for network, scopes in expected_networks.items():
+                require(set(observed['network_definitions'][network]) == set(scopes)
+                        and all(_network_shape(ET.fromstring(observed['network_definitions'][network][scope]))
+                                == _network_shape(ET.fromstring(xml)) for scope, xml in scopes.items()),
+                        'DHCP cleanup must preserve every unrelated network field and reservation.')
+            require(not _retirement_dhcp(observed, request['guest_name'], request['guest']),
+                    'A selected static DHCP reservation remains after exact cleanup.')
+        original = base.CONFIG.read_bytes()
+        try:
+            if state['policy'] != target:
+                base.save(json.dumps(target).encode())
+                base.command([str(base.HELPER), 'apply'])
+            base.command([str(base.HELPER), 'check'], json.dumps(target))
+        except Exception:
+            base.save(original)
+            base.command([str(base.HELPER), 'apply'])
+            base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
+            raise
+        return dict(change, applied=True, retirement_verified=True, dhcp_reservations_removed=removed,
+                    desired_policy=deepcopy(target), changed=state['policy'] != target or bool(removed))
     finally:
         os.close(descriptor)
 

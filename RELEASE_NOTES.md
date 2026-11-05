@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.39.0
+
+Add exact generic-guest retirement to the existing publication transaction and
+reusable lifecycle tasks. Resolve persisted ownership before physical deletion;
+after verified domain and two-path disk absence, remove only the guest's static
+DHCP reservations, bootstrap/full-release policy entries and shared inventory
+record. Retain normal firewall rules, source images, other guests and production
+protection. Unsupported host-service grants refuse preflight. Interrupted
+Git/API publication can retry without guest SSH, and fully absent repeats are
+bounded no-ops. Dynamic lease cache is reported without editing shared dnsmasq
+state. Fifty-eight focused tests pass, including native two-phase failure paths,
+encrypted publication retry and unchanged AAP installation/management regressions; scoped
+offline production lint passes. Live lifecycle acceptance remains separate.
+
 ## 0.38.1
 
 Document implementation `2795c13`, its approved bootstrap-versus-final-release

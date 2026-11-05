@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import stat
 import sys
 import tempfile
 import time
@@ -150,7 +151,7 @@ def plan(expected, probe):
             'rich_rule': rule, 'changed': actual != desired}
 
 
-def probe(route):
+def probe(route, allow_absent_guest=False):
     require(os.geteuid() == 0 and DIRECTORY.is_dir() and not DIRECTORY.is_symlink()
             and DIRECTORY.stat().st_uid == 0 and DIRECTORY.stat().st_mode & 0o777 == 0o700
             and CONFIG.is_file() and not CONFIG.is_symlink() and CONFIG.stat().st_uid == 0
@@ -168,6 +169,38 @@ def probe(route):
     require(len(net_names) <= 64, 'Require bounded actual guest networks.')
     data['networks'] = {name: command(['virsh', '-c', 'qemu:///system', 'net-dumpxml', name]).stdout for name in net_names}
     data['autostart'] = command(['virsh', '-c', 'qemu:///system', 'list', '--all', '--autostart', '--name']).stdout.split()
+    if allow_absent_guest:
+        name = route['vm_name']
+        require(isinstance(name, str) and re.fullmatch(r'[a-z][a-z0-9-]{0,62}', name),
+                'Inspect only the exact selected generic guest disk names.')
+        data['disk_states'] = {}
+        for path in ('/opt/vms/' + name + '.disk.qcow2', '/opt/vms/' + name + '.qcow2'):
+            try:
+                info = os.lstat(path)
+            except FileNotFoundError:
+                data['disk_states'][path] = {'exists': False}
+            else:
+                data['disk_states'][path] = {'exists': True, 'regular': stat.S_ISREG(info.st_mode),
+                    'symlink': stat.S_ISLNK(info.st_mode), 'inode': info.st_ino, 'device': info.st_dev,
+                    'size': info.st_size, 'mtime_ns': info.st_mtime_ns, 'links': info.st_nlink}
+        if name not in data['domains']:
+            require(not any(row['exists'] for row in data['disk_states'].values()),
+                    'A missing selected domain with a remaining canonical disk requires explicit recovery review.')
+        active = command(['virsh', '-c', 'qemu:///system', 'net-list', '--name']).stdout.split()
+        require(set(active) <= set(net_names), 'Retain the complete known libvirt network set.')
+        data['network_definitions'] = {network: {'persistent': command(
+            ['virsh', '-c', 'qemu:///system', 'net-dumpxml', network, '--inactive']).stdout,
+            **({'current': data['networks'][network]} if network in active else {})} for network in net_names}
+        data['dhcp_leases'] = {network: command(
+            ['virsh', '-c', 'qemu:///system', 'net-dhcp-leases', network]).stdout for network in active}
+        data['native_rich_rules'] = {state: command(['firewall-cmd'] + options +
+            ['--list-all-zones']).stdout.splitlines()
+            for state, options in (('runtime', []), ('permanent', ['--permanent']))}
+        # An enforced bridge can be inactive after its guest was removed. No
+        # native zone rule is changed here; inspect all zones for owned residue.
+        data['zone'] = None
+        data['leases'] = ''
+        return data
     data['leases'] = command(['virsh', '-c', 'qemu:///system', 'domifaddr', route['vm_name'], '--source', 'lease']).stdout
     selected = ET.fromstring(data['domains'][route['vm_name']]['current'])
     network = selected.find('./devices/interface/source').get('network')

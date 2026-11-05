@@ -37,7 +37,7 @@ class ActionModule(ActionBase):
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
         try:
-            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "installation_access"):
+            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "installation_access", "retire_guest"):
                 return self.release_guest(result, task_vars or {})
             if self._task.check_mode:
                 result.update(changed=False, published=False)
@@ -402,7 +402,10 @@ class ActionModule(ActionBase):
         try:
             args = self._task.args
             installation = args.get("operation") == "installation_access"
-            required = {"operation", "route", "primary"} if installation else {"operation", "guest", "hypervisor"}
+            retirement = args.get("operation") == "retire_guest"
+            required = ({"operation", "route", "primary"} if installation else
+                        {"operation", "guest_name", "hypervisor"} if retirement else
+                        {"operation", "guest", "hypervisor"})
             keys.require(set(args) >= required
                 and set(args) <= required | {"phase", "transition"}
                 and args.get("phase", "publish") in ("plan", "publish"),
@@ -459,6 +462,11 @@ class ActionModule(ActionBase):
                             args["route"], args["primary"], args.get("transition") if phase == "publish" else None)
                         capture = keys.installation_inventory_capture
                         source_operations = keys.source_installation_operations
+                    elif retirement:
+                        context = keys.generic_retirement_context(documents["autodeploy"], documents["shared"], source,
+                            args["guest_name"], args["hypervisor"], args.get("transition") if phase == "publish" else None)
+                        capture = keys.generic_retirement_capture
+                        source_operations = keys.source_generic_retirement_operations
                     else:
                         context = keys.guest_release_context(documents["autodeploy"], documents["shared"],
                             args["guest"], args["hypervisor"], args.get("transition") if phase == "publish" else None,
@@ -470,9 +478,13 @@ class ActionModule(ActionBase):
                     operations = source_operations(source, desired["shared"], desired["autodeploy"],
                         desired["hactar"], context)
                     transition = {key: context[key] for key in ("previous_policy", "desired_policy")}
+                    if retirement:
+                        transition["guest"] = context["guest"]
                     if phase == "plan":
                         result.update(changed=False, published=False, transition=transition,
                                       durable_policy_published=False)
+                        if retirement:
+                            result.update(guest=context["guest"], records_absent=context["records_absent"])
                         return result
                     # Recheck the running source job before any durable or API mutation.
                     keys.verify_source_job(source, None, variables)
@@ -491,7 +503,8 @@ class ActionModule(ActionBase):
                     if changed:
                         git("add", "--", *changed)
                         git("-c", "user.name=AAP AutoDeploy", "-c", "user.email=automation@example.invalid",
-                            "commit", "--quiet", "-m", "Publish verified guest recovery isolation release")
+                            "commit", "--quiet", "-m", ("Publish verified generic guest retirement" if retirement else
+                            "Publish verified guest recovery isolation release"))
                         if git("push", "origin", "HEAD:refs/heads/main", optional=True).returncode:
                             continue
                         durable = True
