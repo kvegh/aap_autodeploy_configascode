@@ -17,7 +17,7 @@ settings declare the requirement. The same native AAP ownership record and main
 inventory retain the verified hardware declaration so normal access checks and
 complete teardown account for both NICs. Primary identity, API tokens and
 firewall permissions remain unchanged. The [shared role contract](roles/recovery_guest_release/README.md#windows-owned-aap-interface)
-describes exact verification, safe publication and cleanup. This code is prepared
+describes exact verification, safe publication and cleanup. This code is implemented
 and tested; live second-NIC deployment and teardown require separate acceptance.
 
 The existing [guest release role](roles/recovery_guest_release/README.md#exact-guest-bootstrap)

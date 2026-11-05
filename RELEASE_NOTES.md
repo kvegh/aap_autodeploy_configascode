@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.45.1
+
+Document implementation `eb806b7b79d51f08d7cf54fb2edb3d449ed375aa`, the agreed Windows
+infrastructure boundary, verified optional AAP interface ownership, exact cleanup,
+current native publisher checkout and the 54 passing merged-tree checks. Keep
+live setup and teardown acceptance separate from source publication.
+
 ## 0.45.0
 
 Support one exact Windows-owned supplemental AAP NIC in the existing allocation,

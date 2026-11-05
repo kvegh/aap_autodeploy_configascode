@@ -1,5 +1,48 @@
 # Design decisions history
 
+## Keep Windows AAP networking in its infrastructure deployment — 2026-11-05
+
+Implementation `eb806b7b79d51f08d7cf54fb2edb3d449ed375aa` follows the owner's decision that the
+Windows infrastructure job should prepare its selected AAP's second isolated NIC
+and persistent RHEL connection, following the AIOps infrastructure pattern.
+The existing private Windows profile declares this requirement. The API-only CaC
+import installs definitions; the infrastructure job performs the host work.
+Existing AAP guest preparation remains a partial image, storage, subscription and
+installer setup, rather than a complete declared RHEL operating-system baseline.
+
+The same existing AAP allocation and main-inventory ownership record retain one
+optional Windows interface. Its primary identity and route remain immutable.
+Native checks account for the exact current and persistent interface set,
+Windows ownership alias and virtio model. Authenticated RHEL readback proves the
+static address, manual IPv4, disabled IPv6, persistent connection and absence of
+a gateway or DNS configuration. Firewall permissions remain unchanged.
+
+The same role exposes its source preflight before host work. Its existing
+publisher saves the bounded ownership change with encrypted Git compare-and-swap
+and reconciles the same source inventory row. Concurrent writers retain a
+published exact owner. Failed jobs may remove only newly created components,
+after a fresh authenticated read proves canonical ownership absent; uncertainty
+preserves the components for review. Complete AAP cleanup consumes every saved
+NIC and removes exact owned DHCP/DNS host records while retaining other network
+content. Older live single-NIC AAPs reuse their already validated native identity
+without inventing saved verification metadata. Missing ownership still refuses
+ambiguous reservation cleanup.
+
+Repeated dynamic role calls exposed Ansible's cached action module retaining an
+earlier deleted checkout. The publisher now reads settings through each native
+action instance's current source path, retaining strict path validation and the
+existing authentication and cleanup behavior.
+
+The merged tree preserves the separately published sixth RHEL CaC project and
+passes 54 supplemental-interface, native plugin-lifetime, project-contract,
+bootstrap and selector checks. The coordinator independently repeated all 17
+supplemental tests. Existing decommission, allocation, source TLS and native role
+checks also passed, as did production lint, AST, local links and whitespace
+validation. Real capture rendering passed with the normal existing environment
+and CaC Vault identities. This publication establishes code and local validation;
+live interface setup, Windows functionality and complete cleanup remain separate
+acceptance steps. This worker launched no live job or host operation.
+
 ## Add explicit HTTP bootstrap for an already owned guest — 2026-11-05
 
 Implementation `85ee77d` follows the owner's decision to retain the current
