@@ -34,10 +34,21 @@ SourceClient = keys.SourceClient
 class ActionModule(ActionBase):
     TRANSFERS_FILES = False
 
+    def _project_root(self):
+        """Read settings from this invocation; the native module cache may outlive a checkout."""
+        path = getattr(self, '_original_path', None)
+        keys.require(isinstance(path, str) and Path(path).is_absolute(),
+                     'Resolve the publisher from its current native action-plugin path.')
+        source = Path(path).resolve(strict=True)
+        keys.require(source.is_file() and source.name == 'aap_publish_instance_keys.py'
+                     and source.parent.name == 'action_plugins',
+                     'Require the current native publisher source before reading encrypted settings.')
+        return source.parents[1]
+
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
         try:
-            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "guest_bootstrap_http", "installation_access", "retire_guest"):
+            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "guest_bootstrap_http", "installation_access", "retire_guest", "aap_supplemental_interface"):
                 return self.release_guest(result, task_vars or {})
             if self._task.check_mode:
                 result.update(changed=False, published=False)
@@ -68,7 +79,7 @@ class ActionModule(ActionBase):
                     "Publish the current declared recovery isolation policy without changing its scope.")
             token = os.environ.get("CAC_GIT_TOKEN", "")
             keys.require(bool(token), "Attach VM allocation git Pseudo CMDB writer for token publication.")
-            repository = contract.autodeploy_repository(self._loader, ROOT)
+            repository = contract.autodeploy_repository(self._loader, self._project_root())
             source = SourceClient()
             keys.require(source.origin != keys.origin(args["record"].get("target")),
                          "Source API access must identify the AAP running this fresh deployment.")
@@ -397,12 +408,14 @@ class ActionModule(ActionBase):
 
 
     def release_guest(self, result, variables):
-        """Plan then publish one verified guest release using existing Git/API access."""
+        """Plan and publish one verified guest change using existing Git/API access."""
         durable = False
+        supplemental = False
         try:
             args = self._task.args
             installation = args.get("operation") == "installation_access"
             retirement = args.get("operation") == "retire_guest"
+            supplemental = args.get('operation') == 'aap_supplemental_interface'
             aap_release = (args.get("operation") == "release_guest" and isinstance(args.get("guest"), dict)
                            and args["guest"].get("kind") == "aap")
             required = ({"operation", "route", "primary"} if installation else
@@ -419,9 +432,11 @@ class ActionModule(ActionBase):
                 "Attach the existing VM allocation git Pseudo CMDB writer for durable release.")
             source = SourceClient()
             keys.verify_source_job(source, None, variables)
-            repository = contract.autodeploy_repository(self._loader, ROOT)
+            repository = contract.autodeploy_repository(self._loader, self._project_root())
             names = {"autodeploy": "vaults/cac/aap_autodeploy_configascode-cac-vault.yml",
                      "shared": "cac/host_inventory.yml", "hactar": "cac/hactar_recovery.yml"}
+            if supplemental:
+                names['allocation'] = 'state/aap_vm_allocations_vault.yml'
             with tempfile.TemporaryDirectory(prefix="aap-guest-release-") as temporary:
                 workspace = Path(temporary)
                 helper = workspace / "askpass"
@@ -455,7 +470,13 @@ class ActionModule(ActionBase):
                         raw, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes(), filename=str(path))
                         documents[kind] = AnsibleLoader(raw).get_single_data()
                         seals[kind] = (label, secret)
-                    if installation or aap_release:
+                    if supplemental:
+                        context = keys.supplemental_interface_context(documents['autodeploy'], documents['shared'],
+                            documents['allocation'], args['guest'], args['hypervisor'],
+                            args.get('transition') if phase == 'publish' else None)
+                        capture = keys.supplemental_interface_capture
+                        source_operations = keys.source_supplemental_interface_operations
+                    elif installation or aap_release:
                         allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
                         keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
                                      "Read existing consumed AAP ownership before installation access.")
@@ -487,17 +508,23 @@ class ActionModule(ActionBase):
                     operations = source_operations(source, desired["shared"], desired["autodeploy"],
                         desired["hactar"], context)
                     transition = {key: context[key] for key in ("previous_policy", "desired_policy")}
+                    if supplemental:
+                        transition.update({key: context[key] for key in ('previous_resource', 'desired_resource')})
                     if retirement:
                         transition["guest"] = context["guest"]
                     if phase == "plan":
                         result.update(changed=False, published=False, transition=transition,
                                       durable_policy_published=False)
+                        if supplemental:
+                            present = context['primary'].get('supplemental_interfaces') == [args['guest']['supplemental_interface']]
+                            result.update(canonical_resource_present=present, canonical_resource_absent=not present,
+                                          durable_ownership_published=context['primary'] == context['desired_resource'])
                         if retirement:
                             result.update(guest=context["guest"], records_absent=context["records_absent"])
                         return result
                     # Recheck the running source job before any durable or API mutation.
                     keys.verify_source_job(source, None, variables)
-                    if aap_release:
+                    if aap_release or supplemental:
                         git("fetch", "--quiet", "--depth=1", "origin", "main")
                         latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
@@ -527,13 +554,15 @@ class ActionModule(ActionBase):
                         durable = True
                     else:
                         durable = True
-                    if installation or aap_release:
+                    if installation or aap_release or supplemental:
                         git("fetch", "--quiet", "--depth=1", "origin", "main")
                         latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
                         observed_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == context["route"]["vm_name"]]
-                        keys.require(observed_records == [context["reservation"]],
+                        expected_reservation = (next(row for row in desired['allocation']['aap_vm_allocation']['reservations'].values()
+                            if row.get('vm_name') == context['route']['vm_name']) if supplemental else context['reservation'])
+                        keys.require(observed_records == [expected_reservation],
                                      "Selected AAP reservation changed before installation source synchronization.")
                     # Exact preflight already validated every API destination. A failed API write leaves
                     # the published policy intact; an idempotent retry completes the source aliases.
@@ -556,22 +585,30 @@ class ActionModule(ActionBase):
                     if observed != desired:
                         # Restart from fresh state; exact transition checks reject unrelated changes.
                         continue
-                    if installation or aap_release:
+                    if installation or aap_release or supplemental:
                         latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
                         observed_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == context["route"]["vm_name"]]
-                        keys.require(observed_records == [context["reservation"]],
+                        keys.require(observed_records == [expected_reservation],
                                      "Selected AAP ownership changed during installation access publication.")
                     synchronized = True
                     result.update(changed=bool(changed or operations), published=True,
                                   transition=transition, durable_policy_published=True)
+                    if supplemental:
+                        result.update(durable_ownership_published=True,
+                                      canonical_resource_present=bool(context['desired_resource'].get('supplemental_interfaces')),
+                                      canonical_resource_absent=not context['desired_resource'].get('supplemental_interfaces'))
                     return result
                 keys.require(synchronized, "Concurrent policy updates prevented exact guest release synchronization; retry safely.")
         except keys.StoreError as error:
             result.update(failed=True, msg=str(error), durable_policy_published=durable)
+            if supplemental:
+                result['durable_ownership_published'] = durable
             return result
         except Exception:
             result.update(failed=True, msg="Protected guest release publication failed; inspect protected source state before retry.",
                           durable_policy_published=durable)
+            if supplemental:
+                result['durable_ownership_published'] = durable
             return result

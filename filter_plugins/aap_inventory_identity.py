@@ -2,10 +2,16 @@
 
 from collections.abc import Mapping
 from ipaddress import IPv4Address
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
 from urllib.parse import urlsplit
 import re
 
 from ansible.errors import AnsibleFilterError
+
+_spec = spec_from_file_location('inventory_primary_interfaces', Path(__file__).resolve().parents[1] / 'src/aap_hypervisor_access.py')
+_ownership = module_from_spec(_spec)
+_spec.loader.exec_module(_ownership)
 
 
 def inventory_counter(value):
@@ -49,6 +55,7 @@ def inventory_instance_name(selected, host=None):
             or resource.get('disk') != '/opt/vms/' + physical + '.disk.qcow2'):
         raise AnsibleFilterError('The selected AAP entry conflicts with its verified physical identity.')
     try:
+        _ownership.primary_interfaces(resource)
         address = resource.get('address')
         if not isinstance(address, str) or str(IPv4Address(address)) != address:
             raise ValueError
@@ -73,8 +80,12 @@ def inventory_route_matches(selected, host, route, resources):
                  and not url.query and not url.fragment and url.path in ('', '/')
                  and route['guest_host_keys'] == host['host_keys']
                  and isinstance(primary, Mapping)
+                 and primary.get('vm_name', physical) == physical
                  and all(primary.get(key) == resource.get(key) for key in (
-                     'vm_name', 'uuid', 'disk', 'address', 'network', 'bridge', 'mac', 'hypervisor_machine_id', 'verified')))
+                     'uuid', 'disk', 'address', 'network', 'bridge', 'mac', 'hypervisor_machine_id', 'verified',
+                     'supplemental_interfaces')))
+        if valid:
+            _ownership.primary_interfaces(dict(primary), route['hypervisor'])
     except (KeyError, TypeError, ValueError):
         valid = False
     if not valid:

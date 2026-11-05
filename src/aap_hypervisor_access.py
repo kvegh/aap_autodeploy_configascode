@@ -13,14 +13,151 @@ import tempfile
 import time
 import xml.etree.ElementTree as ET
 
+from ipaddress import IPv4Address, IPv4Interface, IPv4Network
+
 DIRECTORY = Path('/etc/hactarconfig')
 CONFIG = DIRECTORY / 'replacement-isolation.json'
 HELPER = Path('/usr/local/sbin/hactar-recovery-isolation')
 
 
+OWNER = 'disconnected-windows-patching'
+PRIMARY_FIELDS = {'uuid', 'disk', 'address', 'mac', 'network', 'bridge', 'verified', 'hypervisor_machine_id'}
+SUPPLEMENTAL_FIELDS = {'owner_project_id', 'network', 'bridge', 'address', 'mac',
+                       'connection_uuid', 'connection_name', 'attachment_created', 'connection_created'}
+
+
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def uuid(value):
+    return (isinstance(value, str) and re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', value)
+            and value != '00000000-0000-0000-0000-000000000000')
+
+
+def nic(value):
+    """Validate a canonical, private, isolated network identity without coercion."""
+    require(isinstance(value, dict), 'Require a recorded network identity.')
+    address = IPv4Address(value.get('address'))
+    require(isinstance(value.get('address'), str) and str(address) == value['address']
+            and any(address in IPv4Network(block)
+                    for block in ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'))
+            and isinstance(value.get('mac'), str)
+            and re.fullmatch(r'(?:[0-9a-f]{2}:){5}[0-9a-f]{2}', value['mac'])
+            and not int(value['mac'][:2], 16) & 1 and value['mac'] != '00:00:00:00:00:00'
+            and isinstance(value.get('network'), str)
+            and re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}', value['network'])
+            and isinstance(value.get('bridge'), str)
+            and re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,14}', value['bridge']),
+            'Require a canonical private address, unicast MAC, network and bridge.')
+    return value
+
+
+def supplemental(value, pin=None):
+    require(isinstance(value, dict) and set(value) == SUPPLEMENTAL_FIELDS
+            and value['owner_project_id'] == OWNER
+            and value['attachment_created'] is True and value['connection_created'] is True
+            and uuid(value['connection_uuid'])
+            and isinstance(value['connection_name'], str)
+            and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,62}', value['connection_name']),
+            'Require the exact Windows-owned NIC and newly created persistent connection.')
+    nic(value)
+    require(pin is None or value['bridge'] in pin['isolation_bridges'],
+            'The supplemental NIC must remain on an enforced isolated bridge.')
+    return value
+
+
+def primary_interfaces(primary, pin=None):
+    """Preserve the immutable flat primary and, when declared, exactly one extra."""
+    require(isinstance(primary, dict), 'Require existing primary guest ownership.')
+    extras = primary.get('supplemental_interfaces', [])
+    require(isinstance(extras, list) and len(extras) <= 1
+            and ('supplemental_interfaces' not in primary or len(extras) == 1),
+            'Omit unused supplemental metadata; record only one exact Windows NIC.')
+    result = [primary]
+    for value in extras:
+        supplemental(value, pin)
+        require(all(value[field] != primary[field] for field in ('address', 'mac', 'network', 'bridge')),
+                'The supplemental identity must be distinct from the immutable primary.')
+        result.append(value)
+    return result
+
+
+def supplemental_native_matches(interface, record):
+    """The use-case marker belongs only to its exact declared extra interface."""
+    source, mac = interface.find('source'), interface.find('mac')
+    alias, model = interface.find('alias'), interface.find('model')
+    return (interface.get('type') == 'network' and source is not None and mac is not None
+            and source.get('network') == record['network'] and mac.get('address') == record['mac']
+            and alias is not None and alias.get('name') == 'ua-windows-' + record['connection_uuid']
+            and model is not None and model.get('type') == 'virtio')
+
+
+def same_primary(before, after):
+    """Only the bounded supplemental declaration can change."""
+    return ({key: value for key, value in before.items() if key != 'supplemental_interfaces'}
+            == {key: value for key, value in after.items() if key != 'supplemental_interfaces'})
+
+
+def desired_resource(primary, declaration, state, pin):
+    require(state in ('present', 'absent'), 'Choose exact supplemental NIC addition or removal.')
+    supplemental(declaration, pin)
+    primary_interfaces(primary, pin)
+    extras = primary.get('supplemental_interfaces', [])
+    require(not extras or extras == [declaration], 'Never replace another saved supplemental NIC or connection.')
+    result = deepcopy(primary)
+    if state == 'present':
+        result['supplemental_interfaces'] = [deepcopy(declaration)]
+    else:
+        result.pop('supplemental_interfaces', None)
+    primary_interfaces(result, pin)
+    return result
+
+
+def connection_readback(guest):
+    """Use actual authenticated RHEL readback, never a caller-supplied verified flag."""
+    observed, declaration = guest['connection_readback'], guest['supplemental_interface']
+    require(isinstance(observed, dict) and set(observed) == {'machine_id', 'connections'}
+            and observed['machine_id'] == guest['guest_machine_id']
+            and re.fullmatch(r'[0-9a-f]{32}', observed['machine_id'] or ''),
+            'Require fresh authenticated connection and guest-machine readback.')
+    rows = observed['connections']
+    fields = {'uuid', 'name', 'mac', 'addresses', 'gateway', 'dns', 'never_default', 'autoconnect',
+              'ipv4_method', 'ipv4_ignore_auto_dns', 'ipv6_method', 'ipv6_never_default', 'ipv6_ignore_auto_dns'}
+    require(isinstance(rows, list) and len(rows) <= 64
+            and all(isinstance(row, dict) and set(row) == fields and uuid(row['uuid'])
+                    and isinstance(row['name'], str) and isinstance(row['mac'], str)
+                    and isinstance(row['addresses'], list) and len(row['addresses']) <= 16
+                    and isinstance(row['gateway'], str) and isinstance(row['dns'], list)
+                    and type(row['never_default']) is bool and type(row['autoconnect']) is bool
+                    and isinstance(row['ipv4_method'], str) and isinstance(row['ipv6_method'], str)
+                    and all(type(row[key]) is bool for key in ('ipv4_ignore_auto_dns', 'ipv6_never_default', 'ipv6_ignore_auto_dns'))
+                    for row in rows)
+            and len({row['uuid'] for row in rows}) == len(rows),
+            'Inspect a bounded complete list of persistent NetworkManager profiles.')
+    matching = []
+    for row in rows:
+        addresses = [IPv4Interface(value) for value in row['addresses']]
+        require(all(str(address) == value for address, value in zip(addresses, row['addresses'])),
+                'Read canonical persistent IPv4 addresses without lossy conversion.')
+        if (row['uuid'] == declaration['connection_uuid'] or row['name'] == declaration['connection_name']
+                or row['mac'] == declaration['mac'] or any(str(value.ip) == declaration['address'] for value in addresses)):
+            matching.append(row)
+    if guest['supplemental_state'] == 'absent':
+        require(not matching, 'Do not forget a remaining supplemental connection or address.')
+        return None
+    require(len(matching) == 1, 'Require exactly one authenticated owned persistent connection.')
+    row = matching[0]
+    require(row['uuid'] == declaration['connection_uuid'] and row['name'] == declaration['connection_name']
+            and row['mac'] == declaration['mac'] and len(row['addresses']) == 1
+            and str(IPv4Interface(row['addresses'][0]).ip) == declaration['address']
+            and not row['gateway'] and not row['dns'] and row['never_default'] is True and row['autoconnect'] is True
+            and row['ipv4_method'] == 'manual' and row['ipv4_ignore_auto_dns'] is True
+            and row['ipv6_method'] == 'disabled' and row['ipv6_never_default'] is True
+            and row['ipv6_ignore_auto_dns'] is True,
+            'The exact supplemental connection needs its static address, autoconnect, no gateway and no DNS.')
+    return IPv4Interface(row['addresses'][0])
 
 
 def command(arguments, data=None, allowed=(0,)):
@@ -107,8 +244,18 @@ def plan(expected, probe):
         root = ET.fromstring(xml)
         require(root.findtext('name') == name and root.find('bridge') is not None, 'Read actual network bridge definitions.')
         networks[name] = root.find('bridge').get('name')
-    require(primary['network'] in networks and networks[primary['network']] == primary['bridge']
-            and primary['bridge'] in declared['bridges'], 'Primary network must use its recorded enforced bridge.')
+    recorded = primary_interfaces(primary, pin)
+    require(all(networks.get(nic['network']) == nic['bridge'] and nic['bridge'] in declared['bridges'] for nic in recorded),
+            'Every declared AAP NIC must use its recorded enforced network and bridge.')
+    for nic in recorded[1:]:
+        definitions = probe.get('supplemental_network_definitions', {}).get(nic['network'])
+        require(isinstance(definitions, dict) and set(definitions) == {'persistent', 'current'},
+                'Inspect both active and persistent supplemental network definitions.')
+        for xml in definitions.values():
+            root = ET.fromstring(xml)
+            require(root.findtext('name') == nic['network'] and root.find('bridge') is not None
+                    and root.find('bridge').get('name') == nic['bridge'] and root.find('forward') is None,
+                    'The exact supplemental network must remain persistently isolated.')
     mac_owners = {}
     require(route['vm_name'] in probe['domains'], 'Require the actual selected primary domain.')
     for name, states in probe['domains'].items():
@@ -120,20 +267,31 @@ def plan(expected, probe):
                 address = mac.get('address')
                 require(address not in mac_owners or mac_owners[address] == name, 'Guest MAC ownership must be unique.')
                 mac_owners[address] = name
+    require(set(probe['domains'][route['vm_name']]) == {'persistent', 'current'},
+            'Inspect both persistent and current primary domain definitions.')
+    expected_nics = {(nic['network'], nic['mac']) for nic in recorded}
     for xml in probe['domains'][route['vm_name']].values():
         root = ET.fromstring(xml)
         disks, interfaces = root.findall("./devices/disk[@device='disk']"), root.findall('./devices/interface')
-        require(root.findtext('uuid') == primary['uuid'] and len(disks) == len(interfaces) == 1,
-                'Primary UUID and single disk/interface must match verified ownership.')
-        disk, interface = disks[0].find('source'), interfaces[0]
+        require(root.findtext('uuid') == primary['uuid'] and len(disks) == 1 and len(interfaces) == len(recorded),
+                'Primary UUID, one disk and the exact declared NIC set must match verified ownership.')
+        disk = disks[0].find('source')
         require(disk is not None and disk.get('file') == primary['disk']
                 and primary['disk'] == '/opt/vms/' + route['vm_name'] + '.disk.qcow2'
-                and interface.get('type') == 'network' and interface.find('source') is not None
-                and interface.find('source').get('network') == primary['network']
-                and interface.find('mac') is not None and interface.find('mac').get('address') == primary['mac'],
-                'Primary storage, MAC and network must match actual libvirt ownership.')
+                and all(interface.get('type') == 'network' and interface.find('source') is not None
+                        and interface.find('mac') is not None for interface in interfaces)
+                and {(interface.find('source').get('network'), interface.find('mac').get('address'))
+                     for interface in interfaces} == expected_nics,
+                'Primary storage and every declared MAC/network must match actual libvirt ownership.')
+        for record in recorded[1:]:
+            matching = [interface for interface in interfaces
+                        if interface.find('mac').get('address') == record['mac']]
+            require(len(matching) == 1 and supplemental_native_matches(matching[0], record),
+                    'The supplemental NIC must retain its exact Windows ownership marker and virtio model.')
     leases = re.findall(r'([0-9a-f]{2}(?::[0-9a-f]{2}){5})\s+ipv4\s+([0-9.]+)/[0-9]+', probe['leases'].lower())
-    require(set(leases) == {(primary['mac'], primary['address'])}, 'Require the exact selected guest DHCP identity.')
+    require((primary['mac'], primary['address']) in leases
+            and set(leases) <= {(nic['mac'], nic['address']) for nic in recorded},
+            'Require the exact primary DHCP identity and no undeclared supplemental lease.')
     mode = expected.get('mode', 'management')
     desired = desired_policy(route, primary, declared, mode)
     client = next(item for item in desired['guest_host_clients'] if item['ipv4'] == primary['address'])
@@ -151,7 +309,7 @@ def plan(expected, probe):
             'rich_rule': rule, 'changed': actual != desired}
 
 
-def probe(route, allow_absent_guest=False, guest_kind=None):
+def probe(route, allow_absent_guest=False, guest_kind=None, primary=None):
     require(guest_kind in (None, 'windows'), 'Select only default Linux or explicit Windows native provenance.')
     require(os.geteuid() == 0 and DIRECTORY.is_dir() and not DIRECTORY.is_symlink()
             and DIRECTORY.stat().st_uid == 0 and DIRECTORY.stat().st_mode & 0o777 == 0o700
@@ -169,6 +327,11 @@ def probe(route, allow_absent_guest=False, guest_kind=None):
     net_names = command(['virsh', '-c', 'qemu:///system', 'net-list', '--all', '--name']).stdout.split()
     require(len(net_names) <= 64, 'Require bounded actual guest networks.')
     data['networks'] = {name: command(['virsh', '-c', 'qemu:///system', 'net-dumpxml', name]).stdout for name in net_names}
+    if primary is not None and primary.get('supplemental_interfaces'):
+        data['supplemental_network_definitions'] = {nic['network']: {
+            'current': data['networks'][nic['network']],
+            'persistent': command(['virsh', '-c', 'qemu:///system', 'net-dumpxml', nic['network'], '--inactive']).stdout}
+            for nic in primary_interfaces(primary, route['hypervisor'])[1:]}
     data['autostart'] = command(['virsh', '-c', 'qemu:///system', 'list', '--all', '--autostart', '--name']).stdout.split()
     if allow_absent_guest or guest_kind == 'windows':
         name = route['vm_name']
@@ -207,7 +370,14 @@ def probe(route, allow_absent_guest=False, guest_kind=None):
         return data
     data['leases'] = command(['virsh', '-c', 'qemu:///system', 'domifaddr', route['vm_name'], '--source', 'lease']).stdout
     selected = ET.fromstring(data['domains'][route['vm_name']]['current'])
-    network = selected.find('./devices/interface/source').get('network')
+    management = [interface for interface in selected.findall('./devices/interface')
+                  if interface.find('source') is not None and interface.find('mac') is not None]
+    if primary is not None:
+        management = [interface for interface in management
+                      if interface.find('mac').get('address') == primary['mac']
+                      and interface.find('source').get('network') == primary['network']]
+        require(len(management) == 1, 'Inspect the declared primary bridge independently of NIC ordering.')
+    network = management[0].find('source').get('network')
     bridge = ET.fromstring(data['networks'][network]).find('bridge').get('name')
     data['zone'] = command(['firewall-cmd', '--get-zone-of-interface=' + bridge]).stdout.strip()
     return data
@@ -249,7 +419,8 @@ def reconcile(expected):
             except BlockingIOError:
                 require(time.monotonic() < deadline, 'Another hypervisor policy transaction is active; retry safely.')
                 time.sleep(0.1)
-        current = probe(expected['route'])
+        current = (probe(expected['route'], primary=expected['primary'])
+                   if expected['primary'].get('supplemental_interfaces') else probe(expected['route']))
         change = plan(expected, current)
         require(current['zone'] == 'libvirt', 'Use only the existing libvirt zone for the selected bridge.')
         command([str(HELPER), 'check'], json.dumps(current['policy']))

@@ -11,6 +11,15 @@ and self-API connection before installation begins. The existing base template
 also supports the isolated `aap_installation_access` repair tag. These changes
 add no wrapper playbook, job template, credential type or secret store.
 
+The Windows infrastructure job can prepare one additional isolated NIC and its
+persistent RHEL connection on the selected existing AAP VM. Its private Windows
+settings declare the requirement. The same native AAP ownership record and main
+inventory retain the verified hardware declaration so normal access checks and
+complete teardown account for both NICs. Primary identity, API tokens and
+firewall permissions remain unchanged. The [shared role contract](roles/recovery_guest_release/README.md#windows-owned-aap-interface)
+describes exact verification, safe publication and cleanup. This code is prepared
+and tested; live second-NIC deployment and teardown require separate acceptance.
+
 The existing [guest release role](roles/recovery_guest_release/README.md#exact-guest-bootstrap)
 also supports explicitly approved HTTP bootstrap for one already owned generic
 Linux guest. `recovery_release_operation: guest_bootstrap_http` adds only that
@@ -1159,6 +1168,15 @@ credentials, projects, execution environments, Job Templates, and workflow
 definitions through CoP dispatch. It rejects job-launch and schedule definitions
 and excludes dispatch's launch roles. It does not apply the subscription or shared
 base, run the imported automation, or change Windows machines.
+
+Launching the Windows infrastructure job is a separate operation. Following the
+AIOps infrastructure pattern, that job owns both its required supplemental AAP
+NIC and persistent guest connection, then the Windows guests. A pure CaC import
+does not change VM hardware, configure the guest operating system or launch that
+job. Generic AAP base setup does not add a Windows NIC, and no separate guest-OS
+Job Template is required. Existing AAP guest preparation remains a partial
+golden-image, storage, subscription and installer setup rather than a complete
+RHEL operating-system baseline.
 
 The AD extension's target public CA bundle and SSH-known-host data must be
 prepared as encrypted project inputs before import. The generic importer does

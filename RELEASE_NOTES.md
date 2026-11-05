@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.45.0
+
+Support one exact Windows-owned supplemental AAP NIC in the existing allocation,
+main inventory, native verification and complete teardown. Keep primary identity
+and permissions immutable; verify isolated hardware and persistent manual IPv4,
+disabled IPv6, no gateway/DNS and exact connection ownership. Reuse the existing
+role's read-only plan entry point, publisher, encrypted compare-and-swap and source
+reconciliation. Preserve components if durable ownership exists or cannot safely
+be ruled out. Remove only selected DHCP/DNS host reservations during complete
+teardown, including retry after VM absence. Resolve publisher settings from each
+native invocation when an earlier checkout was deleted. No new store, credential,
+service, Job Template or wrapper is added. Live acceptance remains separate.
+Supplemental NICs retain their exact Windows alias and virtio model; legacy
+single-NIC cleanup reuses already validated live ownership without fabricating
+saved verification metadata.
+
 ## 0.44.2
 
 Document the verified RHEL configuration import, seven-template/six-survey

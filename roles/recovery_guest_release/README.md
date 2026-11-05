@@ -111,3 +111,75 @@ UUID, exclusive ownership among guests, canonical disk, MAC, network and DHCP.
 Only the primary's exact policy identity is added; existing native firewall rules,
 production exclusions and other guest permissions remain. Linux and Windows
 branches retain their existing behavior.
+
+## Windows-owned AAP interface
+
+The existing `recovery_release_operation: aap_supplemental_interface` verifies
+and saves one Windows-owned supplemental interface on an existing AAP. It
+changes ownership metadata only, with no firewall grant, early release or token
+change. The Windows infrastructure job configures the NIC and RHEL connection;
+this role independently checks the resulting native hardware and its protected
+authenticated connection readback before publication.
+
+Use the same role with `tasks_from: plan` before any mutation. Supply the usual
+`recovery_release_guest`, `recovery_release_hypervisor` and
+`recovery_release_trust_file`, plus that operation value. The plan is read-only
+and returns `__recovery_release_plan`; it does not claim that intended hardware
+already exists. Retain the same pinned checkout throughout plan, setup, publish
+and any rollback check. Call the role's normal entry point after configuration
+and fresh authenticated RHEL readback.
+
+The typed guest has exactly `kind: aap`, `route`, `primary`, `guest_machine_id`,
+`supplemental_interface`, `supplemental_state` (`present` or `absent`) and
+`connection_readback`. Route and primary come from the existing reservation.
+The primary remains immutable. The optional `supplemental_interfaces` list in
+that same primary resource contains at most one exact declaration; omission
+means unused. Main-inventory `vm_resource` mirrors the same declaration.
+
+Each declaration has exactly `owner_project_id: disconnected-windows-patching`,
+`network`, `bridge`, `address`, `mac`, `connection_uuid`, `connection_name`,
+`attachment_created: true` and `connection_created: true`. Existing unowned
+matching hardware or connections must be refused rather than adopted. Source
+and native checks bind the exact primary UUID/disk and all declared MAC/network
+pairs to both current and persistent XML. The supplemental interface remains
+bound to the exact `ua-windows-<connection_uuid>` interface alias and virtio
+model; primary and legacy interfaces retain their original model behavior.
+The supplemental network remains
+isolated; the static private address must be outside DHCP pools and absent from
+existing reservations. The primary DHCP lease remains required; a static
+secondary interface requires no fabricated DHCP lease.
+
+`connection_readback` contains the actual authenticated `machine_id` and a
+bounded `connections` list. Every row has `uuid`, `name`, `mac`, `addresses`
+(IPv4 CIDR strings), `gateway`, `dns` (list), `never_default`, `autoconnect`,
+`ipv4_method`, `ipv4_ignore_auto_dns`, `ipv6_method`, `ipv6_never_default` and
+`ipv6_ignore_auto_dns`. The exact owned row must have its one static address,
+empty gateway/DNS, `manual` IPv4, `disabled` IPv6, and all five applicable
+Boolean settings true. The producer also verifies that the interface has no
+IPv4/IPv6 default route or IPv6 address, preserving the original routes and
+resolver. For removal, no profile may retain its UUID, name, MAC or address,
+and the exact NIC must be absent from both XML definitions.
+
+The same publisher verifies the running source job and uses encrypted Git
+compare-and-swap to update the existing allocation and main inventory, then
+reconciles that same source AAP row without renaming it. Other captures, routes,
+primary identity, credentials, tokens and permissions remain unchanged.
+`__recovery_release_plan.canonical_resource_present` and
+`canonical_resource_absent` describe the freshly read canonical record;
+`durable_ownership_published` describes the exact intended saved state.
+
+If publication fails, the Windows producer may undo only components it created
+and only after a fresh authenticated plan proves canonical ownership absent.
+Preserve components when this or any concurrent job published their exact
+declaration. If absence cannot be proved, preserve them and report cleanup
+pending. Reset per-invocation results prevents reusing a previous role call's
+durability flag. Ordinary role cleanup still removes its temporary runtime code.
+The publisher resolves settings from each invocation's native action path even
+when Ansible cached its module from a deleted earlier checkout.
+
+Windows-only teardown removes this declaration after the exact owned extra NIC
+and connection are gone. Complete AAP teardown consumes every saved interface,
+including cleanup after VM absence, and removes only exact owned DHCP/DNS host
+records while preserving unrelated network XML. Related generic Linux guests
+cannot borrow this supplemental AAP schema. These are local implementation
+checks; live Windows deployment and teardown remain separate acceptance.

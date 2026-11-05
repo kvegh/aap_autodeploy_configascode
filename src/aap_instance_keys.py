@@ -24,6 +24,9 @@ _routing_spec.loader.exec_module(_routing)
 _management_spec = spec_from_file_location("instance_key_management_access", Path(__file__).with_name("aap_hypervisor_access.py"))
 _management = module_from_spec(_management_spec)
 _management_spec.loader.exec_module(_management)
+_allocation_spec = spec_from_file_location('instance_key_allocation', Path(__file__).with_name('aap_name_allocation.py'))
+_allocation = module_from_spec(_allocation_spec)
+_allocation_spec.loader.exec_module(_allocation)
 
 
 class StoreError(ValueError):
@@ -33,6 +36,13 @@ class StoreError(ValueError):
 def require(condition, message):
     if not condition:
         raise StoreError(message)
+
+
+def validate_aap_primary(route, resource):
+    try:
+        return _allocation.validate_primary_resource(route, resource)
+    except (ValueError, TypeError, KeyError):
+        raise StoreError('Require the exact saved primary AAP ownership and bounded supplemental declaration.') from None
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -258,10 +268,11 @@ def source_related_resources(client, shared, allocation, selected, retained=None
     related, owners = {}, []
 
     def add_owner(resource):
-        identity = {"bridge": resource["bridge"], "ipv4": resource["address"], "mac": resource["mac"]}
-        require(not any(old["ipv4"] == identity["ipv4"] or old["mac"] == identity["mac"] for old in owners),
-                "Remaining inventory guest permission ownership must be unique.")
-        owners.append(identity)
+        for nic in _management.primary_interfaces(resource, pin):
+            identity = {"bridge": nic["bridge"], "ipv4": nic["address"], "mac": nic["mac"]}
+            require(not any(old["ipv4"] == identity["ipv4"] or old["mac"] == identity["mac"] for old in owners),
+                    "Remaining inventory guest permission ownership must be unique.")
+            owners.append(identity)
 
     aap_records = {row["vm_name"]: row for row in allocation["reservations"].values()
                    if row.get("instance_route", {}).get("hypervisor") == pin}
@@ -276,6 +287,7 @@ def source_related_resources(client, shared, allocation, selected, retained=None
         if physical_name in aap_records:
             entry = aap_records[physical_name]
             resource = entry.get("instance_resources", {}).get("aap")
+            validate_aap_primary(entry['instance_route'], resource)
             require(isinstance(resource, dict) and resource.get("verified") is True
                     and resource.get("hypervisor_machine_id") == pin["machine_id"]
                     and resource.get("address") == entry["instance_route"]["vm_ip"]
@@ -292,12 +304,27 @@ def source_related_resources(client, shared, allocation, selected, retained=None
                     and values["aap_instance_number"] == entry["number"],
                     "Remaining AAP permission ownership requires its verified source placement and resource.")
             if not entry.get("decommissioned"):
+                require(values.get('vm_resource', {}).get('supplemental_interfaces') == resource.get('supplemental_interfaces'),
+                        'Source and canonical AAP supplemental ownership must remain identical.')
                 add_owner(resource)
             continue
         resource = values.get("vm_resource")
         require(name not in names or isinstance(resource, dict),
                 "An existing selected related VM requires its complete source vm_resource.")
         if resource is None:
+            continue
+        require(isinstance(resource, dict) and 'supplemental_interfaces' not in resource,
+                'Only a registered AAP primary may own the supplemental Windows interface.')
+        if isinstance(resource, dict) and resource.get('kind') == 'windows':
+            resource = windows_guest_resource(resource, pin)
+            require(name == resource['vm_name'] and name not in names
+                    and values.get('ansible_host') == resource['address']
+                    and values.get('vm_uuid') == resource['uuid']
+                    and values.get('computer_name') == resource['computer_name']
+                    and values.get('computer_uuid') == resource['computer_uuid'],
+                    'Unrelated Windows permissions require complete native trusted computer ownership.')
+            for nic in resource['interfaces']:
+                add_owner(nic)
             continue
         required = {"vm_name", "address", "uuid", "disk", "mac", "network", "bridge", "machine_id",
                     "host_keys", "hypervisor_machine_id", "verified"}
@@ -393,6 +420,8 @@ def isolation_retirement_context(record, selected, target, transition, related_r
     for role in ("aap", "zabbix", "testserver1", "tra"):
         metadata = resources.get(role, {})
         require(isinstance(metadata, dict), "Require mapping resource ownership records.")
+        require(role == 'aap' or 'supplemental_interfaces' not in metadata,
+                'Related application guests cannot borrow AAP supplemental-interface ownership.')
         name = selected if role == "aap" else role + "-" + version
         address = route["vm_ip"] if role == "aap" else metadata.get("address")
         require(metadata.get("vm_name", name) == name and metadata.get("address", address) == address
@@ -405,9 +434,12 @@ def isolation_retirement_context(record, selected, target, transition, related_r
                 and isinstance(metadata.get("disk"), str)
                 and re.fullmatch(re.escape("/opt/vms/" + name) + r"(?:\.disk)?\.qcow2", metadata["disk"]),
                 "Recorded guests require their exact selected UUID and disk.")
+        if metadata and role == 'aap':
+            validate_aap_primary(route, metadata)
         guests.append({"name": name, "role": role, "address": address, "metadata": deepcopy(metadata)})
-    require(isinstance(identities, list) and len(identities) <= 4,
-            "Retire only the four selected deployment identities.")
+    owned_nics = [(guest, nic) for guest in guests for nic in _management.primary_interfaces(guest['metadata'], pin)]
+    require(isinstance(identities, list) and len(identities) <= len(owned_nics),
+            "Retire only the exact NIC identities of the four selected deployment VMs.")
     selected_keys = set()
     addresses, macs = set(), set()
     for identity in identities:
@@ -420,10 +452,9 @@ def isolation_retirement_context(record, selected, target, transition, related_r
                 and identity["mac"] != "00:00:00:00:00:00",
                 "Retire only normalized selected bridge and unicast MAC identities.")
         _routing.ipv4(identity["ipv4"])
-        matches = [guest for guest in guests if guest["address"] == identity["ipv4"]]
+        matches = [(guest, nic) for guest, nic in owned_nics if nic.get('address', guest['address']) == identity['ipv4']]
         require(len(matches) == 1, "An isolation identity does not belong to a selected recorded guest.")
-        guest = matches[0]
-        metadata = guest["metadata"]
+        guest, metadata = matches[0]
         require((guest["role"] == "aap" or metadata)
                 and metadata.get("mac", identity["mac"]) == identity["mac"]
                 and metadata.get("bridge", identity["bridge"]) == identity["bridge"],
@@ -439,7 +470,7 @@ def isolation_retirement_context(record, selected, target, transition, related_r
                     "An isolation identity conflicts with an existing guest permission.")
         selected_keys.add(key)
     for client in previous.get("guest_host_clients", []) + previous.get("https_clients", []) + previous.get("released_clients", []) + previous.get("http_clients", []):
-        if any(client["ipv4"] == guest["address"] or client["mac"] == guest["metadata"].get("mac") for guest in guests):
+        if any(client['ipv4'] == nic.get('address', guest['address']) or client['mac'] == nic.get('mac') for guest, nic in owned_nics):
             require(tuple(client[field] for field in ("bridge", "ipv4", "mac")) in selected_keys,
                     "Retirement must include every existing permission of the selected recorded guests.")
     expected = deepcopy(previous)
@@ -560,6 +591,8 @@ def retirement_host_matches(row, guest, route, hypervisor_name):
             "A selected inventory guest has conflicting address or placement data.")
     metadata = guest["metadata"]
     if guest["role"] == "aap":
+        require(values.get('vm_resource', {}).get('supplemental_interfaces') == metadata.get('supplemental_interfaces'),
+                'Do not retire an AAP inventory row with conflicting supplemental ownership.')
         require(origin("https://" + values.get("ansible_fqdn", "")) == origin(route["aap_hostname"]),
                 "The selected inventory AAP host has a conflicting public URL.")
         for field, expected in (("vm_uuid", metadata.get("uuid")), ("machine_id", metadata.get("machine_id")),
@@ -731,6 +764,7 @@ def management_access_context(configuration, record, selected, route, requested,
             and set(record.get("instance_resources", {})) == {"aap"},
             "Management publication requires the active exact AAP-only reservation.")
     primary = record["instance_resources"]["aap"]
+    validate_aap_primary(route, primary)
     require(isinstance(primary, dict) and isinstance(primary.get("uuid"), str)
             and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", primary["uuid"])
             and primary.get("vm_name", selected) == selected,
@@ -752,6 +786,166 @@ def management_access_context(configuration, record, selected, route, requested,
             "Publish only the independently derived selected AAP management grant; preserve all other clients.")
     return {"route": deepcopy(route), "primary": deepcopy(primary), "previous_policy": previous,
             "desired_policy": desired, "guests": [], "removed_rules": set(), "access_mode": mode}
+
+
+def supplemental_interface_context(configuration, shared, allocation, guest, pin, transition=None):
+    """Change one declared Windows NIC without changing route, primary or permissions."""
+    fields = {'kind', 'route', 'primary', 'guest_machine_id', 'supplemental_interface',
+              'supplemental_state', 'connection_readback'}
+    require(isinstance(guest, dict) and set(guest) == fields and guest['kind'] == 'aap',
+            'Use only the existing AAP route and bounded supplemental connection request.')
+    route, pin = _routing.instance_route(guest['route']), _routing.hypervisor_pin(pin)
+    require(route['hypervisor'] == pin and isinstance(guest['guest_machine_id'], str)
+            and re.fullmatch(r'[0-9a-f]{32}', guest['guest_machine_id'])
+            and guest['guest_machine_id'] not in ('0' * 32, pin['machine_id']),
+            'Bind supplemental networking to the pinned existing AAP and authenticated guest.')
+    records = [row for row in allocation['aap_vm_allocation']['reservations'].values()
+               if row.get('vm_name') == route['vm_name']]
+    require(len(records) == 1, 'Resolve one consumed AAP reservation for supplemental networking.')
+    record = records[0]
+    context = management_access_context(configuration, record, route['vm_name'], route, None)
+    current, supplied = context['primary'], guest['primary']
+    validate_aap_primary(route, supplied)
+    require(_management.same_primary(current, supplied), 'Supplemental networking cannot change primary ownership.')
+    declaration = guest['supplemental_interface']
+    desired = _management.desired_resource(current, declaration, guest['supplemental_state'], pin)
+    _management.desired_resource(supplied, declaration, guest['supplemental_state'], pin)
+    previous = current
+    if current == desired and supplied != current:
+        previous = supplied
+    policy = context['previous_policy']
+    require(all(nic['address'] not in policy.get('protected_ipv4', []) for nic in _management.primary_interfaces(desired, pin))
+            and declaration['address'] not in (pin['address'], pin['public_ip'])
+            and declaration['address'] not in policy.get('protected_ipv4', []),
+            'Supplemental networking must preserve all hypervisor and production exclusions.')
+    if transition is not None:
+        require(isinstance(transition, dict) and set(transition) == {
+                    'previous_policy', 'desired_policy', 'previous_resource', 'desired_resource'}
+                and transition['previous_policy'] == transition['desired_policy'] == policy
+                and transition['desired_resource'] == desired
+                and current in (transition['previous_resource'], desired)
+                and _management.same_primary(transition['previous_resource'], desired)
+                and _management.desired_resource(transition['previous_resource'], declaration,
+                                                guest['supplemental_state'], pin) == desired,
+                'Publish only the planned exact supplemental ownership transition.')
+        previous = transition['previous_resource']
+        _management.connection_readback(guest)
+    context.update(guest=deepcopy(guest), reservation=deepcopy(record), previous_resource=deepcopy(previous),
+                   desired_resource=deepcopy(desired), desired_policy=deepcopy(policy), identities=[])
+    rows = [row for row in shared['host_inventory_configuration']['hosts']
+            if aap_inventory_owner(row, route['vm_name'])]
+    require(len(rows) == 1, 'Use the existing uniquely owned main-inventory AAP entry.')
+    hypervisors = [row for row in shared['host_inventory_configuration']['hosts']
+                   if inventory_variables(row).get('ansible_host') == pin['address']]
+    require(len(hypervisors) == 1 and rows[0].get('inventory') == hypervisors[0].get('inventory'),
+            'Preserve AAP placement in the captured pinned hypervisor inventory.')
+    context['hypervisor_name'] = hypervisors[0]['name']
+    context['inventory_host_name'] = rows[0]['name']
+    supplemental_host_variables(inventory_variables(rows[0]), context)
+    # Every recorded NIC address and MAC must remain exclusive across AAP and
+    # ordinary guest rows, including unrelated multi-interface Windows guests.
+    for row in shared['host_inventory_configuration']['hosts']:
+        if row is rows[0]:
+            continue
+        values = inventory_variables(row)
+        resource = values.get('vm_resource', {})
+        others = list(resource.get('interfaces', [resource])) if isinstance(resource, dict) else []
+        if isinstance(resource, dict):
+            others += resource.get('supplemental_interfaces', [])
+        require(values.get('ansible_host') != declaration['address']
+                and all(nic.get('address') != declaration['address'] and nic.get('mac') != declaration['mac'] for nic in others),
+                'Another captured guest already owns the supplemental address or MAC.')
+    for other in allocation['aap_vm_allocation']['reservations'].values():
+        if other is record or other.get('decommissioned') or other.get('hypervisor_id') != pin['machine_id']:
+            continue
+        resource = other.get('instance_resources', {}).get('aap')
+        if not resource:
+            continue
+        require(all(nic.get('address') != declaration['address'] and nic.get('mac') != declaration['mac']
+                    and nic.get('connection_uuid') != declaration['connection_uuid']
+                    for nic in _management.primary_interfaces(resource)),
+                'Another consumed AAP reservation already owns the supplemental identity.')
+    return context
+
+
+def supplemental_host_variables(values, context):
+    """Preserve host aliases, keys and unrelated variables while replacing exact NIC ownership."""
+    result = deepcopy(values)
+    route, primary, guest = context['route'], context['desired_resource'], context['guest']
+    resource = result.get('vm_resource')
+    require(isinstance(resource, dict) and resource.get('vm_name') == route['vm_name']
+            and result.get('ansible_host') == route['vm_ip'] and result.get('vm_uuid') == primary['uuid']
+            and result.get('hypervisor_host') == context['hypervisor_name']
+            and result.get('host_keys') == route['guest_host_keys']
+            and origin('https://' + result.get('ansible_fqdn', '')) == origin(route['aap_hostname']),
+            'Keep the existing verified primary inventory placement and public identity.')
+    number = result.get('aap_instance_number')
+    if isinstance(number, str) and re.fullmatch(r'[1-9][0-9]{0,9}', number):
+        number = int(number)
+    require(type(number) is int and number == int(route['vm_name'].rsplit('-', 1)[1]),
+            'Preserve the exact canonical selected AAP allocation number.')
+    core = {key: resource[key] for key in _allocation.ownership.PRIMARY_FIELDS | {'supplemental_interfaces'} if key in resource}
+    require(core in (context['previous_resource'], context['desired_resource'], guest['primary']),
+            'The inventory supplemental declaration differs from the exact planned resources.')
+    for machine_id in (result.get('machine_id'), resource.get('machine_id')):
+        require(machine_id is None or machine_id == guest['guest_machine_id'],
+                'The authenticated AAP machine identity changed from saved ownership.')
+    resource.pop('supplemental_interfaces', None)
+    resource.update(deepcopy(primary))
+    result['vm_resource'] = resource
+    return result
+
+
+def supplemental_interface_capture(configuration, context, kind):
+    result = deepcopy(configuration)
+    if kind == 'allocation':
+        rows = [row for row in result['aap_vm_allocation']['reservations'].values()
+                if row.get('vm_name') == context['route']['vm_name']]
+        require(len(rows) == 1 and rows[0] == context['reservation'],
+                'The consumed reservation changed before supplemental publication.')
+        rows[0]['instance_resources']['aap'] = deepcopy(context['desired_resource'])
+    elif kind == 'shared':
+        rows = [row for row in result['host_inventory_configuration']['hosts']
+                if aap_inventory_owner(row, context['route']['vm_name'])]
+        require(len(rows) == 1, 'Preserve one existing supplemental owner in the main inventory.')
+        set_inventory_variables(rows[0], supplemental_host_variables(inventory_variables(rows[0]), context))
+    else:
+        require(kind in ('autodeploy', 'hactar'), 'Use only maintained supplemental ownership captures.')
+    return result
+
+
+def source_supplemental_interface_operations(client, shared, autodeploy, hactar, context):
+    def unchanged_policy(values, selected_context, pinned=False):
+        source_retirement_variables(values, selected_context, pinned)
+        return deepcopy(values)
+    operations = source_inventory_operations(client, shared, autodeploy, hactar, context, unchanged_policy)
+    host = next(row for row in shared['host_inventory_configuration']['hosts']
+                if aap_inventory_owner(row, context['route']['vm_name']))
+    inventories = client.rows('inventories/?name=' + quote(host['inventory']))
+    require(len(inventories) == 1, 'Keep the existing source inventory for the owned supplemental interface.')
+    rows = client.rows('hosts/?inventory=%s&page_size=200' % inventories[0]['id'])
+    require(len(rows) <= 256 and all(row.get('inventory') == inventories[0]['id'] for row in rows),
+            'Read complete bounded source ownership before supplemental publication.')
+    selected = [row for row in rows if aap_inventory_owner(row, context['route']['vm_name'])]
+    require(len(selected) == 1 and selected[0].get('name') == host['name'],
+            'Keep the same physical AAP and inventory alias during supplemental publication.')
+    for row in rows:
+        if row is selected[0]:
+            continue
+        values = inventory_variables(row)
+        resource = values.get('vm_resource', {})
+        others = list(resource.get('interfaces', [resource])) if isinstance(resource, dict) else []
+        if isinstance(resource, dict):
+            others += resource.get('supplemental_interfaces', [])
+        nic = context['guest']['supplemental_interface']
+        require(values.get('ansible_host') != nic['address']
+                and all(item.get('address') != nic['address'] and item.get('mac') != nic['mac'] for item in others),
+                'Another live source guest already owns the supplemental address or MAC.')
+    old = inventory_variables(selected[0])
+    updated = supplemental_host_variables(old, context)
+    if old != updated:
+        operations.append(('PATCH', 'hosts/%s/' % selected[0]['id'], {'variables': json.dumps(updated)}))
+    return operations
 
 
 def management_inventory_capture(configuration, context, kind):
@@ -1067,7 +1261,10 @@ def merge_inventory(configuration, selected, route, policy, primary=None):
                   host_keys=deepcopy(route["guest_host_keys"]))
     set_inventory_variables(host, values)
     if primary is not None:
+        _management.primary_interfaces(primary, pin)
         existing_resource = values.get("vm_resource", {})
+        require(existing_resource.get('supplemental_interfaces') == primary.get('supplemental_interfaces'),
+                'Only the bounded supplemental transaction may change declared AAP interfaces.')
         require(isinstance(existing_resource, dict) and all(key not in existing_resource or existing_resource[key] == value
                 for key, value in primary.items()), "Preserve exact existing primary guest provenance.")
         values.update(vm_uuid=primary["uuid"], vm_resource={**existing_resource, **deepcopy(primary), "vm_name": selected})
@@ -1159,7 +1356,7 @@ def ensure_source_store(client, records, organization):
 
 def guest_interfaces(guest):
     """Keep Windows NIC provenance explicit; legacy Linux remains one interface."""
-    return guest["interfaces"] if guest.get("kind") == "windows" else [guest]
+    return guest["interfaces"] if guest.get("kind") == "windows" else [guest] + guest.get("supplemental_interfaces", [])
 
 
 def guest_identities(guest):
@@ -1204,7 +1401,7 @@ def windows_guest_resource(guest, pin):
 def guest_resource_conflicts(old, resource):
     if not isinstance(old, dict):
         return True
-    old_nics = old.get("interfaces", []) if old.get("kind") == "windows" else [old]
+    old_nics = guest_interfaces(old)
     new_nics = guest_interfaces(resource)
     return (bool(old.get("uuid") and old["uuid"] == resource["uuid"])
             or bool(old.get("disk") and old["disk"] == resource["disk"])

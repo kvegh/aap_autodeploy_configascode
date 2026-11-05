@@ -46,6 +46,25 @@
       ansible.builtin.set_fact:
         aap_decommission_guest_xmls: {}
         aap_decommission_guest_network_xmls: {}
+        aap_decommission_persistent_guest_xmls: {}
+      no_log: true
+
+    - name: Inspect selected persistent domain identities without changing them
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', dumpxml, '{{ item.name }}', --inactive]
+      loop: '{{ aap_retirement.domains }}'
+      when: item.name in aap_retirement_domains.stdout_lines
+      register: aap_decommission_persistent_guest_capture
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Retain exact persistent selected domain readback
+      ansible.builtin.set_fact:
+        aap_decommission_persistent_guest_xmls: >-
+          {{ aap_decommission_persistent_guest_xmls | combine({item.item.name: item.stdout}) }}
+      loop: '{{ aap_decommission_persistent_guest_capture.results }}'
+      when: not item.skipped | default(false)
       no_log: true
 
     - name: Retain exact selected domain readback in protected job variables
@@ -61,20 +80,8 @@
           {{ aap_decommission_guest_xmls | aap_decommission_guest_networks(aap_instance_resources) }}
       no_log: true
 
-    - name: Inspect those libvirt network bridge definitions
-      ansible.builtin.command:
-        argv: [virsh, -c, 'qemu:///system', net-dumpxml, '{{ item }}']
-      loop: '{{ aap_decommission_guest_network_names }}'
-      register: aap_decommission_guest_network_capture
-      changed_when: false
-      check_mode: false
-      no_log: true
-
-    - name: Retain selected network bridge readback in protected job variables
-      ansible.builtin.set_fact:
-        aap_decommission_guest_network_xmls: '{{ aap_decommission_guest_network_xmls | combine({item.item: item.stdout}) }}'
-      loop: '{{ aap_decommission_guest_network_capture.results }}'
-      no_log: true
+    - name: Inspect those exact active and persistent libvirt networks
+      ansible.builtin.include_tasks: decommission-network-readback.yml
 
     - name: Plan removal of only verified selected guest identities
       ansible.builtin.set_fact:
@@ -88,7 +95,15 @@
              aap_decommission_guest_access_plan(aap_retirement, aap_instance_route, aap_instance_resources,
                aap_decommission_guest_xmls, aap_decommission_guest_network_xmls,
                aap_decommission_isolation_capture.content | b64decode | from_json,
-               aap_related_resource_proof | default(none)) }}
+               aap_related_resource_proof | default(none), aap_decommission_persistent_guest_xmls) }}
+      no_log: true
+
+    - name: Plan removal of only exact saved DHCP and DNS host reservations
+      ansible.builtin.set_fact:
+        aap_decommission_reservations: >-
+          {{ aap_decommission_guest_network_xmls |
+             aap_decommission_reservation_plan(aap_instance_route, aap_instance_resources,
+               aap_decommission_guest_xmls, aap_decommission_guest_access_plan) }}
       no_log: true
 
     - name: Expose the protected policy handoff for canonical source retirement
@@ -152,6 +167,42 @@
         argv: [/usr/local/sbin/hactar-recovery-isolation, check]
         stdin: '{{ aap_decommission_guest_access_plan.actual_policy | to_json }}'
       changed_when: false
+      no_log: true
+
+    - name: Reinspect exact network reservations before selected record removal
+      ansible.builtin.include_tasks: decommission-network-readback.yml
+
+    - name: Refuse changed network ownership before exact reservation removal
+      ansible.builtin.assert:
+        that: >-
+          aap_decommission_guest_network_xmls |
+          aap_decommission_reservation_matches(aap_decommission_reservations, 'before')
+      no_log: true
+
+    - name: Remove only exact saved selected DHCP and DNS host records
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - net-update
+          - '{{ item.network }}'
+          - delete
+          - '{{ item.kind }}'
+          - '{{ item.xml }}'
+          - "{{ '--config' if item.scope == 'persistent' else '--live' }}"
+      loop: '{{ aap_decommission_reservations.reservations }}'
+      changed_when: true
+      no_log: true
+
+    - name: Reinspect network definitions after exact selected record removal
+      ansible.builtin.include_tasks: decommission-network-readback.yml
+
+    - name: Verify selected reservations gone and unrelated network contents preserved
+      ansible.builtin.assert:
+        that: >-
+          aap_decommission_guest_network_xmls |
+          aap_decommission_reservation_matches(aap_decommission_reservations)
       no_log: true
 
     - name: Read only exact runtime rich rules immediately before retirement

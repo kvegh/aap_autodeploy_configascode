@@ -209,7 +209,7 @@ class GuestReleaseTests(unittest.TestCase):
                 if transition is not None: args['transition'] = transition
                 plugin._task = SimpleNamespace(args=args, check_mode=check); plugin._loader = loader
                 return plugin.run(task_vars={'awx_job_id': 123, 'awx_job_template_id': 456, 'awx_project_revision': 'a' * 40})
-            with mock.patch.object(ActionBase, 'run', side_effect=lambda *a, **k: {}), mock.patch.object(module, 'ROOT', project), \
+            with mock.patch.object(ActionBase, 'run', side_effect=lambda *a, **k: {}), mock.patch.object(module.ActionModule, '_project_root', return_value=project), \
                  mock.patch.object(module, 'SourceClient', return_value=source), \
                  mock.patch.object(module.subprocess, 'run', side_effect=redirected), \
                  mock.patch.dict(os.environ, {'CAC_GIT_TOKEN': 'synthetic-writer-token'}):

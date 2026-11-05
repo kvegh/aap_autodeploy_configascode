@@ -247,6 +247,9 @@ class RuntimeReleaseTests(unittest.TestCase):
                         if key in task:
                             localize(task[key])
             localize(tasks)
+            planned_tasks = yaml.safe_load((ROOT / 'roles/recovery_guest_release/tasks/plan.yml').read_text())
+            localize(planned_tasks)
+            (role / 'tasks/plan.yml').write_text(yaml.safe_dump(planned_tasks, sort_keys=False))
             (role / 'tasks/main.yml').write_text(yaml.safe_dump(tasks, sort_keys=False))
             play = root / 'fixture.yml'
             play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,

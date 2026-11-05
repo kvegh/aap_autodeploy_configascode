@@ -2,7 +2,13 @@
 
 from copy import deepcopy
 from ipaddress import IPv4Address
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
 import re
+
+_spec = spec_from_file_location('allocation_interface_ownership', Path(__file__).with_name('aap_hypervisor_access.py'))
+ownership = module_from_spec(_spec)
+_spec.loader.exec_module(ownership)
 
 
 def reserve(state, prefix, request_id, hypervisor_id, observed_floor=1):
@@ -64,8 +70,8 @@ def reserve(state, prefix, request_id, hypervisor_id, observed_floor=1):
 
 def validate_primary_resource(route, resource):
     """Bind the existing primary ownership record to this exact verified route."""
-    if not isinstance(resource, dict) or set(resource) != {
-            "uuid", "disk", "address", "mac", "network", "bridge", "verified", "hypervisor_machine_id"}:
+    if (not isinstance(resource, dict) or not ownership.PRIMARY_FIELDS <= set(resource)
+            or set(resource) - ownership.PRIMARY_FIELDS - {'supplemental_interfaces'}):
         raise ValueError("Publish only the complete verified primary guest ownership fields.")
     if (not isinstance(resource["uuid"], str)
             or not re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", resource["uuid"])
@@ -83,6 +89,7 @@ def validate_primary_resource(route, resource):
             or resource["hypervisor_machine_id"] != route["hypervisor"]["machine_id"]
             or resource["verified"] is not True):
         raise ValueError("Primary guest ownership must match the exact selected route, disk and pinned hypervisor.")
+    ownership.primary_interfaces(resource, route['hypervisor'])
     return resource
 
 

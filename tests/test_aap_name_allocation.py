@@ -37,7 +37,7 @@ def writer_project(directory, vault):
     """Use actual action files and encrypted fixture settings for token-bound Git."""
     project = directory / "project"
     for relative in ("action_plugins/aap_reserve_vm_name.py",
-                     "src/aap_name_allocation.py", "filter_plugins/cac_import.py"):
+                     "src/aap_name_allocation.py", "src/aap_hypervisor_access.py", "filter_plugins/cac_import.py"):
         target = project / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((ROOT / relative).read_bytes())

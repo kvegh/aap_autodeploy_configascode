@@ -100,6 +100,17 @@ target choices. A successful import only proves the definitions were installed;
 it does not prove the application or demo works. Do not impose a generic
 target-AAP selector on jobs where that choice is irrelevant.
 
+The Windows infrastructure job owns its needed extra AAP virtual NIC and the
+persistent RHEL connection, following the same boundary as AIOps Zabbix
+infrastructure. Its existing private runtime profile declares the connection;
+the existing AAP allocation and main inventory retain verified hardware
+ownership for strict checks and complete cleanup. The CaC importer remains
+API-only and launches no infrastructure. This supersedes the earlier proposal
+for a separate AAP guest-OS preparation job or a generic base NIC addition.
+AAP's existing golden-image, storage, subscription and installer preparation is
+partial guest setup, not a complete declared RHEL OS baseline. Shared second-NIC
+support is implemented with local tests; live setup and cleanup are unproved.
+
 For Automation Orchestrator, three locations are independent: AAP-A runs the
 deployment job, the configured external OpenShift cluster receives AO, and AO
 connects to selected AAP-B. AAP-B may be AAP-A or another versioned AAP. The

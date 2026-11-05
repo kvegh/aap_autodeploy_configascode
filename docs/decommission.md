@@ -17,6 +17,11 @@ The complete deployment scope includes AAP, matching versioned Zabbix,
 testserver and TRA guests, and the demo website. Related guests require recorded
 UUID/disk ownership in the existing source AAP inventory before deletion.
 AutoDeploy's encrypted reservation retains only primary AAP ownership.
+Its optional Windows-owned supplemental interface remains part of that same
+AAP resource, not a separate application VM record. Current and persistent NIC
+sets must match all declared identities. Saved metadata also identifies every
+NIC after the VM is absent. Related generic Linux guests cannot use this optional
+AAP field.
 Known website content/cache/checkout, nginx vhosts/rate-limit/Basic-auth files,
 certificate lineages and upstream CA files are removed only for that version.
 
@@ -25,6 +30,18 @@ unknown orphaned role names, validates ownership, rechecks each record set
 immediately before deletion and verifies provider absence. Conflicting addresses,
 unexpected IPv6 or unreviewed record types stop before VM deletion. Other
 versions and production records are preserved.
+
+The same preflight plans exact matching libvirt DHCP/DNS host records from active
+and persistent network XML. After verified shutdown it rereads the definitions,
+deletes only those exact records and verifies that all unrelated XML remains.
+Retries plan only still-present records. Missing or conflicting ownership stops
+cleanup; no MAC or reservation is inferred from a name alone. The Windows AAP
+NIC uses a static address outside DHCP pools and adds no DHCP/DNS host record.
+For an older live one-NIC AAP that predates saved resource metadata, cleanup
+reuses the native UUID/disk/network/MAC identity already validated by the guest
+ownership preflight and its route address. It creates no synthetic verified
+record. An absent VM without complete saved ownership cannot authorize cleanup
+of ambiguous named reservations.
 
 ## Read related ownership from the existing source inventory
 

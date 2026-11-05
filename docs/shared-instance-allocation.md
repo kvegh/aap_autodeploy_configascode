@@ -75,7 +75,7 @@ not tried. Connection settings explicitly read the original inventory host's
 route so delegation cannot accidentally lose its placement data. Conflicting
 caller routes or effective connection overrides fail before guest authentication.
 
-The same route transaction now saves `instance_resources.aap` with exactly
+The initial route transaction saves `instance_resources.aap` with exactly
 `uuid`, `disk`, `address`, `mac`, `network`, `bridge`, `verified` and
 `hypervisor_machine_id`. Actual domain/network XML must identify the selected
 VM, one expected file-backed disk, one interface and the enforced network
@@ -85,6 +85,15 @@ of known primary ownership. Decommissioned reservations cannot publish a fresh
 active route. Legacy callers without ownership metadata remain compatible;
 new Stage 01 always supplies it. This retains proof after a failed partial
 decommission has already removed the VM definition, without a new state store.
+
+The Windows infrastructure job may later add one optional
+`supplemental_interfaces` declaration to that same AAP ownership record and its
+main-inventory `vm_resource`. This bounded transaction preserves the eight
+primary fields and route, checks exact native and authenticated RHEL identity,
+and grants no firewall permission. Unused metadata is omitted. Ordinary route
+publication cannot replace or discard the declaration. See the
+[existing role contract](../roles/recovery_guest_release/README.md#windows-owned-aap-interface)
+for its plan, publication, concurrent rollback and exact removal requirements.
 
 AutoDeploy allocation retains only `instance_resources.aap`. Application VM
 configuration belongs to its use case; generic teardown reads related ownership

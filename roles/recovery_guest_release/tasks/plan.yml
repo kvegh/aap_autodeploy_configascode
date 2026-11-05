@@ -1,0 +1,34 @@
+---
+- name: Retain verified guest release inputs before delegation changes connection context
+  ansible.builtin.set_fact:
+    __recovery_release_guest: "{{ recovery_release_guest }}"
+    __recovery_release_pin: "{{ recovery_release_hypervisor }}"
+    __recovery_release_trust: "{{ recovery_release_trust_file }}"
+    __recovery_release_operation: "{{ recovery_release_operation | default('release_guest') }}"
+    __recovery_release_publish:
+      durable_policy_published: false
+  no_log: true
+
+- name: Choose an existing guest permission or verified supplemental AAP interface
+  ansible.builtin.assert:
+    that: __recovery_release_operation in ['release_guest', 'guest_bootstrap_https', 'guest_bootstrap_http', 'aap_supplemental_interface']
+    fail_msg: Choose full guest release, approved bootstrap HTTP or HTTPS, or a verified supplemental AAP interface.
+
+- name: Retain the fixed runtime operation before delegation
+  ansible.builtin.set_fact:
+    __recovery_release_mode: >-
+      {{ {'release_guest': 'release', 'guest_bootstrap_https': 'bootstrap_https',
+          'guest_bootstrap_http': 'bootstrap_http',
+          'aap_supplemental_interface': 'supplemental_interface'}[__recovery_release_operation] }}
+  no_log: true
+
+- name: Preflight the source job and exact saved policy before changing the hypervisor
+  aap_publish_instance_keys:
+    operation: "{{ __recovery_release_operation }}"
+    phase: plan
+    guest: "{{ __recovery_release_guest }}"
+    hypervisor: "{{ __recovery_release_pin }}"
+  delegate_to: localhost
+  become: false
+  register: __recovery_release_plan
+  no_log: true

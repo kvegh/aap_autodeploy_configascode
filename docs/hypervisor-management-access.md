@@ -21,8 +21,10 @@ the project; it is not installed as a new host program or service. It verifies:
 
 - the hypervisor machine ID, assigned destination address and existing protected
   configuration, active/enabled isolation service and libvirt bridge zone;
-- the selected primary UUID, exact single disk and interface, MAC, network,
-  bridge and DHCP IPv4 lease against recorded ownership;
+- the selected primary UUID, exact single disk, primary MAC/network/bridge and
+  DHCP IPv4 lease against recorded ownership; when the Windows infrastructure
+  job has published a supplemental NIC, both saved and current interface sets
+  must match that exact declaration, with its actual isolated bridge;
 - the saved and current device definitions of every actual guest, refusing
   passthrough devices, remote storage and interfaces outside enforced bridges;
 - that guest autostart remains disabled and current policy is the declared
@@ -74,3 +76,21 @@ Check mode reads identities, validates the candidate and reports changes without
 applying firewall or configuration writes. It does not run the guest TCP probe
 or publish secrets. Tests use synthetic identities and local encrypted Git with
 a fake API; a passing test does not establish live connectivity.
+
+## Supplemental Windows interface
+
+The private Windows runtime settings declare one optional interface on the
+selected existing AAP. The Windows infrastructure job configures both its
+virtual hardware and persistent RHEL NetworkManager profile. The shared
+[ownership transaction](../roles/recovery_guest_release/README.md#windows-owned-aap-interface)
+records only verified AAP hardware ownership in the existing allocation and
+main-inventory `vm_resource`; it grants no network permission. Unrecorded NICs,
+changed primary identity and altered supplemental connections fail closed.
+
+Complete AAP decommission validates all declared interfaces, including saved
+identity after a domain is already absent. It removes only exact matching
+DHCP/DNS host reservations from active and persistent network definitions,
+preserving other records. The static Windows AAP interface itself adds no
+DHCP, DNS or firewall entry. Windows-only teardown preserves the primary AAP
+and removes its supplemental declaration only after the exact created NIC and
+connection are gone.

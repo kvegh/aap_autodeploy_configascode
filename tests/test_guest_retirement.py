@@ -138,7 +138,7 @@ class GenericRetirementTests(unittest.TestCase):
                 if transition is not None: arguments['transition'] = transition
                 action._task = SimpleNamespace(args=arguments, check_mode=check); action._loader = loader
                 return action.run(task_vars={'awx_job_id': 123, 'awx_job_template_id': 456, 'awx_project_revision': 'a' * 40})
-            with mock.patch.object(ActionBase, 'run', side_effect=lambda *a, **kw: {}), mock.patch.object(module, 'ROOT', project), \
+            with mock.patch.object(ActionBase, 'run', side_effect=lambda *a, **kw: {}), mock.patch.object(module.ActionModule, '_project_root', return_value=project), \
                  mock.patch.object(module, 'SourceClient', return_value=source), \
                  mock.patch.object(module.subprocess, 'run', side_effect=redirected), \
                  mock.patch.dict(os.environ, {'CAC_GIT_TOKEN': 'synthetic-retirement-token'}):

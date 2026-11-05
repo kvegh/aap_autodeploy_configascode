@@ -240,6 +240,8 @@ def aap_plan(request, state):
 
 
 def plan(request, state):
+    if request.get('mode') == 'supplemental_interface':
+        return supplemental_plan(request, state)
     if isinstance(request.get('guest'), dict) and request['guest'].get('kind') == 'aap':
         return aap_plan(request, state)
     if isinstance(request.get('guest'), dict) and request['guest'].get('kind') == 'windows':
@@ -335,6 +337,54 @@ def plan(request, state):
             'changed': state['policy'] != target}
 
 
+def supplemental_plan(request, state):
+    """Verify intended hardware and authenticated connection without granting access."""
+    require(set(request) == {'operation', 'guest', 'hypervisor', 'transition', 'check_mode', 'mode'}
+            and request['operation'] == 'apply' and type(request['check_mode']) is bool,
+            'Supplemental ownership verification cannot change or roll back networking.')
+    guest, pin, transition = request['guest'], request['hypervisor'], request['transition']
+    require(isinstance(guest, dict) and set(guest) == {'kind', 'route', 'primary', 'guest_machine_id',
+                'supplemental_interface', 'supplemental_state', 'connection_readback'}
+            and guest['kind'] == 'aap' and guest['route']['hypervisor'] == pin
+            and isinstance(guest['guest_machine_id'], str)
+            and re.fullmatch(r'[0-9a-f]{32}', guest['guest_machine_id'])
+            and guest['guest_machine_id'] not in ('0' * 32, pin['machine_id']),
+            'Use the existing AAP route and authenticated guest identity.')
+    require(isinstance(transition, dict) and set(transition) == {
+                'previous_policy', 'desired_policy', 'previous_resource', 'desired_resource'}
+            and transition['previous_policy'] == transition['desired_policy'] == state['policy'],
+            'Supplemental networking must leave all live and declared permissions unchanged.')
+    previous, desired = transition['previous_resource'], transition['desired_resource']
+    require(base.same_primary(previous, desired) and guest['primary'] in (previous, desired)
+            and base.desired_resource(previous, guest['supplemental_interface'], guest['supplemental_state'], pin) == desired,
+            'Verify only the planned optional interface; never replace primary ownership.')
+    observed_address = base.connection_readback(guest)
+    base.plan({'route': guest['route'], 'primary': desired,
+               'declared_policy': state['policy'], 'mode': 'installation'}, state)
+    if guest['supplemental_state'] == 'present':
+        declaration = guest['supplemental_interface']
+        definitions = state['supplemental_network_definitions'][declaration['network']]
+        for xml in definitions.values():
+            definition = ET.fromstring(xml)
+            require(definition.find('forward') is None, 'The Windows supplemental network must remain isolated.')
+            subnets = [ipaddress.IPv4Network('%s/%s' % (node.get('address'), node.get('prefix', node.get('netmask'))), strict=False)
+                       for node in definition.findall('./ip') if node.get('family', 'ipv4') == 'ipv4']
+            require(observed_address.network in subnets and observed_address.ip not in {
+                        value for subnet in subnets for value in (subnet.network_address, subnet.broadcast_address)}
+                    and declaration['address'] not in state['addresses'],
+                    'The static supplemental address must match its actual network and not the hypervisor.')
+            for node in definition.findall('./ip/dhcp/range'):
+                require(not (ipaddress.IPv4Address(node.get('start')) <= observed_address.ip <= ipaddress.IPv4Address(node.get('end'))),
+                        'The supplemental static address must remain outside dynamic DHCP pools.')
+            for node in definition.findall('./ip/dhcp/host'):
+                require(node.get('ip') != declaration['address'] and node.get('mac') != declaration['mac'],
+                        'A supplemental static connection cannot claim an existing DHCP reservation.')
+            require(all(node.get('ip') != declaration['address'] for node in definition.findall('./dns/host')),
+                    'A supplemental static connection cannot claim an existing DNS host record.')
+    return {'previous_policy': deepcopy(state['policy']), 'desired_policy': deepcopy(state['policy']),
+            'changed': False, 'ownership_verified': True}
+
+
 def reconcile(request):
     if request.get('operation') in {'retire_plan', 'retire_apply', 'retire_rollback'}:
         return reconcile_retirement(request)
@@ -343,7 +393,13 @@ def reconcile(request):
     descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
     try:
         fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        state = base.probe(route, guest_kind='windows') if guest.get('kind') == 'windows' else base.probe(route)
+        if guest.get('kind') == 'windows':
+            state = base.probe(route, guest_kind='windows')
+        elif guest.get('kind') == 'aap' and (guest['primary'].get('supplemental_interfaces') or request.get('mode') == 'supplemental_interface'):
+            primary = request['transition'].get('desired_resource', guest['primary'])
+            state = base.probe(route, primary=primary)
+        else:
+            state = base.probe(route)
         change = plan(request, state)
         base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
         spec = importlib.util.spec_from_loader('installed_guest_release_isolation',

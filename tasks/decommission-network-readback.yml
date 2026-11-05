@@ -1,0 +1,48 @@
+---
+- name: Inspect which selected networks are currently active
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', net-list, --name]
+  register: aap_decommission_active_networks
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Inspect selected persistent network definitions
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', net-dumpxml, '{{ item }}', --inactive]
+  loop: '{{ aap_decommission_guest_network_names }}'
+  register: aap_decommission_persistent_network_capture
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Inspect selected active network definitions
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', net-dumpxml, '{{ item }}']
+  loop: '{{ aap_decommission_guest_network_names }}'
+  when: item in aap_decommission_active_networks.stdout_lines
+  register: aap_decommission_current_network_capture
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Initialize exact selected network readback
+  ansible.builtin.set_fact:
+    aap_decommission_guest_network_xmls: {}
+  no_log: true
+
+- name: Retain selected persistent network readback
+  ansible.builtin.set_fact:
+    aap_decommission_guest_network_xmls: >-
+      {{ aap_decommission_guest_network_xmls | combine({item.item: {'persistent': item.stdout}}) }}
+  loop: '{{ aap_decommission_persistent_network_capture.results }}'
+  no_log: true
+
+- name: Retain selected active network readback
+  ansible.builtin.set_fact:
+    aap_decommission_guest_network_xmls: >-
+      {{ aap_decommission_guest_network_xmls | combine({item.item:
+          aap_decommission_guest_network_xmls[item.item] | combine({'current': item.stdout})}) }}
+  loop: '{{ aap_decommission_current_network_capture.results }}'
+  when: not item.skipped | default(false)
+  no_log: true

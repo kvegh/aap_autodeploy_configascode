@@ -251,12 +251,18 @@ class GuestAccessRetirementTests(unittest.TestCase):
                     "log=pathlib.Path(%r)\n" % str(events) +
                     "with log.open('a') as f: f.write(json.dumps(sys.argv)+chr(10))\n" +
                     "xmls=%r\nnetworks=%r\n" % (inputs[4], inputs[5]) +
-                    "if 'dumpxml' in sys.argv: print(xmls[sys.argv[-1]])\n" +
-                    "elif 'net-dumpxml' in sys.argv: print(networks[sys.argv[-1]])\n" +
+                    "if 'dumpxml' in sys.argv: print(xmls[sys.argv[sys.argv.index('dumpxml')+1]])\n" +
+                    "elif 'net-dumpxml' in sys.argv: print(networks[sys.argv[sys.argv.index('net-dumpxml')+1]])\n" +
+                    "elif 'net-list' in sys.argv: print(chr(10).join(networks))\n" +
                     "elif pathlib.Path(sys.argv[0]).name=='systemctl': assert sys.argv[1] in ('is-active','is-enabled')\n" +
                     "else: assert any(x.startswith('--query-rich-rule=') for x in sys.argv)\n")
                 stub.chmod(0o700)
             tasks = yaml.safe_load((ROOT / "tasks/decommission-guest-access.yml").read_text())
+            readback = yaml.safe_load((ROOT / 'tasks/decommission-network-readback.yml').read_text())
+            for task in readback:
+                if 'ansible.builtin.command' in task:
+                    task['ansible.builtin.command']['argv'][0] = str(directory / 'virsh')
+            (directory / 'decommission-network-readback.yml').write_text(yaml.safe_dump(readback, sort_keys=False))
             for task in tasks[1]["block"]:
                 if "ansible.builtin.stat" in task:
                     task["ansible.builtin.stat"]["path"] = str(policy)
@@ -328,6 +334,17 @@ class GuestAccessRetirementTests(unittest.TestCase):
                 "if action=='--query-rich-rule': sys.exit(0 if rule in data[key] else 1)\n" +
                 "data[key].remove(rule);p.write_text(json.dumps(data))\n")
             firewall.chmod(0o700)
+            virsh = directory / 'virsh'
+            virsh.write_text('#!/usr/bin/env python3\nimport sys\nnetworks=%r\n' % inputs[5]
+                             + "if 'net-list' in sys.argv: print(chr(10).join(networks))\n"
+                             + "elif 'net-dumpxml' in sys.argv: print(networks[sys.argv[sys.argv.index('net-dumpxml')+1]])\n"
+                             + "else: raise SystemExit(9)\n")
+            virsh.chmod(0o700)
+            readback = yaml.safe_load((ROOT / 'tasks/decommission-network-readback.yml').read_text())
+            for task in readback:
+                if 'ansible.builtin.command' in task:
+                    task['ansible.builtin.command']['argv'][0] = str(virsh)
+            (directory / 'decommission-network-readback.yml').write_text(yaml.safe_dump(readback, sort_keys=False))
             tasks = yaml.safe_load((ROOT / "tasks/decommission-guest-access.yml").read_text())
 
             def adapt(rows):
@@ -346,11 +363,15 @@ class GuestAccessRetirementTests(unittest.TestCase):
             play.write_text(yaml.safe_dump([{"hosts": "localhost", "connection": "local", "become": False,
                 "gather_facts": False, "vars": {"aap_decommission_guest_access_phase": "apply",
                     "aap_decommission_selected_guests_stopped": True,
+                    'aap_decommission_guest_network_names': list(inputs[5]),
+                    'aap_decommission_reservations': RETIRE.reservation_plan(
+                        {name: {'persistent': xml, 'current': xml} for name, xml in inputs[5].items()}, inputs[2], inputs[3]),
                     "aap_decommission_isolation_retirement": {key: plan[key] for key in ("previous_policy", "desired_policy", "identities")},
                     "aap_decommission_guest_access_plan": plan}, "tasks": tasks}], sort_keys=False))
             config = directory / "ansible.cfg"
             config.write_text("[defaults]\nretry_files_enabled=false\n")
             environment = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_NOCOLOR="1",
+                               ANSIBLE_FILTER_PLUGINS=str(ROOT / 'filter_plugins'),
                                ANSIBLE_LOCAL_TEMP=str(directory / "local"), ANSIBLE_REMOTE_TEMP=str(directory / "remote"))
             command = [sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(play)]
             if check:
