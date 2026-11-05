@@ -84,6 +84,35 @@ def retirement_request(absent=False):
 
 
 class WindowsGuestLifecycleTests(unittest.TestCase):
+    def test_explicitly_disabled_dns_keeps_exact_dhcp_and_requires_no_dns_record(self):
+        request, state = runtime_fixture()
+        nic = request['guest']['interfaces'][0]
+        name = nic['network']
+        for scope, xml in state['network_definitions'][name].items():
+            root = ET.fromstring(xml)
+            dns = root.find('dns')
+            dns.clear()
+            dns.set('enable', 'no')
+            state['network_definitions'][name][scope] = ET.tostring(root, encoding='unicode')
+        self.assertTrue(runtime.plan(request, state)['changed'])
+        rows = runtime._windows_reservations(state, request['guest'], require_present=True)
+        self.assertEqual([row['kind'] for row in rows if row['network'] == name],
+                         ['ip-dhcp-host', 'ip-dhcp-host'])
+        for variant in ('missing-dhcp', 'unexpected-dns', 'enabled-without-dns'):
+            with self.subTest(variant=variant):
+                changed = deepcopy(state)
+                root = ET.fromstring(changed['network_definitions'][name]['current'])
+                if variant == 'missing-dhcp':
+                    root.find('./ip/dhcp').remove(root.find('./ip/dhcp/host'))
+                elif variant == 'unexpected-dns':
+                    host = ET.SubElement(root.find('dns'), 'host', {'ip': nic['address']})
+                    ET.SubElement(host, 'hostname').text = nic['dns_name']
+                else:
+                    root.find('dns').attrib.clear()
+                changed['network_definitions'][name]['current'] = ET.tostring(root, encoding='unicode')
+                with self.assertRaises(ValueError):
+                    runtime.plan(request, changed)
+
     def test_lab_exception_preserves_false_in_capture_and_still_requires_native_identity(self):
         keys = release_tests.keys
         for validated in (False, True):

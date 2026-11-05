@@ -147,10 +147,13 @@ def _windows_reservations(state, guest, require_present=False):
                     or node.get('mac', '').lower() == nic['mac'] or node.get('name') == nic['dns_name']]
             dns = [node for node in root.findall('./dns/host') if node.get('ip') == nic['address']
                    or nic['dns_name'] in [item.text for item in node.findall('hostname')]]
+            dns_enabled = root.find('dns') is None or root.find('dns').get('enable', 'yes') != 'no'
             require(len(dhcp) <= 1 and all(node.attrib == expected for node in dhcp)
                     and len(dns) <= 1 and all(node.attrib == {'ip': nic['address']}
                         and [item.text for item in node.findall('hostname')] == [nic['dns_name']] for node in dns)
-                    and (not require_present or (len(dhcp) == len(dns) == 1)),
+                    and (dns_enabled or not dns)
+                    and (not require_present or
+                         (len(dhcp) == 1 and len(dns) == (1 if dns_enabled else 0))),
                     'Windows DHCP and DNS tuples must belong exclusively to this exact verified NIC.')
             for kind, nodes in (('ip-dhcp-host', dhcp), ('dns-host', dns)):
                 selected.extend({'network': network, 'scope': scope, 'kind': kind,

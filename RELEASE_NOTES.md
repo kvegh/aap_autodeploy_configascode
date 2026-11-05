@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.45.8
+
+Honor explicitly disabled libvirt DNS during verified Windows release and
+retirement. Keep exact DHCP ownership; require no matching DNS record when DNS
+is disabled and retain the existing DNS checks on enabled networks.
+
 ## 0.45.7
 
 Document the completed RHEL demo. Keep workshop patching proof separate from

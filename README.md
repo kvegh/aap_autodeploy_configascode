@@ -82,6 +82,10 @@ or in the protected task records, rather than the README's opening instructions.
 
 ## Current implementation
 
+Windows lifecycle checks follow each libvirt network's DNS setting: exact DHCP
+ownership is required, while DNS records are required only when DNS is enabled.
+An explicitly disabled DNS service stays disabled during deployment and cleanup.
+
 RHEL source 0.5.7 passed one complete RHSA/cutoff/full-update cycle on the
 workshop controller, including verified already-current full updates. Its CaC
 import and read-only runtime passed on the receiving AAP; client SSH from that
