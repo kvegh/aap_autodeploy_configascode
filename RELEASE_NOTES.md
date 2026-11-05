@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.45.9
+
+Document disabled-DNS ownership implementation `3f5c7e2` and twelve passing lifecycle checks.
+
 ## 0.45.8
 
 Honor explicitly disabled libvirt DNS during verified Windows release and

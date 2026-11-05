@@ -2816,3 +2816,12 @@ passed one complete RHSA/cutoff/full-update cycle on the workshop controller.
 Both full updates ran and verified already-current outcomes. Receiving-AAP CaC
 and runtime verification remain distinct from unproved client SSH access.
 The current generated task overview and encrypted recovery checkpoint are preserved.
+
+## Honor the isolated network's disabled DNS — 2026-11-05
+
+Implementation `3f5c7e2` follows the native network declaration during Windows
+release and retirement. Explicitly disabled DNS requires no matching DNS entry;
+exact DHCP ownership remains mandatory. Enabled DNS retains both checks. This
+fixes a real deployment mismatch without enabling DNS or weakening VM identity
+checks. All twelve focused lifecycle tests passed, including DHCP-only networks
+and refusal of missing DHCP, unexpected DNS or missing enabled-DNS records.
