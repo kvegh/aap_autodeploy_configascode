@@ -37,8 +37,8 @@ def _windows_guest(guest, pin):
     fields = {'kind', 'vm_name', 'instance_name', 'uuid', 'disk', 'hypervisor_machine_id', 'verified',
               'computer_name', 'computer_uuid', 'address', 'interfaces', 'winrm_certificate_validated'}
     require(isinstance(guest, dict) and set(guest) == fields and guest['kind'] == 'windows'
-            and guest['verified'] is True and guest['winrm_certificate_validated'] is True,
-            'Require explicit trusted Windows provenance, never substituted Linux machine or SSH identity.')
+            and guest['verified'] is True and type(guest['winrm_certificate_validated']) is bool,
+            'Require explicit Windows provenance and a truthful Boolean certificate-validation result.')
     name = guest['vm_name']
     version = re.fullmatch(r'[a-z][a-z0-9-]*-v([0-9]{2,})', name or '')
     require(version is not None and len(name) <= 15 and int(version[1]) > 0

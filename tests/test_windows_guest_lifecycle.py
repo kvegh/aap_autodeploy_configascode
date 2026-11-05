@@ -17,7 +17,7 @@ from test_guest_retirement_runtime import runtime
 ORIGINAL_FIXTURE = release_tests.fixture
 
 
-def source_fixture(new=True, nics=2):
+def source_fixture(new=True, nics=2, certificate_validated=True):
     original, pin, main, shared, hactar, allocation = ORIGINAL_FIXTURE(new=True)
     interfaces = [{'network': 'isolated', 'bridge': 'vmbr0', 'mac': original['mac'],
                    'address': original['address'], 'dns_name': 'winvm-v07.example.invalid'}]
@@ -28,7 +28,7 @@ def source_fixture(new=True, nics=2):
              'uuid': original['uuid'], 'disk': '/opt/vms/win-winvm-v07-clone.disk.qcow2',
              'hypervisor_machine_id': pin['machine_id'], 'verified': True,
              'computer_name': 'WINVM-V07', 'computer_uuid': original['uuid'],
-             'address': interfaces[-1]['address'], 'interfaces': interfaces, 'winrm_certificate_validated': True}
+             'address': interfaces[-1]['address'], 'interfaces': interfaces, 'winrm_certificate_validated': certificate_validated}
     return guest, pin, main, shared, hactar, allocation
 
 
@@ -40,8 +40,8 @@ def retired_fixture():
     return guest, pin, documents, allocation
 
 
-def runtime_fixture(absent=False, nics=2):
-    guest, pin, *_ = source_fixture(nics=nics)
+def runtime_fixture(absent=False, nics=2, certificate_validated=True):
+    guest, pin, *_ = source_fixture(nics=nics, certificate_validated=certificate_validated)
     if nics == 2:
         guest['interfaces'][1]['bridge'] = 'vmbr1'
         pin['isolation_bridges'].append('vmbr1')
@@ -84,6 +84,32 @@ def retirement_request(absent=False):
 
 
 class WindowsGuestLifecycleTests(unittest.TestCase):
+    def test_lab_exception_preserves_false_in_capture_and_still_requires_native_identity(self):
+        keys = release_tests.keys
+        for validated in (False, True):
+            with self.subTest(certificate_validated=validated):
+                guest, pin, main, shared, *_ = source_fixture(certificate_validated=validated)
+                context = keys.guest_release_context(main, shared, guest, pin)
+                capture = keys.guest_release_inventory_capture(shared, context, 'shared')
+                row = next(row for row in capture['host_inventory_configuration']['hosts']
+                           if row['name'] == guest['vm_name'])
+                self.assertIs(keys.inventory_variables(row)['vm_resource']['winrm_certificate_validated'], validated)
+                request, state = runtime_fixture(certificate_validated=validated)
+                self.assertTrue(runtime.plan(request, state)['changed'])
+                request['guest']['computer_uuid'] = '88888888-2222-3333-4444-555555555555'
+                with self.assertRaises(ValueError):
+                    runtime.plan(request, state)
+
+    def test_certificate_result_requires_a_real_boolean_in_both_validators(self):
+        for value in (None, 0, 1, 'false', 'true', [], {}):
+            with self.subTest(value=value):
+                guest, pin, main, shared, *_ = source_fixture(certificate_validated=value)
+                with self.assertRaises(release_tests.keys.StoreError):
+                    release_tests.keys.guest_release_context(main, shared, guest, pin)
+                request, state = runtime_fixture(certificate_validated=value)
+                with self.assertRaises(ValueError):
+                    runtime.plan(request, state)
+
     def test_native_windows_probe_requires_explicit_absence_and_inspects_only_three_exact_paths(self):
         request, fixture = runtime_fixture(absent=True)
         pin = request['hypervisor'];calls = [];paths = []
@@ -138,9 +164,10 @@ class WindowsGuestLifecycleTests(unittest.TestCase):
         with self.assertRaises(keys.StoreError): keys.generic_retirement_context(documents['autodeploy'], documents['shared'], source, guest['vm_name'], pin)
 
     def test_source_rejects_untrusted_incomplete_foreign_and_linux_shaped_windows_records_before_writes(self):
-        for variant in ('trust', 'computer', 'unicode-computer', 'uuid', 'clone', 'owner', 'missing-nic', 'linux-field', 'duplicate', 'public', 'bootstrap'):
+        for variant in ('validation-type', 'unverified', 'computer', 'unicode-computer', 'uuid', 'clone', 'owner', 'missing-nic', 'linux-field', 'duplicate', 'public', 'bootstrap'):
             guest, pin, main, shared, *_ = source_fixture()
-            if variant == 'trust': guest['winrm_certificate_validated'] = False
+            if variant == 'validation-type': guest['winrm_certificate_validated'] = 'false'
+            elif variant == 'unverified': guest['verified'] = False
             elif variant == 'computer': guest['computer_name'] = 'FOREIGN'
             elif variant == 'unicode-computer': guest.update(vm_name='k-v07', computer_name='\u212a-V07', disk='/opt/vms/win-k-v07-clone.disk.qcow2')
             elif variant == 'uuid': guest['computer_uuid'] = '88888888-2222-3333-4444-555555555555'
@@ -157,10 +184,11 @@ class WindowsGuestLifecycleTests(unittest.TestCase):
         for count in (1, 2):
             request, state = runtime_fixture(nics=count)
             self.assertTrue(runtime.plan(request, state)['changed'])
-        for variant in ('trust', 'computer', 'uuid', 'marker', 'title', 'nic', 'dns', 'dhcp', 'bridge', 'lease', 'extra-policy', 'disk-link', 'bootstrap'):
+        for variant in ('validation-type', 'unverified', 'computer', 'uuid', 'marker', 'title', 'nic', 'dns', 'dhcp', 'bridge', 'lease', 'extra-policy', 'disk-link', 'bootstrap'):
             request, state = runtime_fixture()
             guest = request['guest']
-            if variant == 'trust': guest['winrm_certificate_validated'] = False
+            if variant == 'validation-type': guest['winrm_certificate_validated'] = 'false'
+            elif variant == 'unverified': guest['verified'] = False
             elif variant == 'computer': guest['computer_name'] = 'FOREIGN'
             elif variant == 'uuid': guest['computer_uuid'] = '88888888-2222-3333-4444-555555555555'
             elif variant in ('marker', 'title', 'nic'):
@@ -195,8 +223,11 @@ class WindowsGuestLifecycleTests(unittest.TestCase):
         with self.assertRaises((ValueError, KeyError)): runtime.retirement_plan(request, state)
 
     def test_windows_real_encrypted_release_publication_retry_uses_same_source_transaction(self):
-        with patch.object(release_tests, 'fixture', side_effect=source_fixture):
-            release_tests.GuestReleaseTests().exercise_action('release_guest')
+        for validated in (False, True):
+            def fixture(*args, **kwargs):
+                return source_fixture(*args, certificate_validated=validated, **kwargs)
+            with self.subTest(certificate_validated=validated), patch.object(release_tests, 'fixture', side_effect=fixture):
+                release_tests.GuestReleaseTests().exercise_action('release_guest')
 
     def test_native_windows_cleanup_preserves_unrelated_dns_dhcp_and_recovers_failed_policy_apply(self):
         for fail_once in (False, True):

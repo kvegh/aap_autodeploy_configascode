@@ -25,14 +25,19 @@ service, credential type or secret store.
 ## Verified Windows deployments
 
 The same role accepts an explicit Windows resource only after the caller has
-completed the VM's configuration checks over authenticated WinRM with certificate
-validation. This is a per-VM deployment milestone; later patch/content functional
+completed the VM's configuration checks over authenticated WinRM. The operator
+has retained the demo's existing HTTPS/NTLM certificate-validation exception;
+the resource must truthfully record whether certificate validation occurred.
+This is a per-VM deployment milestone; later patch/content functional
 tests are separate. VM creation alone is insufficient. Windows bootstrap HTTPS
 is not supported by this branch.
 
 The resource has exactly these fields: `kind: windows`, `vm_name`, `instance_name`,
 `uuid`, `disk`, `hypervisor_machine_id`, `verified: true`, `computer_name`,
-`computer_uuid`, `address`, `interfaces` and `winrm_certificate_validated: true`.
+`computer_uuid`, `address`, `interfaces` and Boolean `winrm_certificate_validated`.
+The value is `false` for the approved demo exception and `true` only for an
+actually certificate-validated connection. Strings and numeric substitutes are
+refused. This field does not replace `verified: true` or any native identity check.
 The observed computer name must match the versioned VM name; the normalized CIM
 product UUID must equal the native libvirt UUID. No Linux machine ID, SSH host
 key or generic-image description is substituted. `instance_name` is the existing

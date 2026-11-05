@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.42.4
+
+Retain the operator-approved Windows demo WinRM certificate-validation exception
+in the existing release transaction. Preserve the actual Boolean certificate
+validation result, including `false`, while requiring authenticated guest facts,
+verified identity and every native UUID, disk, NIC, source and policy check.
+Refuse strings and numeric substitutes. Keep the existing resource schema, AAP
+HTTPS and SSH verification; add no bootstrap, job, credential or service.
+The extra predeployment Windows inspection has been skipped by the operator;
+normal clone and WinRM connection testing remain live acceptance work.
+Eleven Windows lifecycle checks and forty existing Linux/AAP lifecycle and
+version checks passed, including encrypted publication/retry for both Boolean
+values. No live Windows job or isolation release was run.
+
 ## 0.42.3
 
 Document implementation `6de45e0`, the exact live port wire correction and

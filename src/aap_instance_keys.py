@@ -1165,8 +1165,8 @@ def windows_guest_resource(guest, pin):
     required = {"kind", "vm_name", "instance_name", "uuid", "disk", "hypervisor_machine_id", "verified",
                 "computer_name", "computer_uuid", "address", "interfaces", "winrm_certificate_validated"}
     require(isinstance(guest, dict) and set(guest) == required and guest["kind"] == "windows"
-            and guest["verified"] is True and guest["winrm_certificate_validated"] is True,
-            "Windows release requires complete certificate-validated WinRM identity, not Linux substitutes.")
+            and guest["verified"] is True and type(guest["winrm_certificate_validated"]) is bool,
+            "Windows release requires complete WinRM identity and a Boolean certificate-validation result.")
     name = generic_retirement_name(guest["vm_name"])
     require(len(name) <= 15 and isinstance(guest["computer_name"], str)
             and re.fullmatch(r"[A-Za-z][A-Za-z0-9-]{0,14}", guest["computer_name"])

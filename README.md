@@ -54,7 +54,7 @@ implementation and points to the durable Beads records.
 Windows guests use an explicit `kind: windows` branch of the same shared
 [release](roles/recovery_guest_release/README.md#verified-windows-deployments)
 and [retirement](roles/recovery_guest_retire/README.md) tasks. The caller must first
-verify the VM's configuration through authenticated, certificate-validated WinRM,
+verify the VM's configuration through authenticated WinRM,
 including the observed computer name, normalized CIM product UUID and every
 permanent NIC's MAC/private IPv4. Native checks independently bind those facts to
 the marked Windows clone, owning-instance title, UUID, disk and each actual
@@ -63,6 +63,13 @@ receives only its exact policy identity in one atomic transition. No Linux SSH
 key or machine identity is fabricated. Windows bootstrap is refused, Linux
 defaults remain, and later patch/content functional testing is separate from the
 complete-VM configuration milestone.
+
+The approved Windows demo retains HTTPS/5986 with NTLM and its existing
+certificate-validation exception. The resource records
+`winrm_certificate_validated: false` for that connection; `true` remains reserved
+for actual certificate validation. Authenticated Windows facts and all native
+ownership checks still precede release. AAP HTTPS and SSH verification retain
+their existing settings.
 
 Explicit Windows retirement retains saved provenance through physical deletion,
 then removes only its clone's DHCP/DNS, policy and shared inventory records using
