@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.40.1
+
+Document implementation `ae9cfdb`, its explicit Windows identity and all-NIC
+ownership requirements, exact retirement boundaries, retained Linux/AAP defaults
+and separate trusted-producer/live acceptance prerequisites.
+
 ## 0.40.0
 
 Extend the existing guest lifecycle transaction with strict explicit Windows

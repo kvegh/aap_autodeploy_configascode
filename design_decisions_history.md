@@ -1,5 +1,40 @@
 # Design decisions history
 
+## Verify Windows through its own identity in the shared lifecycle — 2026-11-05
+
+Implementation `ae9cfdbdbf29fe0471b71a0163cd557f607d7d8c` adds the explicitly
+approved `guest.kind: windows` variant to the existing release and retirement
+transaction. Windows clone naming, trusted WinRM/CIM identity and permanent NICs
+differ from Linux. Fabricating Linux machine IDs, SSH keys or generic-image
+descriptions would weaken ownership proof, so the Linux schema and default
+request shapes remain while Windows has a strict bounded field set. No new
+publisher, store, service, credential type or job is added.
+
+The caller must complete the VM's configuration and validate its computer name,
+normalized CIM product UUID and all observed NIC MAC/private IPv4 pairs over
+authenticated, certificate-validated WinRM. Native readback independently matches
+the clone marker, owning-instance title, UUID, exclusive Windows disk, both domain
+definitions and every network/bridge/subnet/DHCP/DNS tuple. The selected WinRM
+address must be one of those verified NICs. One or two NICs receive their exact
+policy identities atomically; production protection and unrelated permissions
+remain. Later patch/content functional tests are separate from this complete-VM
+configuration milestone. No Windows bootstrap exception is authorized or enabled.
+
+Windows retirement explicitly passes its kind even after successful record
+removal. Saved canonical/API ownership supports interrupted publication retries;
+native checks require the Windows clone and both incompatible Linux canonical
+paths absent. Exact per-NIC static DHCP/DNS and policy records are removed through
+the same encrypted captures and source inventory. Unknown host-service grants
+still refuse preflight, dynamic lease cache is not edited, and allocation/token
+state remains untouched. The AAP-only consumed-reservation guards are unchanged.
+
+Sixty-three relevant checks pass, including real encrypted Git/API interruption
+recovery, actual native template modes, distinct Windows bridges, native cleanup
+and rollback, absent-path checks and existing Linux/AAP regressions. Both shared
+lifecycle roles pass production lint; four version-tool checks also pass.
+These are implementation checks. Trusted booted-Windows producer and live
+deployment/release/decommission acceptance remain separate pending steps.
+
 ## Retire one verified generic guest through the existing transaction — 2026-11-05
 
 Implementation `1976a5aae2f70a5455dda9032820889369849183` adds `retire_guest`
