@@ -2797,3 +2797,14 @@ while preserving existing template definitions. The imported read-only runtime
 diagnostic then confirmed execution-environment, collection and Satellite API
 readiness. Existing Machine selection remains separate from SSH-key equivalence
 and receiving-host login. No wrapper or authentication mechanism changed.
+
+## 2026-11-05 — Focus on the repeatable demonstration
+
+Documentation commit `b62e89d` replaces the long opening run history with the
+existing deploy, demonstrate and reset sequence. It corrects prerequisite order,
+source bearer guidance, target selection and private capture filenames. The owner
+requires observed failures to be fixed in normal automation; manual cleanup is
+not a substitute for a working reset. Keep resource/production safeguards and
+bounded waits, while avoiding additional recovery frameworks and repeated proof
+collection. OpenShift runtime verification is deferred. Beads remains authoritative
+with a public overview and encrypted Git recovery checkpoint.

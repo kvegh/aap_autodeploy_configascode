@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.45.6
+
+Document the practical demo decision and documentation implementation `b62e89d`.
+
 ## 0.45.5
 
 Replace the long README run history with deploy, demonstrate and reset
