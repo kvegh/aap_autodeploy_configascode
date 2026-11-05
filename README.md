@@ -82,6 +82,11 @@ or in the protected task records, rather than the README's opening instructions.
 
 ## Current implementation
 
+RHEL source 0.5.7 passed one complete RHSA/cutoff/full-update cycle on the
+workshop controller, including verified already-current full updates. Its CaC
+import and read-only runtime passed on the receiving AAP; client SSH from that
+AAP remains unverified. See the RHEL project for the repeat/reset instructions.
+
 All six project import Job Templates use [one API-only configuration
 playbook](docs/cac-project-import.md), `deploy-cac-project.yml`, with fixed project
 IDs and separate repository Git/Vault credentials. Choose the inventory instance

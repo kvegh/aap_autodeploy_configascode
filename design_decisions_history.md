@@ -2808,3 +2808,11 @@ not a substitute for a working reset. Keep resource/production safeguards and
 bounded waits, while avoiding additional recovery frameworks and repeated proof
 collection. OpenShift runtime verification is deferred. Beads remains authoritative
 with a public overview and encrypted Git recovery checkpoint.
+
+## 2026-11-05 — Complete the lean RHEL demo
+
+RHEL implementation `2be30c742f946b6f9c1ad93a9b7efbe14e230953` (source 0.5.7)
+passed one complete RHSA/cutoff/full-update cycle on the workshop controller.
+Both full updates ran and verified already-current outcomes. Receiving-AAP CaC
+and runtime verification remain distinct from unproved client SSH access.
+The current generated task overview and encrypted recovery checkpoint are preserved.

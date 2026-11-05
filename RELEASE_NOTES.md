@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.45.7
+
+Document the completed RHEL demo. Keep workshop patching proof separate from
+receiving-AAP client SSH readiness; preserve the current generated task overview.
+
 ## 0.45.6
 
 Document the practical demo decision and documentation implementation `b62e89d`.
