@@ -403,6 +403,8 @@ class ActionModule(ActionBase):
             args = self._task.args
             installation = args.get("operation") == "installation_access"
             retirement = args.get("operation") == "retire_guest"
+            aap_release = (args.get("operation") == "release_guest" and isinstance(args.get("guest"), dict)
+                           and args["guest"].get("kind") == "aap")
             required = ({"operation", "route", "primary"} if installation else
                         {"operation", "guest_name", "hypervisor"} if retirement else
                         {"operation", "guest", "hypervisor"})
@@ -453,15 +455,21 @@ class ActionModule(ActionBase):
                         raw, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes(), filename=str(path))
                         documents[kind] = AnsibleLoader(raw).get_single_data()
                         seals[kind] = (label, secret)
-                    if installation:
+                    if installation or aap_release:
                         allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
                         keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
                                      "Read existing consumed AAP ownership before installation access.")
                         allocation = AnsibleLoader(self._loader._vault.decrypt(allocation_path.read_bytes())).get_single_data()
-                        context = keys.installation_access_context(documents["autodeploy"], documents["shared"], allocation,
-                            args["route"], args["primary"], args.get("transition") if phase == "publish" else None)
-                        capture = keys.installation_inventory_capture
-                        source_operations = keys.source_installation_operations
+                        if aap_release:
+                            context = keys.aap_release_context(documents["autodeploy"], documents["shared"], allocation,
+                                args["guest"], args["hypervisor"], args.get("transition") if phase == "publish" else None)
+                            capture = keys.retire_inventory_capture
+                            source_operations = keys.source_aap_release_operations
+                        else:
+                            context = keys.installation_access_context(documents["autodeploy"], documents["shared"], allocation,
+                                args["route"], args["primary"], args.get("transition") if phase == "publish" else None)
+                            capture = keys.installation_inventory_capture
+                            source_operations = keys.source_installation_operations
                     elif retirement:
                         context = keys.generic_retirement_context(documents["autodeploy"], documents["shared"], source,
                             args["guest_name"], args["hypervisor"], args.get("transition") if phase == "publish" else None,
@@ -489,6 +497,14 @@ class ActionModule(ActionBase):
                         return result
                     # Recheck the running source job before any durable or API mutation.
                     keys.verify_source_job(source, None, variables)
+                    if aap_release:
+                        git("fetch", "--quiet", "--depth=1", "origin", "main")
+                        latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        selected_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
+                                            if row.get("vm_name") == context["route"]["vm_name"]]
+                        keys.require(selected_records == [context["reservation"]],
+                                     "Consumed AAP ownership changed before final release publication.")
                     changed = []
                     for kind, value in desired.items():
                         if value is None or value == documents[kind]:
@@ -511,12 +527,12 @@ class ActionModule(ActionBase):
                         durable = True
                     else:
                         durable = True
-                    if installation:
+                    if installation or aap_release:
                         git("fetch", "--quiet", "--depth=1", "origin", "main")
                         latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
                         observed_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
-                                            if row.get("vm_name") == args["route"]["vm_name"]]
+                                            if row.get("vm_name") == context["route"]["vm_name"]]
                         keys.require(observed_records == [context["reservation"]],
                                      "Selected AAP reservation changed before installation source synchronization.")
                     # Exact preflight already validated every API destination. A failed API write leaves
@@ -540,11 +556,11 @@ class ActionModule(ActionBase):
                     if observed != desired:
                         # Restart from fresh state; exact transition checks reject unrelated changes.
                         continue
-                    if installation:
+                    if installation or aap_release:
                         latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
                         observed_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
-                                            if row.get("vm_name") == args["route"]["vm_name"]]
+                                            if row.get("vm_name") == context["route"]["vm_name"]]
                         keys.require(observed_records == [context["reservation"]],
                                      "Selected AAP ownership changed during installation access publication.")
                     synchronized = True

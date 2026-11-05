@@ -194,7 +194,54 @@ def windows_plan(request, state):
     return {'previous_policy': deepcopy(state['policy']), 'desired_policy': deepcopy(target), 'changed': state['policy'] != target}
 
 
+def aap_plan(request, state):
+    require(set(request) <= {'operation', 'guest', 'hypervisor', 'transition', 'check_mode', 'mode'}
+            and {'operation', 'guest', 'hypervisor', 'transition', 'check_mode'} <= set(request)
+            and request['operation'] in {'apply', 'rollback'} and type(request['check_mode']) is bool
+            and request.get('mode', 'release') == 'release', 'AAP supports only final verified base-configuration release.')
+    guest, pin, transition = (request[key] for key in ('guest', 'hypervisor', 'transition'))
+    require(isinstance(guest, dict) and set(guest) == {'kind', 'route', 'primary', 'guest_machine_id'}
+            and guest['kind'] == 'aap' and guest['route']['hypervisor'] == pin
+            and isinstance(guest['guest_machine_id'], str) and re.fullmatch(r'[a-f0-9]{32}', guest['guest_machine_id'])
+            and guest['guest_machine_id'] != pin['machine_id'], 'Require the existing AAP route and fresh authenticated guest machine identity.')
+    route, primary = guest['route'], guest['primary']
+    require(primary.get('machine_id', guest['guest_machine_id']) == guest['guest_machine_id'],
+            'The authenticated AAP machine identity conflicts with saved primary facts.')
+    require(isinstance(transition, dict) and set(transition) == {'previous_policy', 'desired_policy'},
+            'Use only the exact source-preflighted AAP release transition.')
+    previous, desired = transition['previous_policy'], transition['desired_policy']
+    require(state['policy'] in (previous, desired)
+            and previous.get('protected_ipv4') and previous['protected_ipv4'] == desired.get('protected_ipv4')
+            and primary['address'] not in previous['protected_ipv4'], 'AAP release must retain all production exclusions and exact canonical policy.')
+    identity = {'bridge': primary['bridge'], 'ipv4': primary['address'], 'mac': primary['mac']}
+    expected = deepcopy(previous)
+    matches = [row for row in expected.setdefault('released_clients', [])
+               if row['ipv4'] == identity['ipv4'] or row['mac'] == identity['mac']]
+    require(not matches or matches == [identity], 'An AAP release conflicts with another guest identity.')
+    if not matches:
+        expected['released_clients'].append(identity)
+    require(desired == expected, 'AAP release may add only its exact consumed primary identity.')
+    # Reuse the actual AAP native guard, without applying its bounded permission
+    # or requiring the unrelated generic-image provenance description.
+    base.plan({'route': route, 'primary': primary, 'declared_policy': state['policy'], 'mode': 'installation'}, state)
+    require(set(state['domains'][route['vm_name']]) == {'persistent', 'current'}, 'Inspect both actual AAP domain definitions.')
+    for name, scopes in state['domains'].items():
+        if name == route['vm_name']:
+            continue
+        for xml in scopes.values():
+            root = ET.fromstring(xml)
+            require(root.findtext('uuid') != primary['uuid']
+                    and not any(node.get('file') == primary['disk'] for node in root.findall('./devices/disk/source')),
+                    'Another native domain owns the consumed AAP UUID or disk.')
+    if request['operation'] == 'rollback':
+        require(state['policy'] == desired, 'AAP rollback cannot overwrite a later policy change.')
+    target = previous if request['operation'] == 'rollback' else desired
+    return {'previous_policy': deepcopy(state['policy']), 'desired_policy': deepcopy(target), 'changed': state['policy'] != target}
+
+
 def plan(request, state):
+    if isinstance(request.get('guest'), dict) and request['guest'].get('kind') == 'aap':
+        return aap_plan(request, state)
     if isinstance(request.get('guest'), dict) and request['guest'].get('kind') == 'windows':
         return windows_plan(request, state)
     require({'operation', 'guest', 'hypervisor', 'transition', 'check_mode'} <= set(request)
@@ -291,7 +338,7 @@ def reconcile(request):
     if request.get('operation') in {'retire_plan', 'retire_apply', 'retire_rollback'}:
         return reconcile_retirement(request)
     pin, guest = request['hypervisor'], request['guest']
-    route = {'hypervisor': pin, 'vm_name': guest['vm_name']}
+    route = guest['route'] if guest.get('kind') == 'aap' else {'hypervisor': pin, 'vm_name': guest['vm_name']}
     descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
     try:
         fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)

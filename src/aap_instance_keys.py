@@ -934,6 +934,82 @@ def source_installation_operations(client, shared, autodeploy, hactar, context):
     return operations
 
 
+def aap_release_host_matches(row, guest, context):
+    values = inventory_variables(row)
+    route, primary = guest["route"], guest["primary"]
+    resource = values.get("vm_resource", {})
+    require(values.get("ansible_host") == route["vm_ip"]
+            and values.get("hypervisor_host") == context["hypervisor_name"]
+            and values.get("vm_uuid") == primary["uuid"]
+            and values.get("host_keys") == route["guest_host_keys"]
+            and origin("https://" + values.get("ansible_fqdn", "")) == origin(route["aap_hostname"])
+            and isinstance(resource, dict) and resource.get("vm_name") == route["vm_name"]
+            and all(resource.get(key) == value for key, value in primary.items()),
+            "Final AAP release requires the existing published exact primary inventory identity.")
+    for recorded in (values.get("machine_id"), resource.get("machine_id")):
+        require(recorded is None or recorded == guest["guest_machine_id"],
+                "Authenticated AAP machine identity changed from its recorded value.")
+
+
+def aap_release_context(configuration, shared, allocation, guest, pin, transition=None):
+    """Release only the existing consumed AAP primary; never treat it as a clone."""
+    require(isinstance(guest, dict) and set(guest) == {"kind", "route", "primary", "guest_machine_id"}
+            and guest["kind"] == "aap", "Use only the typed existing AAP route, primary and authenticated machine identity.")
+    route, pin = _routing.instance_route(guest["route"]), _routing.hypervisor_pin(pin)
+    require(route["hypervisor"] == pin and isinstance(guest["guest_machine_id"], str)
+            and re.fullmatch(r"[a-f0-9]{32}", guest["guest_machine_id"])
+            and guest["guest_machine_id"] != pin["machine_id"],
+            "Final AAP release requires fresh authenticated guest facts on the registered hypervisor.")
+    context = installation_access_context(configuration, shared, allocation, route, guest["primary"])
+    previous = context["previous_policy"]
+    require(previous.get("protected_ipv4") and guest["primary"]["address"] not in previous["protected_ipv4"],
+            "Final AAP release must retain independently declared production protection.")
+    identity = {key: guest["primary"][field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
+    desired = deepcopy(previous)
+    matches = [row for row in desired.setdefault("released_clients", [])
+               if row["ipv4"] == identity["ipv4"] or row["mac"] == identity["mac"]]
+    require(not matches or matches == [identity], "Final AAP release conflicts with another guest's identity.")
+    if not matches:
+        desired["released_clients"].append(identity)
+    require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
+            desired.get("guest_host_clients", []), desired.get("released_clients", [])) == desired,
+            "Final AAP release must preserve normalized production protection and all other grants.")
+    if transition is not None:
+        require(isinstance(transition, dict) and set(transition) == {"previous_policy", "desired_policy"}
+                and transition["desired_policy"] == desired, "Publish only the exact planned AAP release.")
+        old = transition["previous_policy"]
+        require(isinstance(old, dict) and _routing.isolation_policy(pin, old.get("https_clients", []),
+                old.get("protected_ipv4"), old.get("guest_host_clients", []), old.get("released_clients", [])) == old,
+                "Retain the exact normalized policy preceding AAP release.")
+        derived = deepcopy(old)
+        if identity not in derived.setdefault("released_clients", []):
+            derived["released_clients"].append(identity)
+        require(derived == desired and previous in (old, desired), "AAP release cannot replace another policy change.")
+        previous = old
+    hosts = shared["host_inventory_configuration"]["hosts"]
+    hypervisors = [row for row in hosts if inventory_variables(row).get("ansible_host") == pin["address"]]
+    require(len(hypervisors) == 1, "Resolve one exact published AAP hypervisor.")
+    context.update(previous_policy=deepcopy(previous), desired_policy=desired, guest=deepcopy(guest["primary"]),
+                   aap_guest=deepcopy(guest), access_mode="aap_release", hypervisor_name=hypervisors[0]["name"])
+    selected = [row for row in hosts if row.get("inventory") == context["inventory_name"]
+                and aap_inventory_owner(row, route["vm_name"])]
+    require(len(selected) == 1, "Final AAP release cannot create a missing primary inventory record.")
+    aap_release_host_matches(selected[0], guest, context)
+    return context
+
+
+def source_aap_release_operations(client, shared, autodeploy, hactar, context):
+    """Update policy aliases only, requiring the already-published AAP host."""
+    operations = source_inventory_operations(client, shared, autodeploy, hactar, context, guest_release_variables)
+    inventories = client.rows("inventories/?name=" + quote(context["inventory_name"]))
+    require(len(inventories) == 1, "Keep the exact published shared AAP inventory.")
+    rows = client.rows("hosts/?inventory=%s&name=%s" % (inventories[0]["id"], quote(context["inventory_host_name"])))
+    require(len(rows) == 1 and rows[0].get("inventory") == inventories[0]["id"],
+            "Final AAP release requires exactly its existing published source host.")
+    aap_release_host_matches(rows[0], context["aap_guest"], context)
+    return operations
+
+
 def merge_inventory(configuration, selected, route, policy, primary=None):
     """Keep VM placement in the existing inventory capture, without any tokens."""
     instance_name(selected)

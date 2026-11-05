@@ -72,6 +72,26 @@ other VMs, credentials and allocation history remain unchanged. Sixty-three
 relevant tests and focused role lint cover these paths; actual Windows deployment
 and release acceptance remain separate.
 
+Normal `04-aap-config.yml` now releases its AAP guest only after complete base
+configuration, MCP/API token verification, source publication and their token/
+workspace cleanup succeed. The final hook creates new short-lived pinned SSH
+trust and reads only the guest's machine identity using the existing login. It
+requires the existing token-store publication and inventory registration settings
+to be enabled. Partial/skipped execution and check mode cannot grant full release.
+The bounded `aap_installation_access` repair remains HTTPS-only and ends the play
+before this final hook. Both old and final trust files have failure-safe cleanup.
+
+The same lifecycle role uses explicit `kind: aap` with the existing route, exact
+primary resource and fresh guest machine ID. Source validation checks the
+existing VM reservation before and after publication without changing it; native
+checks reuse the AAP UUID, disk, MAC, network and DHCP ownership guards. It adds
+only that primary identity to `released_clients` in the same three encrypted
+captures/source aliases. Generic-clone descriptions are unnecessary, and
+allocation history, tokens, native rules and other guests remain unchanged.
+Unpublished failures retain the existing exact rollback behavior; durable
+publication is reconciled by retry. Live normal-base acceptance is separate from
+the source/native failure and ordering tests.
+
 The agreed functional test order is to prove the source environment's other
 use cases first, then pause its three demo guests while keeping its AAP running
 to build and verify the successor. That successor deployment is itself a source
@@ -379,7 +399,7 @@ The repository contains the deployment stages and separate use-case imports:
 | 01 | `01-linux-vm-setup.yml` | Clone a prepared golden image and discover the VM address. |
 | 02 | `02-infra-config.yml` | Configure DNS, certificates, and the reverse proxy. |
 | 03 | `03-aap-install.yml` | Prepare the VM and run the pre-staged AAP installer. |
-| 04 | `04-aap-config.yml` | Apply the subscription, PAH sources and local download credentials, then shared CaC through `infra.aap_configuration.dispatch`. |
+| 04 | `04-aap-config.yml` | Apply the subscription, PAH and shared CaC, verify MCP/API publication, then release only the completed AAP guest after cleanup. |
 | Separate | `05-prepare-use-cases.yml` | Prepare exact PAH requirements for explicitly selected use cases; outside base deployment. |
 | Separate | `deploy-selected-use-cases.yml` | Install only chosen umbrella Projects and saved CaC through the seed's scoped configuration importers. |
 
@@ -814,7 +834,8 @@ Repository tokens are read-only by default, with two approved exceptions:
   write** permission, approved for saving encrypted settings and verified
   resource details for each new instance. Its credential retains the existing
   `CaC repo read token` display name; that name does not describe its current
-  write permission. The preparation automation remains work in progress.
+  write permission. The importer now prepares those encrypted settings; fresh
+  successor acceptance remains separate.
 
 Both use the existing `Cac_git_token_type`; no additional credential type or
 repository is introduced. Other companion repository tokens remain read-only.
@@ -1038,6 +1059,12 @@ It reuses the existing AIOps repository's approved write access and preserves
 existing secrets on retries. Missing auxiliary VMs stay absent and disabled;
 their actual ownership comes only from existing native deployment evidence.
 Application deployment and successor-environment acceptance remain separate.
+
+Normal preparation job 3320 succeeded on published revision `5728dfe` (0.41.1)
+for an existing target. Independent readback preserved all sixty-nine previous
+template IDs, verified the added Claude installer and matched the selected
+application VM identity. This proves that preparation/refresh path, without
+creating a successor or establishing this version's final AAP release acceptance.
 
 Before the first import on a fresh target, run the existing use-case prerequisite
 preparation for that instance and the reviewed AIOps selection. It supplies the

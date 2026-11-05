@@ -1,5 +1,23 @@
 # Release notes
 
+## 0.42.0
+
+Add final AAP guest release to the successful end of normal Stage 04, after all
+base/MCP/token/source publication and cleanup. Reuse the existing role/action with
+explicit AAP route/primary/fresh machine identity and the consumed reservation,
+checked before and after publication without modifying allocator state. Reuse
+native AAP ownership guards and add only the exact primary policy identity to
+the existing three encrypted captures/source aliases. Preserve tokens, native
+rules, other guests and Linux/Windows behavior. Partial/skipped runs, check mode,
+failed stages/cleanup and the bounded HTTPS-only repair cannot grant release.
+Both original and new short-lived SSH trust files have bounded cleanup. Native
+ordering/failure and reservation-race tests distinguish code verification from
+pending live normal-base acceptance.
+Seventy-one lifecycle checks and four version checks pass on the published
+0.41.1 baseline; focused production lint passes fifteen files. Separately,
+normal preparation job 3320 succeeded using 0.41.1 for an existing target,
+preserving its prior template IDs. That result does not run this new AAP release.
+
 ## 0.41.1
 
 Document implementation `cecff63`, the existing-importer preparation sequence,

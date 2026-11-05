@@ -1,0 +1,66 @@
+---
+- name: Require successful complete normal base and source publication before full release
+  ansible.builtin.assert:
+    that:
+      - ansible_run_tags | sort == ['all']
+      - ansible_skip_tags | length == 0
+      - not ansible_check_mode
+      - aap_instance_key_store.publish | default(false) | bool
+      - aap_instance_key_store.register_inventory | default(false) | bool
+      - cac_instance_key_publication.published | default(false) | bool
+      - cac_instance_key_publication is succeeded
+      - aap_instance_resources.aap.verified | bool
+      - aap_instance_route | aap_instance_route is mapping
+    fail_msg: Complete normal base, MCP/API access and source publication successfully before releasing AAP isolation.
+  no_log: true
+
+- name: Prepare new short-lived pinned SSH trust after all base cleanup succeeded
+  ansible.builtin.include_tasks: aap-instance-ssh.yml
+
+- name: Bind existing guest login before delegated identity inspection
+  ansible.builtin.set_fact:
+    aap_final_release_login:
+      user: "{{ vault_ansible_user }}"
+      password: "{{ vault_ansible_password }}"
+  no_log: true
+
+- name: Read only the authenticated selected guest machine identity through its pinned route
+  ansible.builtin.command:
+    argv: [cat, /etc/machine-id]
+  delegate_to: "{{ aap_instance_route.aap_hostname | urlsplit('hostname') }}"
+  become: false
+  vars:
+    ansible_connection: ssh
+    ansible_host: "{{ hostvars[inventory_hostname].aap_instance_route.vm_ip }}"
+    ansible_port: 22
+    ansible_user: "{{ hostvars[inventory_hostname].aap_final_release_login.user }}"
+    ansible_password: "{{ hostvars[inventory_hostname].aap_final_release_login.password }}"
+    ansible_ssh_common_args: "{{ hostvars[inventory_hostname].aap_instance_ssh_args }}"
+    ansible_host_key_checking: true
+    ansible_ssh_host_key_checking: true
+  register: aap_final_guest_machine_id
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Require actual guest facts rather than the hypervisor machine identity
+  ansible.builtin.assert:
+    that:
+      - aap_final_guest_machine_id.stdout | trim is match('^[0-9a-f]{32}$')
+      - aap_final_guest_machine_id.stdout | trim != aap_instance_route.hypervisor.machine_id
+    fail_msg: Fresh authenticated guest machine identity is required for final AAP release.
+  no_log: true
+
+# Preserve the existing public role input names.
+- name: Release this consumed AAP primary through the same existing lifecycle transaction # noqa: var-naming[no-role-prefix]
+  ansible.builtin.include_role:
+    name: recovery_guest_release
+  vars:
+    recovery_release_guest:
+      kind: aap
+      route: "{{ aap_instance_route }}"
+      primary: "{{ aap_instance_resources.aap }}"
+      guest_machine_id: "{{ aap_final_guest_machine_id.stdout | trim }}"
+    recovery_release_hypervisor: "{{ aap_instance_route.hypervisor }}"
+    recovery_release_trust_file: "{{ aap_instance_trust.path }}"
+    recovery_release_operation: release_guest

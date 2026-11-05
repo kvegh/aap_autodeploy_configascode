@@ -312,7 +312,30 @@
               when: cac_gateway_token.json.id is defined
               no_log: true
           always:
-            - name: Remove the temporary checkout, decrypted manifest, and authentication helper
-              ansible.builtin.file:
-                path: "{{ cac_workspace.path }}"
-                state: absent
+            - name: Finish private workspace cleanup and always discard its old SSH trust
+              block:
+                - name: Remove the temporary checkout, decrypted manifest, and authentication helper
+                  ansible.builtin.file:
+                    path: "{{ cac_workspace.path }}"
+                    state: absent
+              always:
+                - name: Remove only the base configuration's temporary instance trust file
+                  ansible.builtin.file:
+                    path: "{{ aap_instance_trust.path }}"
+                    state: absent
+                  when: aap_instance_trust.path | default('') is match('^/tmp/aap-instance-known-hosts-[A-Za-z0-9_]+$')
+                  no_log: true
+
+  post_tasks:
+    - name: Release only the successfully configured and published AAP guest
+      when: not ansible_check_mode
+      block:
+        - name: Verify fresh guest identity and publish final AAP isolation release
+          ansible.builtin.include_tasks: tasks/aap-final-release.yml
+      always:
+        - name: Remove only the final release's newly allocated SSH trust file
+          ansible.builtin.file:
+            path: "{{ aap_instance_trust.path }}"
+            state: absent
+          when: aap_instance_trust.path | default('') is match('^/tmp/aap-instance-known-hosts-[A-Za-z0-9_]+$')
+          no_log: true

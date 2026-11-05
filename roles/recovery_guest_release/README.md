@@ -51,3 +51,27 @@ All verified NIC identities are added atomically to the same policy transition
 and existing encrypted captures/source inventory. Production denial and every
 unrelated permission remain. Omitted `kind` keeps the existing Linux schema and
 checks; the Windows fields are refused by that default schema.
+
+## Completed AAP base configuration
+
+The same role accepts exactly `kind: aap`, `route`, `primary` and
+`guest_machine_id` as its guest object. The route and exact primary come from the
+existing consumed VM reservation; the machine ID must be freshly read through
+the existing authenticated, pinned SSH connection and must agree with any
+recorded guest ID. It is not a password/token recovery mechanism and introduces
+no generic-image description or synthetic guest fields.
+
+Normal Stage 04 calls this branch only after base configuration, MCP/API access,
+source publication and their cleanup succeed. Existing publication and inventory
+registration must be enabled. A new short-lived trust file is removed even when
+release fails. Partial runs, skipped tasks, check mode and the HTTPS-only repair
+path do not reach full release.
+
+The source action compares the read-only reservation before and after durable
+publication. It requires the already-published AAP inventory host and leaves its
+physical/alias identity and token data unchanged. Native checks reuse the AAP
+management/installation ownership guard, including both domain definitions,
+UUID, exclusive ownership among guests, canonical disk, MAC, network and DHCP.
+Only the primary's exact policy identity is added; existing native firewall rules,
+production exclusions and other guest permissions remain. Linux and Windows
+branches retain their existing behavior.

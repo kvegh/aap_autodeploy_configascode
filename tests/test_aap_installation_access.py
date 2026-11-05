@@ -216,16 +216,22 @@ class ActionModule(ActionBase):
             fixture_play=directory/'play.yml'
             fixture_play.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,
                 'vars':variables,'pre_tasks':pre,'tasks':[{'name':'Forbidden ordinary base stage',
-                'ansible.builtin.fail':{'msg':'Ordinary base configuration must not execute'}}]}],sort_keys=False))
+                'ansible.builtin.fail':{'msg':'Ordinary base configuration must not execute'}}],
+                'post_tasks':[{'name':'Forbidden final AAP release after bounded repair','tags':['always'],
+                'ansible.builtin.fail':{'msg':'Repair must end before any final release'}}]}],sort_keys=False))
             env=dict(os.environ,ANSIBLE_ACTION_PLUGINS=str(plugins),ANSIBLE_FILTER_PLUGINS=str(root/'filter_plugins'),
                      ANSIBLE_LOCAL_TEMP=str(directory/'local'),ANSIBLE_REMOTE_TEMP=str(directory/'remote'),ANSIBLE_NOCOLOR='1')
-            result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(fixture_play),
-                '--tags','aap_installation_access'],env=env,cwd=root,text=True,capture_output=True,timeout=45)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            self.assertNotIn('TASK [Forbidden ordinary base stage]',result.stdout)
-            rows=[json.loads(line)for line in trace.read_text().splitlines()]
-            self.assertEqual([row['phase']for row in rows if 'phase'in row],['plan','publish'])
-            remote=next(row for row in rows if row.get('transport'));self.assertFalse(Path(remote['trust']).exists())
+            for native in (False,True):
+                env['ANSIBLE_JINJA2_NATIVE']=str(native).lower()
+                trace.unlink(missing_ok=True)
+                result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(fixture_play),
+                    '--tags','aap_installation_access'],env=env,cwd=root,text=True,capture_output=True,timeout=45)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                self.assertNotIn('TASK [Forbidden ordinary base stage]',result.stdout)
+                self.assertNotIn('TASK [Forbidden final AAP release',result.stdout)
+                rows=[json.loads(line)for line in trace.read_text().splitlines()]
+                self.assertEqual([row['phase']for row in rows if 'phase'in row],['plan','publish'])
+                remote=next(row for row in rows if row.get('transport'));self.assertFalse(Path(remote['trust']).exists())
 
     def test_real_encrypted_git_bootstrap_plan_publish_retry_and_idempotence_preserve_tokens_and_allocator(self):
         module = load('installation_publication_action', 'action_plugins/aap_publish_instance_keys.py')
