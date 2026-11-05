@@ -1,436 +1,84 @@
 # AAP AutoDeploy and Configuration as Code
 
-Resuming in a new session? Start with [RESTART_HERE.md](RESTART_HERE.md).
+Deploy a fresh AAP, import selected use cases, run their demonstrations, and clean
+up the disposable resources so the demonstration can be repeated. Recovery can
+be driven by an external AAP; it must not depend on the hypervisor being rebuilt.
+Start with [RESTART_HERE.md](RESTART_HERE.md) when resuming existing work.
 
-The [portable AutoDeploy bundle](docs/autodeploy-portability.md) retains the newer
-four-stage templates, excludes the older production-only family from future
-installations, binds source API access to the receiving AAP, and preserves
-inventory labels separately from immutable VM/registry identities. Stage 01 now
-grants and durably publishes the verified new guest's bounded installation HTTPS
-and self-API connection before installation begins. The existing base template
-also supports the isolated `aap_installation_access` repair tag. These changes
-add no wrapper playbook, job template, credential type or secret store.
+## Run the demonstration
 
-The Windows infrastructure job can prepare one additional isolated NIC and its
-persistent RHEL connection on the selected existing AAP VM. Its private Windows
-settings declare the requirement. The same native AAP ownership record and main
-inventory retain the verified hardware declaration so normal access checks and
-complete teardown account for both NICs. Primary identity, API tokens and
-firewall permissions remain unchanged. The [shared role contract](roles/recovery_guest_release/README.md#windows-owned-aap-interface)
-describes exact verification, safe publication and cleanup. This code is implemented
-and tested; live second-NIC deployment and teardown require separate acceptance.
+1. Prepare the selected test hypervisor through Hactar configuration. Confirm its
+   pinned identity, images, available memory/disk, DNS access, nginx and existing
+   ACME account. Keep the original production hypervisor excluded.
+2. Run **Deploy Complete AAP** for that hypervisor. Its four existing stages create
+   the VM, configure infrastructure, install AAP and apply shared base CaC.
+3. Run the existing selected-use-case selector for the chosen AAP inventory
+   entry. It prepares each use case's PAH prerequisites, then imports its CaC.
+   For a standalone import, run the existing Stage 05 preparation first, then
+   supply `aap_instance_key` to the use case's CaC deployment template. Each
+   template calls `deploy-cac-project.yml` with its saved `aap_cac_project_id`
+   and repository-specific Git/Vault credentials. The inventory FQDN and
+   instance token select the receiving HTTPS API.
+4. Run the imported use-case jobs. Importing CaC installs definitions; it does
+   not deploy the application's infrastructure or prove the demo works. Run
+   memory-intensive use cases sequentially.
+5. Verify the visible result, then run that use case's normal cleanup jobs for
+   its disposable resources. Preserve AAP, reusable templates, source images and
+   other use cases. Fix a failed automation step and rerun it before calling the
+   demonstration complete.
+6. Use the verified AAP to install its successor environment. This is the
+   version-to-version acceptance test; a successful CaC import alone is
+   insufficient. Follow the agreed capacity and retirement order before any
+   later bare-metal rebuild.
 
-The same [retirement role](roles/recovery_guest_retire/README.md) exposes its
-existing source-ownership plan separately for the Windows reset job. This lets
-that job distinguish a registered guest from an unconfigured clone before native
-checks. True record absence remains `null` in both Ansible templating modes;
-missing ownership never supplies invented Windows identity. This internal entry
-point adds no job, store or deletion permission. Normal reset acceptance is separate.
+The [functional sequence and target boundaries](docs/recovery-and-use-case-targets.md)
+explain the expected results, resource lifecycle and deferred OpenShift test.
+Use-case repositories provide their runtime instructions. Current task states and
+live results are in [TODO.md](TODO.md) and its encrypted full records, rather
+than a second checklist here.
 
-The existing [guest release role](roles/recovery_guest_release/README.md#exact-guest-bootstrap)
-also supports explicitly approved HTTP bootstrap for one already owned generic
-Linux guest. `recovery_release_operation: guest_bootstrap_http` adds only that
-verified bridge/IP/MAC identity to `http_clients`, permitting public IPv4 TCP 80.
-HTTPS approvals, other guests and private/reserved/production restrictions remain.
-The same source preflight, encrypted publication, exact rollback and selected
-retirement cleanup apply. This extension is implemented and tested; live
-bootstrap and download acceptance remain separate checks.
+## Keep the demo boundaries clear
 
-The selected-use-case launcher supplements its execution environment's active
-trust bundle with the existing source CA credential. Both native HTTPS requests
-and source SDK calls use that private combined bundle, retaining the receiving
-AAP's own installed authority. Authentication and checkout share one temporary
-workspace, which is removed after success or failure. Global trust is unchanged.
+- Base configures AAP and its shared content sources. Each selected use case owns
+  its application jobs, runtime settings and disposable infrastructure. AIOps
+  service settings belong in its private companion, not the AAP-only registry.
+- All six CaC import templates use one playbook, fixed project IDs and separate
+  repository reader/Vault credentials. API calls require verified HTTPS and the
+  selected instance's token. There is no SSH or installer-password API fallback.
+- An inventory entry selects the AAP API destination; a pinned hypervisor and
+  verified VM identity select infrastructure targets. These are separate choices.
+- Recovery isolation prevents restored guests from contacting production using
+  inherited settings. Successful guest configuration releases only the verified
+  guest; production blocks and private MCP boundaries remain in place.
+- Preserve required-input, intended-resource and successful-operation checks.
+  Use bounded waits for installation and other asynchronous operations. Add
+  focused checks for observed failures; avoid parallel recovery frameworks and
+  repeated proof collection that do not help the demo run.
 
-Normal remote import 3296 installed all fourteen future AutoDeploy templates,
-preserving the fifty-five existing templates: sixty-nine total. Independent
-readback checked projects, inventories, execution environment, credentials,
-labels and saved variables, with the older production-only family absent on
-the receiving AAP. Refresh 3300 then verified the five credential-forwarding
-flags while preserving every template ID and other setting. Existing production
-objects remain in place. These results prove configuration installation; a
-complete next-version VM installation and independent recovery remain separate.
+See [project imports](docs/cac-project-import.md),
+[base portability](docs/autodeploy-portability.md),
+[upstream TLS](docs/aap-upstream-tls.md),
+[instance tokens](docs/instance-token-store.md),
+[shared allocation](docs/shared-instance-allocation.md), and
+[decommissioning](docs/decommission.md) for the relevant operator details.
+The existing [guest release](roles/recovery_guest_release/README.md) and
+[guest retirement](roles/recovery_guest_retire/README.md) roles own the shared
+isolation/ownership transitions; use-case jobs call them at their lifecycle
+boundaries. Windows reset reuses the retirement role's existing source-ownership
+plan before selecting configured-guest or unconfigured-clone cleanup; missing
+ownership grants no deletion permission. The Windows infrastructure job also
+owns its optional additional
+AAP NIC and persistent RHEL connection; the CaC importer remains API-only.
 
-Normal selector 84 then completed on the receiving AAP itself using revision
-`8c5a05c`: prerequisite job 86 and AutoDeploy importer 88 both succeeded. It used
-the existing source API bearer, trusted combined CA bundle, registered inventory
-identity and scoped credentials; no application or VM deployment job was run.
+## Tasks and decisions
 
-The selected inventory entry is now renamed in place. Physical VM, disk, public
-DNS, allocation and token keys remain unchanged; normal AIOps refresh 3298
-verified its lookup, existing runtime ciphertext and running website recovery.
-The future shared capture removes twelve duplicate Windows settings and two
-obsolete AIOps values. Existing production variables remain until their older
-consumers migrate. See [inventory ownership](docs/shared-inventory-ownership.md).
-
-The group-creation preflight omits empty variables, matching the configuration
-role and the native module's mapping requirement. Installation and management
-publication also save the exact approved native firewalld rule in the three
-encrypted captures and source aliases. This keeps the host rebuild declaration
-aligned with the permission applied live; unrelated rules and credentials remain
-unchanged.
-
-The [agreed recovery and deployment targets](docs/recovery-and-use-case-targets.md)
-describe the external-AAP recovery goal, version-to-version acceptance test,
-older template retention, self/remote CaC installation and use-case runtime
-targets. These are requirements; the guide distinguishes them from verified
-implementation and points to the durable Beads records.
-
-Windows guests use an explicit `kind: windows` branch of the same shared
-[release](roles/recovery_guest_release/README.md#verified-windows-deployments)
-and [retirement](roles/recovery_guest_retire/README.md) tasks. The caller must first
-verify the VM's configuration through authenticated WinRM,
-including the observed computer name, normalized CIM product UUID and every
-permanent NIC's MAC/private IPv4. Native checks independently bind those facts to
-the marked Windows clone, owning-instance title, UUID, disk and each actual
-network/bridge and static DHCP/DNS tuple. One or two NICs are supported; each
-receives only its exact policy identity in one atomic transition. No Linux SSH
-key or machine identity is fabricated. Windows bootstrap is refused, Linux
-defaults remain, and later patch/content functional testing is separate from the
-complete-VM configuration milestone.
-
-The approved Windows demo retains HTTPS/5986 with NTLM and its existing
-certificate-validation exception. The resource records
-`winrm_certificate_validated: false` for that connection; `true` remains reserved
-for actual certificate validation. Authenticated Windows facts and all native
-ownership checks still precede release. AAP HTTPS and SSH verification retain
-their existing settings.
-
-The separate native Claude installer has passed a normal deployment and both
-private MCP diagnostics. Provider configuration recognition is verified; a model
-invocation and the complete successor-environment test remain separate checks.
-
-Explicit Windows retirement retains saved provenance through physical deletion,
-then removes only its clone's DHCP/DNS, policy and shared inventory records using
-the existing encrypted transaction. Absent retries require the Windows clone and
-both incompatible Linux canonical disk paths absent. Production protection,
-other VMs, credentials and allocation history remain unchanged. Sixty-three
-relevant tests and focused role lint cover these paths; actual Windows deployment
-and release acceptance remain separate.
-
-Normal `04-aap-config.yml` now releases its AAP guest only after complete base
-configuration, MCP/API token verification, source publication and their token/
-workspace cleanup succeed. The final hook creates new short-lived pinned SSH
-trust and reads only the guest's machine identity using the existing login. It
-requires the existing token-store publication and inventory registration settings
-to be enabled. Partial/skipped execution and check mode cannot grant full release.
-The bounded `aap_installation_access` repair remains HTTPS-only and ends the play
-before this final hook. Both old and final trust files have failure-safe cleanup.
-
-The same lifecycle role uses explicit `kind: aap` with the existing route, exact
-primary resource and fresh guest machine ID. Source validation checks the
-existing VM reservation before and after publication without changing it; native
-checks reuse the AAP UUID, disk, MAC, network and DHCP ownership guards. It adds
-only that primary identity to `released_clients` in the same three encrypted
-captures/source aliases. Generic-clone descriptions are unnecessary, and
-allocation history, tokens, native rules and other guests remain unchanged.
-Unpublished failures retain the existing exact rollback behavior; durable
-publication is reconciled by retry. Live normal-base acceptance is separate from
-the source/native failure and ordering tests.
-
-The agreed functional test order is to prove the source environment's other
-use cases first, then pause its three demo guests while keeping its AAP running
-to build and verify the successor. That successor deployment is itself a source
-AAP functionality test. See the [verification sequence](docs/recovery-and-use-case-targets.md#order-of-functional-verification)
-and account separately for any additional Windows or Assistant guests.
-
-Recreate Ansible Automation Platform from configuration as code so that a new
-instance can take over the production platform's tasks, including deploying and
-configuring further AAP instances. An existing trusted AAP acts as the initial
-seed. Demo-specific deployments remain supported through separate use-case
-configurations.
-
-A production replacement needs the platform and use-case definitions, secret
-inputs, deployment automation, PAH content, execution environments and functional
-verification required for those tasks. The existing fresh-instance pipeline and
-selected use-case imports are parts of that goal. Fresh-target bootstrap
-credential provisioning and persistent MCP access have been verified. Complete
-production coverage, live rerun preservation, recursive deployment and takeover
-verification remain pending.
-
-The project provides reusable automation and CaC templates for other operators.
-Populated shared and demo configuration is maintained in a separate private
-repository as Vault-encrypted files.
-
-The six project deployment Job Templates use names derived from their fixed
-project IDs: **Deploy AIOps Selfhealing Demo CaC**, **Deploy Disconnected Windows Patching CaC**,
-**Deploy Automation Orchestrator CaC**, **Deploy Assistant Team CaC**,
-**Deploy AAP Autodeploy Configascode CaC**, and **Deploy RHEL Sniperpatching CaC**.
-Names begin with **Deploy** and end with **CaC**, distinguishing configuration
-imports from application deployment jobs. Hyphens and underscores separate the project words;
-AIOps, AAP and RHEL retain their capitalization.
-The selector derives these names from the same rule. Existing template IDs,
-repository credentials and workflow links are preserved. See the
-[project import guide](docs/cac-project-import.md) for the full mapping.
-
-The RHEL configuration import has passed on a separate receiving AAP. Readback
-verified seven templates, six surveys and their inventory/runtime/API credential
-bindings while preserving existing templates. Its imported read-only runtime
-diagnostic also passed. The selected Machine credential is a binding; host SSH
-access from that receiving AAP remains a separate check.
-
-The naming change passed focused selector, extraction and version regressions;
-production readback preserved credentials, permissions, schedules and workflow links.
-
-Project captures now use `vaults/cac/<project-id>-cac-vault.yml` inside their
-separate `<project-id>-secrets` repositories. The generic importer reads only
-that canonical capture; shared base checkout retains its temporary old-path fallback.
-The shared bootstrap capture remains `cac/base_CaC_vault.yml`. Extraction accepts
-the canonical project path and can declare a shared inventory reference for an
-individual template while retaining older portable inventory aliases. This
-compatibility change does not switch production templates or run any imports.
-
-Complete CaC object ownership remains an open design task. Labels cannot cover
-every Controller resource, and API label support does not imply that the UI can
-edit or filter it. The [ownership review](docs/cac-object-ownership.md) preserves
-the verified API/UI table and alternative approaches from Beads `bead-wd-72v`.
-No universal ownership mechanism has been selected or deployed.
-
-[TODO.md](TODO.md) is generated from current Beads task metadata; complete scoped
-records are retained as Vault ciphertext in the existing Hactar repository.
-The records distinguish approved plans, published implementations and actual
-runtime verification, so recovery does not mistake prepared code for a proven deployment.
-After every task change, run `scripts/sync_todo.py` with the snapshot path and
-existing CaC Vault password file, then commit both mirrors. Use `--check` to
-detect stale output. [Restart instructions](RESTART_HERE.md) explain the refresh
-and recovery procedure. Agreed decisions remain readable in the linked guides
-and `design_decisions_history.md`, even when the original tracker is unavailable.
-
-Stage 03 allows the containerized installer up to two hours. Its existing-job
-observer waits for the same ceiling without starting another installer. Set the
-installation Job Template timeout to three hours to leave room for host
-preparation and final health checks.
-
-Future installations publish a TLS frontend that returns a temporary 503 until
-the installer supplies its upstream CA through the authenticated guest SSH
-connection. Stage 03 verifies the installed Gateway, copies that public CA bundle
-to the selected hypervisor and validates the upstream hostname before publishing
-the proxy with certificate verification and SNI enabled. Configuration validation
-precedes reload, with rollback on publication failure. This code changes no
-existing deployment unless its installation stage is explicitly run.
-See the [upstream TLS lifecycle](docs/aap-upstream-tls.md) for the bootstrap,
-verification, rollback and validation boundaries.
-After an independently verified successful installation, the `aap_upstream_tls`
-tag retries only trusted Gateway verification and proxy publication. Registered
-target selection and pinned SSH setup always run; host preparation, the installer
-and its temporary async-result observer are excluded. Normal untagged Stage 03
-still runs the complete installation. The narrowly scoped
-`aap_proxy_identity_diagnostics: true` option reveals only the hypervisor
-machine-ID command result when diagnosing its connection; it defaults to false.
-Delegated SSH connection settings explicitly read the selected guest's saved
-route, because Ansible evaluates connection variables against the delegated host.
-
-Recovery Stage 01 now uses a [shared encrypted name reservation](docs/shared-instance-allocation.md)
-before any image write, with a pinned hypervisor and live isolation checks.
-The isolation guard keeps its original bridge/DNS policy unless the inventory
-independently declares approved HTTPS clients and protected source addresses.
-Each exception binds an exact bridge, IPv4 and MAC; the registered hypervisor
-pin remains unchanged. Independently approved local guest-to-hypervisor grants
-may also declare exact host IPv4 destinations and TCP ports through
-`aap_hypervisor_isolation_host_clients`. The guard verifies the complete existing
-policy; it never applies a new permission. Empty optional lists retain the
-original isolation policy.
-
-The generic Linux deployment can release its verified guest from the additional
-recovery isolation after guest configuration succeeds. The shared
-`recovery_guest_release` role first verifies the running source job, exact
-hypervisor and complete guest provenance, then validates the live UUID, disk,
-network, DHCP identity and guest machine ID. It adds only that bridge/IPv4/MAC
-to `released_clients`, exposed in recovery inventory as
-`aap_hypervisor_isolation_released_clients`. Production destinations remain
-blocked in both guest forwarding and guest-to-host traffic before any release
-allowance. Ordinary firewalld, private MCP exposure rules, other guests, IPv6
-restrictions and disabled autostart remain in force. The extra isolation protects
-parallel image-based recovery from inherited production integrations; successful
-VM creation alone does not authorize release before guest setup and identity
-checks finish.
-
-For an explicitly approved package bootstrap, that same role accepts
-`recovery_release_operation: guest_bootstrap_https`. It adds only public IPv4
-HTTPS for the verified generic guest, retaining production/private blocks and
-all other permissions. It grants no hypervisor-service or full-release access.
-Full release follows successful complete deployment and validation. See
-[bootstrap and portability](docs/autodeploy-portability.md).
-
-Source inventory identity checks accept an SSH port returned by Controller as
-either an integer or its canonical ASCII decimal string. Both forms must match
-the exact pinned value in range 1–65535. Boolean/float values, signs, whitespace,
-leading zeros and other ports remain refused. No live port or credential is
-changed, and source-job, machine/key, TLS and saved-policy checks remain intact.
-
-The shared [exact guest retirement role](roles/recovery_guest_retire/README.md)
-supports the existing disposable-guest retirement job in two phases. Its plan
-resolves saved generic-clone ownership from existing encrypted CaC and source
-inventory, then verifies the native UUID, exclusive disk, MAC, network and
-provenance before deletion. After the caller removes that exact domain and clone,
-publication requires both canonical disk paths absent. It removes only that
-guest's static DHCP reservations, HTTPS/full-release entries and shared inventory
-record, preserving other guests and source images. Unsupported selected
-host-service grants refuse preflight. Dynamic DHCP lease cache is reported
-separately and is not edited.
-
-Retirement reuses the existing source API, writer, Vault and three-capture
-transaction. Keep the calling application's inventory row until shared
-publication succeeds. A surviving canonical or source API resource record allows
-an interrupted retry without connecting to the deleted guest. Once both records
-are gone, the only permitted repeat is verified physical absence with no policy
-or unknown DHCP removal. Normal management/installation paths retain their
-existing strict guest-presence checks. Native and encrypted-transaction tests
-verify this behavior; live disposable-guest acceptance is a separate result.
-
-The existing `aap_publish_instance_keys` action plans and saves the release using
-existing source API, writer and Vault credentials. It updates the three maintained
-encrypted policy captures and source inventory aliases without changing target
-API tokens or allocation history. New guest provenance goes into the existing
-shared host inventory, not the AAP-only allocator. A conflicting existing host,
-MAC, address, policy or ownership record stops the operation. Git updates use
-ordinary compare-and-retry pushes; a failed source API synchronization after
-publication retains the published live policy for an idempotent retry. Existing
-VMs can run the guest-verification phase without recreating their disks.
-Bootstrap provenance is required in persistent libvirt XML. A running guest need
-not expose a description saved after startup with `virsh desc --config`; if it
-does expose one, it must match. Both XML definitions still require the exact
-UUID, disk, MAC and network. Failed commands are checked before parsing their
-JSON output or considering rollback. The original implementation passed 249
-repository tests; sixteen focused native tests cover these checks. Normal source
-job 3282 passed configuration-only acceptance for an existing test guest. Its
-encrypted publication and source inventory match the exact intended update;
-API tokens, allocation history and existing literal template tags were preserved.
-Independent checks confirmed that only the selected guest was released, all
-four VM definitions and normal host services were unchanged, public connectivity
-worked and production access remained blocked. Other guests retain their
-restrictions. Broader rollout and recovery acceptance remain tracked in Beads
-`bead-wd-mcr.1`.
-
-Local counters are preserved as migration evidence. Fresh guest host keys and
-the exact instance route are retained for the following stages. Stages 02–04
-resolve an exact instance key from that registry before any target connection;
-SSH uses the pinned hypervisor jump route and API access uses verified public
-DNS and trusted TLS. Provisioning is enabled one phase at a time; local checks
-alone do not establish a completed AAP build.
-The fresh registered deployment has now completed Stages 01–04: installer 3136
-succeeded and base retry 3144 completed in 125.097 seconds on source `59aa985`
-with encrypted base `f38a8cf`. Independent public-TLS administrator login, reserved
-node identity, expected platform objects and absence of advanced use cases were
-verified. Literal-injector tags fixed the earlier protected wildcard-merge failure;
-no VM creation or installation was repeated. Selected use-case setup and complete
-production takeover remain separate.
-
-`verify-registered-instance.yml` provides a separate read-only guest login/sudo
-probe through the registered jump route. It checks the exact configured bundle,
-installer account access, RHEL/tools, disk layout/capacity, temporary free space,
-CPU/memory and credential-free verified Red Hat HTTPS handshakes. Protected
-installation inputs must be nonempty. It reads both machine-ID paths without
-running installation, growth, package or subscription tasks. The layout guard
-reflects the existing preparation commands (root XFS on the fourth disk partition);
-a different layout requires a reviewed preparation change. Sizing follows the
-local AAP installation reference: four CPUs, 16 GB RAM (32 GB with collection
-seeding), 60 GB disk, 10 GiB temporary and 3 GiB variable temporary free space.
-The artifact separates `preparation_ready` from `installer_ready`: existing
-partition/XFS preparation may provide temporary space, and the installer may
-provide its own runtime packages. The observer proves proposed growth using
-`growpart -N`, never writes a partition table, and reports missing runtime tools
-plus vendor package-task references for review. Its success gates preparation;
-current installer failures remain visible. The verified bundle's common role
-installs `podman_packages` (including Podman); its absence before that role runs
-is reported rather than assigned to manual preparation. Stage03 rechecks the exact root
-layout before growth, refuses growth failures, and verifies actual temporary
-capacity before subscription or installer work. Red Hat TLS probes may reuse the
-guest's already configured RHSM CA in a local verified context and retain bounded
-failure categories. They send no client credentials. The artifact reports
-observed capacities and failed check names; it does not benchmark disk IOPS or
-authenticate to Red Hat services. A verified
-SSH host-key handshake alone does not establish authenticated guest access;
-compare the retained probe identity with protected golden/source evidence before
-proceeding to installation.
-Actual observer job 3135 passed with `preparation_ready=true`: supported expansion,
-bundle/account/resources/tools and all three strict HTTPS handshakes verified.
-The installed RHSM CA supplied the two Red Hat service authorities. Current
-installer readiness remains false until preparation expands root and the vendor
-runtime is present. Infrastructure job 3133 also succeeded. Neither proof
-establishes a completed AAP installation.
-
-`capture-aap-cac.yml` provides [reviewed live extraction and CaC updates](docs/cac-reconciliation.md).
-It discovers owned project/label definitions, proves complete read visibility,
-compares separate source/desired baselines, preserves secrets and pending repo
-edits, and detects additions, changes and removals. Preview is the default;
-initialization and encrypted updates require a fresh reviewed digest. The first
-adapter covers AutoDeploy and reports its code-owned workflow separately; other
-components need explicit adapters. It never applies configuration to source AAP.
-Association updates apply membership deltas so accepted desired-only bootstrap
-dependencies survive unrelated source removals. Lists inside user variables and
-credential inputs keep their original meaningful order.
-The importer renders only declared resources before validation. AAP marks survey
-input as protected text; passing the entire variables dictionary through Jinja
-can leave unrelated organization expressions unresolved. Direct resource
-rendering preserves literal credential-injector templates while resolving those
-ordinary expressions.
-
-Protected CaC YAML serialization preserves explicit `!unsafe` literal tags.
-AAP injector templates must remain literal during CoP wildcard merging, while
-ordinary environment references still resolve. Logical string equality alone
-cannot validate this boundary: tests check tags after decrypt/reload. The exact
-vendor merge is tested with protected canaries in both templating modes.
-Custom credential types retain stable input/injector schemas alongside their
-credentials; runtime IDs and management flags are excluded. Retained CA
-dependencies survive removed associations while vaulted PEM inputs are preserved.
-Actual Job Template 158 (`Extract and Reconcile AAP CaC`) is installed. Default
-preview job 3139 succeeded on `f38517a` in 44.042 seconds, with zero conflicts or
-validation errors. Its encrypted review decrypts correctly. With no accepted
-baseline yet, it reports 373 initial differences and seven code-graph differences;
-these are not changes since a previous extraction. No initialization, update or
-Git publication ran.
-Source credential aliases resolve to the captured/base-bootstrap namespace;
-shared external definitions are recognized through those aliases as well.
-The protected action normalizes Boolean survey strings and returns bounded
-refusal categories to a separate failure task. Sensitive inputs/results remain
-under `no_log`; a preflight error still has an actionable reason.
-Controller GET failures distinguish HTTP status, TLS trust, DNS and connection
-categories using only the endpoint family, preserving query values and tokens.
-On TLS trust failure, credential-free DNS/host-file and verified-SNI connection
-evidence is retained only as a Vault-encrypted failure artifact. It accepts no
-untrusted certificate and sends no HTTP/API credentials during those probes.
-An optional credential-bound source CA file can add an independently verified
-existing authority only to the collector HTTPS context. Default trust, hostname
-checks, exact source origin and redirect refusal remain enforced; global EE trust
-and DNS are unchanged. The portable schema in `src/cac_source_credential.py`
-preserves the used URL/token reader and provides a separate optional CA credential
-attachment. Its required PEM uses Controller's single-file string template and
-`tower.filename`. Existing in-use credential schemas are never rewritten; no CA
-attachment means ordinary default trust.
-
-The encrypted environment DNS credential is maintained separately from the
-Vault password. Refreshing that one credential preserves every other environment
-input; infrastructure still reads existing records before any DNS write.
-
-DNS creation and removal keep their API requests and responses protected with
-`no_log`, including when diagnostic logging is enabled for other tasks.
-Certbot and its nginx plugin belong to the shared Hactar baremetal base OS.
-Stage 02 checks their installed RPMs after the host pin, then requires the existing
-approved ACME account/certificate. It installs no packages or new account itself.
-
-Base means platform setup only. Use-case Git projects, inventories, hosts,
-credentials, execution environments, templates, workflows, and EDA integrations
-belong to their separate use-case configurations. Each use case has its own
-deployment Job Template and encrypted configuration file.
-Base also owns PAH's certified, validated, and community repository setup and
-the Controller content-source credentials and organization attachments that use
-those repositories. Base does not synchronize collection content. Each use case
-declares which collections its own PAH preparation needs.
-
-[Beads and its Git overview](TODO.md) track current work; the older plan retains its historical
-backlog pending migration. Each open area explains
-its context, purpose and completion goal; completed work is collected at
-[Done:](PLAN.md#done). It includes the step-by-step operator guide and review
-against Red Hat's CaC guidance. Older plans and completion notes are preserved
-in Git and the decision history rather than duplicated as open work.
-Current drift review uses CaC comparisons. Incremental catch-up using AAP audit
-logs is planned: identify changed objects, retrieve their current configuration
-and dependencies, and review differences before updating encrypted captures.
-Audit checkpoints, component coverage and retention gaps still need validation.
-Base creates one persistent API/MCP token, retains a protected target-side copy,
-and publishes its instance-indexed entry to encrypted CaC and the source AAP
-shared token-store credential. See [instance token storage](docs/instance-token-store.md).
+Beads is authoritative. `scripts/sync_todo.py` generates the public task overview
+and encrypts complete scoped records in the existing Hactar repository; run its
+`--check` mode before publishing a checkpoint. Keep private task details and
+populated configuration encrypted. [Restart instructions](RESTART_HERE.md)
+explain recovery without the current tracker. Lasting decisions and implementation
+commits remain in `design_decisions_history.md`; older run evidence belongs there
+or in the protected task records, rather than the README's opening instructions.
 
 ## Current implementation
 
@@ -468,61 +116,25 @@ stops configuration. A per-run Gateway token authenticates the subscription
 import and dispatch. It is revoked afterward, and the temporary checkout, ZIP,
 and authentication helper are removed after successful runs and ordinary task
 failures. Ansible role-loading errors or interruptions can prevent cleanup.
-The complete workflow described below provides automatic job handoff. On
-20 October 2026 a fresh replacement completed stages 01-04, PAH prerequisite
-preparation and all five captured use-case imports as individually launched jobs.
-Base job 2233 verified administrator-password setup, bootstrap credential
-provisioning, persistent MCP access and PAH configuration. Independent CoP/API
-comparison confirmed the imported scope and identified remaining production gaps.
-This establishes stage/import success; a complete workflow launch, recursive
-creation of another AAP and functional demo tests remain open in the
-[project TODO](PLAN.md#todo).
-
 The obsolete per-project wrapper playbooks have been removed. Every deployment
 Job Template selects the common importer and fixes its project ID in extra variables.
 `restore-windows-config.yml` remains a local-file utility.
-`destroy-test-aap.yml` backs **Decommission AAP Test Instance**, with explicit
-instance confirmation, pinned recovery identity and exact disk/DNS/TLS/nginx cleanup, related versioned guests and an orphaned DNS
-scan. Disk ownership checks accept libvirt's generated disk-index metadata while
-requiring the exact single file-backed disk. Before deletion, verified guest
-identities select only their local, HTTP/HTTPS bootstrap and released-client permissions for
-retirement. Protected production addresses remain declared while any HTTP, HTTPS
-or released guest survives. Exact native rules and the existing persistent isolation policy are
-cleaned after guest shutdown; normal deployment guards remain strict. The final
-existing writer updates encrypted policy aliases and inventory captures, removes
-only owned same-version source inventory entries and preserves literal variable
-templates, other guests, shared Machine credentials and consumed allocation
-history. Retries accept only the canonical policy or its exact verified removal
-result; no generic policy-check bypass is provided. Stage 01 records the primary
-VM's complete ownership in its existing encrypted route transaction after a
-read-only authenticated guest check through the pinned hypervisor. Actual domain
-and network XML supply the UUID, disk, address, MAC and bridge; conflicting saved
-identity cannot be silently replaced. This retains proof for a retry after the
-VM definition has already gone. AutoDeploy stores only AAP configuration and
-primary AAP ownership. Decommission reads related VM ownership from verified
-`vm_resource` data in the existing source AAP inventory, using the already
-attached source API access. Normal instance reads require no source API access.
-Optional guests may be absent only when their VM and both disk variants are
-absent and every remaining permission has verified surviving inventory ownership.
-All source policy aliases are updated and read back before guest inventory
-records are deleted, so partial cleanup can be retried without storing
-application ownership in AutoDeploy. See
-[decommission details](docs/decommission.md). Active source inventory/API state
-is retired without reusing its number. These local changes are validated but
-have not been applied by a decommission job. Previous successful
-imports below are historical evidence, not claims that this new importer has run
-against a target.
+`destroy-test-aap.yml` backs **Decommission AAP Test Instance**. It requires
+explicit instance confirmation, pinned hypervisor identity and verified ownership
+before removing the selected VM, related same-version guests, disks, DNS,
+certificates, nginx and isolation permissions. Source images, other guests,
+shared credentials and consumed allocation numbers are preserved. The existing
+writer saves the resulting policy and inventory state; it does not store
+application ownership in the AAP-only allocation record. See
+[decommission details](docs/decommission.md) for the exact scope and retry rules.
+Code validation and a successful live decommission remain distinct results in
+the task records.
 
-The Windows importer creates inventory groups before linking their memberships.
-The CoP group role starts requests asynchronously, so a parent group can otherwise
-refer to children that do not yet exist on a clean target. A successful import
-does not establish runtime collection compatibility or functional demo readiness.
-The refreshed encrypted Windows capture includes patch-level assessment and
-WSUS patch-ceiling templates and the managed Windows update template. Its 21
-templates and 17 workflow nodes retain the existing owned dependencies; target
-templates receive the Windows label without changing the source templates.
-Configuration import 2270 verified the latest capture; runtime compatibility and
-functional testing remain separate.
+The Windows importer creates groups before linking their memberships, so
+asynchronous group creation cannot leave references to missing children.
+Its capture includes the infrastructure, patch assessment, bounded WSUS update
+and cleanup jobs. Import success still requires separate runtime demonstration
+and reset acceptance.
 
 ## Setup and secrets
 
@@ -533,12 +145,10 @@ after shared base configuration. It creates no use-case projects or imports.
 The separate [use-case selector](docs/selected-use-cases.md) installs only the
 operator's selected umbrella submodules and their reviewed saved CaC. Application,
 deployment and demo jobs are not launched by configuration selection.
-The selector uses a separate encrypted seed login and, when required, the
-existing source CA file only for seed API operations. Target base login and
-normal target TLS trust remain separate. Exact reviewed source-only credential
-pins preserve existing global associations; route credentials still require
-organization ownership. Source/target API prechecks and temporary-token cleanup
-have passed; a live selected-use-case import remains unperformed.
+The selector uses the attached source API bearer and, when required, its
+existing CA credential. Its temporary trust bundle also retains the receiving
+AAP's installed authority; global trust is unchanged. Selected imports have run
+successfully, but application jobs still require their own functional test.
 The shared inventory has per-hypervisor VM groups with `hypervisor_host`, and
 AAP hosts carry explicit `ansible_fqdn`. Configuration import selects the exact inventory host through `aap_instance_key`.
 The saved **AAP API/MCP Auth Token Store** selects its bearer and binds its URL to
@@ -835,8 +445,10 @@ by this base extension. Sensitive tasks stay protected even with ordinary
 
 ### Stage 04 inputs
 
-Supply `aap_instance_key` as the exact completed registered VM name, or carry
-the matching Stage 01 workflow handoff. The registry derives the public HTTPS
+Supply `aap_instance_key` as the completed allocation's exact registered VM name,
+or carry the matching Stage 01 workflow handoff. This stage uses the allocation
+key, which is preserved when an inventory entry is renamed; CaC import templates
+instead select the inventory entry. The registry derives the public HTTPS
 API URL and private guest SSH jump route. Caller-supplied conflicting URLs or
 addresses, bare private-API fallbacks, alternate AAAA routes and disabled TLS
 validation are refused. Attach the AutoDeploy repository read token, CaC Vault,
@@ -1309,27 +921,23 @@ unique suffix, such as `controller_projects_DEMO_PLACEHOLDER`, and reference
 dependencies by object name. Keep configuration authentication separate from the
 credentials that demo jobs will use inside AAP.
 
-Keep editable files such as `base.yml` and `DEMO_PLACEHOLDER.yml` in that
-working directory. When a configuration is ready:
+Keep editable populated files and Vault password files outside Git. When a
+configuration is ready:
 
-1. Create a separate Vault-encrypted copy using the local Vault password file.
-2. Place that encrypted copy in the private configuration repository's `cac/`.
-   Use `base_CaC_vault.yml` or `DEMO_PLACEHOLDER_CaC_vault.yml` as its name.
-3. Verify the Vault header, successful decryption with the intended password,
-   and equality with the working copy without displaying decrypted content.
-4. Review staged files, then commit and push only the encrypted configuration.
+1. Create a whole-file Vault-encrypted copy with the intended repository's Vault
+   password.
+2. Save shared bootstrap configuration as `cac/base_CaC_vault.yml` in its private
+   repository. Save a use case as `vaults/cac/<project-id>-cac-vault.yml` in
+   `<project-id>-secrets`, for example
+   `vaults/cac/aiops-selfhealing-demo-cac-vault.yml`.
+3. Verify the Vault header and successful decryption without displaying its
+   contents. Review staged files and push only encrypted populated configuration.
+4. Run the corresponding CaC import template for the selected AAP. Stage 04 loads
+   shared base only; adding a use-case file does not import it automatically.
 
-The AIOps-specific filename is `aiops_demo.yml`; its contents are still whole-file
-Vault encrypted in the private repository. Its editable copy and extraction
-inventory stay outside Git. Only the current working demo is selected; older
-test objects are listed separately. Shared source inventory, SSH credentials,
-and runtime environments are copied under AIOps-specific names for independent
-ownership. Source objects remain untouched.
-
-Keep the editable working files and Vault password file outside Git. This public
-repository's `cac/` retains the empty examples. Stage 04 loads the private shared
-base automatically. The separate AIOps entry point loads `vaults/cac/aiops-selfhealing-demo-cac-vault.yml`;
-adding other encrypted demo files does not apply them automatically.
+This public repository retains only empty configuration examples. Runtime
+settings for a use case belong in its own private companion and are delivered
+through its existing encrypted runtime inputs, separately from shared AAP base.
 
 See [Configuration_as_Code.md](Configuration_as_Code.md) for variable naming,
 resource types, and restore dependencies. Empty templates do not provision

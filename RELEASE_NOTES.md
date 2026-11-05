@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.45.5
+
+Replace the long README run history with deploy, demonstrate and reset
+instructions. Correct prerequisite ordering, source bearer guidance, registered
+allocation versus inventory selection, and canonical private capture filenames.
+Document that observed failures must be fixed in the existing automation and
+that OpenShift runtime verification is deferred. Refresh recoverable task records.
+
 ## 0.45.4
 
 Record implementation `41c77d231c54baf9ea3fd70d7b2b35f00183de33` and the

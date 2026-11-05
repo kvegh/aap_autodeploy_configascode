@@ -37,6 +37,20 @@ services running, and preserve the paused guests' definitions and disks for
 restart. Additional guests created for Windows or Assistant tests require their
 own memory accounting and an explicit place in this pause sequence.
 
+Keep this a repeatable demonstration: deploy through the existing jobs, verify
+the visible result, and reset through the existing cleanup jobs. Fix observed
+failures in those jobs and rerun the failed step; a manual cleanup does not
+establish that the automated reset works. Retain target identity and production
+protection checks, but avoid additional generic recovery layers and repeated
+evidence collection.
+
+For Windows, the existing baseline job first captures core guests and images
+before provisioning. Before cleanup, the same job preserves that snapshot and
+adds the actual Windows cleanup identities. Cleanup removes its LDAP/trust
+references, regional demo objects and five disposable guests, then verifies
+their absence and removes the Windows-owned AAP interface. Reusable use-case
+templates and shared content credentials remain available for another run.
+
 Use the still-running source AAP to build the next AAP, install its selected CaC
 and deploy and verify the next environment's services. This is itself a required
 functional test of the source AAP; the complete deployment capability is proved
@@ -118,6 +132,10 @@ existing integration URL and credentials express that choice. With AAP
 integration enabled, AO's OIDC setup also registers an OAuth application in the
 selected AAP, so integration is not read-only.
 
+The OpenShift runtime test is deferred until cluster access is available. It is
+neither a current blocked task nor a passed functional test; continue the
+available demonstration work without requesting that access now.
+
 For AIOps, setup must support its source environment or another selected
 versioned environment. The destination determines hypervisor placement, VMs,
 website/DNS/proxy configuration, monitoring targets, EDA bindings and private
@@ -127,11 +145,12 @@ deployment.
 
 A fresh AIOps destination also needs its own verified guest ownership/artifacts,
 target-local website/EDA credentials and encrypted runtime settings in the
-existing private AIOps companion. The current capture has a prepared instance;
-automatic preparation of another instance is still tracked in
-`bead-wd-72f.31.2`. The ciphertext embedding helper copies prepared settings and
-does not generate those new identities or credentials. Agree that lifecycle
-before adding any persistence or writer mechanism.
+existing private AIOps companion. The existing
+[import preparation](aiops-instance-preparation.md) saves the selected instance's
+settings and native website/Event Stream readbacks using its approved repository
+writer. It does not orchestrate the auxiliary VMs or complete the per-clone
+Zabbix/MCP lifecycle. Those remaining steps and fresh-successor acceptance stay
+in `bead-wd-72f.31.2`; current-instance import success does not prove them.
 
 ## Recovery isolation policy
 
