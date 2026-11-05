@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.43.1
+
+Document implementation `85ee77d`, the exact owned-guest HTTP permission,
+preserved policy fields, publication/rollback and retirement guarantees, and
+the 113 passing scoped checks. Keep live firewall and download acceptance
+separate from code publication.
+
 ## 0.43.0
 
 Support explicitly approved public HTTP bootstrap for one already owned generic

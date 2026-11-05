@@ -1,5 +1,38 @@
 # Design decisions history
 
+## Add explicit HTTP bootstrap for an already owned guest — 2026-11-05
+
+Implementation `85ee77d` follows the owner's decision to retain the current
+container platform and its HTTP downloads.
+The approved permission is public IPv4 TCP 80 for only the existing verified
+guest, retaining its HTTPS access and all private/reserved/production blocks.
+The shared implementation therefore extends the existing guest bootstrap and
+publication transaction with `guest_bootstrap_http`, rather than changing HTTPS
+approvals or releasing the guest before configuration succeeds.
+
+HTTP is an independent optional list of exact bridge, IPv4 and MAC identities.
+The new operation requires the complete existing published guest identity and
+placement, then repeats native domain, disk, network, lease and bootstrap
+provenance checks before applying the exact derived change. Existing source-job
+verification, encrypted compare-and-swap publication, source alias reconciliation,
+idempotent retries, durable-publication handling and bounded rollback remain.
+All existing policy operations preserve HTTP permissions; exact retirement
+removes only the selected identity and retains production denial while another
+HTTP, HTTPS or released guest survives. No service, store, registry, credential,
+job template or wrapper is introduced.
+
+All 113 scoped checks passed, including the real encrypted publication and
+interrupted source synchronization retry, native HTTP operation and rollback,
+complete guest identity checks, preservation through AAP/Linux/Windows policy
+operations, and exact retirement. The coordinator independently repeated the
+six HTTP tests. Production lint passed five files, and compile, policy-call
+propagation, whitespace and added-text privacy checks passed.
+
+These results establish implemented code and test behavior. Live helper
+installation, source synchronization, encrypted environment changes, firewall
+application and successful guest downloads remain separate acceptance steps.
+This publication did not run those operations or launch a job.
+
 ## Verify the existing native Claude installer separately from model access — 2026-11-05
 
 The AIOps implementation `80b7dff`, published in `86d3cb5`, passed its normal
