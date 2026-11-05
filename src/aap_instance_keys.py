@@ -355,7 +355,7 @@ def verify_remaining_guest_grants(policy, proof):
     if proof["missing_roles"]:
         owners = {tuple(owner[key] for key in ("bridge", "ipv4", "mac")) for owner in proof["policy_owners"]}
         require(all(tuple(client[key] for key in ("bridge", "ipv4", "mac")) in owners
-                    for client in policy.get("https_clients", []) + policy.get("guest_host_clients", []) + policy.get("released_clients", [])),
+                    for client in policy.get("https_clients", []) + policy.get("guest_host_clients", []) + policy.get("released_clients", []) + policy.get("http_clients", [])),
                 "Missing related VM rows require every remaining grant to have surviving verified inventory ownership.")
 
 
@@ -378,7 +378,7 @@ def isolation_retirement_context(record, selected, target, transition, related_r
 
     def normalized(policy):
         require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
-            policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", [])) == policy,
+            policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", []), policy.get("http_clients", [])) == policy,
             "Retirement policies must preserve the registered hypervisor's normalized isolation schema.")
     normalized(previous)
     normalized(desired)
@@ -433,17 +433,17 @@ def isolation_retirement_context(record, selected, target, transition, related_r
         addresses.add(identity["ipv4"])
         macs.add(identity["mac"])
         key = tuple(identity[field] for field in ("bridge", "ipv4", "mac"))
-        for client in previous.get("guest_host_clients", []) + previous.get("https_clients", []) + previous.get("released_clients", []):
+        for client in previous.get("guest_host_clients", []) + previous.get("https_clients", []) + previous.get("released_clients", []) + previous.get("http_clients", []):
             require(not ((client["ipv4"] == identity["ipv4"] or client["mac"] == identity["mac"])
                          and tuple(client[field] for field in ("bridge", "ipv4", "mac")) != key),
                     "An isolation identity conflicts with an existing guest permission.")
         selected_keys.add(key)
-    for client in previous.get("guest_host_clients", []) + previous.get("https_clients", []) + previous.get("released_clients", []):
+    for client in previous.get("guest_host_clients", []) + previous.get("https_clients", []) + previous.get("released_clients", []) + previous.get("http_clients", []):
         if any(client["ipv4"] == guest["address"] or client["mac"] == guest["metadata"].get("mac") for guest in guests):
             require(tuple(client[field] for field in ("bridge", "ipv4", "mac")) in selected_keys,
                     "Retirement must include every existing permission of the selected recorded guests.")
     expected = deepcopy(previous)
-    for field in ("https_clients", "guest_host_clients", "released_clients"):
+    for field in ("https_clients", "guest_host_clients", "released_clients", "http_clients"):
         if field not in expected:
             continue
         retained = [client for client in expected[field]
@@ -453,7 +453,7 @@ def isolation_retirement_context(record, selected, target, transition, related_r
                 expected[field] = retained
             else:
                 expected.pop(field)
-                if not expected.get("https_clients") and not expected.get("released_clients"):
+                if not expected.get("https_clients") and not expected.get("released_clients") and not expected.get("http_clients"):
                     expected.pop("protected_ipv4", None)
     require(expected == desired, "Desired isolation must be exactly selected identity removal without new grants.")
     removed_rules = {'rule family="ipv4" priority="0" source address="%s/32" '
@@ -476,13 +476,15 @@ def retirement_policy_variables(values, context, pinned=False):
         current = _routing.isolation_policy(values["aap_hypervisor_pin"],
             values.get("aap_hypervisor_isolation_https_clients", []),
             values.get("aap_hypervisor_isolation_protected_ipv4", []),
-            values.get("aap_hypervisor_isolation_host_clients", []), values.get("aap_hypervisor_isolation_released_clients", []))
+            values.get("aap_hypervisor_isolation_host_clients", []), values.get("aap_hypervisor_isolation_released_clients", []), values.get("aap_hypervisor_isolation_http_clients", []))
         require(current in (old, new), "Canonical recovery policy changed beyond this exact retirement.")
         values.update(aap_hypervisor_isolation_https_clients=deepcopy(new.get("https_clients", [])),
             aap_hypervisor_isolation_protected_ipv4=deepcopy(new.get("protected_ipv4", [])),
             aap_hypervisor_isolation_host_clients=deepcopy(new.get("guest_host_clients", [])),
             **({"aap_hypervisor_isolation_released_clients": deepcopy(new.get("released_clients", []))}
                if new.get("released_clients") or "aap_hypervisor_isolation_released_clients" in values else {}))
+        if "http_clients" in new or "aap_hypervisor_isolation_http_clients" in values:
+            values["aap_hypervisor_isolation_http_clients"] = deepcopy(new.get("http_clients", []))
     for alias in ("isolation_policy", "hactar_isolation_policy"):
         require(alias not in values or values[alias] in (old, new),
                 "An existing hypervisor policy alias conflicts with selected retirement.")
@@ -505,15 +507,15 @@ def source_retirement_variables(values, context, pinned=False):
     if pinned:
         require(values.get("aap_hypervisor_pin") == pin, "Keep the exact registered source inventory pin.")
         policies.append(_routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
-            values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []), values.get("aap_hypervisor_isolation_released_clients", [])))
+            values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []), values.get("aap_hypervisor_isolation_released_clients", []), values.get("aap_hypervisor_isolation_http_clients", [])))
     policies += [values[key] for key in ("isolation_policy", "hactar_isolation_policy") if key in values]
     removed_rules = set(context["removed_rules"])
     for policy in policies:
         require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
-            policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", [])) == policy,
+            policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", []), policy.get("http_clients", [])) == policy,
             "A lagging source policy must retain the normalized registered schema.")
         reduced = deepcopy(policy)
-        for field in ("https_clients", "guest_host_clients", "released_clients"):
+        for field in ("https_clients", "guest_host_clients", "released_clients", "http_clients"):
             if field not in reduced:
                 continue
             retained = [client for client in reduced[field]
@@ -523,7 +525,7 @@ def source_retirement_variables(values, context, pinned=False):
                     reduced[field] = retained
                 else:
                     reduced.pop(field)
-                    if not reduced.get("https_clients") and not reduced.get("released_clients"):
+                    if not reduced.get("https_clients") and not reduced.get("released_clients") and not reduced.get("http_clients"):
                         reduced.pop("protected_ipv4", None)
         require(reduced == desired, "A source policy cannot change beyond exact selected identity retirement.")
         removed_rules.update('rule family="ipv4" priority="0" source address="%s/32" '
@@ -540,6 +542,8 @@ def source_retirement_variables(values, context, pinned=False):
             aap_hypervisor_isolation_host_clients=deepcopy(desired.get("guest_host_clients", [])),
             **({"aap_hypervisor_isolation_released_clients": deepcopy(desired.get("released_clients", []))}
                if desired.get("released_clients") or "aap_hypervisor_isolation_released_clients" in values else {}))
+        if "http_clients" in desired or "aap_hypervisor_isolation_http_clients" in values:
+            values["aap_hypervisor_isolation_http_clients"] = deepcopy(desired.get("http_clients", []))
     if "firewall_additional_zone_rules" in values:
         rules = values["firewall_additional_zone_rules"]
         require(isinstance(rules, list) and all(isinstance(rule, dict) for rule in rules),
@@ -737,13 +741,13 @@ def management_access_context(configuration, record, selected, route, requested,
     require(len(inventories) == 1, "Resolve the canonical pinned recovery policy before management publication.")
     values = inventory_variables(inventories[0])
     previous = _routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
-        values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []), values.get("aap_hypervisor_isolation_released_clients", []))
+        values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []), values.get("aap_hypervisor_isolation_released_clients", []), values.get("aap_hypervisor_isolation_http_clients", []))
     try:
         desired = _management.desired_policy(route, primary, previous, mode)
     except (ValueError, KeyError):
         raise StoreError("Management publication differs from the existing selected AAP permission.") from None
     require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
-            desired.get("guest_host_clients", []), desired.get("released_clients", [])) == desired
+            desired.get("guest_host_clients", []), desired.get("released_clients", []), desired.get("http_clients", [])) == desired
             and (requested is None or requested == desired),
             "Publish only the independently derived selected AAP management grant; preserve all other clients.")
     return {"route": deepcopy(route), "primary": deepcopy(primary), "previous_policy": previous,
@@ -774,11 +778,11 @@ def source_management_variables(values, context, pinned=False):
     if pinned:
         require(result.get("aap_hypervisor_pin") == pin, "Keep the registered source recovery pin.")
         policies.append(_routing.isolation_policy(pin, result.get("aap_hypervisor_isolation_https_clients", []),
-            result.get("aap_hypervisor_isolation_protected_ipv4", []), result.get("aap_hypervisor_isolation_host_clients", []), result.get("aap_hypervisor_isolation_released_clients", [])))
+            result.get("aap_hypervisor_isolation_protected_ipv4", []), result.get("aap_hypervisor_isolation_host_clients", []), result.get("aap_hypervisor_isolation_released_clients", []), result.get("aap_hypervisor_isolation_http_clients", [])))
     policies += [result[key] for key in ("isolation_policy", "hactar_isolation_policy") if key in result]
     for policy in policies:
         require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
-            policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", [])) == policy,
+            policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", []), policy.get("http_clients", [])) == policy,
             "A source management policy must use the normalized registered schema.")
         try:
             expected = _management.desired_policy(context["route"], context["primary"], policy,
@@ -795,6 +799,8 @@ def source_management_variables(values, context, pinned=False):
             **({"aap_hypervisor_isolation_released_clients": deepcopy(desired["released_clients"])}
                if desired.get("released_clients") else ({"aap_hypervisor_isolation_released_clients": []}
                if "aap_hypervisor_isolation_released_clients" in result else {})))
+        if "http_clients" in desired or "aap_hypervisor_isolation_http_clients" in result:
+            result["aap_hypervisor_isolation_http_clients"] = deepcopy(desired.get("http_clients", []))
     # firewalld's base playbook consumes this explicit native-rule list, not
     # guest_host_clients. Persist only the current operation's approved pair.
     import shlex
@@ -876,7 +882,7 @@ def installation_access_context(configuration, shared, allocation, route, primar
         old = transition["previous_policy"]
         pin = route["hypervisor"]
         require(_routing.isolation_policy(pin, old.get("https_clients", []), old.get("protected_ipv4"),
-                old.get("guest_host_clients", []), old.get("released_clients", [])) == old
+                old.get("guest_host_clients", []), old.get("released_clients", []), old.get("http_clients", [])) == old
                 and _management.desired_policy(route, primary, old, "installation") == context["desired_policy"]
                 and context["previous_policy"] in (old, context["desired_policy"]),
                 "Installation access cannot replace another guest permission or production exclusion.")
@@ -983,14 +989,14 @@ def aap_release_context(configuration, shared, allocation, guest, pin, transitio
     if not matches:
         desired["released_clients"].append(identity)
     require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
-            desired.get("guest_host_clients", []), desired.get("released_clients", [])) == desired,
+            desired.get("guest_host_clients", []), desired.get("released_clients", []), desired.get("http_clients", [])) == desired,
             "Final AAP release must preserve normalized production protection and all other grants.")
     if transition is not None:
         require(isinstance(transition, dict) and set(transition) == {"previous_policy", "desired_policy"}
                 and transition["desired_policy"] == desired, "Publish only the exact planned AAP release.")
         old = transition["previous_policy"]
         require(isinstance(old, dict) and _routing.isolation_policy(pin, old.get("https_clients", []),
-                old.get("protected_ipv4"), old.get("guest_host_clients", []), old.get("released_clients", [])) == old,
+                old.get("protected_ipv4"), old.get("guest_host_clients", []), old.get("released_clients", []), old.get("http_clients", [])) == old,
                 "Retain the exact normalized policy preceding AAP release.")
         derived = deepcopy(old)
         if identity not in derived.setdefault("released_clients", []):
@@ -1239,7 +1245,8 @@ def released_guest_resource(guest, pin):
 
 def guest_release_context(configuration, shared, guest, pin, transition=None, access="release"):
     """Derive one addition from canonical policy; never infer target ownership from an IP."""
-    require(access in ("release", "bootstrap_https"), "Choose full release or bounded guest bootstrap HTTPS.")
+    require(access in ("release", "bootstrap_https", "bootstrap_http"),
+            "Choose full release or bounded guest bootstrap HTTP or HTTPS.")
     pin = _routing.hypervisor_pin(pin)
     resource = released_guest_resource(guest, pin)
     require(resource.get("kind") != "windows" or access == "release",
@@ -1250,14 +1257,14 @@ def guest_release_context(configuration, shared, guest, pin, transition=None, ac
     values = inventory_variables(inventories[0])
     previous = _routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
         values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []),
-        values.get("aap_hypervisor_isolation_released_clients", []))
+        values.get("aap_hypervisor_isolation_released_clients", []), values.get("aap_hypervisor_isolation_http_clients", []))
     require(previous.get("protected_ipv4") and pin["address"] not in previous["protected_ipv4"]
             and pin["public_ip"] not in previous["protected_ipv4"]
             and all(nic["address"] not in previous["protected_ipv4"] for nic in guest_interfaces(resource)),
             "Release must preserve independently declared production exclusions.")
     identities = guest_identities(resource)
     desired = deepcopy(previous)
-    field = "released_clients" if access == "release" else "https_clients"
+    field = {"release": "released_clients", "bootstrap_https": "https_clients", "bootstrap_http": "http_clients"}[access]
     released = desired.setdefault(field, [])
     for identity in identities:
         matching = [item for item in released if item["ipv4"] == identity["ipv4"] or item["mac"] == identity["mac"]]
@@ -1265,7 +1272,7 @@ def guest_release_context(configuration, shared, guest, pin, transition=None, ac
         if not matching:
             released.append(identity)
     require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
-            desired.get("guest_host_clients", []), desired.get("released_clients", [])) == desired,
+            desired.get("guest_host_clients", []), desired.get("released_clients", []), desired.get("http_clients", [])) == desired,
             "The selected release must preserve the complete normalized production-protected policy.")
     if transition is not None:
         require(isinstance(transition, dict) and set(transition) == {"previous_policy", "desired_policy"}
@@ -1273,7 +1280,7 @@ def guest_release_context(configuration, shared, guest, pin, transition=None, ac
                 "Publication must match the exact planned and applied guest release.")
         original = transition["previous_policy"]
         require(isinstance(original, dict) and _routing.isolation_policy(pin, original.get("https_clients", []),
-            original.get("protected_ipv4"), original.get("guest_host_clients", []), original.get("released_clients", [])) == original,
+            original.get("protected_ipv4"), original.get("guest_host_clients", []), original.get("released_clients", []), original.get("http_clients", [])) == original,
             "Keep the normalized policy captured before the live release.")
         derived = deepcopy(original)
         for identity in identities:
@@ -1286,6 +1293,22 @@ def guest_release_context(configuration, shared, guest, pin, transition=None, ac
     hypervisors = [row for row in hosts if inventory_variables(row).get("ansible_host") == pin["address"]]
     require(len(hypervisors) == 1, "Resolve the exact hypervisor in the fixed shared inventory.")
     hypervisor = hypervisors[0]
+    if access == "bootstrap_http":
+        owned = [row for row in hosts if row.get("inventory") == hypervisor["inventory"]
+                 and row.get("name") == resource["vm_name"]]
+        require(len(owned) == 1, "HTTP bootstrap requires an already published guest owner.")
+        owner = inventory_variables(owned[0])
+        recorded = owner.get("vm_resource", {})
+        require(isinstance(recorded, dict) and recorded.get("verified") is True
+                and owner.get("hypervisor_host") == hypervisor["name"]
+                and owner.get("ansible_host") == resource["address"]
+                and owner.get("vm_uuid") == resource["uuid"]
+                and ("source_image_sha256" not in resource
+                     or recorded.get("source_image_sha256") == resource["source_image_sha256"])
+                and all(key in recorded and recorded[key] == resource[key] for key in (
+                    "vm_name", "uuid", "disk", "network", "bridge", "mac", "address", "host_keys",
+                    "machine_id", "hypervisor_machine_id")),
+                "HTTP bootstrap must match the already published complete guest identity.")
     for row in hosts:
         if row.get("inventory") != hypervisor["inventory"] or row.get("name") == resource["vm_name"]:
             continue
@@ -1322,12 +1345,12 @@ def guest_release_variables(values, context, pinned=False):
         require(result.get("aap_hypervisor_pin") == pin, "Keep the exact recovery pin during release.")
         policies.append(_routing.isolation_policy(pin, result.get("aap_hypervisor_isolation_https_clients", []),
             result.get("aap_hypervisor_isolation_protected_ipv4", []), result.get("aap_hypervisor_isolation_host_clients", []),
-            result.get("aap_hypervisor_isolation_released_clients", [])))
+            result.get("aap_hypervisor_isolation_released_clients", []), result.get("aap_hypervisor_isolation_http_clients", [])))
     identities = guest_identities(context["guest"])
-    field = "https_clients" if context.get("access_mode") == "bootstrap_https" else "released_clients"
+    field = {"bootstrap_https": "https_clients", "bootstrap_http": "http_clients"}.get(context.get("access_mode"), "released_clients")
     for policy in policies:
         require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
-            policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", [])) == policy,
+            policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", []), policy.get("http_clients", [])) == policy,
             "A source release alias must keep the normalized production-protected schema.")
         derived = deepcopy(policy)
         for identity in identities:
@@ -1341,6 +1364,8 @@ def guest_release_variables(values, context, pinned=False):
             aap_hypervisor_isolation_protected_ipv4=deepcopy(desired["protected_ipv4"]),
             aap_hypervisor_isolation_host_clients=deepcopy(desired.get("guest_host_clients", [])),
             aap_hypervisor_isolation_released_clients=deepcopy(desired.get("released_clients", [])))
+        if "http_clients" in desired or "aap_hypervisor_isolation_http_clients" in result:
+            result["aap_hypervisor_isolation_http_clients"] = deepcopy(desired.get("http_clients", []))
     return result
 
 
@@ -1482,7 +1507,7 @@ def generic_retirement_policy(policy, guest):
         return result
     identities = guest_identities(guest)
     generic_retirement_no_host_grants({"isolation_policy": result}, guest)
-    for field in ("https_clients", "released_clients"):
+    for field in ("https_clients", "released_clients", "http_clients"):
         retained = []
         for row in result.get(field, []):
             matching = [identity for identity in identities if row["ipv4"] == identity["ipv4"] or row["mac"] == identity["mac"]]
@@ -1495,7 +1520,7 @@ def generic_retirement_policy(policy, guest):
                 result[field] = retained
             else:
                 result.pop(field)
-    if not result.get("https_clients") and not result.get("released_clients"):
+    if not result.get("https_clients") and not result.get("released_clients") and not result.get("http_clients"):
         result.pop("protected_ipv4", None)
     return result
 
@@ -1511,7 +1536,7 @@ def generic_retirement_context(configuration, shared, client, name, pin, transit
     values = inventory_variables(recovery[0])
     previous = _routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
         values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []),
-        values.get("aap_hypervisor_isolation_released_clients", []))
+        values.get("aap_hypervisor_isolation_released_clients", []), values.get("aap_hypervisor_isolation_http_clients", []))
     data = shared["host_inventory_configuration"]
     hypervisors = [row for row in data["hosts"] if inventory_variables(row).get("ansible_host") == pin["address"]]
     require(len(hypervisors) == 1, "Resolve the fixed main-inventory hypervisor before exact guest retirement.")
@@ -1579,12 +1604,12 @@ def generic_retirement_context(configuration, shared, client, name, pin, transit
     if transition is not None:
         old = transition["previous_policy"]
         require(isinstance(old, dict) and _routing.isolation_policy(pin, old.get("https_clients", []),
-                old.get("protected_ipv4"), old.get("guest_host_clients", []), old.get("released_clients", [])) == old
+                old.get("protected_ipv4"), old.get("guest_host_clients", []), old.get("released_clients", []), old.get("http_clients", [])) == old
                 and generic_retirement_policy(old, guest) == transition["desired_policy"] == desired
                 and previous in (old, desired), "A retirement transition changed beyond the exact selected guest.")
         previous = old
     require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
-            desired.get("guest_host_clients", []), desired.get("released_clients", [])) == desired,
+            desired.get("guest_host_clients", []), desired.get("released_clients", []), desired.get("http_clients", [])) == desired,
             "Retirement must preserve normalized production protection and other guest permissions.")
     identities = guest_identities(guest) if guest is not None else []
     context = {"route": {"hypervisor": deepcopy(pin)}, "guest": guest, "guest_name": name,

@@ -21,7 +21,8 @@
              aap_hypervisor_isolation_https_clients | default([]),
              aap_hypervisor_isolation_protected_ipv4 | default([]),
              aap_hypervisor_isolation_host_clients | default([]),
-             aap_hypervisor_isolation_released_clients | default([])) }}
+             aap_hypervisor_isolation_released_clients | default([]),
+           aap_hypervisor_isolation_http_clients | default([])) }}
       check_mode: "{{ ansible_check_mode | bool }}"
   no_log: true
 

@@ -37,7 +37,7 @@ class ActionModule(ActionBase):
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
         try:
-            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "installation_access", "retire_guest"):
+            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "guest_bootstrap_http", "installation_access", "retire_guest"):
                 return self.release_guest(result, task_vars or {})
             if self._task.check_mode:
                 result.update(changed=False, published=False)
@@ -64,7 +64,7 @@ class ActionModule(ActionBase):
                 declared = registration["policy"]
                 keys.require(routing.isolation_policy(registered_route["hypervisor"],
                     declared.get("https_clients", []), declared.get("protected_ipv4"),
-                    declared.get("guest_host_clients", []), declared.get("released_clients", [])) == declared,
+                    declared.get("guest_host_clients", []), declared.get("released_clients", []), declared.get("http_clients", [])) == declared,
                     "Publish the current declared recovery isolation policy without changing its scope.")
             token = os.environ.get("CAC_GIT_TOKEN", "")
             keys.require(bool(token), "Attach VM allocation git Pseudo CMDB writer for token publication.")
@@ -479,7 +479,7 @@ class ActionModule(ActionBase):
                     else:
                         context = keys.guest_release_context(documents["autodeploy"], documents["shared"],
                             args["guest"], args["hypervisor"], args.get("transition") if phase == "publish" else None,
-                            "bootstrap_https" if args["operation"] == "guest_bootstrap_https" else "release")
+                            {"guest_bootstrap_https": "bootstrap_https", "guest_bootstrap_http": "bootstrap_http"}.get(args["operation"], "release"))
                         capture = keys.guest_release_inventory_capture
                         source_operations = keys.source_guest_release_operations
                     desired = {kind: capture(value, context, kind) if value is not None else None

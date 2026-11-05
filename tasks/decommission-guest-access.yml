@@ -83,7 +83,8 @@
                aap_hypervisor_isolation_https_clients | default([]),
                aap_hypervisor_isolation_protected_ipv4 | default([]),
                aap_hypervisor_isolation_host_clients | default([]),
-               aap_hypervisor_isolation_released_clients | default([])) |
+               aap_hypervisor_isolation_released_clients | default([]),
+           aap_hypervisor_isolation_http_clients | default([])) |
              aap_decommission_guest_access_plan(aap_retirement, aap_instance_route, aap_instance_resources,
                aap_decommission_guest_xmls, aap_decommission_guest_network_xmls,
                aap_decommission_isolation_capture.content | b64decode | from_json,

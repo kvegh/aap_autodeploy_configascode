@@ -164,9 +164,17 @@ class GuestReleaseTests(unittest.TestCase):
     def test_native_bootstrap_https_action_uses_same_encrypted_transaction_and_safe_retry(self):
         self.exercise_action('guest_bootstrap_https')
 
+    def test_native_bootstrap_http_action_uses_same_encrypted_transaction_and_safe_retry(self):
+        self.exercise_action('guest_bootstrap_http')
+
     def exercise_action(self, operation):
         module = load('test_guest_release_action', 'action_plugins/aap_publish_instance_keys.py')
         guest, pin, main, shared, hactar, allocation = fixture(new=True)
+        if operation == 'guest_bootstrap_http':
+            bootstrap = keys.guest_release_context(main, shared, guest, pin, access='bootstrap_https')
+            main = keys.guest_release_inventory_capture(main, bootstrap, 'autodeploy')
+            shared = keys.guest_release_inventory_capture(shared, bootstrap, 'shared')
+            hactar = keys.guest_release_inventory_capture(hactar, bootstrap, 'hactar')
         source = Source(main, shared, hactar)
         secret = VaultSecret(b'synthetic-cac-password')
         environment_secret = VaultSecret(b'synthetic-environment-password')
@@ -212,7 +220,7 @@ class GuestReleaseTests(unittest.TestCase):
                 selected = [{'bridge': nic['bridge'], 'ipv4': nic['address'], 'mac': nic['mac']}
                             for nic in resource.get('interfaces', [resource])]
                 expected = deepcopy(transition['previous_policy'])
-                field = 'https_clients' if operation == 'guest_bootstrap_https' else 'released_clients'
+                field = {'guest_bootstrap_https': 'https_clients', 'guest_bootstrap_http': 'http_clients'}.get(operation, 'released_clients')
                 expected.setdefault(field, []).extend(selected)
                 self.assertEqual(transition['desired_policy'], expected)
                 self.assertEqual(source.calls, [])

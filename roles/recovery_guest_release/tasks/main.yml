@@ -7,10 +7,17 @@
     __recovery_release_operation: "{{ recovery_release_operation | default('release_guest') }}"
   no_log: true
 
-- name: Choose full release or the approved bootstrap HTTPS permission
+- name: Choose full release or the approved guest bootstrap permission
   ansible.builtin.assert:
-    that: __recovery_release_operation in ['release_guest', 'guest_bootstrap_https']
-    fail_msg: Use only full guest release or approved bootstrap HTTPS.
+    that: __recovery_release_operation in ['release_guest', 'guest_bootstrap_https', 'guest_bootstrap_http']
+    fail_msg: Use only full guest release or approved bootstrap HTTP or HTTPS.
+
+- name: Retain the fixed runtime operation before delegation
+  ansible.builtin.set_fact:
+    __recovery_release_mode: >-
+      {{ {'release_guest': 'release', 'guest_bootstrap_https': 'bootstrap_https',
+          'guest_bootstrap_http': 'bootstrap_http'}[__recovery_release_operation] }}
+  no_log: true
 
 - name: Preflight the source job and exact saved policy before changing the hypervisor
   aap_publish_instance_keys:
@@ -73,7 +80,7 @@
               'hypervisor': __recovery_release_pin,
               'transition': __recovery_release_plan.transition,
               'check_mode': ansible_check_mode | bool,
-              'mode': 'bootstrap_https' if __recovery_release_operation == 'guest_bootstrap_https' else 'release'} | to_json }}
+              'mode': __recovery_release_mode} | to_json }}
       delegate_to: "{{ __recovery_release_pin.address }}"
       become: true
       vars: *recovery_release_connection
@@ -107,7 +114,7 @@
               'hypervisor': __recovery_release_pin,
               'transition': __recovery_release_plan.transition,
               'check_mode': false,
-              'mode': 'bootstrap_https' if __recovery_release_operation == 'guest_bootstrap_https' else 'release'} | to_json }}
+              'mode': __recovery_release_mode} | to_json }}
       delegate_to: "{{ __recovery_release_pin.address }}"
       become: true
       vars: *recovery_release_connection

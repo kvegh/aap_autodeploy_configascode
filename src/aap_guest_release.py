@@ -250,7 +250,8 @@ def plan(request, state):
             and type(request['check_mode']) is bool,
             'Choose one exact verified recovery guest transition.')
     mode = request.get('mode', 'release')
-    require(mode in {'release', 'bootstrap_https'}, 'Choose full release or bounded guest bootstrap HTTPS.')
+    require(mode in {'release', 'bootstrap_https', 'bootstrap_http'},
+            'Choose full release or bounded guest bootstrap HTTP or HTTPS.')
     guest, pin, transition = (request[key] for key in ('guest', 'hypervisor', 'transition'))
     require(isinstance(guest, dict) and guest.get('verified') is True
             and re.fullmatch(r'[a-z][a-z0-9-]{0,62}', guest.get('vm_name', ''))
@@ -270,7 +271,7 @@ def plan(request, state):
             'Retain production denial, all enforced bridges and disabled autostart.')
     identity = {'bridge': guest['bridge'], 'ipv4': guest['address'], 'mac': guest['mac']}
     expected = deepcopy(previous)
-    field = 'released_clients' if mode == 'release' else 'https_clients'
+    field = {'release': 'released_clients', 'bootstrap_https': 'https_clients', 'bootstrap_http': 'http_clients'}[mode]
     released = expected.setdefault(field, [])
     matching = [row for row in released if row['ipv4'] == identity['ipv4'] or row['mac'] == identity['mac']]
     require(not matching or matching == [identity], 'An existing conflicting release requires review.')
@@ -379,7 +380,7 @@ def _retirement_policy(policy, guest):
     require(not any(row['ipv4'] == identity['ipv4'] or row['mac'] == identity['mac']
                     for row in policy.get('guest_host_clients', []) for identity in identities),
             'Selected host-service grants require supported exact cleanup before retirement.')
-    for field in ('https_clients', 'released_clients'):
+    for field in ('https_clients', 'released_clients', 'http_clients'):
         retained = []
         for row in result.get(field, []):
             matching = [identity for identity in identities if row['ipv4'] == identity['ipv4'] or row['mac'] == identity['mac']]
@@ -392,7 +393,7 @@ def _retirement_policy(policy, guest):
                 result[field] = retained
             else:
                 result.pop(field)
-    if not result.get('https_clients') and not result.get('released_clients'):
+    if not result.get('https_clients') and not result.get('released_clients') and not result.get('http_clients'):
         result.pop('protected_ipv4', None)
     return result
 

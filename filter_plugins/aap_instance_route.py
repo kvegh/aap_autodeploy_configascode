@@ -206,7 +206,8 @@ def local_host_policy(result, pin, clients):
     return result
 
 
-def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_clients=None, released_clients=None):
+def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_clients=None,
+                     released_clients=None, http_clients=None):
     pin = hypervisor_pin(pin)
     result = {
         "bridges": list(pin["isolation_bridges"]),
@@ -220,7 +221,10 @@ def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_cl
     released = [] if released_clients is None else released_clients
     require(isinstance(released, list) and len(released) <= 64,
             "Declare a bounded list of verified released guest identities.")
-    if not clients and not released:
+    http = [] if http_clients is None else http_clients
+    require(isinstance(http, list) and len(http) <= 64,
+            "Declare bounded exact HTTP bootstrap clients explicitly.")
+    if not clients and not released and not http:
         return local_host_policy(result, pin, guest_host_clients)
     require(
         isinstance(protected_ipv4, list) and protected_ipv4,
@@ -278,6 +282,25 @@ def isolation_policy(pin, https_clients=None, protected_ipv4=None, guest_host_cl
         identities.append(dict(client))
     if identities:
         result["released_clients"] = identities
+    approved_http = []
+    for client in http:
+        require(isinstance(client, Mapping) and set(client) == {"bridge", "ipv4", "mac"},
+                "Bind HTTP bootstrap to an exact bridge, IPv4 and MAC identity.")
+        ipv4(client["ipv4"])
+        mac = client["mac"]
+        require(client["bridge"] in pin["isolation_bridges"]
+                and any(IPv4Address(client["ipv4"]) in network for network in private)
+                and isinstance(mac, str) and re.fullmatch(r"[0-9a-f]{2}(?::[0-9a-f]{2}){5}", mac)
+                and not int(mac[:2], 16) & 1 and mac != "00:00:00:00:00:00"
+                and not any(old["ipv4"] == client["ipv4"] or old["mac"] == mac for old in approved_http),
+                "HTTP bootstrap requires unique normalized private guest identities.")
+        for old in approved + result.get("guest_host_clients", []) + identities:
+            require(not (old["ipv4"] == client["ipv4"] or old["mac"] == mac)
+                    or all(old[key] == client[key] for key in client),
+                    "An HTTP bootstrap identity conflicts with an existing guest grant.")
+        approved_http.append(dict(client))
+    if approved_http:
+        result["http_clients"] = approved_http
     return result
 
 

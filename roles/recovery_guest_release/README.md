@@ -22,6 +22,37 @@ Inputs are `recovery_release_guest`, `recovery_release_hypervisor` and the exist
 controller-side `recovery_release_trust_file`. This role adds no job template,
 service, credential type or secret store.
 
+## Exact guest bootstrap
+
+`recovery_release_operation` defaults to `release_guest`. The existing
+`guest_bootstrap_https` value permits only the selected verified generic Linux
+guest's public IPv4 TCP 443 traffic. It does not give that guest full release.
+
+The explicit `guest_bootstrap_http` value permits only public IPv4 TCP 80 for
+the same exact guest identity. HTTP additionally requires its complete verified
+`vm_resource` to have already been published in the canonical shared inventory,
+with the same hypervisor placement, address, UUID, disk, network, MAC, machine
+identity and SSH keys. The caller still supplies the same existing guest,
+hypervisor and pinned trust inputs. No caller-selected port list is accepted.
+
+HTTP uses its own optional `http_clients` list. It never turns existing HTTPS
+clients into HTTP clients. The matching recovery variable is
+`aap_hypervisor_isolation_http_clients`; the structured `isolation_policy` and
+`hactar_isolation_policy` aliases retain the same field. Missing or empty input
+is omitted from the normalized policy. A persisted HTTP list is bounded,
+nonempty and requires the declared protected IPv4 destinations.
+
+Both bootstrap operations retain private/reserved/production restrictions,
+existing HTTPS access, host-service grants and other released guests. They use
+the same native guest checks, source-job verification, encrypted compare-and-swap
+publication and rollback as full release. Other policy operations preserve HTTP
+entries. Selected guest retirement removes only that guest's exact HTTP entry
+and retains production protection while any HTTP, HTTPS or released guest remains.
+Full release still requires the caller's completed configuration checks.
+
+The HTTP extension is implemented and tested. This does not establish successful
+live bootstrap or downloads; the caller still requires operator approval.
+
 ## Verified Windows deployments
 
 The same role accepts an explicit Windows resource only after the caller has
@@ -29,8 +60,8 @@ completed the VM's configuration checks over authenticated WinRM. The operator
 has retained the demo's existing HTTPS/NTLM certificate-validation exception;
 the resource must truthfully record whether certificate validation occurred.
 This is a per-VM deployment milestone; later patch/content functional
-tests are separate. VM creation alone is insufficient. Windows bootstrap HTTPS
-is not supported by this branch.
+tests are separate. VM creation alone is insufficient. Windows bootstrap HTTP
+and HTTPS are not supported by this branch.
 
 The resource has exactly these fields: `kind: windows`, `vm_name`, `instance_name`,
 `uuid`, `disk`, `hypervisor_machine_id`, `verified: true`, `computer_name`,

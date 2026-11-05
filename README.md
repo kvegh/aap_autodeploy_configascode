@@ -11,6 +11,15 @@ and self-API connection before installation begins. The existing base template
 also supports the isolated `aap_installation_access` repair tag. These changes
 add no wrapper playbook, job template, credential type or secret store.
 
+The existing [guest release role](roles/recovery_guest_release/README.md#exact-guest-bootstrap)
+also supports explicitly approved HTTP bootstrap for one already owned generic
+Linux guest. `recovery_release_operation: guest_bootstrap_http` adds only that
+verified bridge/IP/MAC identity to `http_clients`, permitting public IPv4 TCP 80.
+HTTPS approvals, other guests and private/reserved/production restrictions remain.
+The same source preflight, encrypted publication, exact rollback and selected
+retirement cleanup apply. This extension is implemented and tested; live
+bootstrap and download acceptance remain separate checks.
+
 The selected-use-case launcher supplements its execution environment's active
 trust bundle with the existing source CA credential. Both native HTTPS requests
 and source SDK calls use that private combined bundle, retaining the receiving
@@ -450,9 +459,9 @@ Job Template selects the common importer and fixes its project ID in extra varia
 instance confirmation, pinned recovery identity and exact disk/DNS/TLS/nginx cleanup, related versioned guests and an orphaned DNS
 scan. Disk ownership checks accept libvirt's generated disk-index metadata while
 requiring the exact single file-backed disk. Before deletion, verified guest
-identities select only their local, installation HTTPS and released-client permissions for
-retirement. Protected production addresses remain declared while any installation
-HTTPS or released guest survives. Exact native rules and the existing persistent isolation policy are
+identities select only their local, HTTP/HTTPS bootstrap and released-client permissions for
+retirement. Protected production addresses remain declared while any HTTP, HTTPS
+or released guest survives. Exact native rules and the existing persistent isolation policy are
 cleaned after guest shutdown; normal deployment guards remain strict. The final
 existing writer updates encrypted policy aliases and inventory captures, removes
 only owned same-version source inventory entries and preserves literal variable

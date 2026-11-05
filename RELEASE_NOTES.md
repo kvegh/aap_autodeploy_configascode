@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.43.0
+
+Support explicitly approved public HTTP bootstrap for one already owned generic
+Linux guest through the existing release role and encrypted publication action.
+Keep HTTP identities separate from HTTPS and full release, validate complete
+published ownership and native provenance, preserve other grants and protected
+destinations, and remove only selected HTTP identities during retirement.
+Absent/empty input remains omitted. No service, store, registry, credential,
+job template or wrapper is added. Live deployment and acceptance remain separate.
+
 ## 0.42.6
 
 Document successful native Claude installation and private MCP checks, retain

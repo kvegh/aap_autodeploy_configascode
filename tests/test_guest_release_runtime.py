@@ -198,8 +198,16 @@ class RuntimeReleaseTests(unittest.TestCase):
     def test_native_role_skips_rollback_after_failed_empty_runtime_result(self):
         self.native_role_failure(False, runtime_failure=True)
 
-    def native_role_failure(self, durable, runtime_failure=False):
+    def test_native_http_role_uses_exact_bootstrap_mode_and_durable_rollback_rules(self):
+        for durable in (False, True):
+            with self.subTest(durable=durable):
+                self.native_role_failure(durable, operation='guest_bootstrap_http')
+
+    def native_role_failure(self, durable, runtime_failure=False, operation='release_guest'):
         request, _ = fixture()
+        if operation == 'guest_bootstrap_http':
+            request['transition']['desired_policy'] = deepcopy(request['transition']['previous_policy'])
+            request['transition']['desired_policy']['http_clients'] = deepcopy(request['transition']['previous_policy']['https_clients'])
         with tempfile.TemporaryDirectory(prefix='guest-release-role-rollback-') as directory:
             root = Path(directory)
             source = root / 'source'
@@ -219,6 +227,7 @@ class RuntimeReleaseTests(unittest.TestCase):
                 "from ansible.plugins.action import ActionBase\n"
                 "class ActionModule(ActionBase):\n"
                 " def run(self,tmp=None,task_vars=None):\n"
+                "  assert self._task.args['operation']==task_vars['fixture_operation']\n"
                 "  if self._task.args['phase']=='plan':return {'changed':False,'transition':task_vars['fixture_transition']}\n"
                 "  return {'failed':True,'msg':'Synthetic publication failure','durable_policy_published':task_vars['fixture_durable']}\n")
             tasks = yaml.safe_load((ROOT / 'roles/recovery_guest_release/tasks/main.yml').read_text())
@@ -242,6 +251,7 @@ class RuntimeReleaseTests(unittest.TestCase):
             play = root / 'fixture.yml'
             play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
                 'vars': {'recovery_release_guest': request['guest'], 'recovery_release_hypervisor': request['hypervisor'],
+                         'recovery_release_operation': operation, 'fixture_operation': operation,
                          'recovery_release_trust_file': '/tmp/synthetic-trust', 'fixture_durable': durable,
                          'fixture_transition': request['transition']},
                 'tasks': [{'ansible.builtin.include_role': {'name': str(role)}}]}], sort_keys=False))
@@ -257,6 +267,7 @@ class RuntimeReleaseTests(unittest.TestCase):
             self.assertEqual([row['operation'] for row in operations],
                              ['apply'] if durable or runtime_failure else ['apply', 'rollback'])
             self.assertEqual(operations[0]['transition'], request['transition'])
+            self.assertTrue(all(row['mode'] == ('bootstrap_http' if operation == 'guest_bootstrap_http' else 'release') for row in operations))
             # Native tempfile/copy/file tasks must remove their actual staging directory on failure.
             self.assertFalse(Path(operations[0]['_runtime_directory']).exists())
 
