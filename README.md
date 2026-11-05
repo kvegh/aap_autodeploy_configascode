@@ -181,6 +181,8 @@ No universal ownership mechanism has been selected or deployed.
 
 [TODO.md](TODO.md) is generated from current Beads task metadata; complete scoped
 records are retained as Vault ciphertext in the existing Hactar repository.
+The records distinguish approved plans, published implementations and actual
+runtime verification, so recovery does not mistake prepared code for a proven deployment.
 After every task change, run `scripts/sync_todo.py` with the snapshot path and
 existing CaC Vault password file, then commit both mirrors. Use `--check` to
 detect stale output. [Restart instructions](RESTART_HERE.md) explain the refresh

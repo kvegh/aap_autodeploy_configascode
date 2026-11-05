@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.45.2
+
+Synchronize the task overview and protected recovery export with the approved
+Windows infrastructure design, reviewed publication and remaining live tests.
+Keep code publication separate from successful runtime acceptance.
+
 ## 0.45.1
 
 Document implementation `eb806b7b79d51f08d7cf54fb2edb3d449ed375aa`, the agreed Windows
