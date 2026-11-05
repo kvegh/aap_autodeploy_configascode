@@ -1,0 +1,11 @@
+---
+- name: Prepare selected AIOps data using the existing private checkout and authenticated target
+  aap_cac_prepare_aiops:
+    operation: "{{ cac_aiops_settings_phase }}"
+    authentication: "{{ cac_api_auth }}"
+  no_log: true
+
+- name: Reload the verified encrypted AIOps capture after publication
+  ansible.builtin.include_vars:
+    file: "{{ cac_workspace.path }}/repository/{{ cac_project_contract.configuration_file }}"
+  no_log: true

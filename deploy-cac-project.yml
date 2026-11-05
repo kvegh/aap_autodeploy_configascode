@@ -53,6 +53,12 @@
         - name: Retrieve the fixed project capture with its private Git and Vault credentials
           ansible.builtin.include_tasks: tasks/cac-project-checkout.yml
 
+        - name: Persist only selected AIOps data before creating credentials or rendering guest jobs
+          ansible.builtin.include_tasks: tasks/cac-aiops-settings.yml
+          vars:
+            cac_aiops_settings_phase: pre
+          when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
+
         - name: Initialize the declared persistent-token placeholder before rendering resource definitions
           ansible.builtin.set_fact:
             "{{ cac_import_metadata.capabilities.eda_controller_access.token_variable }}": ''
@@ -131,6 +137,42 @@
             that:
               - aap_configuration_role_errors | default({}) | dict2items | selectattr('value', 'ne', []) | list | length == 0
             fail_msg: A configuration role reported errors; no workload was launched by this importer.
+          no_log: true
+
+        - name: Preserve native AIOps webhook and Event Stream data after the existing roles create them
+          ansible.builtin.include_tasks: tasks/cac-aiops-settings.yml
+          vars:
+            cac_aiops_settings_phase: post
+          when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
+
+        - name: Refresh selected AIOps saved runtime ciphertext after native resource readback
+          aap_cac_prepare_resources:
+          when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
+          no_log: true
+
+        - name: Revalidate AIOps template labels after the accepted remote settings reread
+          ansible.builtin.include_tasks: tasks/cac-template-labels.yml
+          vars:
+            cac_label_templates: "{{ cac_import_resources.controller_templates }}"
+            cac_label_definitions: "{{ cac_import_resources.controller_labels }}"
+            cac_required_template_label: "{{ cac_import_metadata.required_template_label }}"
+          when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
+
+        - name: Recheck AIOps resource safety before reapplying saved ciphertext
+          ansible.builtin.assert:
+            that:
+              - cac_import_resources | aap_cac_validate_resources(cac_import_metadata)
+          when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
+          no_log: true
+
+        - name: Save prepared AIOps runtime ciphertext through the existing Controller configuration role
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.controller_job_templates
+            apply:
+              no_log: true
+          vars:
+            controller_templates: "{{ cac_import_resources.controller_templates }}"
+          when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
           no_log: true
       always:
         - name: Remove the private checkout without revoking the supplied API credential

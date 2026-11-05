@@ -236,7 +236,8 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
                     fixture.write_text(yaml.dump(play, Dumper=vault_yaml.VaultDumper, sort_keys=False))
                     environment['ANSIBLE_JINJA2_NATIVE'] = native
                     run = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,',
-                                          '--vault-password-file', str(ROOT.parents[2] / 'vpf'), str(fixture)],
+                                          '--vault-password-file', os.environ.get('AAP_CAC_TEST_VAULT_PASSWORD_FILE',
+                                                                                str(ROOT.parents[2] / 'vpf')), str(fixture)],
                                          cwd=ROOT, env=environment, text=True, capture_output=True, timeout=90)
                     self.assertEqual(run.returncode, 0, '%s/native=%s\n%s' % (project, native, run.stdout + run.stderr))
 

@@ -1,5 +1,26 @@
 # Release notes
 
+## 0.41.0
+
+Prepare AIOps instance data before the existing CaC roles create resources, then
+read the target-native website webhook and Event Stream identifiers afterward.
+Reuse the existing private checkout, approved repository writer, separate Vault
+keys and selected HTTPS API authentication. Persist stable per-instance Basic
+passwords before use; preserve current secrets, literal tags, unrelated instances
+and native Zabbix provenance. Accept only canonical inventory counter text,
+honor review holds before commits, and leave missing guests disabled without
+inventing identities or copying prior target tokens. Native API preparation is
+GET-only; existing configuration roles still write all AAP resources.
+
+Thirty-three affected checks pass on the latest published Windows lifecycle
+base, including real local encrypted Git concurrency, native Ansible modes and
+strict identity regressions; two private ciphertext checks pass. Protected
+current-inventory/target-GET fixtures and fresh-instance rendering pass while
+preserving existing runtime ciphertext. Syntax and scoped production lint pass.
+VM producer orchestration, per-clone Zabbix tokens, signed MCP artifacts,
+approved shared defaults and successor functional acceptance remain separate.
+Provider authentication is never copied into a fresh namespace by preparation.
+
 ## 0.40.1
 
 Document implementation `ae9cfdb`, its explicit Windows identity and all-NIC

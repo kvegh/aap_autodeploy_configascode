@@ -1032,6 +1032,13 @@ repository. Follow the [operator procedure](docs/cac-project-import.md), selecti
 `aap_instance_key`; the saved shared token store selects its API token. The public
 playbook repository needs no private read token.
 
+The same importer now [prepares the selected AIOps instance's encrypted settings](docs/aiops-instance-preparation.md)
+before resource creation and records native webhook/Event Stream data afterward.
+It reuses the existing AIOps repository's approved write access and preserves
+existing secrets on retries. Missing auxiliary VMs stay absent and disabled;
+their actual ownership comes only from existing native deployment evidence.
+Application deployment and successor-environment acceptance remain separate.
+
 Before the first import on a fresh target, run the existing use-case prerequisite
 preparation for that instance and the reviewed AIOps selection. It supplies the
 exact PAH collection versions required by the imported SCM projects, including
