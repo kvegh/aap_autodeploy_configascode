@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.42.1
+
+Document implementation `75639c5`, its final normal-base/cleanup boundary,
+read-only reservation checks, native failure/race coverage and pending live AAP
+release acceptance. Distinguish the separately successful AIOps preparation
+refresh on 0.41.1 from this new hook.
+
 ## 0.42.0
 
 Add final AAP guest release to the successful end of normal Stage 04, after all

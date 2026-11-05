@@ -1,5 +1,46 @@
 # Design decisions history
 
+## Release the AAP guest only after normal base completes and cleans up — 2026-11-05
+
+Implementation `75639c54ffff61eac7ea9e1b8707ce9f80240bb3` adds the final release
+hook to normal Stage 04. The owner requires successful VM configuration before
+full recovery isolation is lifted. An AAP primary is not a generic Linux clone,
+so the existing shared role/action accepts an explicit AAP route, exact primary
+resource and freshly authenticated guest machine ID. It reuses the consumed
+reservation and existing native AAP ownership checks instead of fabricating
+generic-image descriptions or duplicating the VM record in another store.
+
+Base configuration, MCP/API token validation, source publication, temporary-token
+revocation and private-workspace cleanup must all succeed first. The original
+trust file is removed in that cleanup path, including failures. Only afterward
+does the hook create new short-lived pinned SSH trust and read the guest's
+machine ID with the existing login. It neither recovers passwords/tokens nor
+changes authentication. The new trust file is always removed, including release
+failure. Existing token-store publication and inventory registration must be
+enabled; partial/skipped execution and check mode cannot grant full release.
+The HTTPS-only installation repair retains its early end-play boundary.
+
+The policy transaction adds only the exact primary bridge/IP/MAC identity in the
+same three encrypted captures and source aliases. The selected reservation is
+compared before and after durable publication and remains read-only. Existing
+source-host aliases, physical identities, tokens, counters, native rules and
+other guest permissions remain unchanged. Native checks cover both domain
+definitions, actual UUID/disk/MAC/network/DHCP and conflicting guest ownership.
+Existing exact rollback and durable-publication retry behavior is reused;
+Linux and Windows paths keep their existing behavior.
+
+Seventy-one lifecycle checks and four version checks pass on published 0.41.1,
+including eighteen native ordering/failure scenarios across both template modes,
+both repair modes and actual independent Git-writer reservation races before
+and after publication. Production lint passes fifteen files. These are code and
+native-fixture results; no live full-base job or AAP release was run by this work.
+
+Separately, normal AIOps preparation job 3320 succeeded on `5728dfe` (0.41.1),
+following implementation `cecff63`. Independent parent-agent readback verified
+the new Claude installer, preservation of all sixty-nine previous template IDs
+and the selected application's VM identity. That existing-target preparation
+result does not prove this new final AAP release or a fresh successor cycle.
+
 ## Prepare AIOps data inside its existing CaC import — 2026-11-05
 
 Implementation `cecff63751a800bdd38df3e0a18ab0f6b5c05f59` adds the reviewed
