@@ -30,6 +30,12 @@ class McpAccessTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.state = {}
+        cls.authority_directory = tempfile.TemporaryDirectory(prefix="mcp-public-authority-")
+        authority = Path(cls.authority_directory.name)
+        subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes",
+            "-keyout", str(authority / "key"), "-out", str(authority / "ca"), "-days", "1",
+            "-subj", "/CN=synthetic-test-ca"], capture_output=True, check=True)
+        cls.public_authority = (authority / "ca").read_text()
 
         class API(BaseHTTPRequestHandler):
             def log_message(self, *args):
@@ -88,6 +94,7 @@ class McpAccessTests(unittest.TestCase):
         cls.server.shutdown()
         cls.server.server_close()
         cls.thread.join(timeout=5)
+        cls.authority_directory.cleanup()
 
     def setUp(self):
         self.state.clear()
@@ -98,7 +105,7 @@ class McpAccessTests(unittest.TestCase):
         self.storage = self.root / "protected"
         self.token_file = self.storage / "mcp-token.json"
 
-    def run_tasks(self, save_failure=None, unknown_save=False, publication=False, publication_failure=False):
+    def run_tasks(self, save_failure=None, unknown_save=False, publication=False, publication_failure=False, ca_failure=False):
         tasks = yaml.safe_load((ROOT / "tasks/mcp-access.yml").read_text())
         tasks[0]["vars"]["cac_mcp_directory"] = str(self.storage)
 
@@ -127,6 +134,9 @@ class McpAccessTests(unittest.TestCase):
                     task.pop("ansible.builtin.slurp", None)
                     task.pop("ansible.builtin.stat", None)
                     task["ansible.builtin.fail"] = {"msg": "Synthetic unreachable storage"}
+                if task.get("name") == "Verify the installed authority against the selected guest HTTPS identity":
+                    task["ansible.builtin.command"]["argv"] = [sys.executable, "-c",
+                        "import json;print(json.dumps({'verified':" + repr(not ca_failure) + "}))"]
                 for key in ("block", "rescue", "always"):
                     relocate(task.get(key, []))
 
@@ -137,7 +147,10 @@ class McpAccessTests(unittest.TestCase):
                      "ansible_python_interpreter": sys.executable}
         actions = str(ROOT / "action_plugins")
         if publication:
-            variables.update(aap_instance_key="fixture-instance-display", aap_instance_route={"vm_name": "fixture-instance"},
+            ca_file = self.root / "selected-ca.pem"
+            ca_file.write_text(self.public_authority)
+            variables.update(aap_instance_key="fixture-instance-display", aap_instance_route={"vm_name": "fixture-instance", "vm_ip": "192.168.70.10"},
+                             cac_mcp_ca_path=str(ca_file),
                              aap_instance_key_store={"publish": True,
                                                                                          "source_organization": "Example"})
             action_directory = self.root / "action_plugins"
@@ -149,6 +162,8 @@ class McpAccessTests(unittest.TestCase):
                 "    def run(self, tmp=None, task_vars=None):\n"
                 "        record = self._task.args['record']\n"
                 f"        assert record['token'] == {BEARER!r}\n"
+                "        assert record['mcp']['url'] == 'https://192.168.70.10:8448/mcp'\n"
+                f"        assert record['mcp']['ca_pem'] == {self.public_authority!r}\n"
                 "        assert self._task.args['instance_name'] == 'fixture-instance'\n"
                 "        assert self._task.args['organization'] == 'Example'\n"
                 f"        if {publication_failure!r}: raise AnsibleActionFail('Synthetic publication refusal')\n"
@@ -189,6 +204,19 @@ class McpAccessTests(unittest.TestCase):
         saved = self.token_file.read_bytes()
         self.assertEqual(self.state["created"], 1)
         self.assertEqual(self.state["deleted"], [])
+        retried, output = self.run_tasks(publication=True)
+        self.assertEqual(retried.returncode, 0, output)
+        self.assertEqual(self.token_file.read_bytes(), saved)
+        self.assertEqual(self.state["created"], 1)
+
+    def test_failed_selected_ca_verification_stops_publication_and_preserves_token(self):
+        failed, output = self.run_tasks(publication=True, ca_failure=True)
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertFalse((self.root / "published.jsonl").exists())
+        self.assertEqual(json.loads(self.token_file.read_text())["token"], BEARER)
+        self.assertEqual(self.state["created"], 1)
+        self.assertEqual(self.state["deleted"], [])
+        saved = self.token_file.read_bytes()
         retried, output = self.run_tasks(publication=True)
         self.assertEqual(retried.returncode, 0, output)
         self.assertEqual(self.token_file.read_bytes(), saved)

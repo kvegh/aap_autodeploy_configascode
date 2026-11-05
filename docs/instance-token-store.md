@@ -55,3 +55,29 @@ Tests exercise selection, mismatches, masked API inputs, real encrypted Git
 updates, source-save failure/retry, concurrent-map retention and reuse of the
 same persistent token. A complete fresh deployment is a separate live proof;
 offline tests alone do not establish that it finished.
+
+## Selected private MCP connection
+
+An existing instance record may additionally contain `mcp`, holding its private
+HTTPS endpoint and installed public `ca_pem`. The credential type, JSON schema
+version, original token/ID/expiry and ordinary CoP API authentication remain
+unchanged. Legacy records without this metadata still authenticate normally.
+Base reads and verifies the authority through its existing authenticated guest
+bootstrap path, then publishes it only for that selected instance; a conflicting
+saved endpoint/CA stops for review. No new token is created.
+
+Publish compatible readers before backfilling. Run existing base configuration
+for the selected instance, refresh AutoDeploy CaC on the receiving AAP, then
+refresh AIOps CaC. The existing AIOps preparation copies only selected token/CA
+into its existing encrypted runtime; it performs no SSH. The normal AIOps
+Claude/MCP installer uses private MCP and application-only CA trust. Other
+namespaces and provider credentials are preserved.
+
+Current importers share the AutoDeploy main project with update-on-launch and
+zero cache timeout. Their normal project sync must load compatible readers
+before accepting new metadata. Older ordinary selectors reject the extra field,
+and older ordinary publishers could discard it. Existing pinned guest
+release/retire/network operations use separate capture paths that preserve the
+complete token mapping; this change requires no unrelated guest lifecycle pin
+change. Receiving stores are refreshed by their existing AutoDeploy CaC import,
+not assumed to change when source base publication finishes.

@@ -45,6 +45,9 @@ than a second checklist here.
 - All six CaC import templates use one playbook, fixed project IDs and separate
   repository reader/Vault credentials. API calls require verified HTTPS and the
   selected instance's token. There is no SSH or installer-password API fallback.
+  Optional private MCP metadata follows that same selected record into existing
+  AIOps runtime settings; its CA applies only to the application, not global
+  trust. See the [ordinary backfill sequence](docs/instance-token-store.md).
 - An inventory entry selects the AAP API destination; a pinned hypervisor and
   verified VM identity select infrastructure targets. These are separate choices.
 - Recovery isolation prevents restored guests from contacting production using

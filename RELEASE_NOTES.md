@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.46.0
+
+Publish optional selected private MCP endpoint/CA metadata through existing base
+and instance-token records, keeping ordinary API authentication unchanged. The
+existing AIOps import copies only the chosen connection into its encrypted
+runtime. Preserve legacy records, other namespaces and old guest-lifecycle
+captures; backfill only after compatible readers are synced.
+
+Validation:45 focused checks, including real native publication/CA refusal and
+encrypted Git preservation, plus Stage04/common-importer syntax. No deployment,
+store backfill, policy or model action was launched.
+
 ## 0.45.11
 
 Document cleanup task decision and implementation `632d2cb`.

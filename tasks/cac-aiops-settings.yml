@@ -3,6 +3,7 @@
   aap_cac_prepare_aiops:
     operation: "{{ cac_aiops_settings_phase }}"
     authentication: "{{ cac_api_auth }}"
+    mcp_connection: "{{ cac_selected_instance_access.mcp_connection | default(omit) }}"
   no_log: true
 
 - name: Reload the verified encrypted AIOps capture after publication

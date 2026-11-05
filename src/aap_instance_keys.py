@@ -2,7 +2,7 @@
 
 from copy import deepcopy
 from datetime import datetime, timezone
-from ipaddress import IPv4Address
+from ipaddress import IPv4Address, IPv4Network
 import hashlib
 from importlib.util import module_from_spec, spec_from_file_location
 import json
@@ -129,8 +129,32 @@ def instance_name(value):
     return value
 
 
+def mcp_connection(value):
+    """Validate the optional selected private endpoint and its installed public CA."""
+    require(isinstance(value, dict) and set(value) == {"url", "ca_pem"},
+            "Keep only the selected private MCP endpoint and public authority.")
+    try:
+        parsed = urlsplit(value["url"])
+        address = IPv4Address(parsed.hostname)
+        require(value["url"] == "https://" + str(address) + ":8448/mcp",
+                "Use only the selected private AAP MCP HTTPS endpoint.")
+        require(any(address in IPv4Network(network) for network in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")),
+                "Use only the selected private AAP address for MCP.")
+        authority = value["ca_pem"]
+        require(isinstance(authority, str) and len(authority) <= 524288
+                and "PRIVATE KEY" not in authority, "Publish only the installed public CA bundle.")
+        blocks = re.findall(r"-----BEGIN CERTIFICATE-----[A-Za-z0-9+/=\r\n]+-----END CERTIFICATE-----", authority)
+        require(bool(blocks), "Require the selected installed PEM certificate authority.")
+        normalized = "\n".join(blocks) + "\n"
+        ssl.create_default_context(cadata=normalized)
+    except (ValueError, TypeError, KeyError, ssl.SSLError):
+        raise StoreError("The selected private MCP endpoint or public authority is invalid.") from None
+    return {"url": value["url"], "ca_pem": normalized}
+
+
 def validate_record(record):
-    require(isinstance(record, dict) and set(record) == {"hostname", "token", "token_id", "expires"},
+    fields = {"hostname", "token", "token_id", "expires"}
+    require(isinstance(record, dict) and fields <= set(record) <= fields | {"mcp"},
             "The stored instance access record is incomplete.")
     origin(record["hostname"])
     require(isinstance(record["token"], str) and record["token"]
@@ -146,6 +170,8 @@ def validate_record(record):
                     "The selected instance token has expired; review rotation explicitly.")
         except (ValueError, TypeError, AttributeError):
             raise StoreError("The selected instance token expiry is invalid or expired.") from None
+    if "mcp" in record:
+        mcp_connection(record["mcp"])
     return record
 
 
@@ -177,12 +203,21 @@ def select_access(data, selected, inventory_host):
             "username": "", "password": "", "validate_certs": True}
 
 
+def select_mcp(data, selected, inventory_host):
+    """Keep public API authentication unchanged and return only selected MCP metadata."""
+    select_access(data, selected, inventory_host)
+    record = data["instances"][selected]
+    return mcp_connection(record["mcp"]) if "mcp" in record else None
+
+
 def merge_record(configuration, selected, saved):
     instance_name(selected)
     require(isinstance(saved, dict) and saved.get("username") == "admin" and saved.get("scope") == "write",
             "Publish only the verified administrator API/MCP token.")
     record = {"hostname": origin(saved.get("target")), "token": saved.get("token"),
               "token_id": saved.get("id"), "expires": saved.get("expires")}
+    if "mcp" in saved:
+        record["mcp"] = mcp_connection(saved["mcp"])
     validate_record(record)
     result = deepcopy(configuration)
     records = result.setdefault("aap_instance_api_credentials", {})
@@ -192,6 +227,11 @@ def merge_record(configuration, selected, saved):
         require(old.get("hostname") == record["hostname"] and old.get("token") == record["token"]
                 and old.get("token_id") == record["token_id"],
                 "Stored access differs for this instance; review replacement explicitly.")
+        if "mcp" in old:
+            previous = mcp_connection(old["mcp"])
+            require("mcp" not in record or record["mcp"] == previous,
+                    "The saved private MCP authority or endpoint changed; review replacement explicitly.")
+            record.setdefault("mcp", previous)
     records[selected] = record
     document(records)
     return result

@@ -30,6 +30,7 @@ class ActionModule(ActionBase):
                     "Require a regular injected instance token file.")
             data = json.loads(path.read_text())
             auth = keys.select_access(data, self._task.args["instance_name"], {"ansible_fqdn": self._task.args["fqdn"]})
+            mcp = keys.select_mcp(data, self._task.args["instance_name"], {"ansible_fqdn": self._task.args["fqdn"]})
         except keys.StoreError as error:
             result.update(changed=False, access_error=str(error))
             return result
@@ -37,4 +38,6 @@ class ActionModule(ActionBase):
             result.update(changed=False, access_error="The protected instance token file could not be read or validated.")
             return result
         result.update(changed=False, authentication=auth)
+        if mcp is not None:
+            result["mcp_connection"] = mcp
         return result

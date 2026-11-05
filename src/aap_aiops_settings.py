@@ -78,7 +78,7 @@ def selected_context(instance, hypervisor, hostname, zone, known_instances, sele
         raise lifecycle.LifecycleError("The selected AAP ownership record is incomplete.") from None
     version = "v%02d" % number
     return {"instance_name": name, "instance_number": number, "version": version,
-            "aap_fqdn": actual_fqdn, "aap_origin": hostname, "zone": zone,
+            "aap_fqdn": actual_fqdn, "aap_origin": hostname, "aap_private_address": str(address), "zone": zone,
             "hypervisor_name": instance["hypervisor_host"], "hypervisor": pin,
             "website_fqdn": "redhat." + version + "." + zone,
             "zabbix_fqdn": "zabbix." + version + "." + zone}
@@ -213,7 +213,8 @@ def merge_source_guest(instances, context, role, source, zabbix_source_sha256=No
     return result
 
 
-def prepare_documents(capture, runtime, context, credential_name, source_hosts=None, password_factory=None):
+def prepare_documents(capture, runtime, context, credential_name, source_hosts=None, password_factory=None,
+                      mcp_access=None, authentication=None):
     """Seed only missing selected data and preserve every existing instance/secret."""
     require(isinstance(capture, dict) and isinstance(capture.get("aiops_instances"), dict),
             "Keep the reviewed AIOps capture and existing instance mapping.")
@@ -252,6 +253,17 @@ def prepare_documents(capture, runtime, context, credential_name, source_hosts=N
     require(isinstance(selected["event_stream_password"], str) and len(selected["event_stream_password"]) >= 16,
             "Keep the selected instance's persisted Event Stream password.")
     settings["instances"].setdefault(name, {})
+    if mcp_access is not None:
+        connection = keys.mcp_connection(mcp_access)
+        require(connection["url"] == "https://" + context["aap_private_address"] + ":8448/mcp"
+                and isinstance(authentication, dict) and authentication.get("hostname") == context["aap_origin"]
+                and isinstance(authentication.get("token"), str) and authentication["token"],
+                "Bind private MCP access only to this selected verified AAP instance.")
+        desired_access = wrap_var(dict(connection, instance_name=name, token=authentication["token"]))
+        existing_access = settings["instances"][name].get("demo_aap_mcp")
+        require(existing_access is None or existing_access == desired_access,
+                "Existing selected AAP MCP access differs; review token or CA replacement explicitly.")
+        settings["instances"][name]["demo_aap_mcp"] = desired_access
     for role in ("testserver1", "tra", "zabbix"):
         source_name = role + "-v%02d" % context["instance_number"]
         if source_name in (source_hosts or {}):

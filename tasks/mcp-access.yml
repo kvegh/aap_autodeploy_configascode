@@ -309,6 +309,44 @@
         follow_redirects: none
         status_code: 200
 
+    - name: Read only this registered guest's installed public MCP authority
+      delegate_to: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+      vars:
+        ansible_connection: ssh
+        ansible_user: "{{ vault_ansible_user }}"
+        ansible_password: "{{ vault_ansible_password }}"
+        ansible_become: true
+        cac_mcp_ca_path: >-
+          {{ aap_installer_ca_path | default('/home/' ~ vault_aap_install_user ~
+             '/aap/tls/extracted/pem/directory-hash/ca-bundle.crt') }}
+      block:
+        - name: Verify the installed authority against the selected guest HTTPS identity
+          ansible.builtin.command:
+            argv:
+              - python3
+              - -c
+              - "{{ lookup('ansible.builtin.file', 'files/verify_aap_upstream.py') }}"
+              - "{{ aap_instance_route.vm_ip }}"
+              - "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+              - "{{ cac_mcp_ca_path }}"
+          changed_when: false
+          register: cac_mcp_authority_check
+          failed_when: >-
+            cac_mcp_authority_check.rc != 0 or
+            not ((cac_mcp_authority_check.stdout | from_json).verified | bool)
+
+        - name: Read the verified installed public authority without changing guest trust
+          ansible.builtin.slurp:
+            src: "{{ cac_mcp_ca_path }}"
+          register: cac_mcp_public_authority
+
+    - name: Add only this selected private MCP connection to its existing token publication
+      ansible.builtin.set_fact:
+        cac_instance_api_record: >-
+          {{ cac_instance_api_record | combine({'mcp': {
+               'url': 'https://' ~ aap_instance_route.vm_ip ~ ':8448/mcp',
+               'ca_pem': cac_mcp_public_authority.content | b64decode }}) }}
+
     - name: Configure and verify this AAP instance connection to its own hypervisor
       ansible.builtin.include_tasks: aap-hypervisor-access.yml
       when: aap_instance_key_store.register_inventory | default(false) | bool
