@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Reuse the existing Windows retirement source plan — 2026-11-05
+
+Implementation `41c77d231c54baf9ea3fd70d7b2b35f00183de33` exposes the same
+retirement source plan as an internal task entry point, so the existing Windows
+reset job can distinguish registered guests from unconfigured clones before
+native checks. A focused native test found that absent records became empty
+strings under non-native Jinja; retaining the complete mapping preserves actual
+null absence. Registered guests still require full native planning and normal
+publication. Three focused tests and two-file production lint passed. Complete
+Windows reset remains subject to the separate authorized live test.
+
 ## Keep Windows AAP networking in its infrastructure deployment — 2026-11-05
 
 Implementation `eb806b7b79d51f08d7cf54fb2edb3d449ed375aa` follows the owner's decision that the

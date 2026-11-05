@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.45.4
+
+Record implementation `41c77d231c54baf9ea3fd70d7b2b35f00183de33` and the
+validated source-plan/null-absence correction; keep live Windows reset acceptance separate.
+
 ## 0.45.3
 
 Expose the existing guest retirement source plan as an internal role task entry
