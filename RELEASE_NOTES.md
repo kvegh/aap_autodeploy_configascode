@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.42.5
+
+Document implementation `276ad84`, the operator-approved Windows demo policy,
+truthful certificate-result recording and fifty-one passing lifecycle/version
+checks. Windows connection, management routing and live release remain unproved.
+
 ## 0.42.4
 
 Retain the operator-approved Windows demo WinRM certificate-validation exception

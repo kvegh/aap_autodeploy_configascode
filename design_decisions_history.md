@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Retain the approved Windows demo certificate policy — 2026-11-05
+
+Implementation `276ad84e257453d14a729d9cc806c0b65771e2e8` follows the operator's
+choice to keep the existing Windows lab connection: HTTPS on port 5986 with
+NTLM and certificate validation disabled. The additional predeployment image and
+WinRM inspection is skipped. This corrects an extra prerequisite introduced for
+the versioned test environment; it does not require new authentication or
+certificate infrastructure.
+
+Both existing Windows resource validators retain the same fields and require a
+real Boolean certificate-validation result. The approved exception records
+`false`; actually validated connections record `true`. Neither may replace
+`verified: true`, authenticated computer facts or the independent native
+UUID, exclusive clone, owning instance, NIC, source and policy checks. Strings
+and numeric substitutes are refused. Other platform and SSH trust settings are
+unchanged, and no new policy flag, job, credential type, store or service is added.
+
+Eleven Windows lifecycle checks passed, including capture preservation of false,
+native UUID mismatch refusal and real encrypted publication/retry for both
+Boolean cases. Forty existing Linux/AAP lifecycle and version checks also passed.
+These are source tests; actual Windows management connectivity, configuration,
+isolation release and functional acceptance remain separate work.
+
 ## Match canonical live Controller SSH port representations — 2026-11-05
 
 Implementation `6de45e0` normalizes only the live inventory SSH port before
