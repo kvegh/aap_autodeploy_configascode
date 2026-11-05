@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.45.10
+
+Document the queued cleanup of custom scripts, plugins/modules and embedded
+code, requiring certified content first and readable, maintainable automation.
+Synchronize the public task overview and encrypted full recovery records.
+
 ## 0.45.9
 
 Document disabled-DNS ownership implementation `3f5c7e2` and twelve passing lifecycle checks.

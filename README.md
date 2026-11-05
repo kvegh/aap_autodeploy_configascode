@@ -72,6 +72,12 @@ AAP NIC and persistent RHEL connection; the CaC importer remains API-only.
 
 ## Tasks and decisions
 
+Queued cleanup `bead-wd-72f.34` reviews standalone helpers, custom plugins/modules
+and scripts embedded in playbooks across the related demos. Certified collections
+and vendor roles come first; remaining custom code needs a concrete capability
+gap. The result must be readable and maintainable, with fewer components and
+clear errors, while preserving target/security checks and the working demo.
+
 Beads is authoritative. `scripts/sync_todo.py` generates the public task overview
 and encrypts complete scoped records in the existing Hactar repository; run its
 `--check` mode before publishing a checkpoint. Keep private task details and
