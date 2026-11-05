@@ -1,5 +1,17 @@
 # Design decisions history
 
+## Reuse selected instance access for private AIOps MCP — 2026-11-05
+
+Implementation `8237ce6` adds optional private MCP endpoint/public-CA metadata to
+the existing encrypted instance record and credential payload. Ordinary API
+authentication and legacy records remain unchanged. Existing base publication
+reads the installed authority; existing AIOps preparation copies only the chosen
+connection into its runtime Vault. This keeps the API importer free of SSH and
+adds no token, credential type, store or job. Compatible readers must be synced
+before normal selected-instance backfill; unrelated pinned guest lifecycle paths
+preserve the mapping. Forty-five focused checks and both affected syntax entry
+points passed. No backfill, deployment, model or policy action ran for validation.
+
 ## Reuse the existing Windows retirement source plan — 2026-11-05
 
 Implementation `41c77d231c54baf9ea3fd70d7b2b35f00183de33` exposes the same

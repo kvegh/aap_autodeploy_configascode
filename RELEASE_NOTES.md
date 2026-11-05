@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.46.1
+
+Document selected MCP metadata implementation `8237ce6` and its reader-first
+backfill boundary.
+
 ## 0.46.0
 
 Publish optional selected private MCP endpoint/CA metadata through existing base
