@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.41.1
+
+Document implementation `cecff63`, the existing-importer preparation sequence,
+preserved live instance data, strict native Zabbix/counter/readiness handling,
+encrypted compare-and-swap checks and remaining successor-factory prerequisites.
+
 ## 0.41.0
 
 Prepare AIOps instance data before the existing CaC roles create resources, then

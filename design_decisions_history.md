@@ -1,5 +1,54 @@
 # Design decisions history
 
+## Prepare AIOps data inside its existing CaC import — 2026-11-05
+
+Implementation `cecff63751a800bdd38df3e0a18ab0f6b5c05f59` adds the reviewed
+pre/post data stages to the existing `deploy-cac-project.yml` path for AIOps.
+A fresh instance previously required already prepared auxiliary guest metadata
+and a credential reference before its first import could render. The new stage
+creates only the namespace and validated existing base Machine reference,
+leaves absent guests disabled, and persists one per-instance Event Stream Basic
+password before ordinary configuration roles use it. Existing known password
+material is preserved; interrupted or competing Git writes do not rotate it.
+
+The owner approved this repository's existing token having scoped write access.
+Preparation therefore reuses the same private checkout, askpass, separate Vault
+secrets and selected target HTTPS authentication. Both maintained files remain
+whole-file encrypted, preserve original headers/literal tags and are committed
+together. Accepted remote state is reread after publication. Capture and
+effective launch-time review holds are enforced before commits or target access.
+No additional job, wrapper, service, repository, credential type or store is added.
+
+Guest facts are accepted only from matching verified native inventory ownership;
+they are not generated or copied from a previous allocation. Zabbix retains its
+own clone source hash, schema, frontend/private API references and native IDs,
+while Linux retains its existing provenance schema. The shared inventory helper
+normalizes only canonical positive decimal counter text, retaining malformed
+value refusal and physical alias/ownership checks.
+
+After the existing roles create resources, GET-only readback binds the target's
+actual website fault-template ID/webhook key and Event Stream UUID/endpoint.
+Existing values must agree; equivalent default HTTPS-port text is preserved
+verbatim. The same Controller configuration role saves refreshed ciphertext;
+preparation performs no direct AAP resource writes or activation/application run.
+
+Thirty-three affected tests pass against the published Windows lifecycle base,
+including actual Ansible modes, real encrypted local Git concurrency, lost
+acknowledgements, wrong keys, holds and native provenance. Two private
+ciphertext checks pass. Protected current-source/target-GET fixtures preserve
+the existing password, runtime ciphertext and Zabbix metadata; fresh-instance
+rendering passes both modes without fabricated guests. Syntax, four version
+checks and scoped production lint pass. Full recursive lint still reports three
+pre-existing unrelated issues, left unchanged.
+
+This is configuration preparation, not complete successor deployment proof.
+VM producer orchestration, per-clone Zabbix API/MCP token lifecycle, signed
+offline MCP artifacts and approved shared application defaults remain separate
+factory work. New namespaces receive no provider credentials. The current
+Vertex reuse approval covers only the previously selected TRA and one short
+read-only test, and does not extend to later allocations. No new allocation,
+VM action, live import or model request was performed for this publication.
+
 ## Verify Windows through its own identity in the shared lifecycle — 2026-11-05
 
 Implementation `ae9cfdbdbf29fe0471b71a0163cd557f607d7d8c` adds the explicitly
