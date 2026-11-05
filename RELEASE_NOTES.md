@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.45.3
+
+Expose the existing guest retirement source plan as an internal role task entry
+point for the existing Windows reset job. Preserve actual null record absence
+under both supported Ansible templating modes. Complete native verification and
+publication remain required for registered guests; no deletion or live action
+is added by the source-only plan.
+
 ## 0.45.2
 
 Synchronize the task overview and protected recovery export with the approved

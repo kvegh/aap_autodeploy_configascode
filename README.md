@@ -20,6 +20,13 @@ firewall permissions remain unchanged. The [shared role contract](roles/recovery
 describes exact verification, safe publication and cleanup. This code is implemented
 and tested; live second-NIC deployment and teardown require separate acceptance.
 
+The same [retirement role](roles/recovery_guest_retire/README.md) exposes its
+existing source-ownership plan separately for the Windows reset job. This lets
+that job distinguish a registered guest from an unconfigured clone before native
+checks. True record absence remains `null` in both Ansible templating modes;
+missing ownership never supplies invented Windows identity. This internal entry
+point adds no job, store or deletion permission. Normal reset acceptance is separate.
+
 The existing [guest release role](roles/recovery_guest_release/README.md#exact-guest-bootstrap)
 also supports explicitly approved HTTP bootstrap for one already owned generic
 Linux guest. `recovery_release_operation: guest_bootstrap_http` adds only that

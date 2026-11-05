@@ -41,3 +41,12 @@ owning-instance title. After physical deletion it removes only that resource's
 exact per-NIC DHCP and DNS records and policy entries. The Windows clone and both
 incompatible Linux canonical disk paths must be absent before publication.
 Omitting this option preserves the existing Linux request and disk checks.
+
+The existing Windows reset job can first include this same role with
+`tasks_from: plan` and the ordinary `plan` inputs above. This reads canonical and
+source ownership only, without contacting the hypervisor. A genuinely absent
+record remains `null` in both supported Ansible templating modes. The caller may
+then select its existing unconfigured-clone checks only when records and matching
+permissions are absent. This entry point does not authorize physical deletion.
+Registered guests still require the complete normal role plan before removal and
+the normal publication phase afterward. Missing provenance is an error.

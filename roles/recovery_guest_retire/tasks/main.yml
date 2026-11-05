@@ -1,46 +1,6 @@
 ---
-- name: Require one exact generic guest retirement phase
-  ansible.builtin.assert:
-    that:
-      - recovery_retire_phase in ['plan', 'publish']
-      - recovery_retire_guest_name is string
-      - recovery_retire_hypervisor is mapping
-      - recovery_retire_guest_kind | default('') in ['', 'windows']
-    fail_msg: Select the exact generic guest, verified hypervisor and retirement phase.
-
-- name: Preserve retirement connection inputs before delegation
-  ansible.builtin.set_fact:
-    __recovery_retire_pin: "{{ recovery_retire_hypervisor }}"
-    __recovery_retire_name: "{{ recovery_retire_guest_name }}"
-    __recovery_retire_trust: {}
-    __recovery_retire_runtime: {}
-    __recovery_retire_native: {}
-    __recovery_retire_published: {}
-  no_log: true
-
-- name: Preflight canonical and source ownership before any physical deletion
-  aap_publish_instance_keys:
-    operation: retire_guest
-    phase: plan
-    guest_name: "{{ __recovery_retire_name }}"
-    hypervisor: "{{ __recovery_retire_pin }}"
-    guest_kind: "{{ recovery_retire_guest_kind | default(omit) }}"
-  delegate_to: localhost
-  become: false
-  register: __recovery_retire_source_plan
-  when: recovery_retire_phase == 'plan'
-  no_log: true
-
-- name: Retain the source-preflighted retirement transition
-  ansible.builtin.set_fact:
-    recovery_guest_retire_plan:
-      guest_name: "{{ __recovery_retire_name }}"
-      hypervisor: "{{ __recovery_retire_pin }}"
-      guest: "{{ __recovery_retire_source_plan.guest }}"
-      transition: "{{ __recovery_retire_source_plan.transition }}"
-      records_absent: "{{ __recovery_retire_source_plan.records_absent }}"
-  when: recovery_retire_phase == 'plan'
-  no_log: true
+- name: Read exact canonical and source retirement ownership
+  ansible.builtin.include_tasks: plan.yml
 
 - name: Require the same successful source plan for final retirement publication
   ansible.builtin.assert:

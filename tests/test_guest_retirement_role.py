@@ -53,6 +53,7 @@ class GenericRetirementRoleTests(unittest.TestCase):
             source = root / 'source'
             role = source / 'roles/recovery_guest_retire'
             (role / 'tasks').mkdir(parents=True)
+            (role / 'tasks/plan.yml').write_text((ROOT / 'roles/recovery_guest_retire/tasks/plan.yml').read_text())
             (role / 'action_plugins').mkdir()
             (source / 'src').mkdir()
             for name in ('aap_guest_release.py', 'aap_hypervisor_access.py'):
@@ -128,6 +129,36 @@ class GenericRetirementRoleTests(unittest.TestCase):
             self.assertTrue(all(not Path(row['_directory']).exists() for row in operations))
             self.assertTrue(all(not Path(row['_trust']).exists() for row in operations))
             self.assertNotIn('Expecting value', result.stdout + result.stderr)
+
+    def test_native_source_plan_can_choose_existing_windows_cleanup_without_touching_hypervisor(self):
+        request, _ = fixture()
+        with tempfile.TemporaryDirectory(prefix='retire-source-plan-') as directory:
+            root = Path(directory)
+            role = root / 'roles/recovery_guest_retire'
+            (role / 'tasks').mkdir(parents=True)
+            (role / 'action_plugins').mkdir()
+            (role / 'tasks/plan.yml').write_text((ROOT / 'roles/recovery_guest_retire/tasks/plan.yml').read_text())
+            (role / 'action_plugins/aap_publish_instance_keys.py').write_text(
+                'from ansible.plugins.action import ActionBase\n'
+                'class ActionModule(ActionBase):\n'
+                ' def run(self,tmp=None,task_vars=None):\n'
+                "  assert self._task.args['guest_kind']=='windows' and self._task.args['phase']=='plan'\n"
+                "  return {'changed':False,'guest':None,'records_absent':True,'transition':task_vars['fixture_transition']}\n")
+            play = root / 'fixture.yml'
+            play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'gather_facts': False,
+                'vars': {'recovery_retire_phase': 'plan', 'recovery_retire_guest_name': request['guest_name'],
+                         'recovery_retire_hypervisor': request['hypervisor'], 'recovery_retire_guest_kind': 'windows',
+                         'fixture_transition': request['transition']},
+                'tasks': [{'ansible.builtin.include_role': {'name': str(role), 'tasks_from': 'plan'}},
+                          {'ansible.builtin.assert': {'that': ['recovery_guest_retire_plan.records_absent',
+                                                            'recovery_guest_retire_plan.guest is none']}}]}]))
+            for native in (False, True):
+                env = dict(os.environ, ANSIBLE_HOME=str(root / 'home'), ANSIBLE_LOCAL_TEMP=str(root / 'local'),
+                           ANSIBLE_JINJA2_NATIVE=str(native).lower())
+                result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(play)],
+                    cwd=root, env=env, text=True, capture_output=True, timeout=30)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertNotIn('Allocate private controller trust', result.stdout)
 
 
 if __name__ == '__main__':
