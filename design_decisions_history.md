@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Match canonical live Controller SSH port representations — 2026-11-05
+
+Implementation `6de45e0` normalizes only the live inventory SSH port before
+comparing it with the exact registered pin. Controller had returned a canonical
+decimal string where encrypted ownership used an integer; the same numeric port
+was incorrectly refused during the shared bootstrap preflight. Actual receiving
+logs showed successful source API reads, and read-only replay of the saved guest
+artifact/captures reproduced this identity refusal. With the correction that
+read-only plan passes without changing live variables or policy.
+
+Only an integer or canonical ASCII decimal string in range 1–65535 is accepted.
+Booleans, floats, signs, whitespace, leading zeros and other ports remain refused.
+Other identity, source-job, TLS and policy checks are unchanged. Three new tests
+include real Ansible/URI YAML-string and JSON-integer Controller representations
+in both native modes; fifty-eight related instance, guest, Windows, AAP and
+version checks also pass. Live bootstrap/software acceptance remains separate.
+
 ## Release the AAP guest only after normal base completes and cleans up — 2026-11-05
 
 Implementation `75639c54ffff61eac7ea9e1b8707ce9f80240bb3` adds the final release

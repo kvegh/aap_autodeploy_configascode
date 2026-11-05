@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.42.3
+
+Document implementation `6de45e0`, the exact live port wire correction and
+sixty-one focused/native lifecycle checks; retain separate live acceptance.
+
 ## 0.42.2
 
 Preserve exact hypervisor SSH pin matching when Controller returns a canonical
