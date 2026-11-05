@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.45.11
+
+Document cleanup task decision and implementation `632d2cb`.
+
 ## 0.45.10
 
 Document the queued cleanup of custom scripts, plugins/modules and embedded

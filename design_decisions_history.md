@@ -2825,3 +2825,12 @@ exact DHCP ownership remains mandatory. Enabled DNS retains both checks. This
 fixes a real deployment mismatch without enabling DNS or weakening VM identity
 checks. All twelve focused lifecycle tests passed, including DHCP-only networks
 and refusal of missing DHCP, unexpected DNS or missing enabled-DNS records.
+
+## Queue certified-content and readability cleanup — 2026-11-05
+
+Documentation `632d2cb` adds task `bead-wd-72f.34` to the Git-visible overview.
+The owner requires reviewing standalone helpers, custom Ansible plugins/modules,
+embedded Python and other scripts against certified collections/vendor roles
+first. Remaining custom code needs a concrete gap; cleanup must reduce opaque
+helper chains and preserve readable workflows, clear errors and essential safety.
+The task is queued rather than an unreviewed rewrite during functional testing.
