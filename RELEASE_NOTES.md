@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.42.2
+
+Preserve exact hypervisor SSH pin matching when Controller returns a canonical
+decimal string instead of an integer port. Normalize only that live API field;
+refuse boolean/float, signs, whitespace, leading zeros, out-of-range or different
+values. Keep every source-job, machine/key, TLS and saved-policy check unchanged
+and do not rewrite live port data. Actual Ansible/URI JSON and YAML inventory
+wire fixtures exercise both native modes before pure lifecycle planning.
+
 ## 0.42.1
 
 Document implementation `75639c5`, its final normal-base/cleanup boundary,

@@ -206,6 +206,12 @@ all other permissions. It grants no hypervisor-service or full-release access.
 Full release follows successful complete deployment and validation. See
 [bootstrap and portability](docs/autodeploy-portability.md).
 
+Source inventory identity checks accept an SSH port returned by Controller as
+either an integer or its canonical ASCII decimal string. Both forms must match
+the exact pinned value in range 1–65535. Boolean/float values, signs, whitespace,
+leading zeros and other ports remain refused. No live port or credential is
+changed, and source-job, machine/key, TLS and saved-policy checks remain intact.
+
 The shared [exact guest retirement role](roles/recovery_guest_retire/README.md)
 supports the existing disposable-guest retirement job in two phases. Its plan
 resolves saved generic-clone ownership from existing encrypted CaC and source

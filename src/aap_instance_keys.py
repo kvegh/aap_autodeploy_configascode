@@ -625,6 +625,15 @@ def retire_inventory_capture(configuration, context, kind):
     return result
 
 
+def canonical_api_port(value):
+    """Normalize only canonical Controller wire text, retaining the exact port."""
+    if isinstance(value, str) and re.fullmatch(r"[1-9][0-9]{0,4}", value):
+        value = int(value)
+    require(type(value) is int and 1 <= value <= 65535,
+            "The live hypervisor SSH port must be an exact canonical port.")
+    return value
+
+
 def source_inventory_operations(client, shared, autodeploy, hactar, context, policy_variables):
     """Read and validate every exact API target before returning bounded operations."""
     operations = {}
@@ -659,7 +668,9 @@ def source_inventory_operations(client, shared, autodeploy, hactar, context, pol
                 "The live hypervisor inventory address conflicts with its registered pin.")
         for field, expected in (("machine_id", pin["machine_id"]), ("ansible_port", pin["port"]),
                                 ("ansible_user", pin["user"]), ("host_keys", pin["host_keys"])):
-            require(field not in current or current[field] == expected,
+            require(field not in current or
+                    (canonical_api_port(current[field]) == expected if field == "ansible_port"
+                     else current[field] == expected),
                     "The live hypervisor inventory identity conflicts with its registered pin.")
         desired = policy_variables(current, context)
         if desired != current:
