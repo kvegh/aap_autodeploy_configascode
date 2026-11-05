@@ -151,7 +151,8 @@ def plan(expected, probe):
             'rich_rule': rule, 'changed': actual != desired}
 
 
-def probe(route, allow_absent_guest=False):
+def probe(route, allow_absent_guest=False, guest_kind=None):
+    require(guest_kind in (None, 'windows'), 'Select only default Linux or explicit Windows native provenance.')
     require(os.geteuid() == 0 and DIRECTORY.is_dir() and not DIRECTORY.is_symlink()
             and DIRECTORY.stat().st_uid == 0 and DIRECTORY.stat().st_mode & 0o777 == 0o700
             and CONFIG.is_file() and not CONFIG.is_symlink() and CONFIG.stat().st_uid == 0
@@ -169,12 +170,15 @@ def probe(route, allow_absent_guest=False):
     require(len(net_names) <= 64, 'Require bounded actual guest networks.')
     data['networks'] = {name: command(['virsh', '-c', 'qemu:///system', 'net-dumpxml', name]).stdout for name in net_names}
     data['autostart'] = command(['virsh', '-c', 'qemu:///system', 'list', '--all', '--autostart', '--name']).stdout.split()
-    if allow_absent_guest:
+    if allow_absent_guest or guest_kind == 'windows':
         name = route['vm_name']
         require(isinstance(name, str) and re.fullmatch(r'[a-z][a-z0-9-]{0,62}', name),
                 'Inspect only the exact selected generic guest disk names.')
         data['disk_states'] = {}
-        for path in ('/opt/vms/' + name + '.disk.qcow2', '/opt/vms/' + name + '.qcow2'):
+        paths = ['/opt/vms/' + name + '.disk.qcow2', '/opt/vms/' + name + '.qcow2']
+        if guest_kind == 'windows':
+            paths.append('/opt/vms/win-' + name + '-clone.disk.qcow2')
+        for path in paths:
             try:
                 info = os.lstat(path)
             except FileNotFoundError:
@@ -184,7 +188,7 @@ def probe(route, allow_absent_guest=False):
                     'symlink': stat.S_ISLNK(info.st_mode), 'inode': info.st_ino, 'device': info.st_dev,
                     'size': info.st_size, 'mtime_ns': info.st_mtime_ns, 'links': info.st_nlink}
         if name not in data['domains']:
-            require(not any(row['exists'] for row in data['disk_states'].values()),
+            require(allow_absent_guest and not any(row['exists'] for row in data['disk_states'].values()),
                     'A missing selected domain with a remaining canonical disk requires explicit recovery review.')
         active = command(['virsh', '-c', 'qemu:///system', 'net-list', '--name']).stdout.split()
         require(set(active) <= set(net_names), 'Retain the complete known libvirt network set.')

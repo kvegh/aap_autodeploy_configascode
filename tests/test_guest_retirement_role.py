@@ -100,8 +100,9 @@ class GenericRetirementRoleTests(unittest.TestCase):
             (role / 'tasks/main.yml').write_text(yaml.safe_dump(tasks, sort_keys=False))
             play = root / 'fixture.yml'
             play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
-                'vars': {'recovery_retire_guest_name': request['guest_name'], 'recovery_retire_hypervisor': request['hypervisor'],
+                'vars': dict({'recovery_retire_guest_name': request['guest_name'], 'recovery_retire_hypervisor': request['hypervisor'],
                          'fixture_guest': request['guest'], 'fixture_transition': request['transition']},
+                         **({'recovery_retire_guest_kind': 'windows'} if request.get('guest_kind') == 'windows' else {})),
                 'tasks': [
                     {'name': 'Plan exact native retirement', 'ansible.builtin.include_role': {'name': str(role)},
                      'vars': {'recovery_retire_phase': 'plan'}},
@@ -121,6 +122,7 @@ class GenericRetirementRoleTests(unittest.TestCase):
             expected = ['retire_plan'] if behavior == 'deletion-failure' else ['retire_plan', 'retire_apply']
             if behavior == 'unpublished': expected.append('retire_rollback')
             self.assertEqual([row['operation'] for row in operations], expected, result.stdout + result.stderr)
+            self.assertTrue(all(row.get('guest_kind') == request.get('guest_kind') for row in operations))
             phases = [json.loads(line) for line in api_trace.read_text().splitlines()]
             self.assertEqual(phases, ['plan'] if behavior in ('deletion-failure', 'runtime-failure') else ['plan', 'publish'])
             self.assertTrue(all(not Path(row['_directory']).exists() for row in operations))

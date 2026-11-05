@@ -134,6 +134,7 @@ class GenericRetirementTests(unittest.TestCase):
             def run(phase, transition=None, check=False):
                 action = module.ActionModule.__new__(module.ActionModule)
                 arguments = {'operation': 'retire_guest', 'phase': phase, 'guest_name': guest['vm_name'], 'hypervisor': pin}
+                if guest.get('kind') == 'windows': arguments['guest_kind'] = 'windows'
                 if transition is not None: arguments['transition'] = transition
                 action._task = SimpleNamespace(args=arguments, check_mode=check); action._loader = loader
                 return action.run(task_vars={'awx_job_id': 123, 'awx_job_template_id': 456, 'awx_project_revision': 'a' * 40})

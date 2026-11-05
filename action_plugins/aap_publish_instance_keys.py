@@ -407,7 +407,7 @@ class ActionModule(ActionBase):
                         {"operation", "guest_name", "hypervisor"} if retirement else
                         {"operation", "guest", "hypervisor"})
             keys.require(set(args) >= required
-                and set(args) <= required | {"phase", "transition"}
+                and set(args) <= required | {"phase", "transition"} | ({"guest_kind"} if retirement else set())
                 and args.get("phase", "publish") in ("plan", "publish"),
                 "Use only the fixed verified guest release request.")
             phase = "plan" if self._task.check_mode else args.get("phase", "publish")
@@ -464,7 +464,8 @@ class ActionModule(ActionBase):
                         source_operations = keys.source_installation_operations
                     elif retirement:
                         context = keys.generic_retirement_context(documents["autodeploy"], documents["shared"], source,
-                            args["guest_name"], args["hypervisor"], args.get("transition") if phase == "publish" else None)
+                            args["guest_name"], args["hypervisor"], args.get("transition") if phase == "publish" else None,
+                            args.get("guest_kind"))
                         capture = keys.generic_retirement_capture
                         source_operations = keys.source_generic_retirement_operations
                     else:

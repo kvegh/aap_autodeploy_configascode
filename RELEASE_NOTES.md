@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.40.0
+
+Extend the existing guest lifecycle transaction with strict explicit Windows
+provenance. Require certificate-validated WinRM computer/CIM identity and every
+observed NIC, then independently verify native UUID, clone marker/title, exclusive
+Windows disk and exact per-NIC bridge/subnet/DHCP/DNS ownership. Add all one or two
+NIC policy identities atomically after complete VM configuration; later functional
+patch/content tests are separate. Refuse Windows bootstrap and Linux identity
+substitutes. Retire only exact saved Windows clone, DHCP/DNS, policy and inventory
+records, with interrupted-publication recovery and bounded absent retries.
+Preserve Linux default requests, AAP consumed-reservation checks, production
+denial, credentials and allocator history. Sixty-three relevant tests pass,
+including encrypted Git/API interruption and both native modes; both shared
+lifecycle roles pass production lint. No live Windows release is claimed.
+
 ## 0.39.1
 
 Document implementation `1976a5a`, its exact saved-ownership retirement and retry

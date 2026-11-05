@@ -208,10 +208,11 @@ class GuestReleaseTests(unittest.TestCase):
                 planned = run('plan', check=True)
                 self.assertFalse(planned.get('failed'), planned)
                 transition = planned['transition']
-                selected = {'bridge': guest['bridge'], 'ipv4': guest['address'], 'mac': guest['mac']}
+                selected = [{'bridge': nic['bridge'], 'ipv4': nic['address'], 'mac': nic['mac']}
+                            for nic in guest.get('interfaces', [guest])]
                 expected = deepcopy(transition['previous_policy'])
                 field = 'https_clients' if operation == 'guest_bootstrap_https' else 'released_clients'
-                expected.setdefault(field, []).append(selected)
+                expected.setdefault(field, []).extend(selected)
                 self.assertEqual(transition['desired_policy'], expected)
                 self.assertEqual(source.calls, [])
                 self.assertEqual(git(remote, 'rev-list', '--count', 'main').stdout.strip(), '1')

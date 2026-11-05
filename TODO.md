@@ -23,10 +23,10 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.15 | Deploy the versioned AIOps website on the selected recovery hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.16 |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
-| bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | open | P1 | feature | bead-wd-72f.31 |
+| bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
 | bead-wd-72f.31.3 | Prepare and verify Assistant Team on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
-| bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | blocked | P1 | task | bead-wd-72f.31.4 |
+| bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | in_progress | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.33.1 | Add Claude installation with private Linux and Zabbix MCP setup | in_progress | P1 | feature | bead-wd-72f.33 |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |

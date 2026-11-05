@@ -51,6 +51,27 @@ older template retention, self/remote CaC installation and use-case runtime
 targets. These are requirements; the guide distinguishes them from verified
 implementation and points to the durable Beads records.
 
+Windows guests use an explicit `kind: windows` branch of the same shared
+[release](roles/recovery_guest_release/README.md#verified-windows-deployments)
+and [retirement](roles/recovery_guest_retire/README.md) tasks. The caller must first
+verify the VM's configuration through authenticated, certificate-validated WinRM,
+including the observed computer name, normalized CIM product UUID and every
+permanent NIC's MAC/private IPv4. Native checks independently bind those facts to
+the marked Windows clone, owning-instance title, UUID, disk and each actual
+network/bridge and static DHCP/DNS tuple. One or two NICs are supported; each
+receives only its exact policy identity in one atomic transition. No Linux SSH
+key or machine identity is fabricated. Windows bootstrap is refused, Linux
+defaults remain, and later patch/content functional testing is separate from the
+complete-VM configuration milestone.
+
+Explicit Windows retirement retains saved provenance through physical deletion,
+then removes only its clone's DHCP/DNS, policy and shared inventory records using
+the existing encrypted transaction. Absent retries require the Windows clone and
+both incompatible Linux canonical disk paths absent. Production protection,
+other VMs, credentials and allocation history remain unchanged. Sixty-three
+relevant tests and focused role lint cover these paths; actual Windows deployment
+and release acceptance remain separate.
+
 The agreed functional test order is to prove the source environment's other
 use cases first, then pause its three demo guests while keeping its AAP running
 to build and verify the successor. That successor deployment is itself a source

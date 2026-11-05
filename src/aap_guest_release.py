@@ -1,13 +1,15 @@
-"""Release one verified Linux guest from recovery quarantine, retaining production denial.
+"""Release or retire one verified guest, retaining production denial.
 
 Runs only on the pinned recovery hypervisor. The sibling management helper owns
 the existing protected-file, libvirt readback and atomic-write primitives.
+Linux remains the default; Windows requires its own explicit trusted provenance.
 """
 
 from copy import deepcopy
 from datetime import datetime
 import fcntl
 import importlib.util
+import ipaddress
 from importlib.machinery import SourceFileLoader
 import json
 import os
@@ -23,7 +25,178 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def _interfaces(guest):
+    return guest['interfaces'] if guest.get('kind') == 'windows' else [guest]
+
+
+def _identities(guest):
+    return [{'bridge': nic['bridge'], 'ipv4': nic['address'], 'mac': nic['mac']} for nic in _interfaces(guest)]
+
+
+def _windows_guest(guest, pin):
+    fields = {'kind', 'vm_name', 'instance_name', 'uuid', 'disk', 'hypervisor_machine_id', 'verified',
+              'computer_name', 'computer_uuid', 'address', 'interfaces', 'winrm_certificate_validated'}
+    require(isinstance(guest, dict) and set(guest) == fields and guest['kind'] == 'windows'
+            and guest['verified'] is True and guest['winrm_certificate_validated'] is True,
+            'Require explicit trusted Windows provenance, never substituted Linux machine or SSH identity.')
+    name = guest['vm_name']
+    version = re.fullmatch(r'[a-z][a-z0-9-]*-v([0-9]{2,})', name or '')
+    require(version is not None and len(name) <= 15 and int(version[1]) > 0
+            and name.endswith('-v%02d' % int(version[1]))
+            and isinstance(guest['computer_name'], str) and guest['computer_name'].lower() == name
+            and re.fullmatch(r'[A-Za-z][A-Za-z0-9-]{0,14}', guest['computer_name'])
+            and isinstance(guest['instance_name'], str) and re.fullmatch(r'[a-z][a-z0-9-]{0,62}', guest['instance_name'])
+            and guest['computer_uuid'] == guest['uuid']
+            and re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', guest['uuid'])
+            and guest['uuid'] != '00000000-0000-0000-0000-000000000000'
+            and guest['hypervisor_machine_id'] == pin['machine_id']
+            and guest['disk'] == '/opt/vms/win-' + name + '-clone.disk.qcow2',
+            'Windows trusted computer, exact clone and native UUID must agree.')
+    nics = guest['interfaces']
+    require(isinstance(nics, list) and 1 <= len(nics) <= 2
+            and all(isinstance(nic, dict) and set(nic) == {'network', 'bridge', 'mac', 'address', 'dns_name'} for nic in nics),
+            'Bind every one or two permanent Windows NICs explicitly.')
+    for nic in nics:
+        address = ipaddress.IPv4Address(nic['address'])
+        require(str(address) == nic['address'] and any(address in ipaddress.IPv4Network(value)
+                for value in ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16')) and not address.is_loopback
+                and not address.is_link_local and not address.is_unspecified and not address.is_multicast
+                and re.fullmatch(r'(?:[0-9a-f]{2}:){5}[0-9a-f]{2}', nic['mac'])
+                and int(nic['mac'].split(':')[0], 16) & 1 == 0 and nic['mac'] != '00:00:00:00:00:00'
+                and nic['bridge'] in pin['isolation_bridges']
+                and re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}', nic['network'])
+                and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]{0,252}', nic['dns_name']),
+                'Windows NICs require canonical private IPv4, MAC, bridge and network/DNS identity.')
+    require(len({nic['mac'] for nic in nics}) == len(nics)
+            and len({nic['address'] for nic in nics}) == len(nics)
+            and guest['address'] in {nic['address'] for nic in nics},
+            'Use distinct Windows NIC identities and select WinRM from the verified interfaces.')
+
+
+def _windows_native(guest, pin, state, present):
+    _windows_guest(guest, pin)
+    require(state['machine_id'] == pin['machine_id'] and pin['address'] in state['addresses']
+            and not state['autostart'] and all(nic['address'] not in state['addresses'] for nic in guest['interfaces']),
+            'Retain the exact pinned hypervisor and disabled guest autostart.')
+    networks = {}
+    for name, xml in state['networks'].items():
+        root = ET.fromstring(xml)
+        require(root.findtext('name') == name and root.find('bridge') is not None, 'Inspect the actual libvirt network identity.')
+        networks[name] = root.find('bridge').get('name')
+    for nic in guest['interfaces']:
+        require(networks.get(nic['network']) == nic['bridge'], 'The Windows NIC bridge must match the actual network.')
+    mac_owners = {}
+    for name, scopes in state['domains'].items():
+        for scope, xml in scopes.items():
+            root = ET.fromstring(xml)
+            require(root.findtext('name') == name, 'Read each exact native domain without substitution.')
+            base.isolated(xml, networks, pin['isolation_bridges'])
+            for mac in root.findall('./devices/interface/mac'):
+                value = mac.get('address')
+                require(value not in mac_owners or mac_owners[value] == name, 'Every Windows MAC requires a unique native owner.')
+                mac_owners[value] = name
+            if name != guest['vm_name']:
+                require(root.findtext('uuid') != guest['uuid']
+                        and not any(node.get('file') == guest['disk'] for node in root.findall('./devices/disk/source'))
+                        and not any(node.get('address') in {nic['mac'] for nic in guest['interfaces']}
+                                    for node in root.findall('./devices/interface/mac')),
+                        'Another guest owns selected Windows UUID, clone or NIC identity.')
+    if present:
+        paths = {'/opt/vms/' + guest['vm_name'] + '.disk.qcow2', '/opt/vms/' + guest['vm_name'] + '.qcow2', guest['disk']}
+        require(set(state['disk_states']) == paths and all(not state['disk_states'][path]['exists']
+                for path in paths if path != guest['disk']), 'Inspect only the exact exclusive Windows clone, without Linux disk aliases.')
+        disk = state['disk_states'][guest['disk']]
+        require(disk['exists'] and disk.get('regular') and not disk.get('symlink') and disk.get('links') == 1,
+                'The Windows clone must be a regular, non-symlinked, exclusively owned file.')
+        require(set(state['domains'][guest['vm_name']]) == {'persistent', 'current'}, 'Read both Windows native definitions.')
+        for xml in state['domains'][guest['vm_name']].values():
+            root = ET.fromstring(xml)
+            disks = root.findall("./devices/disk[@device='disk']")
+            interfaces = root.findall('./devices/interface')
+            actual = []
+            for nic in interfaces:
+                require(nic.get('type') == 'network' and nic.find('source') is not None and nic.find('mac') is not None,
+                        'Every Windows interface must be an explicit libvirt network NIC.')
+                actual.append({'network': nic.find('source').get('network'), 'mac': nic.find('mac').get('address')})
+            expected = [{'network': nic['network'], 'mac': nic['mac']} for nic in guest['interfaces']]
+            require(root.findtext('uuid') == guest['uuid']
+                    and root.findtext('description') == 'aap-disconnected-windows-clone'
+                    and root.findtext('title') == guest['instance_name'] + ':' + guest['vm_name']
+                    and len(disks) == 1 and disks[0].find('source') is not None
+                    and disks[0].find('source').get('file') == guest['disk'] and actual == expected,
+                    'Windows UUID, clone marker/title, exclusive disk and every native NIC must match trusted provenance.')
+
+
+def _windows_reservations(state, guest, require_present=False):
+    selected = []
+    for nic in guest['interfaces']:
+        network = nic['network']
+        scopes = state['network_definitions'].get(network, {})
+        require('persistent' in scopes and (not require_present or 'current' in scopes),
+                'Read every Windows NIC network persistent and active ownership.')
+        for scope, xml in scopes.items():
+            root = ET.fromstring(xml)
+            subnets = [node for node in root.findall('ip') if node.get('address')
+                       and ipaddress.IPv4Address(nic['address']) in ipaddress.ip_network(node.get('address') + '/' +
+                           (node.get('prefix') or node.get('netmask')), strict=False)]
+            require(root.findtext('name') == network and root.find('bridge') is not None
+                    and root.find('bridge').get('name') == nic['bridge'] and len(subnets) == 1
+                    and subnets[0].get('address') != nic['address'], 'Windows IPv4 must belong to its exact native bridge/subnet.')
+            expected = {'mac': nic['mac'], 'ip': nic['address'], 'name': nic['dns_name']}
+            dhcp = [node for node in root.findall('./ip/dhcp/host') if node.get('ip') == nic['address']
+                    or node.get('mac', '').lower() == nic['mac'] or node.get('name') == nic['dns_name']]
+            dns = [node for node in root.findall('./dns/host') if node.get('ip') == nic['address']
+                   or nic['dns_name'] in [item.text for item in node.findall('hostname')]]
+            require(len(dhcp) <= 1 and all(node.attrib == expected for node in dhcp)
+                    and len(dns) <= 1 and all(node.attrib == {'ip': nic['address']}
+                        and [item.text for item in node.findall('hostname')] == [nic['dns_name']] for node in dns)
+                    and (not require_present or (len(dhcp) == len(dns) == 1)),
+                    'Windows DHCP and DNS tuples must belong exclusively to this exact verified NIC.')
+            for kind, nodes in (('ip-dhcp-host', dhcp), ('dns-host', dns)):
+                selected.extend({'network': network, 'scope': scope, 'kind': kind,
+                                 'xml': ET.tostring(node, encoding='unicode')} for node in nodes)
+        for line in state.get('dhcp_leases', {}).get(network, '').lower().splitlines():
+            match = re.search(r'([0-9a-f]{2}(?::[0-9a-f]{2}){5})\s+ipv4\s+([0-9.]+)/[0-9]+', line)
+            if match and (match[1] == nic['mac'] or match[2] == nic['address']):
+                require((match[1], match[2]) == (nic['mac'], nic['address']), 'A Windows NIC has a conflicting live lease owner.')
+    return selected
+
+
+def windows_plan(request, state):
+    require(set(request) <= {'operation', 'guest', 'hypervisor', 'transition', 'check_mode', 'mode'}
+            and {'operation', 'guest', 'hypervisor', 'transition', 'check_mode'} <= set(request)
+            and request['operation'] in {'apply', 'rollback'} and type(request['check_mode']) is bool
+            and request.get('mode', 'release') == 'release', 'Windows supports only final verified deployment release.')
+    guest, pin, transition = (request[key] for key in ('guest', 'hypervisor', 'transition'))
+    require(guest['vm_name'] in state['domains'], 'Release only a present verified Windows guest.')
+    _windows_native(guest, pin, state, True)
+    _windows_reservations(state, guest, True)
+    require(isinstance(transition, dict) and set(transition) == {'previous_policy', 'desired_policy'},
+            'Use the exact preflighted Windows transition.')
+    previous, desired = transition['previous_policy'], transition['desired_policy']
+    require(previous.get('protected_ipv4') and previous['protected_ipv4'] == desired.get('protected_ipv4')
+            and pin['address'] not in previous['protected_ipv4'] and pin['public_ip'] not in previous['protected_ipv4']
+            and all(nic['address'] not in previous['protected_ipv4'] for nic in guest['interfaces'])
+            and previous['bridges'] == desired['bridges'] == pin['isolation_bridges']
+            and previous['dns_bridges'] == desired['dns_bridges'] == pin['isolation_dns_bridges']
+            and state['policy'] in (previous, desired), 'Retain canonical production denial and exact enforced policy.')
+    expected = deepcopy(previous)
+    for identity in _identities(guest):
+        matches = [row for row in expected.setdefault('released_clients', [])
+                   if row['ipv4'] == identity['ipv4'] or row['mac'] == identity['mac']]
+        require(not matches or matches == [identity], 'A Windows release conflicts with another guest identity.')
+        if not matches:
+            expected['released_clients'].append(identity)
+    require(desired == expected, 'Windows release may add only all exact verified NIC identities.')
+    if request['operation'] == 'rollback':
+        require(state['policy'] == desired, 'Windows rollback cannot overwrite a later policy change.')
+    target = previous if request['operation'] == 'rollback' else desired
+    return {'previous_policy': deepcopy(state['policy']), 'desired_policy': deepcopy(target), 'changed': state['policy'] != target}
+
+
 def plan(request, state):
+    if isinstance(request.get('guest'), dict) and request['guest'].get('kind') == 'windows':
+        return windows_plan(request, state)
     require({'operation', 'guest', 'hypervisor', 'transition', 'check_mode'} <= set(request)
             and set(request) <= {'operation', 'guest', 'hypervisor', 'transition', 'check_mode', 'mode'}
             and request['operation'] in {'apply', 'rollback'}
@@ -122,7 +295,7 @@ def reconcile(request):
     descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
     try:
         fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        state = base.probe(route)
+        state = base.probe(route, guest_kind='windows') if guest.get('kind') == 'windows' else base.probe(route)
         change = plan(request, state)
         base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
         spec = importlib.util.spec_from_loader('installed_guest_release_isolation',
@@ -155,15 +328,16 @@ def _retirement_policy(policy, guest):
     result = deepcopy(policy)
     if guest is None:
         return result
-    identity = {'bridge': guest['bridge'], 'ipv4': guest['address'], 'mac': guest['mac']}
-    require(not any(row['ipv4'] == guest['address'] or row['mac'] == guest['mac']
-                    for row in policy.get('guest_host_clients', [])),
+    identities = _identities(guest)
+    require(not any(row['ipv4'] == identity['ipv4'] or row['mac'] == identity['mac']
+                    for row in policy.get('guest_host_clients', []) for identity in identities),
             'Selected host-service grants require supported exact cleanup before retirement.')
     for field in ('https_clients', 'released_clients'):
         retained = []
         for row in result.get(field, []):
-            if row['ipv4'] == guest['address'] or row['mac'] == guest['mac']:
-                require(row == identity, 'A selected permission conflicts with another guest identity.')
+            matching = [identity for identity in identities if row['ipv4'] == identity['ipv4'] or row['mac'] == identity['mac']]
+            if matching:
+                require(matching == [row], 'A selected permission conflicts with another guest identity.')
             else:
                 retained.append(row)
         if field in result and retained != result[field]:
@@ -177,6 +351,8 @@ def _retirement_policy(policy, guest):
 
 
 def _retirement_dhcp(state, name, guest):
+    if guest is not None and guest.get('kind') == 'windows':
+        return _windows_reservations(state, guest)
     selected = []
     for network, scopes in state['network_definitions'].items():
         for scope, xml in scopes.items():
@@ -203,9 +379,11 @@ def _retirement_lease_cache(state, name, guest):
             if not match:
                 continue
             mac, address, hostname = match.groups()
-            if guest is not None and address == guest['address']:
-                require(mac == guest['mac'], 'The selected address has a foreign DHCP lease owner.')
-            matching = hostname.split('.', 1)[0] == name or (guest is not None and mac == guest['mac'])
+            nics = _interfaces(guest) if guest is not None else []
+            for nic in nics:
+                if address == nic['address']:
+                    require(mac == nic['mac'], 'The selected address has a foreign DHCP lease owner.')
+            matching = hostname.split('.', 1)[0] == name or any(mac == nic['mac'] for nic in nics)
             if not matching:
                 continue
             result['rows'] += 1
@@ -218,6 +396,8 @@ def _retirement_lease_cache(state, name, guest):
 
 
 def retirement_plan(request, state):
+    if request.get('guest_kind') == 'windows':
+        return windows_retirement_plan(request, state)
     require(set(request) == {'operation', 'guest_name', 'guest', 'hypervisor', 'transition', 'check_mode'}
             and request['operation'] in {'retire_plan', 'retire_apply', 'retire_rollback'}
             and type(request['check_mode']) is bool, 'Use only an exact generic guest retirement request.')
@@ -320,6 +500,71 @@ def retirement_plan(request, state):
         'changed': state['policy'] != desired or bool(reservations)}
 
 
+def windows_retirement_plan(request, state):
+    require(set(request) == {'operation', 'guest_name', 'guest', 'guest_kind', 'hypervisor', 'transition', 'check_mode'}
+            and request['guest_kind'] == 'windows' and request['operation'] in {'retire_plan', 'retire_apply', 'retire_rollback'}
+            and type(request['check_mode']) is bool, 'Use the explicit exact Windows retirement interface.')
+    name, guest, pin, transition = (request[key] for key in ('guest_name', 'guest', 'hypervisor', 'transition'))
+    version = re.fullmatch(r'[a-z][a-z0-9-]*-v([0-9]{2,})', name or '')
+    require(version is not None and len(name) <= 15 and int(version[1]) > 0
+            and name.endswith('-v%02d' % int(version[1])) and state['machine_id'] == pin['machine_id']
+            and pin['address'] in state['addresses'] and not state['autostart'], 'Retire only one exact Windows guest on its pinned hypervisor.')
+    require(isinstance(transition, dict) and set(transition) == {'previous_policy', 'desired_policy', 'guest'}
+            and transition['guest'] == guest, 'Use the exact persisted Windows retirement provenance.')
+    previous, desired = transition['previous_policy'], transition['desired_policy']
+    require(previous['bridges'] == desired['bridges'] == pin['isolation_bridges']
+            and previous['dns_bridges'] == desired['dns_bridges'] == pin['isolation_dns_bridges']
+            and pin['address'] not in previous.get('protected_ipv4', [])
+            and pin['public_ip'] not in previous.get('protected_ipv4', [])
+            and state['policy'] in (previous, desired) and _retirement_policy(previous, guest) == desired,
+            'Windows retirement may remove only its exact NIC permissions while retaining production protection.')
+    disk = '/opt/vms/win-' + name + '-clone.disk.qcow2'
+    paths = {disk, '/opt/vms/' + name + '.disk.qcow2', '/opt/vms/' + name + '.qcow2'}
+    require(set(state['disk_states']) == paths, 'Inspect the exact Windows clone and both incompatible Linux disk aliases.')
+    present = name in state['domains']
+    absent = not any(row['exists'] for row in state['disk_states'].values())
+    if guest is None:
+        require(not present and absent and previous == desired, 'Missing Windows ownership permits only complete physical absence and no policy change.')
+        networks = {}
+        for network, xml in state['networks'].items():
+            root = ET.fromstring(xml)
+            require(root.findtext('name') == network and root.find('bridge') is not None, 'Retain every exact native network identity.')
+            networks[network] = root.find('bridge').get('name')
+        owners = {}
+        for domain, scopes in state['domains'].items():
+            for xml in scopes.values():
+                root = ET.fromstring(xml)
+                require(root.findtext('name') == domain, 'Inspect every remaining exact native domain.')
+                base.isolated(xml, networks, pin['isolation_bridges'])
+                for node in root.findall('./devices/interface/mac'):
+                    mac = node.get('address')
+                    require(mac not in owners or owners[mac] == domain, 'A remaining guest MAC has conflicting native ownership.')
+                    owners[mac] = domain
+        reservations = _retirement_dhcp(state, name, None)
+        require(not reservations, 'Missing Windows provenance cannot authorize unknown static DHCP cleanup.')
+        for scopes in state['network_definitions'].values():
+            for xml in scopes.values():
+                require(not any((item.text or '').split('.', 1)[0] == name
+                                for item in ET.fromstring(xml).findall('./dns/host/hostname')),
+                        'Missing Windows provenance cannot authorize unknown static DNS cleanup.')
+    else:
+        require(guest.get('kind') == 'windows' and guest.get('vm_name') == name, 'Preserve the selected Windows resource kind and exact name.')
+        _windows_native(guest, pin, state, present)
+        require(present or absent, 'A missing Windows domain with remaining clone storage requires recovery review.')
+        for rules in state['native_rich_rules'].values():
+            require(not any(re.search(r'\bsource\s+address="' + re.escape(nic['address']) + r'(?:/32)?"', rule)
+                            for rule in rules for nic in guest['interfaces']),
+                    'Selected Windows host-service grants require explicit cleanup before retirement.')
+        reservations = _windows_reservations(state, guest, present)
+    if request['operation'] in {'retire_apply', 'retire_rollback'}:
+        require(not present and absent, 'Publish Windows retirement only after domain and all canonical clone paths are absent.')
+    return {'guest_name': name, 'domain_present': present, 'disks_absent': absent, 'already_absent': guest is None,
+            'disk_identity': deepcopy(state['disk_states'][disk]) if present else None,
+            'reservations': reservations, 'dynamic_lease_cache': _retirement_lease_cache(state, name, guest),
+            'previous_policy': deepcopy(state['policy']), 'desired_policy': deepcopy(desired),
+            'changed': state['policy'] != desired or bool(reservations)}
+
+
 def _network_shape(root):
     return (root.tag, sorted(root.attrib.items()), (root.text or '').strip(),
             tuple(_network_shape(child) for child in root))
@@ -330,7 +575,10 @@ def reconcile_retirement(request):
     descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
     try:
         fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        state = base.probe(route, allow_absent_guest=True)
+        probe_args = {'allow_absent_guest': True}
+        if request.get('guest_kind') == 'windows':
+            probe_args['guest_kind'] = 'windows'
+        state = base.probe(route, **probe_args)
         change = retirement_plan(request, state)
         base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
         if request['operation'] == 'retire_plan':
@@ -356,18 +604,21 @@ def reconcile_retirement(request):
             for reservation in change['reservations']:
                 network, scope = reservation['network'], reservation['scope']
                 root = ET.fromstring(expected_networks[network][scope])
-                matching = [item for item in root.findall('./ip/dhcp/host')
+                kind = reservation.get('kind', 'ip-dhcp-host')
+                require(kind in {'ip-dhcp-host', 'dns-host'}, 'Remove only exact native guest DHCP or DNS records.')
+                parent_path = './ip/dhcp' if kind == 'ip-dhcp-host' else './dns'
+                matching = [item for item in root.findall(parent_path + '/host')
                             if ET.tostring(item, encoding='unicode') == reservation['xml']]
                 require(len(matching) == 1, 'Remove only one exact selected static DHCP reservation.')
-                for parent in root.findall('./ip/dhcp'):
+                for parent in root.findall(parent_path):
                     if matching[0] in list(parent):
                         parent.remove(matching[0])
                 expected_networks[network][scope] = ET.tostring(root, encoding='unicode')
                 flag = '--config' if scope == 'persistent' else '--live'
                 base.command(['virsh', '-c', 'qemu:///system', 'net-update', network,
-                              'delete', 'ip-dhcp-host', reservation['xml'], flag])
+                              'delete', kind, reservation['xml'], flag])
                 removed += 1
-            observed = base.probe(route, allow_absent_guest=True)
+            observed = base.probe(route, **probe_args)
             retirement_plan(request, observed)
             require(set(observed['domains']) == set(state['domains'])
                     and set(observed['network_definitions']) == set(expected_networks),

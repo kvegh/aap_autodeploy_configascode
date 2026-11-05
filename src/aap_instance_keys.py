@@ -568,6 +568,9 @@ def retirement_host_matches(row, guest, route, hypervisor_name):
         for field in ("machine_id", "host_keys"):
             require(field not in metadata or values.get(field) == metadata[field],
                     "Related inventory retirement requires its exact recorded machine identity.")
+        if metadata.get("kind") == "windows":
+            require(all(values.get(field) == metadata[field] for field in ("computer_name", "computer_uuid")),
+                    "Windows retirement requires the exact recorded trusted computer identity.")
 
 
 def aap_inventory_owner(row, physical):
@@ -1061,8 +1064,66 @@ def ensure_source_store(client, records, organization):
 
 
 
+def guest_interfaces(guest):
+    """Keep Windows NIC provenance explicit; legacy Linux remains one interface."""
+    return guest["interfaces"] if guest.get("kind") == "windows" else [guest]
+
+
+def guest_identities(guest):
+    return [{"bridge": nic["bridge"], "ipv4": nic["address"], "mac": nic["mac"]}
+            for nic in guest_interfaces(guest)]
+
+
+def windows_guest_resource(guest, pin):
+    required = {"kind", "vm_name", "instance_name", "uuid", "disk", "hypervisor_machine_id", "verified",
+                "computer_name", "computer_uuid", "address", "interfaces", "winrm_certificate_validated"}
+    require(isinstance(guest, dict) and set(guest) == required and guest["kind"] == "windows"
+            and guest["verified"] is True and guest["winrm_certificate_validated"] is True,
+            "Windows release requires complete certificate-validated WinRM identity, not Linux substitutes.")
+    name = generic_retirement_name(guest["vm_name"])
+    require(len(name) <= 15 and isinstance(guest["computer_name"], str)
+            and re.fullmatch(r"[A-Za-z][A-Za-z0-9-]{0,14}", guest["computer_name"])
+            and guest["computer_name"].lower() == name and instance_name(guest["instance_name"])
+            and guest["hypervisor_machine_id"] == pin["machine_id"]
+            and isinstance(guest["uuid"], str)
+            and re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", guest["uuid"])
+            and guest["uuid"] != "00000000-0000-0000-0000-000000000000"
+            and guest["computer_uuid"] == guest["uuid"]
+            and guest["disk"] == "/opt/vms/win-" + name + "-clone.disk.qcow2",
+            "Windows computer, native UUID, clone and selected hypervisor identity must agree.")
+    interfaces = guest["interfaces"]
+    require(isinstance(interfaces, list) and 1 <= len(interfaces) <= 2
+            and all(isinstance(nic, dict) and set(nic) == {"network", "bridge", "mac", "address", "dns_name"}
+                    for nic in interfaces), "Windows requires one or two exact permanent NIC mappings.")
+    for nic in interfaces:
+        require(isinstance(nic["network"], str) and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}", nic["network"])
+                and isinstance(nic["dns_name"], str)
+                and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.-]{0,252}", nic["dns_name"]),
+                "Windows NIC network and DNS reservation names must be exact safe values.")
+    require(len({nic["mac"] for nic in interfaces}) == len(interfaces)
+            and len({nic["address"] for nic in interfaces}) == len(interfaces)
+            and guest["address"] in {nic["address"] for nic in interfaces},
+            "Each Windows NIC needs unique verified identity; WinRM must select one of them.")
+    _routing.isolation_policy(pin, [], [pin["public_ip"]], [], guest_identities(guest))
+    return deepcopy(guest)
+
+
+def guest_resource_conflicts(old, resource):
+    if not isinstance(old, dict):
+        return True
+    old_nics = old.get("interfaces", []) if old.get("kind") == "windows" else [old]
+    new_nics = guest_interfaces(resource)
+    return (bool(old.get("uuid") and old["uuid"] == resource["uuid"])
+            or bool(old.get("disk") and old["disk"] == resource["disk"])
+            or any(left.get(field) == right[field] for left in old_nics for right in new_nics
+                   for field in ("mac", "address") if left.get(field))
+            or bool(old.get("machine_id") and old["machine_id"] == resource.get("machine_id")))
+
+
 def released_guest_resource(guest, pin):
-    """Keep only the existing verified generic guest provenance fields."""
+    """Keep the strict Linux default or explicitly typed verified Windows fields."""
+    if isinstance(guest, dict) and guest.get("kind") == "windows":
+        return windows_guest_resource(guest, pin)
     required = {"vm_name", "uuid", "disk", "network", "bridge", "mac", "address", "host_keys",
                 "machine_id", "hypervisor_machine_id", "verified"}
     optional = {"user", "port", "source_image_sha256", "vcpus", "memory_mb", "disk_gb", "packages_updated"}
@@ -1094,6 +1155,8 @@ def guest_release_context(configuration, shared, guest, pin, transition=None, ac
     require(access in ("release", "bootstrap_https"), "Choose full release or bounded guest bootstrap HTTPS.")
     pin = _routing.hypervisor_pin(pin)
     resource = released_guest_resource(guest, pin)
+    require(resource.get("kind") != "windows" or access == "release",
+            "Windows release follows validated deployment; Windows bootstrap is not authorized here.")
     inventories = [row for row in configuration["autodeploy_configuration"]["inventories"]
                    if inventory_variables(row).get("aap_hypervisor_pin") == pin]
     require(len(inventories) == 1, "Resolve one canonical pinned recovery policy before release.")
@@ -1103,16 +1166,17 @@ def guest_release_context(configuration, shared, guest, pin, transition=None, ac
         values.get("aap_hypervisor_isolation_released_clients", []))
     require(previous.get("protected_ipv4") and pin["address"] not in previous["protected_ipv4"]
             and pin["public_ip"] not in previous["protected_ipv4"]
-            and resource["address"] not in previous["protected_ipv4"],
+            and all(nic["address"] not in previous["protected_ipv4"] for nic in guest_interfaces(resource)),
             "Release must preserve independently declared production exclusions.")
-    identity = {key: resource[field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
+    identities = guest_identities(resource)
     desired = deepcopy(previous)
     field = "released_clients" if access == "release" else "https_clients"
     released = desired.setdefault(field, [])
-    matching = [item for item in released if item["ipv4"] == identity["ipv4"] or item["mac"] == identity["mac"]]
-    require(not matching or matching == [identity], "An existing released guest identity conflicts with verified provenance.")
-    if not matching:
-        released.append(identity)
+    for identity in identities:
+        matching = [item for item in released if item["ipv4"] == identity["ipv4"] or item["mac"] == identity["mac"]]
+        require(not matching or matching == [identity], "An existing released guest identity conflicts with verified provenance.")
+        if not matching:
+            released.append(identity)
     require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
             desired.get("guest_host_clients", []), desired.get("released_clients", [])) == desired,
             "The selected release must preserve the complete normalized production-protected policy.")
@@ -1125,8 +1189,9 @@ def guest_release_context(configuration, shared, guest, pin, transition=None, ac
             original.get("protected_ipv4"), original.get("guest_host_clients", []), original.get("released_clients", [])) == original,
             "Keep the normalized policy captured before the live release.")
         derived = deepcopy(original)
-        if identity not in derived.setdefault(field, []):
-            derived[field].append(identity)
+        for identity in identities:
+            if identity not in derived.setdefault(field, []):
+                derived[field].append(identity)
         require(derived == desired and previous in (original, desired),
                 "A release cannot overwrite another guest permission or production exclusion.")
         previous = original
@@ -1139,10 +1204,16 @@ def guest_release_context(configuration, shared, guest, pin, transition=None, ac
             continue
         values = inventory_variables(row)
         old = values.get("vm_resource", {})
-        require(isinstance(old, dict) and values.get("ansible_host") != resource["address"]
-                and not any(old.get(field) == resource[field] for field in ("uuid", "mac", "machine_id")),
+        require(isinstance(old, dict) and values.get("ansible_host") not in {nic["address"] for nic in guest_interfaces(resource)}
+                and not guest_resource_conflicts(old, resource),
                 "Another captured host already owns this guest address or machine identity.")
     hypervisor_values = inventory_variables(hypervisor)
+    if resource.get("kind") == "windows":
+        owners = [row for row in hosts if row.get("inventory") == hypervisor["inventory"]
+                  and aap_inventory_owner(row, resource["instance_name"])]
+        require(len(owners) == 1 and inventory_variables(owners[0]).get("hypervisor_host") == hypervisor["name"]
+                and str(inventory_variables(owners[0]).get("aap_instance_number")) == str(int(resource["vm_name"].rsplit("-v", 1)[1])),
+                "The Windows clone must belong to the selected existing AAP instance on this hypervisor.")
     for field, expected in (("machine_id", pin["machine_id"]), ("ansible_user", pin["user"]),
                             ("ansible_port", pin["port"]), ("host_keys", pin["host_keys"])):
         require(hypervisor_values.get(field) == expected, "Shared hypervisor identity conflicts with the release pin.")
@@ -1165,15 +1236,16 @@ def guest_release_variables(values, context, pinned=False):
         policies.append(_routing.isolation_policy(pin, result.get("aap_hypervisor_isolation_https_clients", []),
             result.get("aap_hypervisor_isolation_protected_ipv4", []), result.get("aap_hypervisor_isolation_host_clients", []),
             result.get("aap_hypervisor_isolation_released_clients", [])))
-    identity = {key: context["guest"][field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
+    identities = guest_identities(context["guest"])
     field = "https_clients" if context.get("access_mode") == "bootstrap_https" else "released_clients"
     for policy in policies:
         require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
             policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", [])) == policy,
             "A source release alias must keep the normalized production-protected schema.")
         derived = deepcopy(policy)
-        if identity not in derived.setdefault(field, []):
-            derived[field].append(identity)
+        for identity in identities:
+            if identity not in derived.setdefault(field, []):
+                derived[field].append(identity)
         require(derived == desired, "A policy alias changed beyond this exact verified guest release.")
     for key in ("isolation_policy", "hactar_isolation_policy"):
         result[key] = deepcopy(desired)
@@ -1190,14 +1262,23 @@ def guest_release_host_variables(values, context):
     result = deepcopy(values)
     number = int(resource["vm_name"].rsplit("-v", 1)[1])
     expected = {"ansible_host": resource["address"], "hypervisor_host": context["hypervisor_name"],
-                "vm_uuid": resource["uuid"], "machine_id": resource["machine_id"],
-                "host_keys": resource["host_keys"], "aap_instance_number": number}
+                "vm_uuid": resource["uuid"], "aap_instance_number": number}
+    if resource.get("kind") == "windows":
+        require("machine_id" not in result and "host_keys" not in result,
+                "A Windows inventory row cannot substitute for an existing Linux identity.")
+        expected.update(computer_name=resource["computer_name"], computer_uuid=resource["computer_uuid"], ansible_connection="winrm")
+        fields = tuple(resource)
+    else:
+        expected.update(machine_id=resource["machine_id"], host_keys=resource["host_keys"])
+        fields = ("vm_name", "uuid", "disk", "network", "bridge", "mac", "address", "host_keys",
+                  "machine_id", "hypervisor_machine_id", "verified")
     for field, value in expected.items():
         require(field not in result or result[field] == value, "An existing guest inventory row conflicts with verified provenance.")
     old = result.get("vm_resource", {})
     require(isinstance(old, dict), "Preserve the existing complete guest ownership mapping.")
-    for field in ("vm_name", "uuid", "disk", "network", "bridge", "mac", "address", "host_keys",
-                  "machine_id", "hypervisor_machine_id", "verified"):
+    require(not old or (old.get("kind") == "windows") == (resource.get("kind") == "windows"),
+            "Guest operating-system provenance cannot change in place.")
+    for field in fields:
         require(field not in old or old[field] == resource[field], "An existing vm_resource conflicts with this verified guest.")
     result.update(expected)
     result["vm_resource"] = dict(old, **deepcopy(resource))
@@ -1244,8 +1325,8 @@ def source_guest_release_operations(client, shared, autodeploy, hactar, context)
         if row.get("name") == name:
             continue
         old = values.get("vm_resource", {})
-        require(values.get("ansible_host") != resource["address"]
-                and not any(old.get(field) == resource[field] for field in ("uuid", "mac", "machine_id")),
+        require(values.get("ansible_host") not in {nic["address"] for nic in guest_interfaces(resource)}
+                and not guest_resource_conflicts(old, resource),
                 "Another source host already owns this guest address or machine identity.")
     matches = [row for row in all_rows if row.get("name") == name]
     require(len(matches) <= 1, "The source guest name is not unique in the captured inventory.")
@@ -1288,12 +1369,14 @@ def generic_retirement_no_host_grants(values, guest):
     """Unknown selected host-service grants require review before physical deletion."""
     if guest is None:
         return
+    addresses = {nic["address"] for nic in guest_interfaces(guest)}
+    macs = {nic["mac"] for nic in guest_interfaces(guest)}
     for alias in ("isolation_policy", "hactar_isolation_policy"):
         for row in values.get(alias, {}).get("guest_host_clients", []):
-            require(row.get("ipv4") != guest["address"] and row.get("mac") != guest["mac"],
+            require(row.get("ipv4") not in addresses and row.get("mac") not in macs,
                     "Selected guest host-service grants require explicit supported cleanup before retirement.")
     for row in values.get("aap_hypervisor_isolation_host_clients", []):
-        require(row.get("ipv4") != guest["address"] and row.get("mac") != guest["mac"],
+        require(row.get("ipv4") not in addresses and row.get("mac") not in macs,
                 "Selected guest host-service grants require explicit supported cleanup before retirement.")
     rules = values.get("firewall_additional_zone_rules", [])
     require(isinstance(rules, list) and all(isinstance(row, dict) for row in rules),
@@ -1301,7 +1384,7 @@ def generic_retirement_no_host_grants(values, guest):
     for row in rules:
         rule = row.get("rule", "")
         require(isinstance(rule, str), "Inspect declared native rule text before retirement.")
-        require(not re.search(r'\bsource\s+address="' + re.escape(guest["address"]) + r'(?:/32)?"', rule),
+        require(not any(re.search(r'\bsource\s+address="' + re.escape(address) + r'(?:/32)?"', rule) for address in addresses),
                 "Selected native host-service rules require explicit supported cleanup before retirement.")
 
 
@@ -1310,13 +1393,14 @@ def generic_retirement_policy(policy, guest):
     result = deepcopy(policy)
     if guest is None:
         return result
-    identity = {key: guest[field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
+    identities = guest_identities(guest)
     generic_retirement_no_host_grants({"isolation_policy": result}, guest)
     for field in ("https_clients", "released_clients"):
         retained = []
         for row in result.get(field, []):
-            if row["ipv4"] == identity["ipv4"] or row["mac"] == identity["mac"]:
-                require(row == identity, "A selected retirement identity conflicts with another guest permission.")
+            matching = [identity for identity in identities if row["ipv4"] == identity["ipv4"] or row["mac"] == identity["mac"]]
+            if matching:
+                require(matching == [row], "A selected retirement identity conflicts with another guest permission.")
             else:
                 retained.append(row)
         if field in result and retained != result[field]:
@@ -1329,9 +1413,11 @@ def generic_retirement_policy(policy, guest):
     return result
 
 
-def generic_retirement_context(configuration, shared, client, name, pin, transition=None):
+def generic_retirement_context(configuration, shared, client, name, pin, transition=None, guest_kind=None):
     """Resolve persisted exact ownership before deletion; a gone guest needs no SSH."""
     name, pin = generic_retirement_name(name), _routing.hypervisor_pin(pin)
+    require(guest_kind in (None, "windows"), "Choose only the default Linux or explicit Windows retirement provenance.")
+    require(guest_kind != "windows" or len(name) <= 15, "Windows retirement requires its exact safe computer name.")
     recovery = [row for row in configuration["autodeploy_configuration"]["inventories"]
                 if inventory_variables(row).get("aap_hypervisor_pin") == pin]
     require(len(recovery) == 1, "Resolve one canonical pinned recovery inventory before guest retirement.")
@@ -1375,24 +1461,28 @@ def generic_retirement_context(configuration, shared, client, name, pin, transit
             guest = deepcopy(retained)
     if guest is not None:
         guest = released_guest_resource(guest, pin)
-        require(guest["vm_name"] == name and isinstance(guest.get("source_image_sha256"), str)
-                and re.fullmatch(r"[a-f0-9]{64}", guest["source_image_sha256"]),
-                "Retire only the saved generic-clone provenance for this exact name.")
+        require(guest.get("kind") == guest_kind and guest["vm_name"] == name
+                and (guest_kind == "windows" or (isinstance(guest.get("source_image_sha256"), str)
+                     and re.fullmatch(r"[a-f0-9]{64}", guest["source_image_sha256"]))),
+                "Retire only the saved verified guest provenance for this exact name.")
         for row in captured + matches:
             row_values = inventory_variables(row)
             require(row_values.get("ansible_host") == guest["address"]
                     and row_values.get("hypervisor_host") == hypervisor["name"]
                     and row_values.get("vm_uuid") == guest["uuid"]
-                    and row_values.get("machine_id") == guest["machine_id"]
-                    and row_values.get("host_keys") == guest["host_keys"],
+                    and ((row_values.get("computer_name") == guest["computer_name"]
+                          and row_values.get("computer_uuid") == guest["computer_uuid"])
+                         if guest_kind == "windows" else
+                         (row_values.get("machine_id") == guest["machine_id"]
+                          and row_values.get("host_keys") == guest["host_keys"])),
                     "Exact guest ownership and placement must agree before retirement.")
         for row in data["hosts"] + live:
             if row.get("name") == name:
                 continue
             row_values = inventory_variables(row)
             metadata = row_values.get("vm_resource", {})
-            require(row_values.get("ansible_host") != guest["address"]
-                    and not any(metadata.get(field) == guest[field] for field in ("uuid", "mac", "machine_id", "disk")),
+            require(row_values.get("ansible_host") not in {nic["address"] for nic in guest_interfaces(guest)}
+                    and not guest_resource_conflicts(metadata, guest),
                     "Another inventory host owns the selected guest identity or disk.")
     elif not captured:
         require(not any(name in row.get("hosts", []) for row in data["groups"]
@@ -1409,11 +1499,10 @@ def generic_retirement_context(configuration, shared, client, name, pin, transit
     require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
             desired.get("guest_host_clients", []), desired.get("released_clients", [])) == desired,
             "Retirement must preserve normalized production protection and other guest permissions.")
-    identity = ({key: guest[field] for key, field in (("bridge", "bridge"), ("ipv4", "address"), ("mac", "mac"))}
-                if guest is not None else None)
+    identities = guest_identities(guest) if guest is not None else []
     context = {"route": {"hypervisor": deepcopy(pin)}, "guest": guest, "guest_name": name,
         "guests": ([{"name": name, "role": "generic", "address": guest["address"], "metadata": deepcopy(guest)}]
-                   if guest is not None else []), "identities": [identity] if identity else [], "removed_rules": set(),
+                   if guest is not None else []), "identities": identities, "removed_rules": set(),
         "previous_policy": deepcopy(previous), "desired_policy": deepcopy(desired),
         "inventory_name": hypervisor["inventory"], "hypervisor_name": hypervisor["name"],
         "records_absent": not captured and not matches}

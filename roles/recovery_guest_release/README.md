@@ -21,3 +21,33 @@ or publishing configuration. Temporary code is removed on success and failure.
 Inputs are `recovery_release_guest`, `recovery_release_hypervisor` and the existing
 controller-side `recovery_release_trust_file`. This role adds no job template,
 service, credential type or secret store.
+
+## Verified Windows deployments
+
+The same role accepts an explicit Windows resource only after the caller has
+completed the VM's configuration checks over authenticated WinRM with certificate
+validation. This is a per-VM deployment milestone; later patch/content functional
+tests are separate. VM creation alone is insufficient. Windows bootstrap HTTPS
+is not supported by this branch.
+
+The resource has exactly these fields: `kind: windows`, `vm_name`, `instance_name`,
+`uuid`, `disk`, `hypervisor_machine_id`, `verified: true`, `computer_name`,
+`computer_uuid`, `address`, `interfaces` and `winrm_certificate_validated: true`.
+The observed computer name must match the versioned VM name; the normalized CIM
+product UUID must equal the native libvirt UUID. No Linux machine ID, SSH host
+key or generic-image description is substituted. `instance_name` is the existing
+owning AAP instance identity, retained in the native domain title.
+
+`interfaces` contains every one or two permanent NICs, each with exactly
+`network`, `bridge`, `mac`, `address` and `dns_name`. The caller must validate
+observed Windows MAC/IP pairs, not merely copy expected settings. The selected
+WinRM `address` must belong to one of these verified NICs. Native checks bind all
+NICs to both domain XML definitions, actual network bridges/subnets and exact
+static DHCP/DNS records; conflicting leases refuse release. The exact disk is
+`/opt/vms/win-<vm-name>-clone.disk.qcow2`, with the existing Windows clone marker
+and `<instance>:<vm-name>` title. It must be exclusively owned and non-symlinked.
+
+All verified NIC identities are added atomically to the same policy transition
+and existing encrypted captures/source inventory. Production denial and every
+unrelated permission remain. Omitted `kind` keeps the existing Linux schema and
+checks; the Windows fields are refused by that default schema.

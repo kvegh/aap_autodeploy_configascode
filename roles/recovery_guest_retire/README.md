@@ -30,3 +30,14 @@ review. Git uses ordinary compare-and-retry publication. A policy reduction is
 rolled back only before durable Git publication and only while its exact desired
 state is still current. Temporary code and SSH trust files are cleaned after
 either phase. Check mode validates without deletion, publication or policy change.
+
+For a verified Windows resource, additionally set
+`recovery_retire_guest_kind: windows` in both phases. This explicit choice is
+required even when a previous successful run has already removed its saved
+resource. It never infers an operating system from a name or substitutes Linux
+identity fields. The same publisher resolves the saved Windows computer/native
+UUID and all permanent NICs; native checks require its marked Windows clone and
+owning-instance title. After physical deletion it removes only that resource's
+exact per-NIC DHCP and DNS records and policy entries. The Windows clone and both
+incompatible Linux canonical disk paths must be absent before publication.
+Omitting this option preserves the existing Linux request and disk checks.
