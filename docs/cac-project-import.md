@@ -1,9 +1,9 @@
 # Import a project into AAP
 
-All five project Job Templates run `deploy-cac-project.yml`. Each template fixes
+All six project Job Templates run `deploy-cac-project.yml`. Each template fixes
 its `aap_cac_project_id` and retains its own private repository read token and
 Vault credential. Operators choose the destination, not the repository or file.
-The older five wrapper playbooks have been removed; all five templates select
+The older five wrapper playbooks have been removed; all six templates select
 the common playbook directly.
 
 | Fixed project ID | Deployment Job Template | Derived private repository | Derived encrypted capture |
@@ -13,6 +13,7 @@ the common playbook directly.
 | `automation-orchestrator` | Deploy Automation Orchestrator CaC | `automation-orchestrator-secrets` | `vaults/cac/automation-orchestrator-cac-vault.yml` |
 | `assistant-team` | Deploy Assistant Team CaC | `assistant-team-secrets` | `vaults/cac/assistant-team-cac-vault.yml` |
 | `aap_autodeploy_configascode` | Deploy AAP Autodeploy Configascode CaC | `aap_autodeploy_configascode-secrets` | `vaults/cac/aap_autodeploy_configascode-cac-vault.yml` |
+| `RHEL-sniperpatching` | Deploy RHEL Sniperpatching CaC | `RHEL-sniperpatching-secrets` | `vaults/cac/RHEL-sniperpatching-cac-vault.yml` |
 
 Deployment names begin with **Deploy** and end with **CaC** to distinguish them
 from application deployment jobs. Split the fixed project ID at hyphens and underscores, capitalize
@@ -26,6 +27,15 @@ The repository owner namespace comes from encrypted environment configuration:
 `git_url`. Unknown IDs and repository/file overrides fail before authenticated
 network operations. No repository owner or authentication value is hardcoded.
 The separate platform bootstrap file remains `cac/base_CaC_vault.yml`.
+
+The reviewed `RHEL-sniperpatching` ID preserves its exact repository and capture
+casing; its display name retains **RHEL**. Other mixed-case IDs remain invalid.
+RHEL uses the same importer and resource schema. Its capture declares the project,
+seven Job Templates and reviewed inventory, host, execution-environment and
+Satellite credential definitions. The Machine credential is an explicit existing
+target binding. Readiness and dependency checks must pass before import; importing
+definitions alone does not establish SSH access, package changes or a completed
+patch cycle.
 
 ## Operator procedure
 
@@ -118,7 +128,7 @@ requirements cache supplies `infra.aap_configuration` 4.10.0, `ansible.eda` 2.13
 Version-matched activation fixtures mock only the API boundary, including the
 actual source action process; they never contact a live activation endpoint.
 
-Offline validation covers all five maintained captures under both Ansible
+Offline validation covers all six maintained captures under both Ansible
 native modes, ownership/label/readiness checks, literal templates, group
 relationships, masked-secret preservation, token failure cleanup, explicit
 instance-token selection and selector forwarding. SCM synchronization and Job Template

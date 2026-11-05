@@ -24,6 +24,10 @@ aap_use_case_catalog:
     playbook: deploy-cac-project.yml
     project_id: assistant-team
     configuration: assistant_team
+  RHEL-sniperpatching:
+    playbook: deploy-cac-project.yml
+    project_id: RHEL-sniperpatching
+    configuration: rhel_sniperpatching
   config_exceptions_ng:
     unavailable: No reviewed encrypted CaC capture and standalone importer is registered.
   automation_portal_setup:

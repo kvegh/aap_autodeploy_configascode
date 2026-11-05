@@ -46,11 +46,19 @@ class ImportContractTests(unittest.TestCase):
         with self.assertRaises(AnsibleFilterError):
             filters.resources_for_import(configuration, dict(complete, schedules=[{'name': 'Do not install'}]))
 
-    def test_all_five_projects_derive_their_own_repository_and_file(self):
+    def test_all_reviewed_projects_derive_their_own_repository_and_file(self):
         for project in filters.PROJECT_IDS:
             result = filters.project_contract(project, 'https://git.example.invalid/example-owner')
             self.assertEqual(result['repository'], 'https://git.example.invalid/example-owner/' + project + '-secrets.git')
             self.assertEqual(result['configuration_file'], 'vaults/cac/' + project + '-cac-vault.yml')
+
+    def test_rhel_contract_preserves_the_reviewed_repository_and_capture_case(self):
+        result = filters.project_contract('RHEL-sniperpatching', 'https://git.example.invalid/example-owner')
+        self.assertEqual(result['repository'], 'https://git.example.invalid/example-owner/RHEL-sniperpatching-secrets.git')
+        self.assertEqual(result['configuration_file'], 'vaults/cac/RHEL-sniperpatching-cac-vault.yml')
+        for project in ('rhel-sniperpatching', 'Rhel-sniperpatching', 'RHEL-sniperpatching/other'):
+            with self.subTest(project=project), self.assertRaises(AnsibleFilterError):
+                filters.project_contract(project, 'https://git.example.invalid/example-owner')
 
     def test_unknown_ids_traversal_and_repository_override_shapes_fail(self):
         for project in ('', '../assistant-team', 'assistant-team/other', 'unknown', 123):

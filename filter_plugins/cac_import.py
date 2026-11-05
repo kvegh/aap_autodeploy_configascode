@@ -12,6 +12,7 @@ from ansible.errors import AnsibleFilterError
 PROJECT_IDS = frozenset((
     "aiops-selfhealing-demo", "disconnected-windows-patching",
     "automation-orchestrator", "assistant-team", "aap_autodeploy_configascode",
+    "RHEL-sniperpatching",
 ))
 RESOURCE_VARIABLES = frozenset((
     "aap_organizations", "aap_applications", "aap_teams", "aap_user_accounts",
@@ -67,7 +68,7 @@ def validate_capture_roots(data):
 
 def project_contract(project_id, namespace):
     require(isinstance(project_id, str) and project_id in PROJECT_IDS,
-            "Select one of the five reviewed CaC project IDs.")
+            "Select a reviewed CaC project ID.")
     require(isinstance(namespace, str) and not any(c.isspace() for c in namespace),
             "Configure the protected HTTPS CaC repository namespace.")
     try:

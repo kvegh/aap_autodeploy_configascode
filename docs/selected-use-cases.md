@@ -3,7 +3,7 @@
 Base deployment ends after stages01–04. The separate
 `deploy-selected-use-cases.yml` selector prepares only selected use-case
 requirements, then launches their existing configuration Job Templates. All
-five project Job Templates use [the common API-only driver](cac-project-import.md).
+six project Job Templates use [the common API-only driver](cac-project-import.md).
 The selector and standalone importer support existing, remote and self-target
 AAP instances. The selector retains the registered-route and infrastructure
 checks required by its separate prerequisite preparation.
@@ -22,6 +22,12 @@ extraction matches use those same names:
 | `AIOps_selfhealing_demo` | `aiops-selfhealing-demo` | `deploy-cac-project.yml` |
 | `automation-orchestrator` | `automation-orchestrator` | `deploy-cac-project.yml` |
 | `disconnected-windows-patching` | `disconnected-windows-patching` | `deploy-cac-project.yml` |
+| `RHEL-sniperpatching` | `RHEL-sniperpatching` | `deploy-cac-project.yml` |
+
+RHEL keeps the exact project ID `RHEL-sniperpatching` and uses
+`configuration_repositories.rhel_sniperpatching` in protected configuration. Its
+dedicated Git/Vault bootstrap entries are optional together, so the existing
+five-project setup needs no RHEL inputs.
 
 Other declared modules have explicit unavailable reasons; empty, duplicate and
 unknown selections fail before setup. Assistant Team has its standalone importer
@@ -68,7 +74,7 @@ including the same saved shared API/MCP token-store credential. It receives
 only the destination instance and diagnostic choice as launch variables: its
 project ID, repository and capture file remain fixed on its saved template.
 
-The five generic templates must permit launch-time credential selection so the
+The six generic templates must permit launch-time credential selection so the
 selector can forward those exact saved sets. Keep the existing environment Vault
 name consistent in its credential definition, template references and protected
 expected-name lists. A label mismatch stops setup before a child starts; aligning

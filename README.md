@@ -136,12 +136,13 @@ The project provides reusable automation and CaC templates for other operators.
 Populated shared and demo configuration is maintained in a separate private
 repository as Vault-encrypted files.
 
-The five project deployment Job Templates use names derived from their fixed
+The six project deployment Job Templates use names derived from their fixed
 project IDs: **Deploy AIOps Selfhealing Demo CaC**, **Deploy Disconnected Windows Patching CaC**,
-**Deploy Automation Orchestrator CaC**, **Deploy Assistant Team CaC**, and **Deploy AAP Autodeploy Configascode CaC**.
+**Deploy Automation Orchestrator CaC**, **Deploy Assistant Team CaC**,
+**Deploy AAP Autodeploy Configascode CaC**, and **Deploy RHEL Sniperpatching CaC**.
 Names begin with **Deploy** and end with **CaC**, distinguishing configuration
 imports from application deployment jobs. Hyphens and underscores separate the project words;
-AIOps and AAP retain their capitalization.
+AIOps, AAP and RHEL retain their capitalization.
 The selector derives these names from the same rule. Existing template IDs,
 repository credentials and workflow links are preserved. See the
 [project import guide](docs/cac-project-import.md) for the full mapping.
@@ -408,7 +409,7 @@ shared token-store credential. See [instance token storage](docs/instance-token-
 
 ## Current implementation
 
-All five project import Job Templates now use [one API-only configuration
+All six project import Job Templates use [one API-only configuration
 playbook](docs/cac-project-import.md), `deploy-cac-project.yml`, with fixed project
 IDs and separate repository Git/Vault credentials. Choose the inventory instance
 at launch; the saved shared token store supplies its API token automatically. The playbook derives the
@@ -836,9 +837,9 @@ checkout. A token stored only inside the repository it unlocks cannot bootstrap
 its own download. Different tokens can use the same custom credential type;
 changing one use case's token must not replace another use case's credential.
 
-The encrypted base holds five independent repository credential pairs for a
-trusted replacement AAP. Each pair has a repository read-token credential and a
-CaC Vault credential. The seed needs the initial base pair independently; a
+The encrypted base supports five required repository credential pairs and an
+optional RHEL pair for a trusted replacement AAP. Each pair has a repository
+read-token credential and a CaC Vault credential. The seed needs the initial base pair independently; a
 password or token stored only inside the repository it unlocks cannot bootstrap
 that download. Keep the initial recovery copy separately.
 
@@ -849,6 +850,7 @@ that download. Keep the initial recovery copy separately.
 | `disconnected-windows-patching-secrets` | `disconnected-windows-patching-secrets CaC repo read token` | `disconnected-windows-patching-secrets CaC vault cred` |
 | `automation-orchestrator-secrets` | `automation-orchestrator-secrets CaC repo read token` | `automation-orchestrator-secrets CaC vault cred` |
 | `aiops-selfhealing-demo-secrets` | `aiops-selfhealing-demo-secrets CaC repo read token` | `aiops-selfhealing-demo-secrets CaC vault cred` |
+| `RHEL-sniperpatching-secrets` (optional) | `RHEL-sniperpatching-secrets CaC repo read token` | `RHEL-sniperpatching-secrets CaC vault cred` |
 
 Repository tokens are read-only by default, with two approved exceptions:
 
@@ -873,7 +875,12 @@ Bootstrap inputs use the same keys (`base`, `assistant_team`,
 `windows_disconnected`, `orchestrator`, `aiops`) in
 `cac_bootstrap_git_credentials` and `cac_bootstrap_vault_credentials`.
 Each Vault entry supplies its name, `vault_id: cac`, and protected password.
-When bootstrap is configured, all five pairs are required. Existing hidden
+When bootstrap is configured, the original five pairs are required. RHEL uses
+the exact additional key `RHEL-sniperpatching` in both mappings; supply both its
+Git and Vault entries or omit both. Selecting RHEL also requires
+`configuration_repositories.rhel_sniperpatching` in protected selector
+configuration. Existing five-project bootstrap and selection remain valid
+without the RHEL credential pair or configuration-repository entry. Existing hidden
 secrets are preserved on reruns; rotation and rekeying are separate operations.
 Both mappings may be omitted when replacement-access bootstrap is not wanted.
 The production and existing fresh-instance credential names, grants and bindings

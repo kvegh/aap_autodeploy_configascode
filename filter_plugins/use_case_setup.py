@@ -14,12 +14,13 @@ def require(condition, message):
 
 def project_display_name(project_id):
     """Derive deployment template names from IDs, preserving their word order."""
-    require(isinstance(project_id, str)
-            and bool(re.fullmatch(r"[a-z0-9]+(?:[-_][a-z0-9]+)*", project_id)),
-            "Use a lowercase project ID with hyphen or underscore word separators.")
-    acronyms = {"aiops": "AIOps", "aap": "AAP"}
+    display_id = "rhel-sniperpatching" if project_id == "RHEL-sniperpatching" else project_id
+    require(isinstance(display_id, str)
+            and bool(re.fullmatch(r"[a-z0-9]+(?:[-_][a-z0-9]+)*", display_id)),
+            "Use a lowercase project ID or the exact reviewed RHEL-sniperpatching ID.")
+    acronyms = {"aiops": "AIOps", "aap": "AAP", "rhel": "RHEL"}
     return "Deploy " + " ".join(acronyms.get(word, word.capitalize())
-                                for word in re.split(r"[-_]", project_id)) + " CaC"
+                                for word in re.split(r"[-_]", display_id)) + " CaC"
 
 
 def https_origin(value):

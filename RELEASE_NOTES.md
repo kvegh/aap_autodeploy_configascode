@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.44.0
+
+Register RHEL-sniperpatching as the sixth reviewed CaC project, using the shared
+deploy-cac-project.yml and existing destination authentication. Preserve exact
+repository/capture casing and derive Deploy RHEL Sniperpatching CaC. Add its
+selector catalog entry and optional paired Git/Vault bootstrap inputs; existing
+five-project bootstrap remains valid. Reject half-pairs, mixed-case aliases and
+reused base Vault definitions. Thirty-eight focused tests pass, including all
+six real captures under both native modes. Three syntax checks and production
+lint pass. Live import and application acceptance remain separate checks.
+
 ## 0.43.1
 
 Document implementation `85ee77d`, the exact owned-guest HTTP permission,

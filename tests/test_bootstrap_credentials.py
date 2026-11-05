@@ -276,6 +276,52 @@ class BootstrapCredentialTests(unittest.TestCase):
         self.assertEqual(self.state["writes"], [])
         self.assertFalse(self.state["unexpected_patch"])
 
+    def add_rhel_pair(self):
+        self.variables["cac_bootstrap_git_credentials"]["RHEL-sniperpatching"] = {
+            "aap_credential_name": "RHEL-sniperpatching-secrets CaC repo read token",
+            "token": "synthetic-rhel-git-secret",
+        }
+        self.variables["cac_bootstrap_vault_credentials"]["RHEL-sniperpatching"] = {
+            "name": "RHEL-sniperpatching-secrets CaC vault cred",
+            "vault_id": "cac",
+            "vault_password": "synthetic-rhel-vault-secret",
+        }
+
+    def test_optional_rhel_pair_is_created_independently_and_preserved_on_rerun(self):
+        self.add_rhel_pair()
+        result, output = self.run_tasks()
+        self.assertEqual(result.returncode, 0, output)
+        created = [body for kind, body in self.state["writes"] if kind == "credentials"]
+        self.assertEqual(len(created), 12)
+        by_name = {body["name"]: body for body in created}
+        self.assertEqual(by_name["RHEL-sniperpatching-secrets CaC repo read token"]["inputs"],
+                         {"token": "synthetic-rhel-git-secret"})
+        self.assertEqual(by_name["RHEL-sniperpatching-secrets CaC vault cred"]["inputs"],
+                         {"vault_id": "cac", "vault_password": "synthetic-rhel-vault-secret"})
+        self.state["writes"].clear()
+        result, output = self.run_tasks()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertEqual(self.state["writes"], [])
+        self.assertFalse(self.state["unexpected_patch"])
+
+    def test_an_optional_rhel_half_pair_is_rejected_before_api_mutation(self):
+        self.add_rhel_pair()
+        for missing in ("cac_bootstrap_git_credentials", "cac_bootstrap_vault_credentials"):
+            variables = copy.deepcopy(self.variables)
+            del variables[missing]["RHEL-sniperpatching"]
+            with self.subTest(missing=missing):
+                result, output = self.run_tasks(variables)
+                self.assertNotEqual(result.returncode, 0, output)
+                self.assertEqual(self.state["writes"], [])
+
+    def test_optional_rhel_pair_cannot_reuse_the_base_vault_definition(self):
+        self.add_rhel_pair()
+        self.variables["cac_bootstrap_vault_credentials"]["RHEL-sniperpatching"] = copy.deepcopy(
+            self.variables["cac_bootstrap_vault_credentials"]["base"])
+        result, output = self.run_tasks()
+        self.assertNotEqual(result.returncode, 0, output)
+        self.assertEqual(self.state["writes"], [])
+
     def test_incomplete_bootstrap_is_rejected_before_api_mutation(self):
         del self.variables["cac_bootstrap_git_credentials"]["orchestrator"]
         result, output = self.run_tasks()

@@ -33,7 +33,7 @@ class UseCaseSetupTests(unittest.TestCase):
             },
             "configuration_repositories": {
                 key: "https://git.example.invalid/config/" + key + ".git"
-                for key in ("base", "aiops", "windows_disconnected", "orchestrator", "assistant_team")
+                for key in ("base", "aiops", "windows_disconnected", "orchestrator", "assistant_team", "rhel_sniperpatching")
             },
         }
 
@@ -66,6 +66,7 @@ class UseCaseSetupTests(unittest.TestCase):
             "automation-orchestrator": "Deploy Automation Orchestrator CaC",
             "assistant-team": "Deploy Assistant Team CaC",
             "aap_autodeploy_configascode": "Deploy AAP Autodeploy Configascode CaC",
+            "RHEL-sniperpatching": "Deploy RHEL Sniperpatching CaC",
         }
         for project_id, name in expected.items():
             with self.subTest(project_id=project_id):
@@ -74,9 +75,27 @@ class UseCaseSetupTests(unittest.TestCase):
         result = self.plan(selected)
         self.assertEqual([entry["name"] for entry in result["importers"]],
                          [expected[self.catalog[key]["project_id"]] for key in selected])
-        for project_id in (None, "", "AiOps", "bad--id", "../other", "id with spaces"):
+        for project_id in (None, "", "AiOps", "bad--id", "../other", "id with spaces", "Rhel-sniperpatching", "RHEL-sniperpatching-other"):
             with self.subTest(project_id=project_id), self.assertRaises(AnsibleFilterError):
                 setup.project_display_name(project_id)
+
+    def test_rhel_selection_uses_the_common_driver_and_its_own_repository(self):
+        result = self.plan(["RHEL-sniperpatching"])
+        self.assertEqual(result["importers"], [{
+            "key": "RHEL-sniperpatching",
+            "name": "Deploy RHEL Sniperpatching CaC",
+            "playbook": "deploy-cac-project.yml",
+            "project_id": "RHEL-sniperpatching",
+            "repository": self.protected["configuration_repositories"]["rhel_sniperpatching"],
+        }])
+
+    def test_existing_five_selections_need_no_rhel_configuration_repository(self):
+        del self.protected["configuration_repositories"]["rhel_sniperpatching"]
+        selected = [key for key, entry in self.catalog.items()
+                    if "project_id" in entry and key != "RHEL-sniperpatching"]
+        result = self.plan(selected)
+        self.assertEqual(len(result["importers"]), 5)
+        self.assertNotIn("RHEL-sniperpatching", [item["key"] for item in result["importers"]])
 
     def test_generic_children_get_only_saved_repository_credentials_and_selected_destination(self):
         original = [
@@ -245,6 +264,7 @@ class UseCaseSetupTests(unittest.TestCase):
             "disconnected-windows-patching-secrets",
             "automation-orchestrator-secrets",
             "aiops-selfhealing-demo-secrets",
+            "RHEL-sniperpatching-secrets",
         ]
         organization = "Fixture organization"
 
