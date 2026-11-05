@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.44.1
+
+Document implementation `d12d5a4ab72082d7de63637fe7ae400c703c8924`, canonical RHEL naming, optional
+paired bootstrap inputs and focused validation. Live deployment acceptance
+remains separate from source publication.
+
 ## 0.44.0
 
 Register RHEL-sniperpatching as the sixth reviewed CaC project, using the shared

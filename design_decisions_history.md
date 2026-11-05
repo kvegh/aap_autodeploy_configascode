@@ -2716,3 +2716,20 @@ identities are retained; conflicting states, priorities and duplicates for that
 endpoint are refused. Three focused persistence tests and 34 related regressions
 passed. Full regression validation of the preceding portable implementation
 passed 275 tests; subsequent focused checks cover these corrections.
+
+## 2026-11-05 — Register RHEL through the shared CaC importer
+
+The exact reviewed RHEL-sniperpatching project ID now uses the common importer
+and selected-use-case catalog. Deploy RHEL Sniperpatching CaC runs the shared
+playbook directly with its fixed ID, dedicated repository reader/Vault pair and
+existing inventory/token-store destination selection. The repository and capture
+retain uppercase RHEL. The original five bootstrap pairs remain required; the
+RHEL Git and Vault entries are optional together. No wrapper, authentication
+mechanism or resource schema was added.
+
+All 38 focused tests passed, including six protected captures under both native
+modes, half-pair/case/reused-Vault refusals and rerun preservation. Three syntax
+checks and production lint passed. Live import and host/application acceptance
+remain separate.
+
+Implementation commit: `d12d5a4ab72082d7de63637fe7ae400c703c8924`.
