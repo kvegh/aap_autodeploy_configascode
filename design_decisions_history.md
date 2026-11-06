@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Clarify the canonical Command Center task title — 2026-11-06
+
+Existing task `bead-wd-1rl.40` now reads "Deploy Command Center from AAP to the
+selected workstation". This makes the deployment direction clear and keeps the
+public title generic. Actual target choices, original notes, state, owner and
+labels remain unchanged; Hactar checkpoint `62c2a27` retains the full encrypted
+147-record context and appended clarification.
+
+The ordinary exporter/mirror refresh and preservation checks passed. No exporter
+code, title-override mechanism, new research, runtime or umbrella change was
+introduced. Existing README instructions remain accurate. Published history is
+preserved; this is one necessary metadata-only follow-up.
+
 ## Reflect waiting tasks and an open stability issue accurately — 2026-11-06
 
 The existing diagram task `bead-wd-72f.35` is blocked on its already-pending

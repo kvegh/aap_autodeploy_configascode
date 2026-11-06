@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.47.12
+
+Document the canonical generic Command Center deployment title in the public
+overview. Actual targets and original answers remain in the encrypted recovery
+records; task state, ownership and labels are preserved. The existing exporter
+is unchanged.
+
 ## 0.47.11
 
 Document accurate handoff states: the diagram task is blocked on its existing
