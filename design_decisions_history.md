@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Name the actual work and add a local interactive companion — 2026-11-06
+
+Implementation `c3f4b74` replaces vague pilot phase labels with Windows
+connectivity, Assistant Team installation/cleanup and Windows/private MCP test
+preparation. The frozen window, 28 steps and historical timing qualifications
+remain unchanged. At the user's additional request, a plain HTML companion embeds
+the same diagram and details; known-node clicks or Enter/Space toggle native
+details without changing Mermaid's strict security mode. A pinned Mermaid12.3.0
+CDN runtime is the sole online rendering requirement; no server, package install
+or new audit is required. The CDN response, content parity, all node toggle paths
+and runtime-failure fallback were checked. Browser rendering remains unverified
+because no browser executable was available. Markdown remains the GitHub-readable
+source; users download/open the HTML locally rather than expect GitHub to host it.
+
 ## Explain delivery delay through a bounded visible-history pilot — 2026-11-06
 
 Implementation `15bd6ce` adds the user-approved Markdown flowchart for one frozen

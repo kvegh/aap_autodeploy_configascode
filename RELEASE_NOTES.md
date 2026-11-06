@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.47.1
+
+Record interactive companion implementation `c3f4b74`, context-label corrections,
+the pinned online runtime and the explicit browser-verification limitation.
+
 ## 0.47.0
 
 Clarify the 24-hour pilot's Windows/Assistant context and add an HTML companion
