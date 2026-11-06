@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Reflect completed Windows OS work and the remaining package-access blocker — 2026-11-06
+
+The existing Windows acceptance record now has a real public status change from
+in progress to blocked. Windows 1.1.5 documentation `0626bd5` and tested executable
+`2dfb9c0` establish both selected OS patch jobs at their exact April builds,
+with zero remaining approved updates/reboots, alongside successful AD and WSUS.
+Only the existing Nexus package-access approval blocks the remaining package
+chain; its prepared rule is unapplied. Full use-case acceptance stays open.
+
+Hactar checkpoint `ed5a152` retains all 147 complete encrypted task records and
+the actual proof. Exporter/mirror checks passed with every prior ID preserved.
+README instructions remain accurate and unchanged. This single necessary
+overview/version checkpoint changes no runtime source, base, credentials or DNS.
+
 ## Retain existing deferred external CaC work — 2026-11-06
 
 Documentation `e8d43a1` adds the existing `bead-wd-9ezo` to the generated public

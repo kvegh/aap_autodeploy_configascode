@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.47.10
+
+Document the real Windows acceptance status change to blocked after both selected
+OS patch jobs reached their exact April builds with zero approved updates or
+reboots remaining. AD and WSUS successes remain explicit; the remaining blocker
+is Nexus package access, with its prepared rule unapplied. Full task context is
+retained in the encrypted recovery checkpoint. Runtime behavior is unchanged.
+
 ## 0.47.9
 
 Document backlog publication `e8d43a1` and its 147-record encrypted recovery
