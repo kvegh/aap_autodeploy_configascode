@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Document verified agent recovery without changing deployment behavior — 2026-11-06
+
+Documentation `8b44905` refreshes the public overview to 87 tasks, including the
+closed agent-remediation acceptance and rebuild-tooling task, and the current
+transferred rollout state. The selected isolated service-outage chain passed on
+AIOps runtime `3da21af`, including bounded-turn implementation `67a6e69`; its
+acceptance documentation is `c69097e`. One real event launched one bounded agent
+and one saved repair, with native target, service and fresh recovery verification.
+This does not establish package-removal recovery or successor installation.
+
+Hactar checkpoint `3904f20` preserves the actual aggregate and all 146 complete
+selected task records, including closed acceptance. Existing exporter/mirror
+checks passed without changing that encrypted checkpoint during this overview
+refresh. Public output contains metadata only; private records and the user's
+handover remain protected. No runtime playbook, base configuration, DNS,
+credential or production-project pin was changed by this publication.
+
 ## Keep transferred AAP work in the recoverable task overview — 2026-11-06
 
 Documentation `da64bd1a2f17579176694017e188e812f5a134c1` refreshes the generated

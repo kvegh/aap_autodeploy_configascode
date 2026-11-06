@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.47.7
+
+Document overview implementation `8b44905`, the verified isolated agent-recovery
+milestone, its limits and the unchanged 146-record encrypted Hactar checkpoint.
+
 ## 0.47.6
 
 Document the closed controlled AIOps acceptance in the public task overview and
