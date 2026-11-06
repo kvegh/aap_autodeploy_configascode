@@ -82,6 +82,10 @@ The [Project Decision/Action Path Flowchart](docs/project-decision-action-path-f
 provides a frozen 24-hour pilot: short Mermaid summaries with expandable decisions,
 failures, fixes, outcomes and timing. It explains delivery delays without exposing
 raw action logs or environment identifiers.
+The additional [interactive HTML version](docs/project-decision-action-path-flowchart.html)
+lets you click a diagram node to toggle its matching explanation. GitHub displays
+HTML source: download the file and open it locally in a modern browser. No server
+is needed; diagram rendering needs internet access to the pinned Mermaid runtime.
 
 Queued cleanup `bead-wd-72f.34` reviews standalone helpers, custom plugins/modules
 and scripts embedded in playbooks across the related demos. Certified collections

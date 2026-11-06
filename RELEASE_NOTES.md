@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.47.0
+
+Clarify the 24-hour pilot's Windows/Assistant context and add an HTML companion
+with the same 28 steps and embedded explanations. Click or use Enter/Space on a
+node to toggle its matching details. The local file needs no server; Mermaid
+12.3.0 loads from the internet in strict mode. Content parity, toggle logic and
+CDN availability were checked; real browser rendering remains unverified.
+
 ## 0.46.9
 
 Synchronize the task overview and encrypted recovery records after the published

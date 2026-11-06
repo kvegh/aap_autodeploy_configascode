@@ -5,7 +5,12 @@
 This is a retrospective of one day, not a current deployment status page. It
 follows the main chat messages and existing decision histories. Expand a numbered
 heading below the diagram for the decision, problem, response, outcome and timing.
-The diagram itself does not toggle those sections.
+Mermaid automatically sizes the diagram when it is rendered. GitHub Markdown
+cannot expand a diagram node on click or redraw its layout, so the matching
+native collapsible details remain below the diagram. For node-click toggling,
+use the additional [HTML companion](project-decision-action-path-flowchart.html):
+download it and open it locally; its diagram loads a pinned Mermaid runtime
+from the internet.
 
 The essential demo is: deploy a fresh AAP, import a use case, run its infrastructure
 and application jobs, demonstrate the result, clean up its disposable resources,
@@ -37,8 +42,8 @@ could proceed alongside another lane. Numbers match the expandable sections.
 
 ```mermaid
 flowchart TB
-  subgraph A[Morning: establish missing prerequisites]
-    N01["01 Start with incomplete proof"] --> N02["02 Inspect images and install tools"]
+  subgraph A[Morning: Windows connectivity and Assistant Team installation]
+    N01["01 Windows and Assistant Team tests unfinished"] --> N02["02 Inspect images and install tools"]
     N01 --> N03["03 Assistant build fails"]
     N03 --> N04["04 Keep Debian; defer UBI rebuild"]
     N02 --> N05["05 Assign Windows network setup"]
@@ -46,7 +51,7 @@ flowchart TB
     N04 --> N07["07 Fix checkout and retry Assistant"]
     N06 --> N08["08 Import Windows jobs"]
   end
-  subgraph B[Afternoon: finish components and encounter waits]
+  subgraph B[Afternoon: Assistant Team cleanup and Windows/private MCP test preparation]
     N07 --> N09["09 Fix normal Assistant cleanup"]
     N01 --> N10["10 Verify native CLI and private MCP"]
     N08 --> N11["11 Repair saved configuration gaps"]
@@ -90,7 +95,7 @@ is omitted; after midnight, entries explicitly say 6 November. Run references
 such as **13-A** are neutral references within this document, not controller IDs.
 
 <details>
-<summary><strong>01 — Begin with component success, but no complete repeatable demo</strong></summary>
+<summary><strong>01 — Windows and Assistant Team end-to-end tests remain unfinished</strong></summary>
 
 At 08:44, Assistant installation was already running, Windows preparation and
 private CLI/MCP work remained unfinished, and successor deployment had not been
@@ -710,7 +715,11 @@ inside the window; its functional runtime remained **1.0.46 / `e608cf0`**. Assis
 publication was verified by commit, including `c618d1f` and its documentation
 checkpoint. Formal tagged releases were not established by this audit.
 
-The diagram uses standard Mermaid and native HTML details supported by common
-Markdown viewers. In viewers without Mermaid, the diagram remains readable as
-text; details depend on that viewer's HTML support. No custom JavaScript,
-container, renderer dependency or deployment component is introduced.
+The Markdown version uses standard Mermaid and native HTML details. In viewers
+without Mermaid, its diagram remains readable as text; details depend on that
+viewer's HTML support. The HTML companion embeds the same narrative and uses a
+pinned Mermaid browser runtime plus a small allowlisted node-toggle handler.
+Its content and detail headings remain usable if the runtime cannot load. It
+requires no local server, backend or deployment component. The HTML toggle logic
+and content parity were checked; real browser rendering was unavailable because
+no browser executable was installed.
