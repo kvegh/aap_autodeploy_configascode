@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.46.4
+
+Refresh the task overview and encrypted recovery records after verified website
+acceptance and the successful AAP primary-release retry. Keep unfinished Windows,
+MCP remediation and successor tests separate from completed component work.
+This documentation checkpoint changes no playbook behavior.
+
 ## 0.46.3
 
 Document primary-only final AAP release implementation `437fe9f` and the observed

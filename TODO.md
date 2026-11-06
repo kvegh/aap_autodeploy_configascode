@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-83 tasks: 23 outstanding; 60 closed.
+83 tasks: 22 outstanding; 61 closed.
 
 ## Outstanding tasks
 
@@ -20,7 +20,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
-| bead-wd-72f.15 | Deploy the versioned AIOps website on the selected recovery hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.16 |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.30.1 | Refresh bootstrap credentials before importing updated AutoDeploy definitions | in_progress | P1 | bug | bead-wd-72f.30 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
@@ -52,6 +51,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.11 | Publish deployed AAP API access using the existing shared MCP token | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.12 | Diagnose AIOps CaC deployment failure on test instance | closed | P1 | bug | bead-wd-72f |
 | bead-wd-72f.14 | Apply the agreed numbered AAP DNS naming scheme | closed | P1 | bug | bead-wd-72f |
+| bead-wd-72f.15 | Deploy the versioned AIOps website on the selected recovery hypervisor | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.15.1 | Deploy the Linux and Zabbix MCP servers on the new TRA VM | closed | P1 | task | bead-wd-72f.15 |
 | bead-wd-72f.17 | Deploy versioned Zabbix VM and AIOps monitoring on the replacement hypervisor | closed | P1 | feature | bead-wd-72f, bead-wd-72f.16 |
 | bead-wd-72f.18 | Deploy versioned testserver1 and TRA Linux VMs on the recovery hypervisor | closed | P1 | task | bead-wd-72f, bead-wd-72f.16 |
