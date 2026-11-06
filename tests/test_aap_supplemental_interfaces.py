@@ -84,6 +84,29 @@ def actual():
 
 
 class SupplementalInterfaceTests(unittest.TestCase):
+    def test_final_aap_release_preserves_secondary_isolation_and_is_idempotent(self):
+        guest, pin, main, shared, hactar, allocation, context, _ = planned()
+        shared = keys.supplemental_interface_capture(shared, context, 'shared')
+        allocation = keys.supplemental_interface_capture(allocation, context, 'allocation')
+        selected = {key: deepcopy(guest[key]) for key in ('kind', 'route', 'primary', 'guest_machine_id')}
+        selected['primary'] = deepcopy(context['desired_resource'])
+        original = deepcopy((shared, allocation))
+        release = keys.aap_release_context(main, shared, allocation, selected, pin)
+        secondary = guest['supplemental_interface']
+        secondary_identity = {'bridge': secondary['bridge'], 'ipv4': secondary['address'], 'mac': secondary['mac']}
+        self.assertNotIn(secondary_identity, release['desired_policy']['released_clients'])
+        desired = {kind: keys.retire_inventory_capture(value, release, kind) for kind, value in
+                   {'autodeploy': main, 'shared': shared, 'hactar': hactar}.items()}
+        source = transaction.Source(main, shared, hactar)
+        operations = keys.source_aap_release_operations(source, desired['shared'], desired['autodeploy'], desired['hactar'], release)
+        self.assertTrue(operations)
+        for method, path, body in operations:
+            source.request(method, path, body)
+        repeated = keys.aap_release_context(desired['autodeploy'], desired['shared'], allocation, selected, pin)
+        self.assertFalse(keys.source_aap_release_operations(source, desired['shared'], desired['autodeploy'], desired['hactar'], repeated))
+        self.assertEqual((shared, allocation), original)
+        self.assertNotIn(secondary_identity, repeated['desired_policy']['released_clients'])
+
     def test_live_legacy_primary_reservations_reuse_the_already_verified_native_identity(self):
         policy,retirement,route,related,xmls,definitions=legacy_fixture()
         self.assertNotIn('aap',related)

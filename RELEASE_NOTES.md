@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.46.2
+
+Keep final AAP release primary-only when Windows has added its declared second
+interface. Source alias comparison now matches the existing primary-only
+transition without granting secondary-interface egress. The focused regression
+verifies source publication and idempotent repeat while preserving its isolation.
+
 ## 0.46.1
 
 Document selected MCP metadata implementation `8237ce6` and its reader-first

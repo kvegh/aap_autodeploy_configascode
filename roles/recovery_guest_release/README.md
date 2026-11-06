@@ -111,6 +111,8 @@ UUID, exclusive ownership among guests, canonical disk, MAC, network and DHCP.
 Only the primary's exact policy identity is added; existing native firewall rules,
 production exclusions and other guest permissions remain. Linux and Windows
 branches retain their existing behavior.
+The primary-only selection also applies during source alias comparison when the
+recorded AAP has a Windows-owned second interface; that interface stays isolated.
 
 ## Windows-owned AAP interface
 

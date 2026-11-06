@@ -1584,6 +1584,8 @@ def guest_release_variables(values, context, pinned=False):
             result.get("aap_hypervisor_isolation_protected_ipv4", []), result.get("aap_hypervisor_isolation_host_clients", []),
             result.get("aap_hypervisor_isolation_released_clients", []), result.get("aap_hypervisor_isolation_http_clients", [])))
     identities = guest_identities(context["guest"])
+    if context.get("access_mode") == "aap_release":
+        identities = identities[:1]
     field = {"bootstrap_https": "https_clients", "bootstrap_http": "http_clients"}.get(context.get("access_mode"), "released_clients")
     for policy in policies:
         require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),

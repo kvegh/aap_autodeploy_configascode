@@ -72,6 +72,8 @@ plan before selecting configured-guest or unconfigured-clone cleanup; missing
 ownership grants no deletion permission. The Windows infrastructure job also
 owns its optional additional
 AAP NIC and persistent RHEL connection; the CaC importer remains API-only.
+Final AAP isolation release selects only its primary interface. A Windows-owned
+second interface remains verified and recorded without gaining that release.
 
 ## Tasks and decisions
 
