@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.46.9
+
+Synchronize the task overview and encrypted recovery records after the published
+decision/action pilot and verified bootstrap/import repairs. Preserve the approved
+Windows activation scope, requested flowchart clarification and remaining runtime
+acceptance work separately from completed documentation and connection checks.
+
 ## 0.46.8
 
 Record flowchart implementation `15bd6ce`, its visible-history scope and the
