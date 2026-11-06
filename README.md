@@ -105,6 +105,11 @@ explain recovery without the current tracker. Lasting decisions and implementati
 commits remain in `design_decisions_history.md`; older run evidence belongs there
 or in the protected task records, rather than the README's opening instructions.
 
+Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
+conversation association and original parent so the existing export includes
+them. Moving a task preserves its actual state; an unanswered credential-source
+question remains blocked until the user supplies or identifies the answer.
+
 ## Current implementation
 
 Windows lifecycle checks follow each libvirt network's DNS setting: exact DHCP

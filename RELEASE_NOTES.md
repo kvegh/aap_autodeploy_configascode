@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.47.4
+
+Synchronize the public task overview with Beads, including the transferred AAP
+rollout's unresolved Vault-source question and the Windows API-responsiveness
+follow-up. Document project classification while preserving the existing
+145-record encrypted Hactar checkpoint. No runtime automation changes.
+
 ## 0.47.3
 
 Record diagnostic implementation `51b8df4`, the successful pinned grammar check
