@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.46.5
+
+Publish the installed AAP issuing CA instead of the extracted full system-root
+bundle. This keeps selected encrypted runtime settings small enough for normal
+CaC requests while preserving verified private TLS and ordinary provider trust.
+
 ## 0.46.4
 
 Refresh the task overview and encrypted recovery records after verified website

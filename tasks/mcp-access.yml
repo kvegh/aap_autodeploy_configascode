@@ -318,7 +318,7 @@
         ansible_become: true
         cac_mcp_ca_path: >-
           {{ aap_installer_ca_path | default('/home/' ~ vault_aap_install_user ~
-             '/aap/tls/extracted/pem/directory-hash/ca-bundle.crt') }}
+             '/aap/tls/ca.cert') }}
       block:
         - name: Verify the installed authority against the selected guest HTTPS identity
           ansible.builtin.command:

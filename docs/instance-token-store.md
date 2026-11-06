@@ -66,6 +66,12 @@ Base reads and verifies the authority through its existing authenticated guest
 bootstrap path, then publishes it only for that selected instance; a conflicting
 saved endpoint/CA stops for review. No new token is created.
 
+The default file is the installer's `tls/ca.cert`, not the extracted system-root
+bundle. Only this instance's relevant public issuer/chain belongs in the encrypted
+runtime. Copying unrelated public roots expands Vault ciphertext enough to exceed
+ordinary proxy request limits. Public provider HTTPS retains normal system/vendor
+trust; the selected private issuer is additive application trust only.
+
 Publish compatible readers before backfilling. Run existing base configuration
 for the selected instance, refresh AutoDeploy CaC on the receiving AAP, then
 refresh AIOps CaC. The existing AIOps preparation copies only selected token/CA
