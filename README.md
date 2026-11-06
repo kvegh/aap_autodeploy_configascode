@@ -78,6 +78,11 @@ second interface remains verified and recorded without gaining that release.
 
 ## Tasks and decisions
 
+The [Project Decision/Action Path Flowchart](docs/project-decision-action-path-flowchart.md)
+provides a frozen 24-hour pilot: short Mermaid summaries with expandable decisions,
+failures, fixes, outcomes and timing. It explains delivery delays without exposing
+raw action logs or environment identifiers.
+
 Queued cleanup `bead-wd-72f.34` reviews standalone helpers, custom plugins/modules
 and scripts embedded in playbooks across the related demos. Certified collections
 and vendor roles come first; remaining custom code needs a concrete capability

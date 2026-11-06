@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.46.7
+
+Add the frozen 24-hour Project Decision/Action Path Flowchart pilot, with 28
+short Mermaid blocks and matching collapsible plain-language explanations.
+Separate observed failures, fixes, job runtime and coordination waits; preserve
+unknown timing and exclude environment identifiers and raw action logs.
+
 ## 0.46.6
 
 Document installed-issuer publication implementation `bde1120` and the observed
