@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.47.5
+
+Document task-overview implementation `da64bd1` and its verified selection,
+preserved encrypted checkpoint and unchanged runtime behavior.
+
 ## 0.47.4
 
 Synchronize the public task overview with Beads, including the transferred AAP

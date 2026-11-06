@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Keep transferred AAP work in the recoverable task overview — 2026-11-06
+
+Documentation `da64bd1a2f17579176694017e188e812f5a134c1` refreshes the generated
+public overview to 86 tasks, including the existing transferred rollout question
+and the Windows API-responsiveness follow-up. AAP-owned integration work retains
+its project label, conversation association and original parent; classification
+does not answer its pending Vault-source question or authorize deployment.
+
+The public overview matches a fresh Beads read. Hactar checkpoint `dabae0b`
+already holds the 145 selected full records and remains byte-for-byte unchanged.
+No automation, credential binding, VM or live-job behavior changes. Published
+documentation remains separate from unfinished runtime and successor acceptance.
+
 ## Diagnose missing diagrams without hiding a valid rendering — 2026-11-06
 
 Implementation `51b8df4` replaces a misleading blanket network error with separate
