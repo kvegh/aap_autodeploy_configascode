@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.47.3
+
+Record diagnostic implementation `51b8df4`, the successful pinned grammar check
+and the outstanding browser/client-side verification.
+
 ## 0.47.2
 
 Distinguish Mermaid import, diagram rendering and node-control failures in the

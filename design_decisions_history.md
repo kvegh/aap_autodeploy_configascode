@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Diagnose missing diagrams without hiding a valid rendering — 2026-11-06
+
+Implementation `51b8df4` replaces a misleading blanket network error with separate
+Mermaid import, rendering and node-control errors. A node-control exception now
+keeps any rendered SVG visible. Static instructions distinguish a script-blocking
+preview from a started runtime without assuming the user's viewing context. The
+pinned module was reachable, and its actual grammar accepted all 28 vertices in
+a syntax-only Node harness; that does not exercise browser DOM sanitation or SVG
+layout. Focused checks cover the separate failures and preservation of rendered
+SVG. Strict security remains unchanged. The reported client-side failure still
+requires its actual stage/error; browser end-to-end verification is unavailable
+without an installed executable. This checkpoint is diagnostic progress, not
+closure of the user's missing-diagram report.
+
 ## Name the actual work and add a local interactive companion — 2026-11-06
 
 Implementation `c3f4b74` replaces vague pilot phase labels with Windows
