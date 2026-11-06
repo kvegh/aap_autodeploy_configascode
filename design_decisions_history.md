@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Retain existing deferred external CaC work — 2026-11-06
+
+Documentation `e8d43a1` adds the existing `bead-wd-9ezo` to the generated public
+overview as a deferred future independent External CloudCLI CaC project. The
+original task, ownership and labels are retained; no duplicate or implementation
+task is created. Its full handoff and the current blocked integration inputs
+remain in Hactar's encrypted 147-record export, checkpoint `6514ae2`.
+
+The existing exporter/check retains all previous task IDs, and Hactar's overview
+check passes. Public text contains only generic task metadata. The user's
+handover and separate deployment evidence are preserved. This publication
+changes no runtime source, credentials, base configuration, DNS or umbrella refs.
+
 ## Document verified agent recovery without changing deployment behavior — 2026-11-06
 
 Documentation `8b44905` refreshes the public overview to 87 tasks, including the

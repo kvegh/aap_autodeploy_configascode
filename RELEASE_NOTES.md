@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.47.9
+
+Document backlog publication `e8d43a1` and its 147-record encrypted recovery
+checkpoint. External CloudCLI remains deferred future CaC work.
+
 ## 0.47.8
 
 Document the existing deferred External CloudCLI independent CaC task in the
