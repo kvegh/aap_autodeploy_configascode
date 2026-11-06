@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.46.3
+
+Document primary-only final AAP release implementation `437fe9f` and the observed
+secondary-interface comparison failure.
+
 ## 0.46.2
 
 Keep final AAP release primary-only when Windows has added its declared second

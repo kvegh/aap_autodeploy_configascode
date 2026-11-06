@@ -1,5 +1,15 @@
 # Design decisions history
 
+## Preserve secondary isolation during final AAP release — 2026-11-06
+
+Implementation `437fe9f` keeps source policy comparison aligned with the existing
+primary-only AAP release. A live base refresh exposed that the shared interface
+enumerator also selected a Windows-owned second interface, contradicting the
+intended transition. The fix selects only the primary identity for this AAP
+operation; secondary ownership and native hardware checks remain unchanged.
+The focused regression proves publication and an idempotent repeat without
+granting the secondary interface egress. Live base retry remains separate proof.
+
 ## Reuse selected instance access for private AIOps MCP — 2026-11-05
 
 Implementation `8237ce6` adds optional private MCP endpoint/public-CA metadata to
