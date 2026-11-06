@@ -26,9 +26,9 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | blocked | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.2 | Complete Windows lab teardown using the existing jobs | in_progress | P1 | task | bead-wd-72f.31.4 |
-| bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | in_progress | P1 | bug | bead-wd-72f.31.4 |
+| bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | open | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
-| bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | in_progress | P1 | task | bead-wd-72f |
+| bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |

@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Reflect waiting tasks and an open stability issue accurately — 2026-11-06
+
+The existing diagram task `bead-wd-72f.35` is blocked on its already-pending
+client error/viewer question, with no browser-diagnosis worker running. The
+known stability issue `bead-wd-72f.31.4.3` is open: bounded research/observer work
+finished, but its cause and correction criterion remain unmet. Neither a new
+active investigation nor a completed fix is claimed. Windows and the deployment
+integration keep their actual input blockers.
+
+Hactar checkpoint `89c2cf1` retains all 147 complete encrypted task records and
+these exact two status corrections. Exporter/mirror checks and preservation
+checks passed. Existing README instructions remain accurate. This single
+metadata/version checkpoint changes no runtime source, evidence collection,
+base configuration, credentials, DNS or umbrella reference.
+
 ## Reflect completed Windows OS work and the remaining package-access blocker — 2026-11-06
 
 The existing Windows acceptance record now has a real public status change from

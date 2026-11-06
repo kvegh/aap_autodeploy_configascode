@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.47.11
+
+Document accurate handoff states: the diagram task is blocked on its existing
+client error/viewer question, and the known stability issue is open after its
+bounded research/observer work. Windows and deployment integration keep their
+actual user-input blockers. This changes task metadata only.
+
 ## 0.47.10
 
 Document the real Windows acceptance status change to blocked after both selected
