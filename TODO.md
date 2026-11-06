@@ -11,13 +11,13 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-87 tasks: 23 outstanding; 64 closed.
+88 tasks: 24 outstanding; 64 closed.
 
 ## Outstanding tasks
 
 | Task | Title | Status | Priority | Type | Parent / dependency IDs |
 |---|---|---|---|---|---|
-| bead-wd-1rl.40 | Configure and verify AAP v16 deployment onto TRA v16 | in_progress | P1 | task | bead-wd-1rl |
+| bead-wd-1rl.40 | Configure and verify AAP v16 deployment onto TRA v16 | blocked | P1 | task | bead-wd-1rl |
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
@@ -39,6 +39,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | in_progress | P2 | task | bead-wd-mcr |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
+| bead-wd-9ezo | Add External CloudCLI as an independent CaC project | deferred | P3 | task | — |
 | bead-wd-x9a | Consider automating AAP updates | open | P3 | task | — |
 
 ## Tasks already done/implemented/decided against

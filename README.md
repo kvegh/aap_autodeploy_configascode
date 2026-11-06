@@ -110,6 +110,10 @@ conversation association and original parent so the existing export includes
 them. Moving a task preserves its actual state; an unanswered credential-source
 question remains blocked until the user supplies or identifies the answer.
 
+External CloudCLI remains future work in the existing deferred task
+`bead-wd-9ezo`, for an independent CaC project. Its full handoff stays in the
+encrypted task snapshot; the public overview retains only task metadata.
+
 ## Current implementation
 
 Windows lifecycle checks follow each libvirt network's DNS setting: exact DHCP

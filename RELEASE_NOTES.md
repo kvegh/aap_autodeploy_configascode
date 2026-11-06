@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.47.8
+
+Document the existing deferred External CloudCLI independent CaC task in the
+public overview and encrypted recovery snapshot, alongside the current blocked
+integration inputs. Preserve its original record and ownership; this is future
+backlog documentation only.
+
 ## 0.47.7
 
 Document overview implementation `8b44905`, the verified isolated agent-recovery
