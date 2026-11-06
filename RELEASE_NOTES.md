@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.46.8
+
+Record flowchart implementation `15bd6ce`, its visible-history scope and the
+structural/privacy checks. This documentation checkpoint changes no automation.
+
 ## 0.46.7
 
 Add the frozen 24-hour Project Decision/Action Path Flowchart pilot, with 28

@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Explain delivery delay through a bounded visible-history pilot — 2026-11-06
+
+Implementation `15bd6ce` adds the user-approved Markdown flowchart for one frozen
+24-hour window. Its 28 short Mermaid blocks map to native collapsible details,
+keeping the overview readable while explaining decisions, actual failures,
+fixes, outcomes and timing. Main visible chat and existing decision histories
+drive the narrative; underlying execution evidence only corroborates facts. Raw
+action lists, private reasoning and environment identifiers stay out of Git.
+The record separates real installation time, observed rework, pending execution
+and the acknowledged overnight continuation failure; unknown effort and parallel
+overlap remain explicit. No live AAP query or behavior change was needed.
+Structural/privacy checks passed; a Mermaid renderer was unavailable, so rendered
+layout was not claimed verified.
+
 ## Carry only the private AAP issuer in runtime settings — 2026-11-06
 
 Implementation `bde1120` reads the installer's `tls/ca.cert` by default. A real
