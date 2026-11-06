@@ -86,6 +86,10 @@ The additional [interactive HTML version](docs/project-decision-action-path-flow
 lets you click a diagram node to toggle its matching explanation. GitHub displays
 HTML source: download the file and open it locally in a modern browser. No server
 is needed; diagram rendering needs internet access to the pinned Mermaid runtime.
+The HTML status line distinguishes runtime import, diagram rendering and node
+controls. If it stays at “script has not started,” download/open the file locally
+rather than rely on a preview that may block JavaScript. A control error keeps
+an already rendered diagram visible.
 
 Queued cleanup `bead-wd-72f.34` reviews standalone helpers, custom plugins/modules
 and scripts embedded in playbooks across the related demos. Certified collections

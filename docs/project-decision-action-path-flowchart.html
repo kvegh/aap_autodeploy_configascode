@@ -69,7 +69,7 @@ interval; they do not measure uninterrupted work.</p>
 <h2>Overview</h2>
 <p>Solid arrows show the main dependency or sequence. Dotted arrows show work that
 could proceed alongside another lane. Numbers match the expandable sections.</p>
-<p id="diagram-status" role="status">Loading diagram. All numbered explanations are also available below.</p>
+<p id="diagram-status" role="status">The interactive script has not started. If this message remains, download this file and open it locally; this viewer may block scripts. All explanations are available below.</p>
 <pre id="diagram" class="mermaid" aria-label="Decision and action flowchart">flowchart TB
   subgraph A[Morning: Windows connectivity and Assistant Team installation]
     N01[&quot;01 Windows and Assistant Team tests unfinished&quot;] --&gt; N02[&quot;02 Inspect images and install tools&quot;]
@@ -639,16 +639,43 @@ function bindNodeDetails() {
   if (count !== allowedIds.size) throw new Error('The diagram did not expose all 28 expected nodes.');
 }
 
-try {
-  const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs');
-  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default', flowchart: { htmlLabels: false } });
-  await mermaid.run({ nodes: [diagram] });
-  bindNodeDetails();
-  status.textContent = 'Diagram ready. Click a numbered node to toggle its explanation, or use Enter/Space.';
-} catch {
-  status.textContent = 'The interactive diagram could not load. Internet access to the Mermaid runtime and a modern browser are required; all 28 explanations remain available below.';
-  diagram.hidden = true;
+function showFailure(stage, error) {
+  const reason = String(error?.message || error).replace(/\s+/g, ' ').slice(0, 240);
+  const guidance = stage === 'Mermaid import'
+    ? ' Check CDN access and whether this viewer blocks JavaScript modules, possibly through its Content Security Policy. Download and open the file locally.'
+    : ' The numbered explanation headings below remain usable.';
+  status.textContent = `${stage} failed: ${reason}.${guidance}`;
+  // A control-binding failure must not hide an otherwise valid rendered chart.
+  diagram.hidden = !diagram.querySelector('svg');
 }
+
+async function startDiagram() {
+  let mermaid;
+  status.textContent = 'Loading the pinned Mermaid runtime from the CDN…';
+  try {
+    ({ default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs'));
+  } catch (error) {
+    showFailure('Mermaid import', error);
+    return;
+  }
+  status.textContent = 'Mermaid loaded. Rendering the diagram…';
+  try {
+    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default', flowchart: { htmlLabels: false } });
+    await mermaid.run({ nodes: [diagram] });
+  } catch (error) {
+    showFailure('Diagram rendering', error);
+    return;
+  }
+  try {
+    bindNodeDetails();
+  } catch (error) {
+    showFailure('Diagram node controls', error);
+    return;
+  }
+  status.textContent = 'Diagram ready. Click a numbered node to toggle its explanation, or use Enter/Space.';
+}
+
+await startDiagram();
 </script>
 </body>
 </html>

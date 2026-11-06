@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.47.2
+
+Distinguish Mermaid import, diagram rendering and node-control failures in the
+HTML companion instead of reporting every exception as a network problem.
+Keep a rendered SVG visible if controls fail, and explain a script-blocking
+preview when JavaScript has not started. The actual pinned grammar parses all
+28 nodes; the reported client-side missing diagram is still under diagnosis.
+
 ## 0.47.1
 
 Record interactive companion implementation `c3f4b74`, context-label corrections,
