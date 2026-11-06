@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Carry only the private AAP issuer in runtime settings — 2026-11-06
+
+Implementation `bde1120` reads the installer's `tls/ca.cert` by default. A real
+CaC request failed with HTTP 413 because copying the extracted system-root
+bundle expanded encrypted runtime data past the proxy request limit. The actual
+installed issuer is already present in that bundle and independently verifies
+both private MCP and Controller HTTPS identities. No proxy limit, token or
+global trust change is needed. Public provider calls retain their existing
+system/vendor roots and additive application trust. The native publication/reuse
+test passed; selected metadata correction and live import retry are separate.
+
 ## Preserve secondary isolation during final AAP release — 2026-11-06
 
 Implementation `437fe9f` keeps source policy comparison aligned with the existing

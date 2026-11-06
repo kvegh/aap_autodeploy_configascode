@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.46.6
+
+Document installed-issuer publication implementation `bde1120` and the observed
+oversized encrypted-runtime request failure.
+
 ## 0.46.5
 
 Publish the installed AAP issuing CA instead of the extracted full system-root
