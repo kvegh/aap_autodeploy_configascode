@@ -804,11 +804,16 @@ application execution and end-to-end remediation remain separate checks.
 
 Subsequent normal deployment and live verification established the selected
 website's restore/rearm loop and the testserver's Linux/ICMP monitoring. Copied
-Apache checks are disabled in place on the minimal guest. General AI repair is
-still disabled: its Claude runtime, provider authentication, workspace
-instructions, private target AAP MCP and reviewed provider egress remain in
-`bead-wd-72f.33`. Configuration refresh preserves the running website activation
-and existing runtime ciphertext rather than enabling the general activation.
+Apache checks are disabled in place on the minimal guest. The selected isolated
+demo now also passed its controlled agent-service outage: a real monitoring
+event reached EDA, one bounded agent invocation launched one successful saved
+repair, and native service/fresh original-trigger recovery checks passed.
+Acceptance task `bead-wd-72f.33` is closed. Its scoped agent activation remains
+enabled alongside the website activation; configuration refresh preserves that
+runtime and its existing ciphertext. Fresh definitions still require their
+reviewed activation step. Package removal, production migration and complete
+successor deployment are outside that service-outage proof. Full results remain
+in the existing encrypted Hactar recovery checkpoint.
 
 ### Disconnected Windows configuration deployment
 

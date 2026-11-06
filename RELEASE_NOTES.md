@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.47.6
+
+Document the closed controlled AIOps acceptance in the public task overview and
+current README. The real selected service-outage chain passed one bounded agent
+invocation, one saved repair and native recovery checks. The full encrypted
+Hactar checkpoint preserves the actual results and task history. No runtime,
+DNS, credential, base configuration or production-project pin changes.
+
 ## 0.47.5
 
 Document task-overview implementation `da64bd1` and its verified selection,
