@@ -2994,3 +2994,24 @@ embedded Python and other scripts against certified collections/vendor roles
 first. Remaining custom code needs a concrete gap; cleanup must reduce opaque
 helper chains and preserve readable workflows, clear errors and essential safety.
 The task is queued rather than an unreviewed rewrite during functional testing.
+
+## 2026-11-07 — Add Command Center to the reviewed CaC projects
+
+Implementation: `d107d3fbd1be2ecd29c14bdb4b442f1ecba84757` (0.48.0).
+
+The owner requested the same deployment arrangement as the existing projects.
+Command Center now has a reviewed project ID, catalog entry and derived
+deployment name in the common importer. Its dedicated repository reader and
+Vault inputs are an optional complete pair, preserving the five required pairs
+and optional RHEL pair. Bootstrap reruns preserve existing credentials.
+
+CaC import installs reviewed platform definitions. The separate application job
+still requires the selected workstation's account, native authentication,
+tracker and protected application settings. Importing definitions does not
+establish successful application deployment or public browser access.
+
+All 41 focused importer, selector and bootstrap tests passed, including seven
+protected captures in both native rendering modes. Three playbook syntax checks
+and production lint passed. The public overview and existing encrypted recovery
+export retain current task outcomes and all 150 baseline records. Live Command
+Center import and application acceptance remain separate work.

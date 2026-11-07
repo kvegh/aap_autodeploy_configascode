@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.48.1
+
+Document Command Center integration implementation `d107d3f`, its existing
+importer/bootstrap design, focused validation and separate live-deployment
+acceptance. Runtime behavior is unchanged from 0.48.0.
+
 ## 0.48.0
 
 Add Command Center NG to the reviewed project IDs and selected-use-case catalog,
