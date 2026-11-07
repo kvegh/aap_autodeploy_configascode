@@ -28,6 +28,10 @@ aap_use_case_catalog:
     playbook: deploy-cac-project.yml
     project_id: RHEL-sniperpatching
     configuration: rhel_sniperpatching
+  command-center-ng:
+    playbook: deploy-cac-project.yml
+    project_id: command-center-ng
+    configuration: command_center_ng
   config_exceptions_ng:
     unavailable: No reviewed encrypted CaC capture and standalone importer is registered.
   automation_portal_setup:

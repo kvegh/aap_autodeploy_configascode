@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.48.0
+
+Add Command Center NG to the reviewed project IDs and selected-use-case catalog,
+using the existing common CaC importer. Its optional dedicated repository reader
+and Vault pair follows the existing bootstrap rules and can coexist with RHEL
+and the five required pairs. Imported definitions and application deployment
+remain separate; native sign-in and target prerequisites still apply.
+
+Validation: 41 focused importer, selector and bootstrap tests passed, including
+all seven protected captures under both native rendering modes. Three playbook
+syntax checks and production lint passed. Refresh the public task overview and
+existing encrypted recovery export with current Beads outcomes. Live Command
+Center CaC import and application acceptance remain separate.
+
 ## 0.47.12
 
 Document the canonical generic Command Center deployment title in the public

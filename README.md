@@ -42,7 +42,7 @@ than a second checklist here.
 - Base configures AAP and its shared content sources. Each selected use case owns
   its application jobs, runtime settings and disposable infrastructure. AIOps
   service settings belong in its private companion, not the AAP-only registry.
-- All six CaC import templates use one playbook, fixed project IDs and separate
+- All seven reviewed CaC import templates use one playbook, fixed project IDs and separate
   repository reader/Vault credentials. API calls require verified HTTPS and the
   selected instance's token. There is no SSH or installer-password API fallback.
   Optional private MCP metadata follows that same selected record into existing
@@ -125,7 +125,7 @@ workshop controller, including verified already-current full updates. Its CaC
 import and read-only runtime passed on the receiving AAP; client SSH from that
 AAP remains unverified. See the RHEL project for the repeat/reset instructions.
 
-All six project import Job Templates use [one API-only configuration
+All seven reviewed project import Job Templates use [one API-only configuration
 playbook](docs/cac-project-import.md), `deploy-cac-project.yml`, with fixed project
 IDs and separate repository Git/Vault credentials. Choose the inventory instance
 at launch; the saved shared token store supplies its API token automatically. The playbook derives the
@@ -517,8 +517,8 @@ checkout. A token stored only inside the repository it unlocks cannot bootstrap
 its own download. Different tokens can use the same custom credential type;
 changing one use case's token must not replace another use case's credential.
 
-The encrypted base supports five required repository credential pairs and an
-optional RHEL pair for a trusted replacement AAP. Each pair has a repository
+The encrypted base supports five required repository credential pairs and
+optional RHEL and Command Center pairs for a trusted replacement AAP. Each pair has a repository
 read-token credential and a CaC Vault credential. The seed needs the initial base pair independently; a
 password or token stored only inside the repository it unlocks cannot bootstrap
 that download. Keep the initial recovery copy separately.
@@ -531,6 +531,7 @@ that download. Keep the initial recovery copy separately.
 | `automation-orchestrator-secrets` | `automation-orchestrator-secrets CaC repo read token` | `automation-orchestrator-secrets CaC vault cred` |
 | `aiops-selfhealing-demo-secrets` | `aiops-selfhealing-demo-secrets CaC repo read token` | `aiops-selfhealing-demo-secrets CaC vault cred` |
 | `RHEL-sniperpatching-secrets` (optional) | `RHEL-sniperpatching-secrets CaC repo read token` | `RHEL-sniperpatching-secrets CaC vault cred` |
+| `command-center-ng-secrets` (optional) | `command-center-ng-secrets CaC repo read token` | `command-center-ng-secrets CaC vault cred` |
 
 Repository tokens are read-only by default, with two approved exceptions:
 
@@ -562,6 +563,12 @@ Git and Vault entries or omit both. Selecting RHEL also requires
 configuration. Existing five-project bootstrap and selection remain valid
 without the RHEL credential pair or configuration-repository entry. Existing hidden
 secrets are preserved on reruns; rotation and rekeying are separate operations.
+Command Center follows the same optional-pair rule with key `command_center_ng`
+in both bootstrap mappings and `configuration_repositories.command_center_ng`
+for selection. Its importer uses `aap_cac_project_id: command-center-ng`, the
+same common playbook and no wrapper. Importing its CaC does not install the
+application or sign an account into Codex; those remain separate prerequisites
+and an explicit application job.
 Both mappings may be omitted when replacement-access bootstrap is not wanted.
 The production and existing fresh-instance credential names, grants and bindings
 were verified after migration. Configuration templates keep their own repository

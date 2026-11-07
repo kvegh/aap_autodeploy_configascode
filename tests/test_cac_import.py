@@ -207,7 +207,7 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
 
     @unittest.skipUnless(Path('/tmp/aap-cac-project-migration/candidate-plaintext').is_dir(),
                          'requires protected migration candidates; no production API is used')
-    def test_all_five_real_captures_render_and_validate_in_both_native_modes(self):
+    def test_all_reviewed_real_captures_render_and_validate_in_both_native_modes(self):
         source = yaml.safe_load((ROOT / 'deploy-cac-project.yml').read_text())[0]
         tasks = source['pre_tasks'][-1]['block']
         first = next(i for i, task in enumerate(tasks) if task['name'].startswith('Initialize the declared'))
@@ -244,8 +244,8 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
                     fixture.write_text(yaml.dump(play, Dumper=vault_yaml.VaultDumper, sort_keys=False))
                     environment['ANSIBLE_JINJA2_NATIVE'] = native
                     run = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,',
-                                          '--vault-password-file', os.environ.get('AAP_CAC_TEST_VAULT_PASSWORD_FILE',
-                                                                                str(ROOT.parents[2] / 'vpf')), str(fixture)],
+                                          '--vault-password-file', os.environ.get('AAP_CAC_TEST_VAULT_PASSWORD_FILE')
+                                          or str(ROOT.parents[2] / 'vpf'), str(fixture)],
                                          cwd=ROOT, env=environment, text=True, capture_output=True, timeout=90)
                     self.assertEqual(run.returncode, 0, '%s/native=%s\n%s' % (project, native, run.stdout + run.stderr))
 

@@ -33,7 +33,7 @@ class UseCaseSetupTests(unittest.TestCase):
             },
             "configuration_repositories": {
                 key: "https://git.example.invalid/config/" + key + ".git"
-                for key in ("base", "aiops", "windows_disconnected", "orchestrator", "assistant_team", "rhel_sniperpatching")
+                for key in ("base", "aiops", "windows_disconnected", "orchestrator", "assistant_team", "rhel_sniperpatching", "command_center_ng")
             },
         }
 
@@ -67,6 +67,7 @@ class UseCaseSetupTests(unittest.TestCase):
             "assistant-team": "Deploy Assistant Team CaC",
             "aap_autodeploy_configascode": "Deploy AAP Autodeploy Configascode CaC",
             "RHEL-sniperpatching": "Deploy RHEL Sniperpatching CaC",
+            "command-center-ng": "Deploy Command Center NG CaC",
         }
         for project_id, name in expected.items():
             with self.subTest(project_id=project_id):
@@ -91,11 +92,22 @@ class UseCaseSetupTests(unittest.TestCase):
 
     def test_existing_five_selections_need_no_rhel_configuration_repository(self):
         del self.protected["configuration_repositories"]["rhel_sniperpatching"]
+        del self.protected["configuration_repositories"]["command_center_ng"]
         selected = [key for key, entry in self.catalog.items()
-                    if "project_id" in entry and key != "RHEL-sniperpatching"]
+                    if "project_id" in entry and key not in ("RHEL-sniperpatching", "command-center-ng")]
         result = self.plan(selected)
         self.assertEqual(len(result["importers"]), 5)
         self.assertNotIn("RHEL-sniperpatching", [item["key"] for item in result["importers"]])
+
+    def test_command_center_selection_uses_the_same_importer_and_own_repository(self):
+        result = self.plan(["command-center-ng"])
+        self.assertEqual(result["importers"], [{
+            "key": "command-center-ng",
+            "name": "Deploy Command Center NG CaC",
+            "playbook": "deploy-cac-project.yml",
+            "project_id": "command-center-ng",
+            "repository": self.protected["configuration_repositories"]["command_center_ng"],
+        }])
 
     def test_generic_children_get_only_saved_repository_credentials_and_selected_destination(self):
         original = [

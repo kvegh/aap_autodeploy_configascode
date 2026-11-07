@@ -18,7 +18,7 @@ def project_display_name(project_id):
     require(isinstance(display_id, str)
             and bool(re.fullmatch(r"[a-z0-9]+(?:[-_][a-z0-9]+)*", display_id)),
             "Use a lowercase project ID or the exact reviewed RHEL-sniperpatching ID.")
-    acronyms = {"aiops": "AIOps", "aap": "AAP", "rhel": "RHEL"}
+    acronyms = {"aiops": "AIOps", "aap": "AAP", "rhel": "RHEL", "ng": "NG"}
     return "Deploy " + " ".join(acronyms.get(word, word.capitalize())
                                 for word in re.split(r"[-_]", display_id)) + " CaC"
 

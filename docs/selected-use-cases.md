@@ -3,7 +3,7 @@
 Base deployment ends after stages01–04. The separate
 `deploy-selected-use-cases.yml` selector prepares only selected use-case
 requirements, then launches their existing configuration Job Templates. All
-six project Job Templates use [the common API-only driver](cac-project-import.md).
+seven reviewed project Job Templates use [the common API-only driver](cac-project-import.md).
 The selector and standalone importer support existing, remote and self-target
 AAP instances. The selector retains the registered-route and infrastructure
 checks required by its separate prerequisite preparation.
@@ -23,11 +23,17 @@ extraction matches use those same names:
 | `automation-orchestrator` | `automation-orchestrator` | `deploy-cac-project.yml` |
 | `disconnected-windows-patching` | `disconnected-windows-patching` | `deploy-cac-project.yml` |
 | `RHEL-sniperpatching` | `RHEL-sniperpatching` | `deploy-cac-project.yml` |
+| `command-center-ng` | `command-center-ng` | `deploy-cac-project.yml` |
 
 RHEL keeps the exact project ID `RHEL-sniperpatching` and uses
 `configuration_repositories.rhel_sniperpatching` in protected configuration. Its
 dedicated Git/Vault bootstrap entries are optional together, so the existing
 five-project setup needs no RHEL inputs.
+
+Command Center uses optional bootstrap key `command_center_ng`, its dedicated
+private repository and the same importer. Its application job is a separate
+explicit action after existing target account, native authentication and tracker
+prerequisites are ready; selecting CaC does not run that job.
 
 Other declared modules have explicit unavailable reasons; empty, duplicate and
 unknown selections fail before setup. Assistant Team has its standalone importer

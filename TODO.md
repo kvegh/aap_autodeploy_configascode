@@ -11,20 +11,22 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-88 tasks: 24 outstanding; 64 closed.
+91 tasks: 26 outstanding; 65 closed.
 
 ## Outstanding tasks
 
 | Task | Title | Status | Priority | Type | Parent / dependency IDs |
 |---|---|---|---|---|---|
-| bead-wd-1rl.40 | Deploy Command Center from AAP to the selected workstation | blocked | P1 | task | bead-wd-1rl |
+| bead-wd-1rl.40 | Deploy Command Center from AAP to the selected workstation | in_progress | P1 | task | bead-wd-1rl |
+| bead-wd-1rl.40.2 | Configure HTTPS reverse proxy for the existing Command Center instance | blocked | P1 | task | bead-wd-1rl.40 |
+| bead-wd-1rl.40.3 | Integrate Command Center through the shared AAP CaC importer | in_progress | P1 | task | bead-wd-1rl.40 |
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
-| bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | blocked | P1 | task | bead-wd-72f.31 |
+| bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.2 | Complete Windows lab teardown using the existing jobs | in_progress | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | open | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
@@ -46,6 +48,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 
 | Task | Title | Status | Priority | Type | Parent / dependency IDs |
 |---|---|---|---|---|---|
+| bead-wd-1rl.40.1 | Install CCNG prerequisites on the selected test workstation | closed | P1 | task | bead-wd-1rl.40 |
 | bead-wd-2i1 | Separate AIOps CaC into its private companion repository | closed | P1 | task | — |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |

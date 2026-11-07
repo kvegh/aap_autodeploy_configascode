@@ -322,6 +322,46 @@ class BootstrapCredentialTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, output)
         self.assertEqual(self.state["writes"], [])
 
+    def add_command_center_pair(self):
+        self.variables["cac_bootstrap_git_credentials"]["command_center_ng"] = {
+            "aap_credential_name": "command-center-ng-secrets CaC repo read token",
+            "token": "synthetic-command-center-git-secret",
+        }
+        self.variables["cac_bootstrap_vault_credentials"]["command_center_ng"] = {
+            "name": "command-center-ng-secrets CaC vault cred",
+            "vault_id": "cac",
+            "vault_password": "synthetic-command-center-vault-secret",
+        }
+
+    def test_command_center_and_rhel_pairs_coexist_and_survive_rerun(self):
+        self.add_rhel_pair()
+        self.add_command_center_pair()
+        result, output = self.run_tasks()
+        self.assertEqual(result.returncode, 0, output)
+        created = {body["name"]: body for kind, body in self.state["writes"]
+                   if kind == "credentials"}
+        self.assertEqual(len(created), 14)
+        self.assertEqual(created["command-center-ng-secrets CaC repo read token"]["inputs"],
+                         {"token": "synthetic-command-center-git-secret"})
+        self.assertEqual(created["command-center-ng-secrets CaC vault cred"]["inputs"],
+                         {"vault_id": "cac", "vault_password": "synthetic-command-center-vault-secret"})
+        self.assertIn("RHEL-sniperpatching-secrets CaC repo read token", created)
+        self.state["writes"].clear()
+        result, output = self.run_tasks()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertEqual(self.state["writes"], [])
+        self.assertFalse(self.state["unexpected_patch"])
+
+    def test_command_center_half_pair_is_rejected_before_api_mutation(self):
+        self.add_command_center_pair()
+        for missing in ("cac_bootstrap_git_credentials", "cac_bootstrap_vault_credentials"):
+            variables = copy.deepcopy(self.variables)
+            del variables[missing]["command_center_ng"]
+            with self.subTest(missing=missing):
+                result, output = self.run_tasks(variables)
+                self.assertNotEqual(result.returncode, 0, output)
+                self.assertEqual(self.state["writes"], [])
+
     def test_incomplete_bootstrap_is_rejected_before_api_mutation(self):
         del self.variables["cac_bootstrap_git_credentials"]["orchestrator"]
         result, output = self.run_tasks()

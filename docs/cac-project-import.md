@@ -1,9 +1,9 @@
 # Import a project into AAP
 
-All six project Job Templates run `deploy-cac-project.yml`. Each template fixes
+All seven reviewed project Job Templates run `deploy-cac-project.yml`. Each template fixes
 its `aap_cac_project_id` and retains its own private repository read token and
 Vault credential. Operators choose the destination, not the repository or file.
-The older five wrapper playbooks have been removed; all six templates select
+The older five wrapper playbooks have been removed; all templates select
 the common playbook directly.
 
 | Fixed project ID | Deployment Job Template | Derived private repository | Derived encrypted capture |
@@ -14,11 +14,12 @@ the common playbook directly.
 | `assistant-team` | Deploy Assistant Team CaC | `assistant-team-secrets` | `vaults/cac/assistant-team-cac-vault.yml` |
 | `aap_autodeploy_configascode` | Deploy AAP Autodeploy Configascode CaC | `aap_autodeploy_configascode-secrets` | `vaults/cac/aap_autodeploy_configascode-cac-vault.yml` |
 | `RHEL-sniperpatching` | Deploy RHEL Sniperpatching CaC | `RHEL-sniperpatching-secrets` | `vaults/cac/RHEL-sniperpatching-cac-vault.yml` |
+| `command-center-ng` | Deploy Command Center NG CaC | `command-center-ng-secrets` | `vaults/cac/command-center-ng-cac-vault.yml` |
 
 Deployment names begin with **Deploy** and end with **CaC** to distinguish them
 from application deployment jobs. Split the fixed project ID at hyphens and underscores, capitalize
 each word and retain the original order. `aiops` becomes **AIOps** and `aap`
-becomes **AAP**. The catalog uses this same rule rather than maintaining separate
+becomes **AAP**, and `ng` becomes **NG**. The catalog uses this same rule rather than maintaining separate
 name overrides. Existing template IDs, credentials and workflow links are retained;
 application templates and SCM Projects keep their existing names.
 
@@ -36,6 +37,17 @@ Satellite credential definitions. The Machine credential is an explicit existing
 target binding. Readiness and dependency checks must pass before import; importing
 definitions alone does not establish SSH access, package changes or a completed
 patch cycle.
+
+Command Center uses this same metadata and resource format. Its private capture
+defines its public SCM Project, selected target inventory/group and application
+Job Template with an existing Machine credential and its own CaC Vault.
+Application settings are delivered as whole-file ciphertext and decrypted in
+the job's execution environment through native Ansible tasks. The application
+job still requires the selected account's existing SSH Git access, Codex login,
+running native daemon, Beads tracker and initial application password when no
+auth file exists. CaC import creates definitions without starting the app or
+changing those prerequisites. Live import and deployment acceptance remain
+separate from offline capture validation.
 
 ## Operator procedure
 
