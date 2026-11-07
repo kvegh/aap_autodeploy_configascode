@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Document the approved application deployment choices — 2026-11-07
+
+Documentation checkpoint `090d761` records the owner's explicit approval of
+encrypted runtime settings, expected SSH server-key preparation, credential-free
+HTTPS public-source download and matched tested application revisions. The
+README distinguishes configuration import from installation and running-service
+acceptance so restoring the project does not repeat the resolved decisions or
+mistake an imported template for a working application.
+
+The public overview reflects completed preparation and ongoing runtime work.
+Hactar checkpoint `1f76421` retains all 150 existing full task records and their
+current user answers in the established encrypted recovery export. Export/mirror
+checks, preservation of every prior record and the original user handover,
+four existing version-tool tests and diff checks passed. No runtime playbook,
+credential, inventory, application restart or new recovery mechanism was added.
+
 ## Clarify the canonical Command Center task title — 2026-11-06
 
 Existing task `bead-wd-1rl.40` now reads "Deploy Command Center from AAP to the

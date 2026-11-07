@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.48.3
+
+Document checkpoint `090d761` and the paired encrypted task recovery checkpoint,
+including approved deployment decisions and proportionate verification. Runtime
+behavior remains unchanged from 0.48.0; application and teardown acceptance are
+still tracked separately.
+
 ## 0.48.2
 
 Document the approved Command Center runtime settings, SSH trust, public-source
