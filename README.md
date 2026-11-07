@@ -569,6 +569,12 @@ for selection. Its importer uses `aap_cac_project_id: command-center-ng`, the
 same common playbook and no wrapper. Importing its CaC does not install the
 application or sign an account into Codex; those remain separate prerequisites
 and an explicit application job.
+The approved application deployment reads protected runtime settings from the
+private companion, prepares the expected SSH server key before connecting, and
+downloads the public application source over verified HTTPS without a Git token.
+Pin the AAP project and guest checkout to the same tested application commit.
+Choose a published revision that supports the intended configuration format;
+importing CaC does not upgrade a running application or restart active agents.
 Both mappings may be omitted when replacement-access bootstrap is not wanted.
 The production and existing fresh-instance credential names, grants and bindings
 were verified after migration. Configuration templates keep their own repository

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.48.2
+
+Document the approved Command Center runtime settings, SSH trust, public-source
+download and matched revision choices. Refresh the task overview and encrypted
+recovery checkpoint after processing the actual user answers. Preparation,
+functional testing and completed teardown remain separate outcomes. No runtime
+playbook, credential, inventory or service behavior changes.
+
 ## 0.48.1
 
 Document Command Center integration implementation `d107d3f`, its existing
