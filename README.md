@@ -42,20 +42,25 @@ The source AAP has completed an AAP-only successor deployment through these four
 stages, with trusted HTTPS/API authentication, a valid license and ready
 Controller. Original guests and source images were preserved. Stage 01 needed
 the published SSH correction and a native start-at-task continuation; fresh
-unattended provisioning and the successor's additional use-case runtime tests
-remain unverified.
+unattended provisioning and complete successor acceptance remain unverified.
 
 Remote and self-targeted AutoDeploy CaC imports have also passed. The selected
 successor now has its AIOps definitions, with new EDA activations disabled;
 application services and fresh runtime tests remain separate. AIOps retains the
 approved saved-image Zabbix authentication baseline, without adding a token
 producer or encryption mechanism.
-Windows and Assistant configuration setup also passed through their existing
-prerequisite and import jobs. Windows' full runtime still needs sufficient RAM;
-Assistant's selected-instance test settings and existing minimal Linux
-provisioning template are now imported, preserving the previous instance's data.
+Windows, Assistant, Automation Orchestrator and RHEL configuration setup passed
+through their existing prerequisite and import jobs. RHEL's independent EE-only
+prerequisite path was also verified live. These imports do not test OpenShift or
+external RHEL workloads. Windows' full runtime still needs sufficient RAM.
+Assistant's complete model-free software test and normal owned retirement passed,
+preserving all five original guests and golden images. This verifies deployed
+CLI/project isolation without provider-authentication transfer or model inference.
+Its existing minimal Linux provisioning template is imported for later use.
+The public caller now pins the corrected Linux registration helper; actual
+testserver-to-AIOps consumption remains a separate runtime check.
 The successor website also passes normal DNS and trusted HTTPS checks, with
-monitoring and auto-arm off. Fresh VM tests remain separate acceptance steps.
+monitoring and auto-arm off. Other fresh VM tests remain separate acceptance steps.
 
 ## Keep the demo boundaries clear
 

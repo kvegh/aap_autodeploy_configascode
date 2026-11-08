@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.48.18
+
+Document the successor's successful full model-free Assistant software test and
+normal preview/apply retirement. Original guests and golden images are preserved;
+the case VM/disk and owned static records are removed. A cached dynamic DHCP
+lease expires naturally. Other use-case runtime and full recovery remain open.
+Assistant source 1.11.11 now pins the corrected Linux publisher; new-guest
+consumer verification remains pending.
+Normal Automation Orchestrator and independent RHEL prerequisite/import chains
+also passed, preserving existing configuration. External workloads were not run.
+
 ## 0.48.17
 
 Document the operator's CCNG password decision: require a chosen protected

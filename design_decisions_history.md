@@ -1,5 +1,34 @@
 # Design decisions history
 
+## Verify and retire the disposable Assistant environment — 2026-11-08
+
+The normal successor software test passed on pinned Assistant source `73a74ac`
+(1.11.8) using private preparation `0157adc` and pair `1997664`. The complete run
+took about 46 minutes and exercised actual deployed CLI, environment and
+project-isolation checks, without authentication restoration or model inference.
+Guest identity and canonical publication matched the resulting resource.
+
+The existing retirement preview and apply both passed. Independent checks found
+the case domain, disk, static DHCP/DNS records, owned policy and inventory rows
+removed, with all five original guests and golden images preserved. One dynamic
+DHCP lease remains cached until normal expiry; no shared-network restart was
+used to clear it. This completes the disposable software test and cleanup,
+while full successor services and independent host recovery remain open.
+
+Assistant implementation `1ee9e4b`, documented at `9d76402` (1.11.11), then
+updates only the existing public helper revision from its earlier value to
+AutoDeploy fix `785e613`. All 23 focused caller/recovery/retirement/version
+checks, three syntax checks and scoped lint passed. Private configuration and
+the pinned software-test baseline stay unchanged. Actual new-guest publication
+and AIOps consumption still need their own runtime verification.
+
+Normal Automation Orchestrator and RHEL configuration setup then passed on
+tested source `ead5a05` (0.48.17), preserving prior objects, token-store state
+and EDA activation state. The RHEL-only prerequisite run confirmed fix `7d8a59b`
+without selecting another case. Their reviewed projects, templates, inventories,
+execution environments and credential definitions are installed. These API
+imports do not establish OpenShift deployment or external RHEL patching.
+
 ## Require a chosen CCNG password only for fresh setup — 2026-11-08
 
 The owner withdrew the shared default-password and first-login access-choice
