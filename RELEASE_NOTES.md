@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.48.22
+
+Document the owner's revised test plan: keep the predecessor AAP off, retire
+only that AAP after Windows cleanup verifies its original baseline, and run
+remaining tests from the successor. Preserve the other predecessor guests.
+The existing decommission job covers the whole environment; an AAP-only path
+must be reviewed before use. This change adds no partial-retirement mode or
+runtime operation.
+
 ## 0.48.21
 
 Document lock correction `e0a96b1`, 37 focused test results and the distinction

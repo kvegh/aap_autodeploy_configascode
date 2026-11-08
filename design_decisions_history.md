@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Retire only the predecessor AAP and continue on the successor — 2026-11-08
+
+The owner withdrew the earlier source-AAP restart and directed retiring that
+AAP while continuing tests on the successor. Other predecessor guests and
+source images remain protected. Retirement must wait until normal Windows
+cleanup verifies its immutable original core baseline, which still includes
+the shut-down AAP's domain and disk. Earlier restoration plans are historical
+and superseded, not permission to restart it.
+
+Source review found that the existing decommission entry removes the entire
+same-version environment. It must not be used for this narrower instruction.
+The existing exact-retirement capability is being assessed before any resource
+removal; this documentation introduces no new selector, framework or helper.
+The pending CCNG rollout also needs successor AAP bindings rather than relying
+on the retired AAP; its first-opening feature remains separate application work.
+
 ## Bound native release lock contention and keep diagnostics safe — 2026-11-08
 
 Fix `e0a96b1c13c756faf7cef3ca7ca3fe2dcc3b1e2e` gives the existing release

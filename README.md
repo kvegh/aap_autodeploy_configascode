@@ -56,8 +56,12 @@ external RHEL workloads. The approved Windows test window stopped only the
 source AAP; the other four core guests remain running. All five Windows guests
 were created, and AD functional checks plus the earlier Windows Server version's
 April updates passed through staged continuation. The newer server version,
-application checks, final cleanup and source AAP restoration remain pending;
-the original workflow failed, so fresh unattended execution is not yet proved.
+application checks and final cleanup remain pending. The owner withdrew the
+source AAP restart: it stays off for separate AAP-only retirement after Windows
+cleanup verifies the original core baseline. Other core guests remain preserved;
+remaining use-case testing belongs on the successor. This partial retirement
+must not invoke the existing whole-environment decommission job.
+The original workflow failed, so fresh unattended execution is not yet proved.
 Assistant's complete model-free software test and normal owned retirement passed,
 preserving all five original guests and golden images. This verifies deployed
 CLI/project isolation without provider-authentication transfer or model inference.
