@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-92 tasks: 24 outstanding; 68 closed.
+93 tasks: 24 outstanding; 69 closed.
 
 ## Outstanding tasks
 
@@ -22,11 +22,11 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
-| bead-wd-72f.16.1 | Prove source AAP deploys its successor on the test hypervisor | in_progress | P1 | task | bead-wd-72f.16 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | open | P1 | bug | bead-wd-72f.31.4 |
+| bead-wd-72f.31.6 | Prepare fresh successor use-case imports and runtime test order | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
@@ -58,6 +58,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.14 | Apply the agreed numbered AAP DNS naming scheme | closed | P1 | bug | bead-wd-72f |
 | bead-wd-72f.15 | Deploy the versioned AIOps website on the selected recovery hypervisor | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.15.1 | Deploy the Linux and Zabbix MCP servers on the new TRA VM | closed | P1 | task | bead-wd-72f.15 |
+| bead-wd-72f.16.1 | Prove source AAP deploys its successor on the test hypervisor | closed | P1 | task | bead-wd-72f.16 |
 | bead-wd-72f.17 | Deploy versioned Zabbix VM and AIOps monitoring on the replacement hypervisor | closed | P1 | feature | bead-wd-72f, bead-wd-72f.16 |
 | bead-wd-72f.18 | Deploy versioned testserver1 and TRA Linux VMs on the recovery hypervisor | closed | P1 | task | bead-wd-72f, bead-wd-72f.16 |
 | bead-wd-72f.18.1 | Verify current VM SSH and sudo access to the replacement TRA guest | closed | P1 | task | bead-wd-72f.18 |

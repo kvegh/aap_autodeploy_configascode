@@ -10,8 +10,9 @@ Start with [RESTART_HERE.md](RESTART_HERE.md) when resuming existing work.
 1. Prepare the selected test hypervisor through Hactar configuration. Confirm its
    pinned identity, images, available memory/disk, DNS access, nginx and existing
    ACME account. Keep the original production hypervisor excluded.
-2. Run **Deploy Complete AAP** for that hypervisor. Its four existing stages create
-   the VM, configure infrastructure, install AAP and apply shared base CaC.
+2. Run the four existing AAP deployment stages in order: create the VM, configure
+   infrastructure, install AAP and apply shared base CaC. Use the VM name returned
+   by Stage 01 as `aap_instance_key` in Stages 02–04.
 3. Run the existing selected-use-case selector for the chosen AAP inventory
    entry. It prepares each use case's PAH prerequisites, then imports its CaC.
    For a standalone import, run the existing Stage 05 preparation first, then
@@ -36,6 +37,13 @@ explain the expected results, resource lifecycle and deferred OpenShift test.
 Use-case repositories provide their runtime instructions. Current task states and
 live results are in [TODO.md](TODO.md) and its encrypted full records, rather
 than a second checklist here.
+
+The source AAP has completed an AAP-only successor deployment through these four
+stages, with trusted HTTPS/API authentication, a valid license and ready
+Controller. Original guests and source images were preserved. Stage 01 needed
+the published SSH correction and a native start-at-task continuation; fresh
+unattended provisioning and the successor's additional use-case runtime tests
+remain unverified.
 
 ## Keep the demo boundaries clear
 

@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Document the AAP-only successor acceptance — 2026-11-08
+
+The tested runtime remains `30629f7` (source 0.48.7), including guest SSH fix
+`34b40d1`. The source controller completed the four existing stages, and bounded
+independent checks verified trusted public API/token access, a valid license,
+ready Controller and distinct native instance identity. Original guests, disks,
+source images and prior API records were preserved. The temporary native
+start-at-task setting was restored after the continuation job captured it.
+
+Stage 01 required a repair and continuation, so this closes AAP-only acceptance
+without claiming a fresh unattended run or complete successor service recovery.
+The quick guide now describes the four installed stage templates directly;
+fresh successors must not depend on an assumed umbrella workflow. Additional
+use-case imports and memory-aware runtime testing remain separately tracked.
+
+The existing task overview and encrypted recovery export retain the actual job
+outcomes and limitations. This documentation update introduces no new workflow,
+recovery mechanism, credential, allocation, shutdown or host reinstall.
+
 ## Preserve guest SSH routing above hypervisor facts — 2026-11-08
 
 Fix `34b40d1` keeps the existing Stage 01 SSH safety checks while giving the

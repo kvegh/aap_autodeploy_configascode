@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.48.8
+
+Document successful AAP-only successor acceptance on tested source `30629f7`:
+four stages completed, trusted API readiness and license verified, original
+guests/images preserved. Keep the repaired Stage 01 and remaining fresh-run and
+use-case limitations explicit. The quick guide now follows the four installed
+stage templates without assuming a complete workflow is installed. Refresh the
+existing public task overview and encrypted recovery export; no runtime changes.
+
 ## 0.48.7
 
 Document fix `34b40d1`, its native SSH precedence/restoration checks and paired
