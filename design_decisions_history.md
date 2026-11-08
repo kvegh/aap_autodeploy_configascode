@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Preserve completed teardown and production HTTPS acceptance — 2026-11-07
+
+Checkpoint `0ddcd06` documents the passed staged Windows patching demonstration
+and Windows-only reset separately from fresh unattended provisioning. Final
+verification passed on Windows source 1.1.11; its published documentation retains
+the earlier repairs and unresolved historical failure rather than hiding them.
+
+Hactar checkpoint `c68f6e6` preserves all 150 prior full task records and current
+outcomes in the existing encrypted recovery export. Production backend HTTPS
+verification and the user's confirmation of external and localhost access are
+recorded as completed; the rejected host-setting removal remains withdrawn.
+The separate test application waits on the existing first-login implementation
+task, not another password request. Read-only successor readiness does not mean
+a VM has been allocated or installed.
+
+Mirror/export checks, Vault preservation, the original handover checksum and
+diff checks passed. This checkpoint changes no runtime code or configuration.
+
 ## Document the approved application deployment choices — 2026-11-07
 
 Documentation checkpoint `090d761` records the owner's explicit approval of

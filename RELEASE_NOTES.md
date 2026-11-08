@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.48.5
+
+Document checkpoint `0ddcd06` and the paired encrypted recovery checkpoint,
+including completed Windows reset, verified production access and the pending
+first-login implementation dependency. Runtime behavior remains unchanged.
+
 ## 0.48.4
 
 Document verified staged Windows testing and final reset without claiming fresh
