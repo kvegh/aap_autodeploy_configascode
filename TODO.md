@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-103 tasks: 27 outstanding; 76 closed.
+104 tasks: 28 outstanding; 76 closed.
 
 ## Outstanding tasks
 
@@ -29,6 +29,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.4.5 | Fix Windows completion checks after evaluation activation | in_progress | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.6 | Approve temporary source AAP outage for successor Windows testing | blocked | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
+| bead-wd-72f.31.6.2 | Allow reviewed EE-based use cases without PAH repository prerequisites | in_progress | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.9 | Run successor Assistant software test and owned retirement | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |

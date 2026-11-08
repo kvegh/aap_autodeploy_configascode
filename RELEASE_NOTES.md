@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.48.15
+
+Allow a reviewed use case whose existing execution environment supplies its
+dependencies to prepare independently with an empty PAH repository list. Retain
+input review, repository uniqueness, exact collection pins and execution-image
+readiness. No unrelated use-case selection is required. Focused native admission
+checks cover the empty path and refusal of unreviewed, duplicate, unpinned or
+missing-image inputs; live metadata setup remains pending.
+
+Validation: 28 focused tests passed, including eight native PAH/admission cases;
+strict production lint passed for four encountered files and the prerequisite
+playbook passed syntax checking. This is source verification, not live acceptance.
+
 ## 0.48.14
 
 Document fix `785e613`, its 55 focused test results and the completed source-fix

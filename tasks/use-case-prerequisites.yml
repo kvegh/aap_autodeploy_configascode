@@ -6,7 +6,6 @@
       - cac_workflow_pah is mapping
       - cac_workflow_pah.reviewed | bool
       - cac_workflow_pah.repositories is sequence
-      - cac_workflow_pah.repositories | length > 0
       - cac_workflow_pah.repositories | map(attribute='name') | unique | length == (cac_workflow_pah.repositories | length)
       - cac_workflow_execution_image is defined
       - cac_workflow_execution_image is string

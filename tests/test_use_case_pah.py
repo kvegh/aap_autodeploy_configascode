@@ -29,6 +29,56 @@ SECRET = "synthetic-pah-management-secret"
 
 
 @unittest.skipUnless(yaml and importlib.util.find_spec("ansible"), "requires installed Ansible and PyYAML")
+class UseCasePrerequisiteAdmissionTests(unittest.TestCase):
+    def run_admission(self, requirements, image="example.invalid/demo-ee:1.0"):
+        # Execute the real admission tasks and repository loop, never image or host operations.
+        tasks = yaml.safe_load((ROOT / "tasks/use-case-prerequisites.yml").read_text())[:3]
+        with tempfile.TemporaryDirectory(prefix="use-case-admission-test-") as directory:
+            root = Path(directory)
+            variables = {"cac_workflow_pah": requirements}
+            if image is not None:
+                variables["cac_workflow_execution_image"] = image
+            fixture = root / "play.yml"
+            fixture.write_text(yaml.safe_dump([
+                {"hosts": "localhost", "connection": "local", "gather_facts": False,
+                 "vars": variables, "tasks": tasks}
+            ], sort_keys=False))
+            environment = dict(os.environ, ANSIBLE_NOCOLOR="1",
+                               ANSIBLE_LOCAL_TEMP=str(root / "local"),
+                               ANSIBLE_REMOTE_TEMP=str(root / "remote"))
+            result = subprocess.run(
+                [sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(fixture)],
+                cwd=root, env=environment, capture_output=True, text=True, timeout=30)
+            return result.returncode, result.stdout + result.stderr
+
+    def test_reviewed_ee_only_case_passes_without_repository_operations(self):
+        code, output = self.run_admission({"reviewed": True, "repositories": []})
+        self.assertEqual(code, 0, output)
+        self.assertIn("Prepare each declared PAH repository", output)
+        self.assertIn("skipping: [localhost]", output)
+
+    def test_unreviewed_ee_only_case_is_refused(self):
+        code, output = self.run_admission({"reviewed": False, "repositories": []})
+        self.assertNotEqual(code, 0, output)
+
+    def test_missing_execution_image_is_refused(self):
+        code, output = self.run_admission({"reviewed": True, "repositories": []}, image=None)
+        self.assertNotEqual(code, 0, output)
+
+    def test_duplicate_repository_is_refused(self):
+        repository = {"name": "rh-certified", "collections": []}
+        code, output = self.run_admission(
+            {"reviewed": True, "repositories": [repository, repository]})
+        self.assertNotEqual(code, 0, output)
+
+    def test_unpinned_collection_is_refused(self):
+        code, output = self.run_admission({"reviewed": True, "repositories": [
+            {"name": "rh-certified", "collections": [{"name": "example.roles", "version": "latest"}]}
+        ]})
+        self.assertNotEqual(code, 0, output)
+
+
+@unittest.skipUnless(yaml and importlib.util.find_spec("ansible"), "requires installed Ansible and PyYAML")
 class UseCasePahTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

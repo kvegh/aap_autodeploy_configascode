@@ -214,6 +214,9 @@ after shared base configuration. It creates no use-case projects or imports.
 The separate [use-case selector](docs/selected-use-cases.md) installs only the
 operator's selected umbrella submodules and their reviewed saved CaC. Application,
 deployment and demo jobs are not launched by configuration selection.
+Reviewed EE-only cases may declare no PAH collection prerequisites. Preparation
+skips those empty collection loops while retaining execution-image readiness;
+other declared collections still require exact versions.
 The selector uses the attached source API bearer and, when required, its
 existing CA credential. Its temporary trust bundle also retains the receiving
 AAP's installed authority; global trust is unchanged. Selected imports have run

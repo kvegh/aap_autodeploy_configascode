@@ -42,6 +42,12 @@ catalog and encrypted protected bindings when umbrella membership changes.
 Actual source/private repository URLs, scoped credential pins and prerequisite
 versions stay in `vaults/cac/aap_autodeploy_configascode-cac-vault.yml`.
 
+A reviewed use case may declare an empty PAH repository list when its existing
+execution environment supplies its dependencies, as with RHEL Sniperpatching.
+Preparation then skips collection synchronization and keeps the existing execution
+image readiness checks. It does not require selecting an unrelated use case.
+Declared collections still require exact versions; unreviewed inputs are refused.
+
 ## Launching the selector
 
 Use its AAP Job Template with the shared `main inventory`. Choose the exact
