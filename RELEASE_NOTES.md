@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.48.7
+
+Document fix `34b40d1`, its native SSH precedence/restoration checks and paired
+encrypted task-recovery checkpoint. Runtime behavior remains unchanged from
+0.48.6; completing the partially created successor is still unverified.
+
 ## 0.48.6
 
 Fix Stage 01 guest readiness when earlier pinned hypervisor connection facts

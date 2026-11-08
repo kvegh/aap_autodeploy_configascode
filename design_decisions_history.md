@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Preserve guest SSH routing above hypervisor facts — 2026-11-08
+
+Fix `34b40d1` keeps the existing Stage 01 SSH safety checks while giving the
+new guest's connection settings the same precedence as the earlier hypervisor
+facts. A delegated block's variables alone did not override those facts, so the
+readiness guard correctly stopped before guest authentication. The probe now
+saves the original connection, binds the exact pinned guest route and restores
+the original hypervisor facts in `always` on success or failure.
+
+The existing native Ansible regression now reproduces the observed precedence,
+checks guest SSH through the pinned hypervisor, rejects unsafe higher-precedence
+caller inputs and verifies restoration. It also checks native partial-stage
+continuation when earlier connection facts are absent. All 26 allocation/routing
+tests, focused playbook syntax and production lint passed. The failed live run
+created one guest before the guard stopped; completing a partial stage remains
+separate from proving a fresh unattended deployment.
+
+The public task overview includes the existing successor functional-test child.
+Paired Hactar checkpoint `573acb4` preserves all 150 prior task records and that
+child in the existing encrypted recovery snapshot. No new recovery framework,
+workflow, credential or counter reset was introduced.
+
 ## Preserve completed teardown and production HTTPS acceptance — 2026-11-07
 
 Checkpoint `0ddcd06` documents the passed staged Windows patching demonstration
