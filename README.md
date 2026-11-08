@@ -611,6 +611,8 @@ downloads the public application source over verified HTTPS without a Git token.
 Pin the AAP project and guest checkout to the same tested application commit.
 Choose a published revision that supports the intended configuration format;
 importing CaC does not upgrade a running application or restart active agents.
+Fresh application setup requires a chosen password in encrypted runtime settings;
+reruns preserve existing user authentication. No shared default password is used.
 Both mappings may be omitted when replacement-access bootstrap is not wanted.
 The production and existing fresh-instance credential names, grants and bindings
 were verified after migration. Configuration templates keep their own repository

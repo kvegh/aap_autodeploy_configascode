@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Require a chosen CCNG password only for fresh setup — 2026-11-08
+
+The owner withdrew the shared default-password and first-login access-choice
+proposal. A fresh install must require an operator-chosen password, and an
+existing user-set password must be preserved. The obsolete rollout dependency
+is removed; no answer to the withdrawn access question is still required.
+
+Published CCNG source `e5e1232` (0.35.0) already enforces this in its AAP password
+task. The standalone installer's noninteractive behavior is a separate
+application-owner concern. The rollout resumes private-candidate and secure
+input verification, retaining the approved Machine/Vault choices and existing
+target. No password is copied, generated, reset or supplied by this decision;
+configuration import and actual application verification remain separate work.
+
 ## Prepare reviewed EE-only use cases independently — 2026-11-08
 
 Fix `7d8a59ba8f310246493aa48db41da366d1111ab0` removes the common requirement

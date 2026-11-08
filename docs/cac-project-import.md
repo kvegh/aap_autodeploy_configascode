@@ -43,11 +43,13 @@ defines its public SCM Project, selected target inventory/group and application
 Job Template with an existing Machine credential and its own CaC Vault.
 Application settings are delivered as whole-file ciphertext and decrypted in
 the job's execution environment through native Ansible tasks. The application
-job still requires the selected account's existing SSH Git access, Codex login,
-running native daemon, Beads tracker and initial application password when no
-auth file exists. CaC import creates definitions without starting the app or
-changing those prerequisites. Live import and deployment acceptance remain
-separate from offline capture validation.
+job requires its approved source checkout/trust, Beads tracker and a protected
+operator-chosen application password when no auth file exists. Existing user-set
+authentication is preserved. Codex login and daemon readiness are reported
+separately; warnings do not establish usable workers. No shared default password
+or first-login access-choice feature is required. CaC import creates definitions
+without starting the app or completing those prerequisites. Live import and
+deployment acceptance remain separate from offline capture validation.
 
 ## Operator procedure
 

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.48.17
+
+Document the operator's CCNG password decision: require a chosen protected
+password for a fresh setup and preserve existing user authentication. Remove
+the superseded shared-default/access-choice dependency from the task records.
+Private configuration/input verification resumes; no app deployment is claimed.
+
 ## 0.48.16
 
 Document fix `7d8a59b`, its focused native admission/PAH verification and the

@@ -17,7 +17,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 
 | Task | Title | Status | Priority | Type | Parent / dependency IDs |
 |---|---|---|---|---|---|
-| bead-wd-1rl.40 | Deploy Command Center from AAP to the selected workstation | blocked | P1 | task | bead-wd-1rl, bead-wd-x8d5 |
+| bead-wd-1rl.40 | Deploy Command Center from AAP to the selected workstation | blocked | P1 | task | bead-wd-1rl |
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
