@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-102 tasks: 27 outstanding; 75 closed.
+103 tasks: 28 outstanding; 75 closed.
 
 ## Outstanding tasks
 
@@ -24,6 +24,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
+| bead-wd-72f.31.2.2 | Publish verified Linux SSH fields required by AIOps guest import | in_progress | P1 | bug | bead-wd-72f.31.2 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | open | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.5 | Fix Windows completion checks after evaluation activation | in_progress | P1 | task | bead-wd-72f.31.4 |

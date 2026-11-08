@@ -182,6 +182,27 @@ class InstancePreparationTests(unittest.TestCase):
         self.assertEqual((capture, runtime), before)
         self.assertIsInstance(after["unrelated"]["injector"], AnsibleUnsafeText)
 
+    def test_released_linux_guest_is_consumable_without_inventory_defaults(self):
+        context, _, _, _, _ = fixture()
+        resource = guest(context)["vm_resource"]
+        release = {"guest": resource, "route": {"hypervisor": context["hypervisor"]},
+                   "hypervisor_name": context["hypervisor_name"]}
+        published = settings.keys.guest_release_host_variables({}, release)
+        result = settings.merge_source_guest({context["instance_name"]: {}}, context,
+                                             "testserver1", published)
+        self.assertEqual(result[context["instance_name"]]["testserver1"], resource)
+        self.assertEqual(settings.keys.guest_release_host_variables(published, release), published)
+        for field, conflicting in (("ansible_user", "different-user"), ("ansible_port", 2223)):
+            with self.subTest(field=field), self.assertRaises(settings.keys.StoreError):
+                settings.keys.guest_release_host_variables({field: conflicting}, release)
+
+        legacy = deepcopy(release)
+        legacy["guest"].pop("user")
+        legacy["guest"].pop("port")
+        unchanged = settings.keys.guest_release_host_variables({}, legacy)
+        self.assertNotIn("ansible_user", unchanged)
+        self.assertNotIn("ansible_port", unchanged)
+
     def test_password_is_saved_once_and_rerun_does_not_generate_or_rotate(self):
         context, _, _, _, _ = fixture()
         first, runtime = self.prepare()

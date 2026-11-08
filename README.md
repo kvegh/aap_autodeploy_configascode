@@ -96,6 +96,12 @@ AAP NIC and persistent RHEL connection; the CaC importer remains API-only.
 Final AAP isolation release selects only its primary interface. A Windows-owned
 second interface remains verified and recorded without gaining that release.
 
+For Linux guests, the existing release publisher carries the verified SSH user
+and port into their source inventory fields as well as their resource record,
+so AIOps can consume a newly created guest without inventory defaults or manual
+patching. Missing values are not invented, conflicting existing values refuse
+publication, and Windows keeps its WinRM fields.
+
 ## Tasks and decisions
 
 The [Project Decision/Action Path Flowchart](docs/project-decision-action-path-flowchart.md)

@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.48.13
+
+Publish a verified Linux guest's SSH user and port in the matching source
+inventory fields as well as its existing resource record. This lets the normal
+AIOps preparation accept a newly created guest without manual inventory edits.
+Use only supplied provenance, reject conflicting inventory values and preserve
+Windows WinRM behavior. No new helper, credential, default or schema is added.
+
+Focused producer-to-consumer, encrypted release and Windows lifecycle checks
+cover the correction. A complete live guest deployment and subsequent AIOps
+refresh remain pending; existing callers must first select the published fix.
+
 ## 0.48.12
 
 Document the successor website's successful DNS/HTTPS deployment and the imported

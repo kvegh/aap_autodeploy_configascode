@@ -1621,6 +1621,12 @@ def guest_release_host_variables(values, context):
         fields = tuple(resource)
     else:
         expected.update(machine_id=resource["machine_id"], host_keys=resource["host_keys"])
+        # Keep verified SSH inputs for AIOps; no credential or port is inferred.
+        # Justification: ../README.md#keep-the-demo-boundaries-clear
+        if "user" in resource:
+            expected["ansible_user"] = resource["user"]
+        if "port" in resource:
+            expected["ansible_port"] = resource["port"]
         fields = ("vm_name", "uuid", "disk", "network", "bridge", "mac", "address", "host_keys",
                   "machine_id", "hypervisor_machine_id", "verified")
     for field, value in expected.items():

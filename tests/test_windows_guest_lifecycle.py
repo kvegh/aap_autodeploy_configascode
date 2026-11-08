@@ -182,6 +182,7 @@ class WindowsGuestLifecycleTests(unittest.TestCase):
         values = keys.inventory_variables(row)
         self.assertEqual(values['ansible_connection'], 'winrm')
         self.assertNotIn('machine_id', values); self.assertNotIn('host_keys', values)
+        self.assertNotIn('ansible_user', values); self.assertNotIn('ansible_port', values)
         self.assertEqual(values['vm_resource'], guest)
         source = release_tests.Source(documents['autodeploy'], documents['shared'], documents['hactar'])
         retired = keys.generic_retirement_context(documents['autodeploy'], documents['shared'], source,
