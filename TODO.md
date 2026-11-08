@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-103 tasks: 28 outstanding; 75 closed.
+103 tasks: 27 outstanding; 76 closed.
 
 ## Outstanding tasks
 
@@ -24,7 +24,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
-| bead-wd-72f.31.2.2 | Publish verified Linux SSH fields required by AIOps guest import | in_progress | P1 | bug | bead-wd-72f.31.2 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | open | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.5 | Fix Windows completion checks after evaluation activation | in_progress | P1 | task | bead-wd-72f.31.4 |
@@ -81,6 +80,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.30.1 | Refresh bootstrap credentials before importing updated AutoDeploy definitions | closed | P1 | bug | bead-wd-72f.30 |
 | bead-wd-72f.31.1 | Assess v16 runtime test prerequisites and targets | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.2.1 | Expose the existing minimal Linux provisioning template on the successor | closed | P1 | task | bead-wd-72f.31.2 |
+| bead-wd-72f.31.2.2 | Publish verified Linux SSH fields required by AIOps guest import | closed | P1 | bug | bead-wd-72f.31.2 |
 | bead-wd-72f.31.3 | Prepare and verify Assistant Team on the selected test environment | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.2 | Complete Windows lab teardown using the existing jobs | closed | P1 | task | bead-wd-72f.31.4 |

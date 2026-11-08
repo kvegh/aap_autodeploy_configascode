@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Preserve verified Linux SSH fields for the next AIOps import — 2026-11-08
+
+Fix `785e613f53036fae61bf3a63b994a83fbe68fcaf` carries a Linux guest's supplied
+verified user and port into its source inventory alongside the existing native
+resource. The previous publisher omitted those fields on a new host, so the
+unchanged AIOps provenance check could not accept that host without manual
+inventory edits. No account or port is inferred, conflicting existing values
+still stop publication, and Windows keeps its separate WinRM behavior.
+
+Thirty AIOps preparation/publication tests, nine encrypted guest-release tests,
+twelve Windows lifecycle tests and four version tests passed, with Python syntax
+and whitespace checks. The new producer-to-consumer fixture proves the mapping,
+idempotence, conflict refusal and behavior when optional fields are absent.
+
+The existing publisher was corrected rather than adding a helper, schema,
+credential or alternate registration path. Its source-fix task is closed in the
+existing task overview and encrypted recovery export. Selecting this revision
+in callers and proving a full live guest-to-AIOps run remain separate work;
+publication is not full-project review or end-to-end acceptance.
+
 ## Verify the website and prepare the existing disposable test — 2026-11-08
 
 AIOps source `c69097e` completed the successor website deployment without changing

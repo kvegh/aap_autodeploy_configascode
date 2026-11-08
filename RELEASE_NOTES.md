@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.48.14
+
+Document fix `785e613`, its 55 focused test results and the completed source-fix
+task in the existing recovery records. Runtime behavior is unchanged from
+0.48.13. Caller revision selection and live guest-to-AIOps acceptance remain
+pending; no deployment is implied by this documentation checkpoint.
+
 ## 0.48.13
 
 Publish a verified Linux guest's SSH user and port in the matching source
