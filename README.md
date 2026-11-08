@@ -891,6 +891,12 @@ for VNC/browser steps, narration, role comparisons and the setup reference.
 AD holds role groups and membership; Ansible configures their AAP team mappings
 and object permissions. The LDAP integration does not import Windows ACLs.
 
+The selected staged demonstration subsequently passed the OS/application patch
+chain and final Windows-only reset using source 1.1.11. Final cleanup verified
+the five disposable guests and owned records absent while preserving the core
+VMs and golden images. That repaired staged run does not establish fresh,
+unattended provisioning; the encrypted recovery records retain its limitations.
+
 ### Automation Orchestrator configuration deployment
 
 Choose the Orchestrator configuration Job Template, which fixes

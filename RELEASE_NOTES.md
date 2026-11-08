@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.48.4
+
+Document verified staged Windows testing and final reset without claiming fresh
+unattended provisioning. Refresh the existing task overview and encrypted
+recovery records with completed teardown, verified strict backend TLS and the
+actual first-login implementation dependency. No runtime code changes.
+
 ## 0.48.3
 
 Document checkpoint `090d761` and the paired encrypted task recovery checkpoint,
