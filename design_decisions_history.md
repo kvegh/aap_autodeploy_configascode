@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Correct first-opening setup and approve the Windows test window — 2026-11-08
+
+The owner clarified that a fresh CCNG installation creates its password at first
+browser opening. It must use neither a default nor a password provided before
+deployment. Earlier entries describing a required Vault password reflect the
+worker's mistaken interpretation and are superseded by this correction.
+Existing user authentication remains preserved. The application owner reports
+CCNG 0.35.1 still requires authentication before startup; therefore the fresh
+rollout waits for implementation and verification, with no user-password input
+pending. No authentication control or private runtime setting was changed.
+
+The owner separately approved the existing bounded Windows capacity proposal:
+gracefully stop only the selected source AAP on the pinned test hypervisor,
+run the successor's normal Windows test and owned cleanup, then restart and
+verify the source's services and prior EDA state. Production, other core guests
+and golden images remain protected; force shutdown and AAP decommissioning are
+excluded. The decision is resolved, while actual execution is tracked separately.
+This documentation does not claim successful shutdown, testing or restoration.
+
 ## Verify and retire the disposable Assistant environment — 2026-11-08
 
 The normal successor software test passed on pinned Assistant source `73a74ac`

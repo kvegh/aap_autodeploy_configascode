@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.48.19
+
+Correct the fresh CCNG setup requirement: create the password at first browser
+opening, without a predeployment Vault password or shared default. Existing
+authentication is preserved; application support remains unfinished.
+Document the approved temporary source-instance outage for successor Windows
+testing. Approval resolves the input only; shutdown, test, cleanup and restoration
+remain separately verified operations.
+
 ## 0.48.18
 
 Document the successor's successful full model-free Assistant software test and
