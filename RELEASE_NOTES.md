@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.48.11
+
+Document successful remote/self AutoDeploy configuration and the repaired AIOps
+import on tested source `22ac431`. Keep application runtime verification separate.
+Document successful Windows and Assistant prerequisite/import sequences and the
+AIOps saved-settings refresh, without claiming fresh application or VM tests.
+Retain the approved saved-image Zabbix authentication baseline and remove the
+unnecessary fresh-token producer/encryption-bridge prerequisite. No runtime code,
+credential type, store, job or workflow is added.
+
 ## 0.48.10
 
 Document fix `2cd85c8`, the observed native inventory representation and focused

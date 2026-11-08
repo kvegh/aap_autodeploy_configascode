@@ -45,6 +45,16 @@ the published SSH correction and a native start-at-task continuation; fresh
 unattended provisioning and the successor's additional use-case runtime tests
 remain unverified.
 
+Remote and self-targeted AutoDeploy CaC imports have also passed. The selected
+successor now has its AIOps definitions, with new EDA activations disabled;
+application services and fresh runtime tests remain separate. AIOps retains the
+approved saved-image Zabbix authentication baseline, without adding a token
+producer or encryption mechanism.
+Windows and Assistant configuration setup also passed through their existing
+prerequisite and import jobs. Windows' full runtime still needs sufficient RAM;
+Assistant's disposable test needs selected-instance settings that preserve the
+previous instance's data. Neither configuration import proves those VM tests.
+
 ## Keep the demo boundaries clear
 
 - Base configures AAP and its shared content sources. Each selected use case owns

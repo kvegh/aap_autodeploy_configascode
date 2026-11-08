@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-97 tasks: 25 outstanding; 72 closed.
+101 tasks: 28 outstanding; 73 closed.
 
 ## Outstanding tasks
 
@@ -24,10 +24,13 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
+| bead-wd-72f.31.2.1 | Expose the existing minimal Linux provisioning template on the successor | open | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | open | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.5 | Fix Windows completion checks after evaluation activation | in_progress | P1 | task | bead-wd-72f.31.4 |
+| bead-wd-72f.31.4.6 | Approve temporary source AAP outage for successor Windows testing | blocked | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
+| bead-wd-72f.31.8 | Prepare successor Assistant test settings without replacing predecessor data | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
@@ -109,6 +112,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.25 | Rename the new AAP inventory host after AIOps import | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.31.4.4 | Assess Windows runtime configuration for the fresh successor | closed | P2 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6.1 | Apply the corrected prerequisite survey to both AAP instances | closed | P2 | task | bead-wd-72f.31.6 |
+| bead-wd-72f.31.7 | Assess Assistant Team deployment readiness on the fresh successor | closed | P2 | task | bead-wd-72f.31 |
 | bead-wd-72f.33 | Prepare the private Claude runtime and verify agent remediation | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.6 | Review AutoDeploy allocator and registry credential design with owner | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.7 | Prefix project deployment Job Template names with Deploy | closed | P2 | task | bead-wd-72f |

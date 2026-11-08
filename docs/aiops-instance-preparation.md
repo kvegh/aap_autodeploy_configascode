@@ -80,14 +80,19 @@ new secrets or claim a usable first deployment.
 This removes the first-import requirement for already-created auxiliary guests.
 It does not add VM orchestration. Testserver/TRA creation, Zabbix deployment,
 MCP artifact preparation and application readiness still use their existing
-deployment paths. Per-clone Zabbix API/MCP token registration and approved shared
-DNS/frontend/provider inputs require their explicit lifecycle/settings work;
-they are never copied from the previous instance as a shortcut.
+deployment paths. Shared DNS/frontend/provider inputs must come from explicitly
+approved sources. Instance URLs, native identifiers, ownership records and
+target-local AAP/EDA credentials remain specific to the selected environment.
 
-Fresh namespaces receive no Vertex ADC, account or project settings. The
-existing Vertex reuse approval covers only the previously selected TRA and one
-short read-only acceptance test. It is not permission to copy that provider
-authentication into later allocations.
+The controlled demo retains the approved Zabbix image's existing API credential,
+as used by the earlier MCP setup. Its selected runtime namespace supplies that
+value to the existing MCP-token field; the consumer still requires the selected
+Zabbix resource and endpoint. A fresh-token producer or an encryption bridge is
+not required for this baseline, and no token is claimed to have been newly minted.
+
+The importer does not invent Vertex ADC, account or project settings. Prepare
+provider inputs only from an operator-approved source for the selected demo;
+storing a value does not itself authorize additional provider or model activity.
 
 Local tests use synthetic API responses and real local encrypted Git repositories,
 including concurrent writers, lost acknowledgements, different Vault keys,
