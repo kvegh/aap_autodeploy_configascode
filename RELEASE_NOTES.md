@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.48.10
+
+Document fix `2cd85c8`, the observed native inventory representation and focused
+validation. Runtime behavior is unchanged from 0.48.9; live CaC retry and
+application deployment remain separate acceptance steps.
+
 ## 0.48.9
 
 Accept a canonical decimal-text SSH port from native inventory when preparing

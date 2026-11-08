@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Accept native inventory port text at the AIOps boundary — 2026-11-08
+
+Fix `2cd85c8` normalizes a canonical decimal-text inventory SSH port before the
+existing strict hypervisor pin validation. A normal configuration import exposed
+this representation difference during successor AIOps preparation; the selected
+port itself matched the independently verified route. Identity, account, host-key
+and port-range checks remain unchanged, and no saved inventory is rewritten.
+
+The focused 29-test AIOps module, four version tests, Python syntax and native
+selected-context reproduction passed. This repairs preparation input handling;
+successful CaC import and application deployment require their own live results.
+The existing task overview was refreshed without introducing new automation.
+
 ## Document the AAP-only successor acceptance — 2026-11-08
 
 The tested runtime remains `30629f7` (source 0.48.7), including guest SSH fix
