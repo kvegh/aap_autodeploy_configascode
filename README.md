@@ -52,7 +52,12 @@ producer or encryption mechanism.
 Windows, Assistant, Automation Orchestrator and RHEL configuration setup passed
 through their existing prerequisite and import jobs. RHEL's independent EE-only
 prerequisite path was also verified live. These imports do not test OpenShift or
-external RHEL workloads. Windows' full runtime still needs sufficient RAM.
+external RHEL workloads. The approved Windows test window stopped only the
+source AAP; the other four core guests remain running. All five Windows guests
+were created, and AD functional checks plus the earlier Windows Server version's
+April updates passed through staged continuation. The newer server version,
+application checks, final cleanup and source AAP restoration remain pending;
+the original workflow failed, so fresh unattended execution is not yet proved.
 Assistant's complete model-free software test and normal owned retirement passed,
 preserving all five original guests and golden images. This verifies deployed
 CLI/project isolation without provider-authentication transfer or model inference.

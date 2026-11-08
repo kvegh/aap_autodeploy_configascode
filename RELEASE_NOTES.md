@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.48.21
+
+Document lock correction `e0a96b1`, 37 focused test results and the distinction
+between a reproduced defect and the unrecoverable historical exception. Runtime
+behavior is unchanged from 0.48.20. Caller revision changes and live end-to-end
+acceptance remain pending.
+
 ## 0.48.20
 
 Wait at most five seconds for the existing native guest-release policy lock

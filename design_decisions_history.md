@@ -1,5 +1,33 @@
 # Design decisions history
 
+## Bound native release lock contention and keep diagnostics safe — 2026-11-08
+
+Fix `e0a96b1c13c756faf7cef3ca7ca3fe2dcc3b1e2e` gives the existing release
+transaction the same bounded five-second lock wait as the management helper.
+Separate AAP processes can reach this shared native critical section; Ansible
+task throttling does not serialize those processes. The exclusive lock still
+precedes every probe and mutation. Identity, current-policy, production denial
+and rollback checks remain unchanged; the separate retirement path is untouched.
+
+Only a controlled lock-exhaustion marker produces code 75 and fixed public
+failure text. Command input/results stay protected, while other exceptions keep
+generic diagnostics and are not retried. No helper, framework, type or result
+schema was introduced.
+
+The earlier pinned helper failed immediately under a real sandbox directory
+lock and discarded the error through its CLI. This reproduces a defect, not
+the original historical exception: retained failure diagnostics were censored,
+and the exact lock owner is unknown. An identical later retry passed, which
+does not establish the missing cause.
+
+Fifteen runtime tests, eighteen supplemental-interface tests and four version
+tests passed, including real transient locking followed by complete fake-native
+apply, bounded exhaustion without probes or changes, unchanged rollback and
+identity checks, exact CLI classification and native Ansible secret-canary
+protection. Strict production role lint, Python/YAML syntax and whitespace
+checks passed. Caller pins and a complete authorized live workflow remain
+separate work; publication is not full-project or live end-to-end acceptance.
+
 ## Correct first-opening setup and approve the Windows test window — 2026-11-08
 
 The owner clarified that a fresh CCNG installation creates its password at first
