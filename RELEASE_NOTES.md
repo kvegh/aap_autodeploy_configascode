@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.48.24
+
+Document successful successor Zabbix deployment and the exact testserver agent
+installation. The owned retry passed with AIOps 1.1.7 after its existing DNS wait
+was extended to cover the observed negative cache. Monitoring and event
+forwarding are configured; trusted HTTPS Basic authentication and unchanged VM
+identity were verified. The real outage test then found that the website probe
+times out without generating an event; functional recovery remains unfinished.
+Private MCP and AI-driven repair remain separate acceptance requirements, with
+the existing staging input unresolved.
+
 ## 0.48.23
 
 Document successful staged Windows functional tests and normal owned cleanup,

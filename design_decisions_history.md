@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Verify monitoring separately from the full repair demonstration — 2026-11-08
+
+AIOps fix `93a30e3`, published at `3420f92` (1.1.7), extends the existing
+frontend readiness window to cover the observed DNS negative cache. Address,
+IPv6 and trusted-certificate checks remain intact; fourteen focused regressions
+and strict task lint passed. The normal owned retry then passed without another
+clone. Its identity, HTTPS Basic gate, monitoring and forwarding configuration
+were verified. The real outage test then found that the website probe has no
+valid sample and times out before generating an event. That connection remains
+under repair; configuration success did not prove website recovery.
+The exact new testserver's normal agent installation also passed.
+
+Private AIOps implementation `1a64a17`, documented at `0db59ca`, preserves the
+verified selected-instance resource and final monitoring settings. The normal
+configuration refresh passed with other instances unchanged. The existing
+website recovery route is tested separately from private MCP and AI-driven
+repair. The latter still needs the owner's pending artifact-key delivery choice;
+no credential mechanism or new helper was selected to bypass that decision.
+These are partial service results, not complete recovery or permission to start
+the conditional bare-metal reinstall.
+
 ## Preserve staged acceptance and the exact predecessor VM retirement — 2026-11-08
 
 Windows `c54d4d4` (1.1.14) passed the selected successor's AD login/RBAC checks,

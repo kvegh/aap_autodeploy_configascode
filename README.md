@@ -68,10 +68,16 @@ preserving all five original guests and golden images. This verifies deployed
 CLI/project isolation without provider-authentication transfer or model inference.
 Its existing minimal Linux provisioning template has now deployed the successor's
 testserver and TRA, with native identity and source/canonical publication verified.
-The public caller pins the corrected Linux SSH-field publisher. Complete AIOps
-service, private MCP and outage/repair acceptance remain separate runtime checks.
-The successor website also passes normal DNS and trusted HTTPS checks, with
-monitoring and auto-arm off. Other fresh VM tests remain separate acceptance steps.
+The public caller pins the corrected Linux SSH-field publisher. The successor
+website passes normal DNS and trusted HTTPS checks. Zabbix deployment and the
+testserver agent have also passed, with monitoring and event forwarding configured.
+The normal retry reused the owned clone and passed with AIOps 1.1.7, whose
+bounded DNS wait covers the observed negative cache.
+The frontend's trusted HTTPS Basic-authentication gate passed independently.
+The live outage test found that the website probe times out before generating
+an event; that connection must be repaired before accepting website recovery.
+Private MCP setup and the complete AI-driven outage/repair test remain open;
+the existing non-AI website recovery route is a separate functional check.
 
 ## Keep the demo boundaries clear
 
