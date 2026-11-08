@@ -159,6 +159,18 @@ class InstancePreparationTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(Exception):
                 settings.selected_context(instance, hypervisor, context["aap_origin"], "example.invalid", {}, "aap27-v07")
 
+    def test_native_decimal_text_port_keeps_the_same_strictly_pinned_route(self):
+        context, _, _, instance, hypervisor = fixture()
+        hypervisor["ansible_port"] = "2222"
+        self.assertEqual(settings.selected_context(instance, hypervisor, context["aap_origin"],
+            "example.invalid", {}, "aap27-v07"), context)
+        self.assertEqual(hypervisor["ansible_port"], "2222")
+        for value in ("invalid", "65536"):
+            hypervisor["ansible_port"] = value
+            with self.subTest(value=value), self.assertRaises(Exception):
+                settings.selected_context(instance, hypervisor, context["aap_origin"],
+                    "example.invalid", {}, "aap27-v07")
+
     def test_first_import_needs_no_fabricated_guest_or_artifact(self):
         context, capture, runtime, _, _ = fixture()
         before = deepcopy((capture, runtime))

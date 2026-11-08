@@ -58,9 +58,12 @@ def selected_context(instance, hypervisor, hostname, zone, known_instances, sele
             "New AAP names must follow the selected allocation's public naming scheme.")
     require(hostname == "https://" + actual_fqdn,
             "The authenticated target API must match the selected inventory FQDN.")
+    managed_port = hypervisor.get("ansible_port")
+    if isinstance(managed_port, str) and re.fullmatch(r"[1-9][0-9]{0,4}", managed_port):
+        managed_port = int(managed_port)
     pin = routing.hypervisor_pin({
         "address": hypervisor.get("ansible_host"), "public_ip": hypervisor.get("public_ipv4"),
-        "user": hypervisor.get("ansible_user"), "port": hypervisor.get("ansible_port"),
+        "user": hypervisor.get("ansible_user"), "port": managed_port,
         "machine_id": hypervisor.get("machine_id"), "host_keys": hypervisor.get("host_keys"),
         "isolation_bridges": hypervisor.get("isolation_policy", {}).get("bridges"),
         "isolation_dns_bridges": hypervisor.get("isolation_policy", {}).get("dns_bridges"),

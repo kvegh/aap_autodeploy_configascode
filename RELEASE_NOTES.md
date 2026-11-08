@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.48.9
+
+Accept a canonical decimal-text SSH port from native inventory when preparing
+selected AIOps settings. Convert only that representation before the unchanged
+hypervisor identity, account, host-key and port validation. Do not modify saved
+inventory or substitute a default route.
+
+Validation: all 29 focused AIOps preparation/publication tests and four version
+tests passed; the selected native inventory context now validates with the same
+pinned port. The failed CaC import still requires its normal retry.
+
 ## 0.48.8
 
 Document successful AAP-only successor acceptance on tested source `30629f7`:

@@ -799,6 +799,8 @@ before resource creation and records native webhook/Event Stream data afterward.
 It reuses the existing AIOps repository's approved write access and preserves
 existing secrets on retries. Missing auxiliary VMs stay absent and disabled;
 their actual ownership comes only from existing native deployment evidence.
+Native inventory SSH ports may be decimal text; preparation normalizes that
+representation before applying the same strict hypervisor pin validation.
 Application deployment and successor-environment acceptance remain separate.
 
 Normal preparation job 3320 succeeded on published revision `5728dfe` (0.41.1)
