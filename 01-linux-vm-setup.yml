@@ -331,6 +331,27 @@
         ansible_ssh_extra_args: -o PreferredAuthentications=password -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no
       no_log: true
       block:
+        - name: Preserve the original hypervisor connection facts for the guest probe
+          ansible.builtin.set_fact:
+            aap_primary_hypervisor_connection:
+              ansible_host: '{{ hostvars[inventory_hostname].ansible_host }}'
+              ansible_port: '{{ hostvars[inventory_hostname].ansible_port }}'
+              ansible_user: '{{ hostvars[inventory_hostname].ansible_user }}'
+              ansible_password: '{{ hostvars[inventory_hostname].ansible_password | default("") }}'
+              ansible_ssh_common_args: '{{ hostvars[inventory_hostname].ansible_ssh_common_args | default("") }}'
+              ansible_ssh_extra_args: '{{ hostvars[inventory_hostname].ansible_ssh_extra_args | default("") }}'
+
+        - name: Bind guest connection facts above the earlier hypervisor facts
+          ansible.builtin.set_fact:
+            ansible_host: '{{ hostvars[inventory_hostname].aap_instance_route.vm_ip }}'
+            ansible_port: 22
+            ansible_user: '{{ hostvars[inventory_hostname].aap_primary_guest_login.user }}'
+            ansible_password: '{{ hostvars[inventory_hostname].aap_primary_guest_login.password }}'
+            ansible_ssh_common_args: >-
+              {{ hostvars[inventory_hostname].aap_instance_route |
+                 aap_instance_ssh_args(hostvars[inventory_hostname].aap_hypervisor_trust.path) }}
+            ansible_ssh_extra_args: -o PreferredAuthentications=password -o PubkeyAuthentication=no -o KbdInteractiveAuthentication=no
+
         - name: Refuse effective connection overrides before any guest authentication
           ansible.builtin.assert:
             that:
@@ -362,6 +383,16 @@
             that:
               - aap_primary_guest_machine_id.stdout | trim is match('^[0-9a-f]{32}$')
               - aap_primary_guest_machine_id.stdout | trim != hostvars[inventory_hostname].aap_hypervisor_pin.machine_id
+
+      always:
+        - name: Restore the original pinned hypervisor connection after the guest probe
+          ansible.builtin.set_fact:
+            ansible_host: '{{ aap_primary_hypervisor_connection.ansible_host }}'
+            ansible_port: '{{ aap_primary_hypervisor_connection.ansible_port }}'
+            ansible_user: '{{ aap_primary_hypervisor_connection.ansible_user }}'
+            ansible_password: '{{ aap_primary_hypervisor_connection.ansible_password }}'
+            ansible_ssh_common_args: '{{ aap_primary_hypervisor_connection.ansible_ssh_common_args }}'
+            ansible_ssh_extra_args: '{{ aap_primary_hypervisor_connection.ansible_ssh_extra_args }}'
 
     - name: Read the actual primary domain ownership after guest verification
       ansible.builtin.command:

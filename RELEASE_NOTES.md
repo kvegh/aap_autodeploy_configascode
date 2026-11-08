@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.48.6
+
+Fix Stage 01 guest readiness when earlier pinned hypervisor connection facts
+outrank delegated task variables. Bind the guest facts explicitly for the
+existing guarded probe and always restore the hypervisor connection afterward.
+Keep route, host-key and higher-precedence caller-override checks intact.
+
+Validation: all 26 existing allocation/routing tests passed, including native
+Ansible reproduction of the original port-precedence failure, guest SSH through
+the pinned jump host, rejected unsafe extra variables and connection restoration.
+Live successor deployment remains incomplete after the failed partial Stage 01.
+
 ## 0.48.5
 
 Document checkpoint `0ddcd06` and the paired encrypted recovery checkpoint,

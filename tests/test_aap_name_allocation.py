@@ -165,10 +165,21 @@ class AllocationTests(unittest.TestCase):
             trust.write_text("synthetic fixture only\n")
             inventory = {"all": {"hosts": {"original_hypervisor": {"aap_instance_route": route,
                 "aap_hypervisor_pin": route["hypervisor"], "aap_hypervisor_trust": {"path": str(trust)},
-                "aap_primary_guest_login": {"user": "synthetic_guest", "password": "synthetic-guest-password"}}}}}
+                "aap_primary_guest_login": {"user": "synthetic_guest", "password": "synthetic-guest-password"},
+                "ansible_host": route["hypervisor"]["address"]}}}}
             (directory / "inventory.yml").write_text(yaml.safe_dump(inventory))
             play = [{"hosts": "original_hypervisor", "gather_facts": False,
-                "vars": {"ansible_ssh_executable": str(executable), "ansible_user": "wrong_outer_user"}, "tasks": [block]}]
+                "vars": {"ansible_ssh_executable": str(executable), "ansible_user": "wrong_outer_user"},
+                "pre_tasks": [{"ansible.builtin.set_fact": {
+                    "ansible_user": "pinned_hypervisor", "ansible_port": 2222,
+                    "ansible_password": "", "ansible_become_password": "",
+                    "ansible_host_key_checking": True, "ansible_ssh_host_key_checking": True,
+                    "ansible_ssh_common_args": "-o StrictHostKeyChecking=yes -o UserKnownHostsFile=" + str(trust)}}],
+                "tasks": [block, {"name": "Prove hypervisor connection was restored", "ansible.builtin.assert": {"that": [
+                    "ansible_host == aap_instance_route.hypervisor.address", "ansible_port | int == 2222",
+                    "ansible_user == 'pinned_hypervisor'", "ansible_password == ''",
+                    "ansible_ssh_common_args == '-o StrictHostKeyChecking=yes -o UserKnownHostsFile=' + aap_hypervisor_trust.path",
+                    "ansible_ssh_extra_args == ''"]}}]}]
             (directory / "play.yml").write_text(yaml.safe_dump(play, sort_keys=False))
             env = dict(os.environ, ANSIBLE_NOCOLOR="1", ANSIBLE_FILTER_PLUGINS=str(ROOT / "filter_plugins"),
                 ANSIBLE_SSH_CONTROL_PATH_DIR=str(directory / "cp"), ANSIBLE_LOCAL_TEMP=str(directory / "local"))
@@ -185,6 +196,23 @@ class AllocationTests(unittest.TestCase):
             self.assertIn('synthetic_guest', arguments)
             self.assertNotIn('wrong_outer_user', arguments)
             self.assertNotIn('synthetic-guest-password', arguments)
+            calls.unlink()
+            # Native partial-stage continuation skips earlier set_fact tasks. Its
+            # existing key-copy task recreates job-local trust; restoration uses
+            # the exact pinned map captured with the consumed reservation.
+            restore = {"ansible_host": route["hypervisor"]["address"], "ansible_port": 2222,
+                "ansible_user": "pinned_hypervisor", "ansible_password": "",
+                "ansible_ssh_common_args": "-o StrictHostKeyChecking=yes -o UserKnownHostsFile=" + str(trust),
+                "ansible_ssh_extra_args": ""}
+            for field in ("ansible_port", "ansible_user"):
+                inventory["all"]["hosts"]["original_hypervisor"][field] = restore[field]
+            (directory / "inventory.yml").write_text(yaml.safe_dump(inventory))
+            resumed = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", str(directory / "inventory.yml"),
+                str(directory / "play.yml"), "--start-at-task", "Preserve the original hypervisor connection facts for the guest probe",
+                "-e", json.dumps({"aap_primary_hypervisor_connection": restore})],
+                env=env, text=True, capture_output=True, timeout=60)
+            self.assertEqual(resumed.returncode, 0, resumed.stdout + resumed.stderr)
+            self.assertIn('synthetic_guest', calls.read_text())
             calls.unlink()
             refused = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", str(directory / "inventory.yml"),
                 str(directory / "play.yml"), "-e", json.dumps({"ansible_host": "198.51.100.99"})],

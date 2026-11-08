@@ -228,10 +228,17 @@ in workflow artifacts.
 The workflow's only survey question is `debug_logging`; saved repository URLs
 are supplied on each appropriate node, and each existing Job Template keeps its
 own credentials. Concurrent runs of this workflow are disabled.
-Failure stops downstream success nodes. Recover manually by rerunning the failed
-Job Templates with the same instance inputs, then launching the remaining stages.
-Relaunching the entire workflow creates a new instance and consumes another
-counter value. Installer observation remains available through Stage 03's existing
+Failure stops downstream success nodes. Stages 02–04 can be rerun with the same
+registered instance input. If Stage 01 has already created its guest, preserve
+that guest and consumed reservation: rerunning Stage 01 allocates another name.
+Inspect the failure before a bounded manual continuation of its remaining tasks;
+a repaired partial run does not prove fresh unattended provisioning.
+
+The Stage 01 readiness probe temporarily binds the new guest's SSH connection
+facts, checks its pinned route, then restores the hypervisor's original connection
+facts even on failure. This prevents the earlier hypervisor port and user facts
+from overriding the delegated guest connection. Both SSH server keys remain
+verified. Installer observation remains available through Stage 03's existing
 async-job identifier.
 
 AutoDeploy is a separate use case rather than platform base. Its whole-file
