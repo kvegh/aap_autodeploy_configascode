@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Stop monitoring setup on an invalid sample and preserve the ownership choice — 2026-11-08
+
+AIOps implementation `f1b5d64` (1.1.8) requires a fresh successful website
+sample before forwarding. The negative test exposed an explicit failure
+override that masked exhausted readiness retries; removing it from both
+health polls restores standard Ansible failure handling. Fifteen focused
+tests and strict lint passed; a real retry remains held.
+
+Exact guest diagnostics established the current website-probe failure:
+the verified monitoring VM has no permission to reach its hypervisor bridge
+on HTTPS. The validated candidate adds only that existing-schema client.
+Native and central-record changes remain unapplied while the owner decides
+whether the existing shared firewall records may remain in AutoDeploy secrets,
+given the earlier AAP-only rule. No application settings are proposed there.
+The saved-image job also lacks automatic publication of those shared records;
+operator preparation remains an explicit limitation, not a completed feature.
+The website is restored and disarmed, both activations are disabled, and the
+separate MCP artifact-key delivery choice remains unanswered.
+
 ## Verify monitoring separately from the full repair demonstration — 2026-11-08
 
 AIOps fix `93a30e3`, published at `3420f92` (1.1.7), extends the existing

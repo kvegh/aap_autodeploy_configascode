@@ -75,7 +75,14 @@ The normal retry reused the owned clone and passed with AIOps 1.1.7, whose
 bounded DNS wait covers the observed negative cache.
 The frontend's trusted HTTPS Basic-authentication gate passed independently.
 The live outage test found that the website probe times out before generating
-an event; that connection must be repaired before accepting website recovery.
+an event. The proved cause is a missing guest-to-hypervisor HTTPS permission.
+Applying it is held on the ownership of existing shared firewall records;
+automatic publication from the saved-image Zabbix job is not implemented.
+The website was restored, its button is disarmed and both EDA activations are off.
+Website recovery is not yet accepted.
+AIOps 1.1.8 now requires a fresh successful website sample before forwarding,
+with standard retry-exhaustion handling. Fifteen focused tests and strict lint
+passed; live acceptance of that correction waits for the policy decision.
 Private MCP setup and the complete AI-driven outage/repair test remain open;
 the existing non-AI website recovery route is a separate functional check.
 

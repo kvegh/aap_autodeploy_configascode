@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.48.25
+
+Document the proved missing monitoring-guest permission to the hypervisor bridge
+on HTTPS. The site was restored and disarmed, with both EDA activations disabled.
+Applying the exact permission is held on ownership of the existing shared
+firewall records; unattended publication from the saved-image job is not
+implemented. AIOps 1.1.8 adds a fresh website-sample gate and removes failure
+overrides that could mask retry exhaustion. Fifteen focused tests and strict
+lint passed; the real recovery chain and private MCP remain unverified.
+
 ## 0.48.24
 
 Document successful successor Zabbix deployment and the exact testserver agent

@@ -28,7 +28,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.7 | Diagnose and fix Windows VM creation release failure | in_progress | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
-| bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | in_progress | P1 | bug | bead-wd-72f.31.6 |
+| bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | blocked | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
