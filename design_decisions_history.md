@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Prepare reviewed EE-only use cases independently — 2026-11-08
+
+Fix `7d8a59ba8f310246493aa48db41da366d1111ab0` removes the common requirement
+for at least one PAH repository. The reviewed RHEL capture deliberately declares
+none because its existing runtime image supplies its Satellite collection.
+Requiring an unrelated selected use case would hide that standalone setup defect.
+Review, mapping, sequence, repository uniqueness, exact collection versions and
+execution-image readiness remain required; empty collection loops simply skip.
+
+Eight native admission/PAH tests, sixteen selector tests and four version tests
+passed. The admission regression executes the real task definitions, admitting
+reviewed empty requirements and refusing unreviewed, missing-image, duplicate and
+unpinned inputs. Strict production lint and prerequisite syntax checks passed.
+These are source checks; standalone live metadata setup and external application
+runtime acceptance remain separate. No helper, flag, credential or schema is added.
+
 ## Preserve verified Linux SSH fields for the next AIOps import — 2026-11-08
 
 Fix `785e613f53036fae61bf3a63b994a83fbe68fcaf` carries a Linux guest's supplied

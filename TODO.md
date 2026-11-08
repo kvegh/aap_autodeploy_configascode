@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-104 tasks: 28 outstanding; 76 closed.
+104 tasks: 27 outstanding; 77 closed.
 
 ## Outstanding tasks
 
@@ -29,7 +29,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.4.5 | Fix Windows completion checks after evaluation activation | in_progress | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.6 | Approve temporary source AAP outage for successor Windows testing | blocked | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
-| bead-wd-72f.31.6.2 | Allow reviewed EE-based use cases without PAH repository prerequisites | in_progress | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.9 | Run successor Assistant software test and owned retirement | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |
@@ -86,6 +85,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.2 | Complete Windows lab teardown using the existing jobs | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.5.1 | Pin the production Windows project to its tested revision | closed | P1 | task | bead-wd-72f.31.4.5 |
+| bead-wd-72f.31.6.2 | Allow reviewed EE-based use cases without PAH repository prerequisites | closed | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.8 | Prepare successor Assistant test settings without replacing predecessor data | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.33.1 | Add Claude installation with private Linux and Zabbix MCP setup | closed | P1 | feature | bead-wd-72f.33 |

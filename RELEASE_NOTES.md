@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.48.16
+
+Document fix `7d8a59b`, its focused native admission/PAH verification and the
+completed source-fix task in the synchronized recovery records. Runtime behavior
+is unchanged from 0.48.15; standalone live metadata setup remains pending.
+
 ## 0.48.15
 
 Allow a reviewed use case whose existing execution environment supplies its
