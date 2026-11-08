@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.48.23
+
+Document successful staged Windows functional tests and normal owned cleanup,
+followed by the separately authorised predecessor AAP VM-only removal. Survivor
+checks passed; DNS/proxy/credential residuals remain explicitly separate.
+The successor's testserver and TRA also deployed with verified publication.
+MCP offline artifacts have a verified immutable offhost copy and encrypted
+restore record; complete service and fresh unattended acceptance remain open.
+The private Windows companion also corrects selected-instance CA preparation;
+eight native data-rendering checks passed with the current target unchanged.
+
 ## 0.48.22
 
 Document the owner's revised test plan: keep the predecessor AAP off, retire

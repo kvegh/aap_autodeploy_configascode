@@ -1,5 +1,40 @@
 # Design decisions history
 
+## Preserve staged acceptance and the exact predecessor VM retirement — 2026-11-08
+
+Windows `c54d4d4` (1.1.14) passed the selected successor's AD login/RBAC checks,
+both April OS baselines and complete application baseline-to-upgrade verification.
+Implementation `a11695c` (1.1.15), documented at `de0687c` (1.1.16), then passed
+all five normal guest retirements and final network/source cleanup using backend
+`e0a96b1`. Original core guests and golden images were preserved. The original
+workflow failed and required staged continuation; fresh unattended acceptance
+is still unproved, and the original masked failure's precise cause is unknown.
+
+The owner reiterated removing only the old AAP VM. The earlier implementation
+choice question was withdrawn in favour of that one-off exact VM operation;
+no partial-decommission mode was added. After Windows baseline verification,
+the registered VM and its single unshared runtime clone were removed. Remaining
+core definitions/states, source images and policy passed verification. DNS,
+proxy, credential and canonical residuals remain separate later cleanup work.
+
+The existing Linux template on Assistant `9d76402` (1.11.11) deployed the new
+testserver and TRA with actual native and source/canonical matching, exercising
+publisher fix `785e613`. Their remaining AIOps services are not inferred from
+VM deployment. The existing approved backup route also preserved all 22 MCP
+artifact files immutably and passed byte-level verification; exact restore
+metadata remains in Hactar's existing encrypted download evidence. No new
+artifact store, credential type or runtime helper was introduced.
+Hactar implementation `7def85f` preserves that verified restore record and all
+168 selected encrypted task records, retaining previous IDs and export scope.
+
+Private Windows implementation `18f2ae7`, documented at `512e247` (0.0.2), makes
+the existing API credential's CA bundle include the already registered selected
+issuer when absent. Eight native rendering checks passed; the full current
+35-template resource render and all unrelated private data remained unchanged.
+This prevents repeating the known missing-issuer preparation defect without a
+new trust source or factory. Fresh next-instance runtime verification remains
+part of the later recovery acceptance.
+
 ## Retire only the predecessor AAP and continue on the successor — 2026-11-08
 
 The owner withdrew the earlier source-AAP restart and directed retiring that

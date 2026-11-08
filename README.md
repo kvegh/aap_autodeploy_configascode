@@ -52,22 +52,24 @@ producer or encryption mechanism.
 Windows, Assistant, Automation Orchestrator and RHEL configuration setup passed
 through their existing prerequisite and import jobs. RHEL's independent EE-only
 prerequisite path was also verified live. These imports do not test OpenShift or
-external RHEL workloads. The approved Windows test window stopped only the
-source AAP; the other four core guests remain running. All five Windows guests
-were created, and AD functional checks plus the earlier Windows Server version's
-April updates passed through staged continuation. The newer server version,
-application checks and final cleanup remain pending. The owner withdrew the
-source AAP restart: it stays off for separate AAP-only retirement after Windows
-cleanup verifies the original core baseline. Other core guests remain preserved;
-remaining use-case testing belongs on the successor. This partial retirement
-must not invoke the existing whole-environment decommission job.
+external RHEL workloads. The staged Windows test passed AD login/RBAC, both
+exact April OS baselines, application baseline/upgrades and combined verification.
+Normal Windows-only cleanup then passed and preserved the original core guests
+and golden images. The owner subsequently directed removing only the predecessor
+AAP VM and its runtime clone; that one-off operation passed survivor checks.
+Its DNS, proxy and credential records remain for later scoped cleanup. Other
+predecessor guests remain preserved, and remaining testing uses the successor.
 The original workflow failed, so fresh unattended execution is not yet proved.
+The private Windows companion now adds the selected instance's already trusted
+registered issuer when missing from its API credential bundle. Existing and
+legacy bundles remain unchanged, avoiding another per-counter CA repair.
 Assistant's complete model-free software test and normal owned retirement passed,
 preserving all five original guests and golden images. This verifies deployed
 CLI/project isolation without provider-authentication transfer or model inference.
-Its existing minimal Linux provisioning template is imported for later use.
-The public caller now pins the corrected Linux registration helper; actual
-testserver-to-AIOps consumption remains a separate runtime check.
+Its existing minimal Linux provisioning template has now deployed the successor's
+testserver and TRA, with native identity and source/canonical publication verified.
+The public caller pins the corrected Linux SSH-field publisher. Complete AIOps
+service, private MCP and outage/repair acceptance remain separate runtime checks.
 The successor website also passes normal DNS and trusted HTTPS checks, with
 monitoring and auto-arm off. Other fresh VM tests remain separate acceptance steps.
 
