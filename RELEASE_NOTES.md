@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.48.20
+
+Wait at most five seconds for the existing native guest-release policy lock
+before any probe or mutation, matching the existing management helper pattern.
+Only actual lock exhaustion returns a fixed busy reason and code75; protected
+command input/results and all identity, current-policy and rollback checks stay
+intact. Other failures are not retried or exposed as raw exceptions.
+
+The lock defect and diagnostic loss were reproduced locally against the exact
+older pinned source. Retained original failure evidence does not establish its
+exception or lock owner; this correction is not proof of that historical cause
+or of a fresh end-to-end workflow. Caller revision updates and live acceptance
+remain separate.
+
 ## 0.48.19
 
 Correct the fresh CCNG setup requirement: create the password at first browser

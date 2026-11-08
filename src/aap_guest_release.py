@@ -7,6 +7,7 @@ Linux remains the default; Windows requires its own explicit trusted provenance.
 
 from copy import deepcopy
 from datetime import datetime
+import errno
 import fcntl
 import importlib.util
 import ipaddress
@@ -15,9 +16,14 @@ import json
 import os
 import re
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 import aap_hypervisor_access as base
+
+
+POLICY_LOCK_BUSY = ('Another hypervisor policy transaction stayed active for five seconds; '
+                    'retry this job. This native attempt made no policy change.')
 
 
 def require(condition, message):
@@ -395,7 +401,17 @@ def reconcile(request):
     route = guest['route'] if guest.get('kind') == 'aap' else {'hypervisor': pin, 'vm_name': guest['vm_name']}
     descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
     try:
-        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        # Separate AAP jobs share this native critical section; task throttle cannot.
+        # Justification: ../roles/recovery_guest_release/README.md#native-lock-contention
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except BlockingIOError:
+                if time.monotonic() >= deadline:
+                    raise BlockingIOError(errno.EAGAIN, POLICY_LOCK_BUSY) from None
+                time.sleep(0.1)
         if guest.get('kind') == 'windows':
             state = base.probe(route, guest_kind='windows')
         elif guest.get('kind') == 'aap' and (guest['primary'].get('supplemental_interfaces') or request.get('mode') == 'supplemental_interface'):
@@ -757,6 +773,10 @@ def reconcile_retirement(request):
 if __name__ == '__main__':
     try:
         print(json.dumps(reconcile(json.load(sys.stdin))))
-    except Exception:
+    except Exception as error:
+        if (isinstance(error, BlockingIOError) and error.errno == errno.EAGAIN
+                and error.strerror == POLICY_LOCK_BUSY):
+            print(POLICY_LOCK_BUSY, file=sys.stderr)
+            raise SystemExit(75)
         print('Protected guest recovery-isolation release failed.', file=sys.stderr)
         raise SystemExit(1)

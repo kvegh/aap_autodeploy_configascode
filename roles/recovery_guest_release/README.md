@@ -22,6 +22,22 @@ Inputs are `recovery_release_guest`, `recovery_release_hypervisor` and the exist
 controller-side `recovery_release_trust_file`. This role adds no job template,
 service, credential type or secret store.
 
+## Native lock contention
+
+Separate AAP jobs can reach the same hypervisor policy transaction concurrently.
+Ansible task throttling applies within one job and cannot protect this shared
+native critical section. The existing Python helper therefore keeps the native
+exclusive directory lock and uses the management helper's bounded five-second
+wait, polling only lock acquisition every tenth of a second. It performs no
+native probe or policy change before acquiring the lock. Identity, current
+policy, production exclusion and rollback checks then run unchanged.
+
+Lock exhaustion returns code 75 and one fixed public busy message. The role
+shows that controlled reason without exposing command input or raw exceptions;
+other failures are not retried and retain sanitized diagnostics. This corrects
+a locally reproduced contention defect. The original historical release failure
+had censored diagnostics, so contention is not established as its cause.
+
 ## Exact guest bootstrap
 
 `recovery_release_operation` defaults to `release_guest`. The existing

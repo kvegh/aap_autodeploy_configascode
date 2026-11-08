@@ -107,6 +107,13 @@ so AIOps can consume a newly created guest without inventory defaults or manual
 patching. Missing values are not invented, conflicting existing values refuse
 publication, and Windows keeps its WinRM fields.
 
+The existing native guest-release transaction briefly waits for a busy shared
+hypervisor lock before any probe or change; separate AAP jobs cannot coordinate
+that lock through task throttling. Exhaustion produces only a fixed safe reason.
+See [native lock contention](roles/recovery_guest_release/README.md#native-lock-contention).
+This fixes a reproduced defect; the earlier censored failure's cause remains
+unproved, and selecting the fix in callers and live verification remain separate.
+
 ## Tasks and decisions
 
 The [Project Decision/Action Path Flowchart](docs/project-decision-action-path-flowchart.md)

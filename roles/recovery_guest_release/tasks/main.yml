@@ -45,6 +45,7 @@
       no_log: true
 
     - name: Verify exact live VM identity and atomically apply its production-blocked release
+      # The native lock coordinates separate AAP jobs; see ../README.md#native-lock-contention.
       ansible.builtin.command:
         argv: [python3, "{{ __recovery_release_runtime.path }}/aap_guest_release.py"]
         stdin: >-
@@ -106,9 +107,14 @@
       no_log: true
 
     - name: Stop after an incomplete guest release publication
+      # Only fixed messages are public; native command arguments/results stay protected.
+      no_log: false
       ansible.builtin.fail:
         msg: >-
-          {{ 'Supplemental AAP interface verification or publication did not finish. Preserve network components '
+          {{ 'Another hypervisor policy transaction stayed active for five seconds; '
+             'retry this job. This native attempt made no policy change.'
+             if ((__recovery_release_apply | default({})).rc | default(0) | int) == 75 else
+             'Supplemental AAP interface verification or publication did not finish. Preserve network components '
              'until a fresh authenticated plan proves canonical ownership absent.'
              if __recovery_release_operation == 'aap_supplemental_interface' else
              'Guest release did not finish. Any newly applied unpublished change was restored. '

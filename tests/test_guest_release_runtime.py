@@ -1,13 +1,20 @@
 """Prove exact native guest ownership, idempotence and rollback without a live VM."""
 
 from copy import deepcopy
+from contextlib import ExitStack, redirect_stderr, redirect_stdout
+import errno
+import fcntl
 from importlib.util import module_from_spec, spec_from_file_location
+import io
 import json
 import os
 from pathlib import Path
 import subprocess
+import runpy
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
@@ -129,7 +136,75 @@ class RuntimeReleaseTests(unittest.TestCase):
         self.exercise_reconcile(check_mode=True)
         self.exercise_reconcile()
 
-    def exercise_reconcile(self, check_mode=False, fail_apply=False):
+    def test_transient_real_lock_contention_waits_then_completes_verified_apply(self):
+        self.exercise_reconcile(contended=True)
+
+    def test_busy_real_lock_exhausts_before_any_probe_or_policy_operation(self):
+        request, _ = fixture()
+        with tempfile.TemporaryDirectory(prefix='guest-release-busy-lock-') as directory, ExitStack() as cleanup:
+            root = Path(directory)
+            descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+            cleanup.callback(os.close, descriptor)
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with patch.object(runtime.base, 'DIRECTORY', root), \
+                    patch.object(runtime.base, 'probe') as probe, \
+                    patch.object(runtime.base, 'command') as command, \
+                    patch.object(runtime.base, 'save') as save:
+                started = time.monotonic()
+                with self.assertRaises(BlockingIOError) as failure:
+                    runtime.reconcile(request)
+                elapsed = time.monotonic() - started
+                self.assertGreaterEqual(elapsed, 4.8)
+                self.assertLess(elapsed, 8)
+                self.assertEqual(failure.exception.errno, errno.EAGAIN)
+                self.assertEqual(failure.exception.strerror, runtime.POLICY_LOCK_BUSY)
+                probe.assert_not_called(); command.assert_not_called(); save.assert_not_called()
+            self.assertEqual(list(root.iterdir()), [])
+
+    def test_actual_cli_exposes_only_fixed_busy_reason(self):
+        request, _ = fixture()
+        with tempfile.TemporaryDirectory(prefix='guest-release-cli-lock-') as directory, ExitStack() as cleanup:
+            root = Path(directory)
+            descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+            cleanup.callback(os.close, descriptor)
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            stdout, stderr = io.StringIO(), io.StringIO()
+            with patch.object(runtime.base, 'DIRECTORY', root), \
+                    patch.object(runtime.base, 'probe') as probe, \
+                    patch.object(runtime.base, 'command') as command, \
+                    patch.object(runtime.base, 'save') as save, \
+                    patch.object(runtime.time, 'monotonic', side_effect=[0, 6]), \
+                    patch.object(sys, 'stdin', io.StringIO(json.dumps(request))), \
+                    redirect_stdout(stdout), redirect_stderr(stderr):
+                with self.assertRaises(SystemExit) as failure:
+                    runpy.run_path(str(ROOT / 'src/aap_guest_release.py'), run_name='__main__')
+            self.assertEqual(failure.exception.code, 75)
+            self.assertEqual(stdout.getvalue(), '')
+            self.assertEqual(stderr.getvalue(), runtime.POLICY_LOCK_BUSY + '\n')
+            probe.assert_not_called(); command.assert_not_called(); save.assert_not_called()
+
+    def test_other_validation_and_io_failures_are_not_retried_or_exposed_by_cli(self):
+        request, _ = fixture()
+        canary = 'synthetic-private-error-canary'
+        for error in (ValueError(canary), BlockingIOError(errno.EAGAIN, canary)):
+            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory(prefix='guest-release-cli-error-') as directory:
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with patch.object(runtime.base, 'DIRECTORY', Path(directory)), \
+                        patch.object(runtime.base, 'probe', side_effect=error) as probe, \
+                        patch.object(runtime.base, 'command') as command, \
+                        patch.object(runtime.base, 'save') as save, \
+                        patch.object(sys, 'stdin', io.StringIO(json.dumps(request))), \
+                        redirect_stdout(stdout), redirect_stderr(stderr):
+                    with self.assertRaises(SystemExit) as failure:
+                        runpy.run_path(str(ROOT / 'src/aap_guest_release.py'), run_name='__main__')
+                self.assertEqual(failure.exception.code, 1)
+                self.assertEqual(stdout.getvalue(), '')
+                self.assertEqual(stderr.getvalue(), 'Protected guest recovery-isolation release failed.\n')
+                self.assertNotIn(canary, stdout.getvalue() + stderr.getvalue())
+                self.assertEqual(probe.call_count, 1)
+                command.assert_not_called(); save.assert_not_called()
+
+    def exercise_reconcile(self, check_mode=False, fail_apply=False, contended=False):
         request, state = fixture()
         request['check_mode'] = check_mode
         with tempfile.TemporaryDirectory(prefix='guest-release-runtime-') as directory:
@@ -141,6 +216,11 @@ class RuntimeReleaseTests(unittest.TestCase):
             helper = root / 'isolation-helper'
             helper.write_text("TABLE='hactar_recovery'\ndef validate_configuration(value):return value\ndef policy(value):return []\n")
             calls, applied = [], []
+            released = threading.Event()
+            def probe(*arguments, **kwargs):
+                if contended:
+                    self.assertTrue(released.is_set(), 'Native verification ran before the policy lock was released.')
+                return state
             def command(arguments, data=None):
                 calls.append((arguments, data))
                 if arguments[-1] == 'apply':
@@ -149,8 +229,18 @@ class RuntimeReleaseTests(unittest.TestCase):
                         raise ValueError('synthetic failed nft application')
                 return subprocess.CompletedProcess(arguments, 0, '', '')
             with patch.object(runtime.base, 'DIRECTORY', root), patch.object(runtime.base, 'CONFIG', config), \
-                    patch.object(runtime.base, 'HELPER', helper), patch.object(runtime.base, 'probe', return_value=state), \
-                    patch.object(runtime.base, 'command', side_effect=command):
+                    patch.object(runtime.base, 'HELPER', helper), patch.object(runtime.base, 'probe', side_effect=probe), \
+                    patch.object(runtime.base, 'command', side_effect=command), ExitStack() as cleanup:
+                if contended:
+                    descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+                    cleanup.callback(os.close, descriptor)
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    def release_lock():
+                        released.set()
+                        fcntl.flock(descriptor, fcntl.LOCK_UN)
+                    timer = threading.Timer(0.2, release_lock)
+                    timer.start()
+                    cleanup.callback(timer.join)
                 if fail_apply:
                     with self.assertRaises(ValueError):
                         runtime.reconcile(request)
@@ -198,12 +288,15 @@ class RuntimeReleaseTests(unittest.TestCase):
     def test_native_role_skips_rollback_after_failed_empty_runtime_result(self):
         self.native_role_failure(False, runtime_failure=True)
 
+    def test_native_role_reports_fixed_busy_reason_without_exposing_protected_command(self):
+        self.native_role_failure(False, runtime_failure=True, busy=True)
+
     def test_native_http_role_uses_exact_bootstrap_mode_and_durable_rollback_rules(self):
         for durable in (False, True):
             with self.subTest(durable=durable):
                 self.native_role_failure(durable, operation='guest_bootstrap_http')
 
-    def native_role_failure(self, durable, runtime_failure=False, operation='release_guest'):
+    def native_role_failure(self, durable, runtime_failure=False, operation='release_guest', busy=False):
         request, _ = fixture()
         if operation == 'guest_bootstrap_http':
             request['transition']['desired_policy'] = deepcopy(request['transition']['previous_policy'])
@@ -222,7 +315,8 @@ class RuntimeReleaseTests(unittest.TestCase):
             stub.write_text("import json,pathlib,sys\nrequest=json.load(sys.stdin)\n"
                 "request['_runtime_directory']=str(pathlib.Path(sys.argv[1]).parent)\n"
                 "with pathlib.Path(" + repr(str(trace)) + ").open('a') as f:f.write(json.dumps(request)+'\\n')\n"
-                + ("raise SystemExit(1)\n" if runtime_failure else "print(json.dumps({'changed':True,'applied':True}))\n"))
+                + ("print('synthetic-protected-command-canary',file=sys.stderr)\nraise SystemExit(75)\n" if busy else
+                   "raise SystemExit(1)\n" if runtime_failure else "print(json.dumps({'changed':True,'applied':True}))\n"))
             (role / 'action_plugins/aap_publish_instance_keys.py').write_text(
                 "from ansible.plugins.action import ActionBase\n"
                 "class ActionModule(ActionBase):\n"
@@ -233,7 +327,8 @@ class RuntimeReleaseTests(unittest.TestCase):
             tasks = yaml.safe_load((ROOT / 'roles/recovery_guest_release/tasks/main.yml').read_text())
             def localize(values):
                 for task in values:
-                    task['no_log'] = False  # Synthetic fixture data only; production task defaults remain protected.
+                    if not busy:
+                        task['no_log'] = False  # Synthetic fixture data only; production task defaults remain protected.
                     if 'delegate_to' in task:
                         task.update(delegate_to='localhost', become=False)
                         task['vars'] = {'ansible_connection': 'local'}
@@ -265,6 +360,9 @@ class RuntimeReleaseTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('Stop after an incomplete guest release publication', result.stdout)
             self.assertNotIn('Expecting value', result.stdout + result.stderr)
+            if busy:
+                self.assertIn(runtime.POLICY_LOCK_BUSY, result.stdout)
+                self.assertNotIn('synthetic-protected-command-canary', result.stdout + result.stderr)
             self.assertTrue(trace.exists(), result.stdout + result.stderr)
             operations = [json.loads(line) for line in trace.read_text().splitlines()]
             self.assertEqual([row['operation'] for row in operations],

@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-104 tasks: 25 outstanding; 79 closed.
+105 tasks: 25 outstanding; 80 closed.
 
 ## Outstanding tasks
 
@@ -25,8 +25,8 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
-| bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | open | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.5 | Fix Windows completion checks after evaluation activation | in_progress | P1 | task | bead-wd-72f.31.4 |
+| bead-wd-72f.31.4.7 | Diagnose and fix Windows VM creation release failure | in_progress | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |
@@ -82,6 +82,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.3 | Prepare and verify Assistant Team on the selected test environment | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.2 | Complete Windows lab teardown using the existing jobs | closed | P1 | task | bead-wd-72f.31.4 |
+| bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | closed | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.5.1 | Pin the production Windows project to its tested revision | closed | P1 | task | bead-wd-72f.31.4.5 |
 | bead-wd-72f.31.4.6 | Approve temporary source AAP outage for successor Windows testing | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6.2 | Allow reviewed EE-based use cases without PAH repository prerequisites | closed | P1 | bug | bead-wd-72f.31.6 |
