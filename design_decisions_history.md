@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Verify the website and prepare the existing disposable test — 2026-11-08
+
+AIOps source `c69097e` completed the successor website deployment without changing
+code or DNS timeouts. Normal DNS and trusted HTTPS then passed, with monitoring
+and auto-arm off; the expected selected AAP fault destination was verified.
+
+Private Assistant implementation `0157adc`, with encrypted pair `1997664` and
+published history `df7bbda`, prepares only the selected successor's disposable
+test and retirement settings while retaining the predecessor's six snapshots.
+Prepared identities are selected explicitly, including their supported aliases;
+unprepared instances fail rather than inheriting another instance's settings.
+The already defined Linux utility joins the ordinary concrete resource list by
+YAML reference, preserving the original seven definitions and existing validation.
+No dispatch framework, helper, credential type or new store is added.
+
+Normal configuration import passed. Source/render ciphertext preservation and
+public provenance were checked; AAP masks stored secret fields, so their native
+bytes were not read independently. The existing disposable runtime test will
+verify normal consumption instead of adding a redundant secret-storage check.
+Software acceptance and owned cleanup remain unfinished.
+
 ## Retain the approved image-based Zabbix authentication baseline — 2026-11-08
 
 Private configuration implementation `bf75752` supplies the selected demo's

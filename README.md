@@ -52,8 +52,10 @@ approved saved-image Zabbix authentication baseline, without adding a token
 producer or encryption mechanism.
 Windows and Assistant configuration setup also passed through their existing
 prerequisite and import jobs. Windows' full runtime still needs sufficient RAM;
-Assistant's disposable test needs selected-instance settings that preserve the
-previous instance's data. Neither configuration import proves those VM tests.
+Assistant's selected-instance test settings and existing minimal Linux
+provisioning template are now imported, preserving the previous instance's data.
+The successor website also passes normal DNS and trusted HTTPS checks, with
+monitoring and auto-arm off. Fresh VM tests remain separate acceptance steps.
 
 ## Keep the demo boundaries clear
 

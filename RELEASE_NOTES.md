@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.48.12
+
+Document the successor website's successful DNS/HTTPS deployment and the imported
+Assistant settings/minimal Linux template. Preserve the distinction between
+verified source/render/import results and the remaining disposable software
+test, owned cleanup and capacity-dependent Windows runtime. No runtime code changes.
+
 ## 0.48.11
 
 Document successful remote/self AutoDeploy configuration and the repaired AIOps
