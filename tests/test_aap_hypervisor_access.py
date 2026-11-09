@@ -158,65 +158,27 @@ class ManagementAccessTests(unittest.TestCase):
         with self.assertRaises(keys.StoreError):
             keys.source_management_variables(foreign, context)
 
-    def test_check_mode_idempotence_and_rollback_use_only_exact_owned_native_rules(self):
-        for check_mode, fail in ((True, False), (False, False), (False, True)):
-            with self.subTest(check_mode=check_mode, fail=fail), tempfile.TemporaryDirectory() as temporary:
-                directory = Path(temporary)
-                expected, observed, *_ = fixture()
-                expected['check_mode'] = check_mode
-                config = directory / 'replacement-isolation.json'
-                original = json.dumps(observed['policy']).encode()
-                config.write_bytes(original)
-                config.chmod(0o600)
-                helper = directory / 'isolation.py'
-                helper.write_text("TABLE='synthetic'\ndef validate_configuration(value): return value\ndef policy(value): return []\n")
-                states, writes = set(), []
-                broken = [False]
-                def command(arguments, data=None, allowed=(0,)):
-                    if arguments[0] == 'firewall-cmd':
-                        mode = '--permanent' in arguments
-                        if '--query-rich-rule=' in arguments[-1]:
-                            return SimpleNamespace(returncode=0 if mode in states else 1, stdout='')
-                        writes.append(arguments)
-                        if '--add-rich-rule=' in arguments[-1]: states.add(mode)
-                        elif '--remove-rich-rule=' in arguments[-1]: states.remove(mode)
-                    elif arguments[-1] == 'apply':
-                        writes.append(arguments)
-                        if fail and not broken[0]:
-                            broken[0] = True
-                            raise ValueError('Synthetic apply failure')
-                    elif arguments[-1] == 'check':
-                        self.assertEqual(json.loads(config.read_text()), json.loads(data))
-                    return SimpleNamespace(returncode=0, stdout='')
-                def probe(route):
-                    result = deepcopy(observed)
-                    result['policy'] = json.loads(config.read_text())
-                    return result
-                with mock.patch.multiple(access, DIRECTORY=directory, CONFIG=config, HELPER=helper), \
-                     mock.patch.object(access, 'probe', side_effect=probe), mock.patch.object(access, 'command', side_effect=command):
-                    if fail:
-                        with self.assertRaises(ValueError): access.reconcile(expected)
-                        self.assertEqual(config.read_bytes(), original)
-                        self.assertEqual(states, set())
-                    else:
-                        result = access.reconcile(expected)
-                        self.assertEqual(result['applied'], not check_mode)
-                        if check_mode:
-                            self.assertEqual(writes, [])
-                            self.assertEqual(config.read_bytes(), original)
-                        else:
-                            self.assertEqual(states, {False, True})
-                            writes.clear()
-                            self.assertFalse(access.reconcile(expected)['changed'])
-                            self.assertEqual(writes, [])
+    def test_resource_verifier_is_read_only_for_real_and_check_modes(self):
+        for check in (False, True):
+            expected, state, *_ = fixture()
+            expected['check_mode'] = check
+            original = deepcopy(state)
+            with mock.patch.object(access, 'probe', return_value=state) as probe, \
+                 mock.patch.object(access, 'command') as command:
+                result = access.reconcile(expected)
+                self.assertFalse(result['applied'])
+                self.assertEqual(result['desired_policy'], access.desired_policy(expected['route'], expected['primary'], expected['declared_policy']))
+                self.assertEqual(probe.call_args.args[1], expected['declared_policy'])
+                command.assert_not_called()
+                self.assertEqual(state, original)
 
     def test_connection_tasks_bind_original_host_and_do_not_proxy_hypervisor_through_itself(self):
         tasks = yaml.safe_load((ROOT / 'tasks/aap-hypervisor-access.yml').read_text())
-        remote = next(row for row in tasks if 'ansible.builtin.command' in row)
+        remote = next(row for row in tasks if 'delegate_to' in row and 'block' in row)
         self.assertIn('hostvars[inventory_hostname].aap_instance_route.hypervisor.port', remote['vars']['ansible_port'])
         self.assertIn('StrictHostKeyChecking=yes', remote['vars']['ansible_ssh_common_args'])
         self.assertNotIn('ProxyCommand', remote['vars']['ansible_ssh_common_args'])
-        self.assertTrue(remote['no_log'])
+        self.assertTrue(next(row for row in remote['block'] if 'ansible.builtin.command' in row)['no_log'])
         tcp = next(row for row in tasks if 'ansible.builtin.wait_for' in row)
         self.assertIn('hostvars[inventory_hostname].aap_instance_route.vm_ip', tcp['vars']['ansible_host'])
         self.assertIn('hostvars[inventory_hostname].aap_instance_ssh_args', tcp['vars']['ansible_ssh_common_args'])
@@ -248,18 +210,25 @@ class ManagementAccessTests(unittest.TestCase):
                 '            assert str(self._task.args["port"]) == str(route["hypervisor"]["port"]), repr(self._task.args["port"])\n'
                 '        return {"changed":False,"stdout":json.dumps({"desired_policy":original["fixture_policy"],"changed":False})}\n')
             tasks = yaml.safe_load((ROOT / 'tasks/aap-hypervisor-access.yml').read_text())
+            transaction = next(row for row in tasks if 'block' in row)
+            verifier = next(row for row in transaction['block'] if 'ansible.builtin.command' in row)
+            verifier = deepcopy(verifier)
+            verifier['vars'] = transaction['vars']
+            verifier['delegate_to'] = transaction['delegate_to']
+            verifier['become'] = False
+            tasks = [tasks[1], verifier, next(row for row in tasks if 'ansible.builtin.wait_for' in row)]
             for row in tasks:
-                row['no_log'] = False  # Synthetic fixture only; production tasks remain protected.
+                row['no_log'] = False  # Synthetic fixture only.
                 for module in ('ansible.builtin.command', 'ansible.builtin.wait_for'):
                     if module in row:
                         row['connection_proof'] = row.pop(module)
                         if module == 'ansible.builtin.command':
-                            row['connection_proof']['argv'][2] = 'synthetic-code-not-executed'
+                            row['connection_proof']['argv'] = ['synthetic-resource-verifier']
             variables = {'aap_instance_route': expected['route'], 'aap_instance_resources': {'aap': expected['primary']},
                 'aap_hypervisor_isolation_https_clients': expected['declared_policy']['https_clients'],
                 'aap_hypervisor_isolation_protected_ipv4': expected['declared_policy']['protected_ipv4'],
                 'aap_hypervisor_isolation_host_clients': expected['declared_policy']['guest_host_clients'],
-                'fixture_policy': expected['declared_policy'], 'aap_instance_trust': {'path': '/tmp/synthetic-trust'},
+                'aap_management_native_runtime': {'path': '/tmp/synthetic-runtime'}, 'fixture_policy': expected['declared_policy'], 'aap_instance_trust': {'path': '/tmp/synthetic-trust'},
                 'vault_ansible_user': 'guest_operator', 'vault_ansible_password': 'synthetic-password',
                 'aap_instance_ssh_args': '-o StrictHostKeyChecking=yes -o ProxyCommand=synthetic-pinned-jump'}
             play = directory / 'play.yml'

@@ -2,19 +2,34 @@
 - name: Verify pinned hypervisor trust and identity
   ansible.builtin.include_tasks: aap-hypervisor-identity.yml
 
-- name: Require the complete persistent recovery isolation policy
-  ansible.builtin.command:
-    argv: [/usr/local/sbin/hactar-recovery-isolation, check]
-    stdin: >-
+- name: Bind the pinned native isolation verification inputs
+  ansible.builtin.set_fact:
+    aap_isolation_hypervisor: '{{ aap_hypervisor_pin }}'
+    aap_isolation_trust_file: '{{ aap_hypervisor_trust.path }}'
+    aap_isolation_pin_policy: >-
       {{ aap_hypervisor_pin | aap_hypervisor_isolation_policy(
            aap_hypervisor_isolation_https_clients | default([]),
            aap_hypervisor_isolation_protected_ipv4 | default([]),
            aap_hypervisor_isolation_host_clients | default([]),
            aap_hypervisor_isolation_released_clients | default([]),
-           aap_hypervisor_isolation_http_clients | default([])) | to_json }}
-  changed_when: false
-  check_mode: false
+           aap_hypervisor_isolation_http_clients | default([])) }}
   no_log: true
+
+- name: Require the complete native isolation policy to match CaC
+  block:
+    - name: Prepare pinned native policy observation under the temporary lock
+      ansible.builtin.include_tasks: aap-isolation-prepare.yml
+
+    - name: Compare the complete existing policy with its CaC source
+      ansible.builtin.include_tasks: aap-isolation-observe.yml
+      vars:
+        aap_isolation_previous_policy: '{{ aap_isolation_pin_policy }}'
+        aap_isolation_desired_policy: '{{ aap_isolation_pin_policy }}'
+        aap_isolation_require_match: true
+
+  always:
+    - name: Release only this observation's temporary lock and checkout
+      ansible.builtin.include_tasks: aap-isolation-finish.yml
 
 - name: Require persistent isolation to be active and enabled
   ansible.builtin.command:

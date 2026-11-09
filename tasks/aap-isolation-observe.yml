@@ -1,0 +1,36 @@
+---
+# Base publication stays base-only. Only native execution sees application grants.
+- name: Compose complete native candidates from base and current application CaC
+  ansible.builtin.set_fact:
+    aap_isolation_effective_previous_policy: >-
+      {{ aap_isolation_previous_policy | combine({'guest_host_clients':
+           (aap_isolation_previous_policy.guest_host_clients | default([]) + aap_isolation_app_clients) | unique | list})
+         if aap_isolation_app_clients | length > 0 else aap_isolation_previous_policy }}
+    aap_isolation_effective_desired_policy: >-
+      {{ aap_isolation_desired_policy | combine({'guest_host_clients':
+           (aap_isolation_desired_policy.guest_host_clients | default([]) + aap_isolation_app_clients) | unique | list})
+         if aap_isolation_app_clients | length > 0 else aap_isolation_desired_policy }}
+  no_log: true
+
+- name: Validate the complete native desired policy before any mutation
+  ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-validate.yml'
+  vars:
+    hactar_isolation_policy: '{{ aap_isolation_effective_desired_policy }}'
+
+- name: Read back the complete native state without treating it as desired configuration
+  ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-readback.yml'
+  vars:
+    hactar_isolation_policy: '{{ aap_isolation_effective_desired_policy }}'
+
+- name: Refuse native policy drift in the strictly read-only hypervisor preflight
+  ansible.builtin.assert:
+    that: __hactar_isolation_matches | bool
+    fail_msg: Native isolation differs from current CaC; run explicit CaC firewall reconciliation before provisioning guests.
+    quiet: true
+  when: aap_isolation_require_match | default(false) | bool
+  no_log: false
+
+- name: Retain only current CaC for native rollback without saving host rules
+  ansible.builtin.set_fact:
+    aap_isolation_rollback_policy: '{{ aap_isolation_effective_previous_policy }}'
+  no_log: true

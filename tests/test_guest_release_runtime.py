@@ -123,254 +123,164 @@ class RuntimeReleaseTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     runtime.plan(request, state)
 
-    def test_rollback_refuses_concurrent_policy_and_preserves_old_bytes_on_apply_error(self):
+    def test_rollback_refuses_concurrent_policy_and_keeps_all_native_provenance_checks(self):
         request, state = fixture()
         request['operation'] = 'rollback'
         with self.assertRaises(ValueError):
             runtime.plan(request, state)
         state['policy'] = deepcopy(request['transition']['desired_policy'])
         self.assertEqual(runtime.plan(request, state)['desired_policy'], request['transition']['previous_policy'])
-        self.exercise_reconcile(fail_apply=True)
 
-    def test_runtime_check_and_apply_are_idempotent_and_touch_only_existing_isolation(self):
-        self.exercise_reconcile(check_mode=True)
-        self.exercise_reconcile()
-
-    def test_transient_real_lock_contention_waits_then_completes_verified_apply(self):
-        self.exercise_reconcile(contended=True)
-
-    def test_busy_real_lock_exhausts_before_any_probe_or_policy_operation(self):
-        request, _ = fixture()
-        with tempfile.TemporaryDirectory(prefix='guest-release-busy-lock-') as directory, ExitStack() as cleanup:
-            root = Path(directory)
-            descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
-            cleanup.callback(os.close, descriptor)
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            with patch.object(runtime.base, 'DIRECTORY', root), \
-                    patch.object(runtime.base, 'probe') as probe, \
-                    patch.object(runtime.base, 'command') as command, \
-                    patch.object(runtime.base, 'save') as save:
-                started = time.monotonic()
-                with self.assertRaises(BlockingIOError) as failure:
-                    runtime.reconcile(request)
-                elapsed = time.monotonic() - started
-                self.assertGreaterEqual(elapsed, 4.8)
-                self.assertLess(elapsed, 8)
-                self.assertEqual(failure.exception.errno, errno.EAGAIN)
-                self.assertEqual(failure.exception.strerror, runtime.POLICY_LOCK_BUSY)
-                probe.assert_not_called(); command.assert_not_called(); save.assert_not_called()
-            self.assertEqual(list(root.iterdir()), [])
-
-    def test_actual_cli_exposes_only_fixed_busy_reason(self):
-        request, _ = fixture()
-        with tempfile.TemporaryDirectory(prefix='guest-release-cli-lock-') as directory, ExitStack() as cleanup:
-            root = Path(directory)
-            descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
-            cleanup.callback(os.close, descriptor)
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            stdout, stderr = io.StringIO(), io.StringIO()
-            with patch.object(runtime.base, 'DIRECTORY', root), \
-                    patch.object(runtime.base, 'probe') as probe, \
-                    patch.object(runtime.base, 'command') as command, \
-                    patch.object(runtime.base, 'save') as save, \
-                    patch.object(runtime.time, 'monotonic', side_effect=[0, 6]), \
-                    patch.object(sys, 'stdin', io.StringIO(json.dumps(request))), \
-                    redirect_stdout(stdout), redirect_stderr(stderr):
-                with self.assertRaises(SystemExit) as failure:
-                    runpy.run_path(str(ROOT / 'src/aap_guest_release.py'), run_name='__main__')
-            self.assertEqual(failure.exception.code, 75)
-            self.assertEqual(stdout.getvalue(), '')
-            self.assertEqual(stderr.getvalue(), runtime.POLICY_LOCK_BUSY + '\n')
-            probe.assert_not_called(); command.assert_not_called(); save.assert_not_called()
-
-    def test_other_validation_and_io_failures_are_not_retried_or_exposed_by_cli(self):
-        request, _ = fixture()
-        canary = 'synthetic-private-error-canary'
-        for error in (ValueError(canary), BlockingIOError(errno.EAGAIN, canary)):
-            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory(prefix='guest-release-cli-error-') as directory:
-                stdout, stderr = io.StringIO(), io.StringIO()
-                with patch.object(runtime.base, 'DIRECTORY', Path(directory)), \
-                        patch.object(runtime.base, 'probe', side_effect=error) as probe, \
-                        patch.object(runtime.base, 'command') as command, \
-                        patch.object(runtime.base, 'save') as save, \
-                        patch.object(sys, 'stdin', io.StringIO(json.dumps(request))), \
-                        redirect_stdout(stdout), redirect_stderr(stderr):
-                    with self.assertRaises(SystemExit) as failure:
-                        runpy.run_path(str(ROOT / 'src/aap_guest_release.py'), run_name='__main__')
-                self.assertEqual(failure.exception.code, 1)
-                self.assertEqual(stdout.getvalue(), '')
-                self.assertEqual(stderr.getvalue(), 'Protected guest recovery-isolation release failed.\n')
-                self.assertNotIn(canary, stdout.getvalue() + stderr.getvalue())
-                self.assertEqual(probe.call_count, 1)
-                command.assert_not_called(); save.assert_not_called()
-
-    def exercise_reconcile(self, check_mode=False, fail_apply=False, contended=False):
+    def test_resource_cli_never_mutates_firewall_or_writes_managed_policy(self):
         request, state = fixture()
-        request['check_mode'] = check_mode
-        with tempfile.TemporaryDirectory(prefix='guest-release-runtime-') as directory:
-            root = Path(directory)
-            config = root / 'replacement-isolation.json'
-            original = json.dumps(state['policy']).encode()
-            config.write_bytes(original)
-            config.chmod(0o600)
-            helper = root / 'isolation-helper'
-            helper.write_text("TABLE='hactar_recovery'\ndef validate_configuration(value):return value\ndef policy(value):return []\n")
-            calls, applied = [], []
-            released = threading.Event()
-            def probe(*arguments, **kwargs):
-                if contended:
-                    self.assertTrue(released.is_set(), 'Native verification ran before the policy lock was released.')
-                return state
-            def command(arguments, data=None):
-                calls.append((arguments, data))
-                if arguments[-1] == 'apply':
-                    applied.append(json.loads(config.read_text()))
-                    if fail_apply and len(applied) == 1:
-                        raise ValueError('synthetic failed nft application')
-                return subprocess.CompletedProcess(arguments, 0, '', '')
-            with patch.object(runtime.base, 'DIRECTORY', root), patch.object(runtime.base, 'CONFIG', config), \
-                    patch.object(runtime.base, 'HELPER', helper), patch.object(runtime.base, 'probe', side_effect=probe), \
-                    patch.object(runtime.base, 'command', side_effect=command), ExitStack() as cleanup:
-                if contended:
-                    descriptor = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
-                    cleanup.callback(os.close, descriptor)
-                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    def release_lock():
-                        released.set()
-                        fcntl.flock(descriptor, fcntl.LOCK_UN)
-                    timer = threading.Timer(0.2, release_lock)
-                    timer.start()
-                    cleanup.callback(timer.join)
-                if fail_apply:
-                    with self.assertRaises(ValueError):
-                        runtime.reconcile(request)
-                    self.assertEqual(config.read_bytes(), original)
-                    self.assertEqual(applied[-1], state['policy'])
-                else:
-                    result = runtime.reconcile(request)
-                    self.assertEqual(result['applied'], not check_mode)
-                    self.assertEqual(config.read_bytes() == original, check_mode)
-                    if check_mode:
-                        self.assertEqual(applied, [])
-                    else:
-                        self.assertEqual(json.loads(config.read_text()), request['transition']['desired_policy'])
-                        state['policy'] = deepcopy(request['transition']['desired_policy'])
-                        self.assertFalse(runtime.reconcile(request)['changed'])
-            self.assertTrue(any(args[:2] == ['/usr/sbin/nft', '--check'] for args, _ in calls))
-            self.assertFalse(any('firewall-cmd' in args or 'destroy' in args for args, _ in calls))
+        with patch.object(runtime.base, 'probe', return_value=state) as probe, \
+             patch.object(runtime.base, 'command') as command:
+            original = deepcopy(state)
+            result = runtime.reconcile(request)
+            self.assertFalse(result['applied'])
+            self.assertEqual(probe.call_args.args[1], request['transition']['previous_policy'])
+            self.assertEqual(state, original)
+            command.assert_not_called()
 
-    def test_native_dynamic_role_loads_existing_action_without_a_wrapper(self):
-        with tempfile.TemporaryDirectory(prefix='guest-release-role-load-') as directory:
-            root = Path(directory)
-            play = root / 'fixture.yml'
-            play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
-                'vars': {'recovery_release_guest': {}, 'recovery_release_hypervisor': {},
-                         'recovery_release_trust_file': '/tmp/synthetic-trust'},
-                'tasks': [{'ansible.builtin.include_role': {
-                    'name': str(ROOT / 'roles/recovery_guest_release')}}]}], sort_keys=False))
-            env = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(root / 'local'), ANSIBLE_REMOTE_TEMP=str(root / 'remote'),
-                       ANSIBLE_HOME=str(root / 'home'), ANSIBLE_NOCOLOR='1')
-            for key in ('CAC_GIT_TOKEN', 'AAP_CAC_SOURCE_TOKEN', 'AAP_CAC_SOURCE_URL'):
-                env.pop(key, None)
-            result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(play), '--check'],
-                env=env, cwd=ROOT, capture_output=True, text=True, timeout=60)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn('Preflight the source job', result.stdout)
-            self.assertNotIn('couldn\'t resolve module', result.stdout + result.stderr)
-            self.assertNotIn('No module named', result.stdout + result.stderr)
-            self.assertNotIn('Allocate protected temporary', result.stdout)
-
-    def test_native_role_rolls_back_unpublished_change_and_keeps_durable_release(self):
-        for durable in (False, True):
-            with self.subTest(durable=durable):
-                self.native_role_failure(durable)
-
-    def test_native_role_skips_rollback_after_failed_empty_runtime_result(self):
-        self.native_role_failure(False, runtime_failure=True)
-
-    def test_native_role_reports_fixed_busy_reason_without_exposing_protected_command(self):
-        self.native_role_failure(False, runtime_failure=True, busy=True)
-
-    def test_native_http_role_uses_exact_bootstrap_mode_and_durable_rollback_rules(self):
-        for durable in (False, True):
-            with self.subTest(durable=durable):
-                self.native_role_failure(durable, operation='guest_bootstrap_http')
-
-    def native_role_failure(self, durable, runtime_failure=False, operation='release_guest', busy=False):
+    def test_actual_cli_sanitizes_resource_errors_without_retry_or_secret_output(self):
         request, _ = fixture()
-        if operation == 'guest_bootstrap_http':
-            request['transition']['desired_policy'] = deepcopy(request['transition']['previous_policy'])
-            request['transition']['desired_policy']['http_clients'] = deepcopy(request['transition']['previous_policy']['https_clients'])
-        with tempfile.TemporaryDirectory(prefix='guest-release-role-rollback-') as directory:
+        stream = io.StringIO()
+        with patch.object(runtime.base, 'probe', side_effect=ValueError('secret-canary')) as probe, \
+             patch('sys.stdin', io.StringIO(json.dumps(request))), redirect_stdout(stream), redirect_stderr(stream):
+            with self.assertRaises(SystemExit) as stopped:
+                runpy.run_path(str(ROOT / 'src/aap_guest_release.py'), run_name='__main__')
+        self.assertEqual(stopped.exception.code, 1)
+        self.assertEqual(probe.call_count, 1)
+        self.assertNotIn('secret-canary', stream.getvalue())
+        self.assertIn('Protected guest resource verification failed.', stream.getvalue())
+
+    def test_native_policy_transaction_rolls_back_failed_publication_and_preserves_durable_state(self):
+        for durable in (False, True):
+            self.native_role_failure(durable)
+
+    def test_native_policy_transaction_keeps_failed_empty_resource_result_protected(self):
+        self.native_role_failure(False, resource_failure=True)
+
+    def test_native_mkdir_contention_is_bounded_and_never_breaks_another_lock(self):
+        self.native_role_failure(False, busy=True)
+
+    def test_native_mkdir_waits_for_transient_contention_then_releases_its_own_lock(self):
+        self.native_role_failure(False, contended=True)
+
+    def test_application_permissions_remain_native_only_through_failed_base_publication(self):
+        app = [{'bridge': 'virbr0', 'ipv4': '192.168.10.17', 'mac': '52:54:00:00:00:17',
+                'destinations': ['192.168.10.1'], 'ports': [443]}]
+        self.native_role_failure(False, app_clients=app)
+
+    def native_role_failure(self, durable, resource_failure=False, busy=False, contended=False, app_clients=None):
+        request, _ = fixture()
+        with tempfile.TemporaryDirectory(prefix='guest-release-native-') as directory:
             root = Path(directory)
             source = root / 'source'
             role = source / 'roles/recovery_guest_release'
             (role / 'tasks').mkdir(parents=True)
             (role / 'action_plugins').mkdir()
+            (source / 'tasks').mkdir()
             (source / 'src').mkdir()
+            native_tasks = root / 'hactar/playbooks/tasks'
+            native_tasks.mkdir(parents=True)
+            trace = root / 'resource-calls.jsonl'
+            native = root / 'hactar-recovery.nft'
+            native.write_text(json.dumps(request['transition']['previous_policy']))
+            lock = root / 'policy.lock'
             for name in ('aap_hypervisor_access.py', 'aap_guest_release.py'):
                 (source / 'src' / name).write_text((ROOT / 'src' / name).read_text())
-            trace = root / 'operations.jsonl'
-            stub = root / 'runtime.py'
-            stub.write_text("import json,pathlib,sys\nrequest=json.load(sys.stdin)\n"
-                "request['_runtime_directory']=str(pathlib.Path(sys.argv[1]).parent)\n"
-                "with pathlib.Path(" + repr(str(trace)) + ").open('a') as f:f.write(json.dumps(request)+'\\n')\n"
-                + ("print('synthetic-protected-command-canary',file=sys.stderr)\nraise SystemExit(75)\n" if busy else
-                   "raise SystemExit(1)\n" if runtime_failure else "print(json.dumps({'changed':True,'applied':True}))\n"))
+            stub = root / 'resource.py'
+            stub.write_text('import json,pathlib,sys\nrequest=json.load(sys.stdin)\n'
+                'with pathlib.Path(' + repr(str(trace)) + ').open("a") as f:f.write(json.dumps({"operation":request["operation"],"runtime":sys.argv[1]})+"\\n")\n'
+                + ('print("secret-resource-canary",file=sys.stderr)\nraise SystemExit(1)\n' if resource_failure else
+                   'print(json.dumps({"changed":True,"applied":False}))\n'))
             (role / 'action_plugins/aap_publish_instance_keys.py').write_text(
-                "from ansible.plugins.action import ActionBase\n"
-                "class ActionModule(ActionBase):\n"
-                " def run(self,tmp=None,task_vars=None):\n"
-                "  assert self._task.args['operation']==task_vars['fixture_operation']\n"
-                "  if self._task.args['phase']=='plan':return {'changed':False,'transition':task_vars['fixture_transition']}\n"
-                "  return {'failed':True,'msg':'Synthetic publication failure','durable_policy_published':task_vars['fixture_durable']}\n")
-            tasks = yaml.safe_load((ROOT / 'roles/recovery_guest_release/tasks/main.yml').read_text())
-            def localize(values):
-                for task in values:
-                    if not busy:
-                        task['no_log'] = False  # Synthetic fixture data only; production task defaults remain protected.
+                'from ansible.plugins.action import ActionBase\n'
+                'class ActionModule(ActionBase):\n'
+                ' def run(self,tmp=None,task_vars=None):\n'
+                '  if self._task.args["phase"]=="plan":return {"changed":False,"transition":task_vars["fixture_transition"]}\n'
+                '  assert self._task.args["transition"]==task_vars["fixture_transition"], "Base publication received application data"\n'
+                '  return {"failed":True,"msg":"Synthetic publication failure","durable_policy_published":task_vars["fixture_durable"]}\n')
+            (native_tasks / 'replacement-isolation-validate.yml').write_text(yaml.safe_dump([
+                {'name':'Validate synthetic CaC input','ansible.builtin.assert':{'that':'hactar_isolation_policy is mapping'}}]))
+            (native_tasks / 'replacement-isolation-readback.yml').write_text(yaml.safe_dump([
+                {'name':'Read synthetic native nft file','ansible.builtin.slurp':{'src':str(native)},'register':'fixture_native'},
+                {'name':'Compare complete synthetic nft state','ansible.builtin.set_fact':{'__hactar_isolation_matches':
+                    '{{ (fixture_native.content | b64decode | from_json) == hactar_isolation_policy }}'}}]))
+            (native_tasks / 'replacement-isolation-apply.yml').write_text(yaml.safe_dump([
+                {'name':'Apply complete synthetic nft state','ansible.builtin.copy':{'dest':str(native),
+                 'content':'{{ hactar_isolation_policy | to_json }}','mode':'0600'}}]))
+            def localize(tasks):
+                for task in tasks:
                     if 'delegate_to' in task:
-                        task.update(delegate_to='localhost', become=False)
-                        task['vars'] = {'ansible_connection': 'local'}
-                    if 'ansible.builtin.command' in task:
-                        actual_path = task['ansible.builtin.command']['argv'][1]
-                        task['ansible.builtin.command']['argv'] = [sys.executable, str(stub), actual_path]
+                        task.update(delegate_to='localhost',become=False)
+                    if 'vars' in task and 'ansible_connection' in task['vars']:
+                        task['vars']={'ansible_connection':'local'}
                     if 'ansible.builtin.copy' in task:
-                        task['ansible.builtin.copy'].pop('owner', None)
-                        task['ansible.builtin.copy'].pop('group', None)
-                    for key in ('block', 'rescue', 'always'):
-                        if key in task:
-                            localize(task[key])
-            localize(tasks)
-            planned_tasks = yaml.safe_load((ROOT / 'roles/recovery_guest_release/tasks/plan.yml').read_text())
-            localize(planned_tasks)
-            (role / 'tasks/plan.yml').write_text(yaml.safe_dump(planned_tasks, sort_keys=False))
-            (role / 'tasks/main.yml').write_text(yaml.safe_dump(tasks, sort_keys=False))
-            play = root / 'fixture.yml'
-            play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
-                'vars': {'recovery_release_guest': request['guest'], 'recovery_release_hypervisor': request['hypervisor'],
-                         'recovery_release_operation': operation, 'fixture_operation': operation,
-                         'recovery_release_trust_file': '/tmp/synthetic-trust', 'fixture_durable': durable,
-                         'fixture_transition': request['transition']},
-                'tasks': [{'ansible.builtin.include_role': {'name': str(role)}}]}], sort_keys=False))
-            env = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(root / 'local'), ANSIBLE_REMOTE_TEMP=str(root / 'remote'),
-                       ANSIBLE_HOME=str(root / 'home'), ANSIBLE_NOCOLOR='1')
-            result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(play)],
-                env=env, cwd=ROOT, capture_output=True, text=True, timeout=60)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn('Stop after an incomplete guest release publication', result.stdout)
-            self.assertNotIn('Expecting value', result.stdout + result.stderr)
+                        task['ansible.builtin.copy'].pop('owner',None)
+                        task['ansible.builtin.copy'].pop('group',None)
+                    if 'ansible.builtin.command' in task:
+                        args=task['ansible.builtin.command']['argv']
+                        if args[0]=='python3':task['ansible.builtin.command']['argv']=[sys.executable,str(stub),args[1]]
+                        else:task['ansible.builtin.command']['argv']=[str(lock) if value=='/run/hactar-recovery-policy.lock' else value for value in args]
+                    for section in ('block','rescue','always'):
+                        if section in task:localize(task[section])
+            for name in ('main.yml','plan.yml'):
+                tasks=yaml.safe_load((ROOT / 'roles/recovery_guest_release/tasks' / name).read_text())
+                localize(tasks)
+                (role / 'tasks' / name).write_text(yaml.safe_dump(tasks,sort_keys=False))
+            actual_prepare=yaml.safe_load((ROOT / 'tasks/aap-isolation-prepare.yml').read_text())
+            prepare=[{'name':'Initialize isolated native transaction fixture','ansible.builtin.set_fact':{
+                'aap_isolation_lock_acquired':False,'aap_isolation_source_workspace':{},'aap_isolation_app_clients':app_clients or [],
+                'hactar_firewall_source_root':str(root/'hactar')}}]
+            prepare += [task for task in actual_prepare if task['name'].startswith(('Acquire the approved','Retain this invocation'))]
+            localize(prepare)
+            (source / 'tasks/aap-isolation-prepare.yml').write_text(yaml.safe_dump(prepare,sort_keys=False))
+            for name in ('aap-isolation-observe.yml','aap-isolation-finish.yml'):
+                tasks=yaml.safe_load((ROOT/'tasks'/name).read_text());localize(tasks)
+                (source/'tasks'/name).write_text(yaml.safe_dump(tasks,sort_keys=False))
+            if busy or contended:
+                lock.mkdir()
+            thread=None
+            if contended:
+                def release_competitor():
+                    time.sleep(2.5)
+                    lock.rmdir()
+                thread=threading.Thread(target=release_competitor)
+                thread.start()
+            play=root/'play.yml'
+            play.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,
+                'vars':{'recovery_release_guest':request['guest'],'recovery_release_hypervisor':request['hypervisor'],
+                        'recovery_release_trust_file':'/tmp/synthetic-trust','fixture_durable':durable,
+                        'fixture_transition':request['transition']},
+                'tasks':[{'ansible.builtin.include_role':{'name':str(role)}}]}],sort_keys=False))
+            env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(root/'local'),ANSIBLE_REMOTE_TEMP=str(root/'remote'),
+                     ANSIBLE_HOME=str(root/'home'),ANSIBLE_NOCOLOR='1')
+            started=time.monotonic()
+            result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(play)],
+                cwd=ROOT,env=env,text=True,capture_output=True,timeout=45)
+            if thread:thread.join(timeout=5)
+            self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertNotIn('secret-resource-canary',result.stdout+result.stderr)
             if busy:
-                self.assertIn(runtime.POLICY_LOCK_BUSY, result.stdout)
-                self.assertNotIn('synthetic-protected-command-canary', result.stdout + result.stderr)
-            self.assertTrue(trace.exists(), result.stdout + result.stderr)
-            operations = [json.loads(line) for line in trace.read_text().splitlines()]
-            self.assertEqual([row['operation'] for row in operations],
-                             ['apply'] if durable or runtime_failure else ['apply', 'rollback'])
-            self.assertEqual(operations[0]['transition'], request['transition'])
-            self.assertTrue(all(row['mode'] == ('bootstrap_http' if operation == 'guest_bootstrap_http' else 'release') for row in operations))
-            # Native tempfile/copy/file tasks must remove their actual staging directory on failure.
-            self.assertFalse(Path(operations[0]['_runtime_directory']).exists())
+                self.assertFalse(trace.exists(),result.stdout+result.stderr)
+                self.assertTrue(lock.is_dir())
+                self.assertGreaterEqual(time.monotonic()-started,5)
+                self.assertLess(time.monotonic()-started,25)
+                self.assertEqual(json.loads(native.read_text()),request['transition']['previous_policy'])
+            else:
+                self.assertTrue(trace.exists(),result.stdout+result.stderr)
+                self.assertFalse(lock.exists(),result.stdout+result.stderr)
+                operations=[json.loads(row) for row in trace.read_text().splitlines()]
+                self.assertEqual([row['operation'] for row in operations],['apply'])
+                self.assertFalse(Path(operations[0]['runtime']).parent.exists())
+                expected='desired_policy' if durable and not resource_failure else 'previous_policy'
+                expected_policy = deepcopy(request['transition'][expected])
+                if app_clients and not resource_failure:
+                    expected_policy['guest_host_clients'] = app_clients
+                self.assertEqual(json.loads(native.read_text()),expected_policy,result.stdout+result.stderr)
+                self.assertIn('Stop after incomplete guest verification or publication',result.stdout)
 
 
 if __name__ == '__main__':

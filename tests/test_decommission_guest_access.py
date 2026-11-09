@@ -185,7 +185,7 @@ class GuestAccessRetirementTests(unittest.TestCase):
                 "gather_facts": False, "vars": variables, "tasks": selected + [{"ansible.builtin.assert": {"that": [
                     "aap_decommission_isolation_retirement is mapping",
                     "aap_decommission_guest_access_plan.changed",
-                    "not aap_decommission_guest_access_plan.requires_local_update",
+                    "aap_decommission_guest_access_plan.requires_local_update",
                     "aap_decommission_isolation_retirement.previous_policy.guest_host_clients | length == 3",
                     "aap_decommission_isolation_retirement.desired_policy.guest_host_clients | length == 1"]}}]}], sort_keys=False))
             config = directory / "ansible.cfg"
@@ -218,9 +218,10 @@ class GuestAccessRetirementTests(unittest.TestCase):
         identity = yaml.safe_load((ROOT / "tasks/aap-hypervisor-identity.yml").read_text())
         pin = yaml.safe_load((ROOT / "tasks/aap-hypervisor-pin.yml").read_text())
         self.assertEqual(pin[0]["ansible.builtin.include_tasks"], "aap-hypervisor-identity.yml")
-        self.assertEqual(pin[1]["ansible.builtin.command"]["argv"], ["/usr/local/sbin/hactar-recovery-isolation", "check"])
-        self.assertIn("aap_hypervisor_isolation_host_clients", pin[1]["ansible.builtin.command"]["stdin"])
-        self.assertEqual(pin[2]["loop"], ["is-active", "is-enabled"])
+        self.assertIn("aap_hypervisor_isolation_host_clients", pin[1]["ansible.builtin.set_fact"]["aap_isolation_pin_policy"])
+        self.assertEqual(pin[2]["block"][1]["ansible.builtin.include_tasks"], "aap-isolation-observe.yml")
+        self.assertEqual(pin[2]["always"][0]["ansible.builtin.include_tasks"], "aap-isolation-finish.yml")
+        self.assertEqual(pin[3]["loop"], ["is-active", "is-enabled"])
         connection = next(task["ansible.builtin.set_fact"] for task in identity if "ansible.builtin.set_fact" in task)
         self.assertTrue(connection["ansible_host_key_checking"])
         self.assertIn("StrictHostKeyChecking=yes", connection["ansible_ssh_common_args"])
@@ -229,181 +230,145 @@ class GuestAccessRetirementTests(unittest.TestCase):
         play = yaml.safe_load((ROOT / "destroy-test-aap.yml").read_text())[0]
         self.assertEqual(play["pre_tasks"][2]["ansible.builtin.include_tasks"], "tasks/aap-hypervisor-identity.yml")
 
-    def test_actual_preflight_check_mode_reads_verified_transition_without_host_writes(self):
+    def run_apply(self, fail=False, check=False, applications=False, no_delete=False):
         inputs = fixture()
+        app_clients = []
+        app_owners = []
+        selected_app_clients = []
+        if applications:
+            selected_app_clients = [copy.deepcopy(inputs[0]['guest_host_clients'][1])]
+            inputs[0]['guest_host_clients'].pop(1)
+            other = {'bridge': 'vmbr0', 'ipv4': '192.168.70.99', 'mac': '52:54:00:00:00:99',
+                     'destinations': ['192.168.70.1'], 'ports': [443]}
+            app_clients = selected_app_clients + [other]
+            guest = dict(inputs[3]['zabbix'], vm_name='zabbix-v07', instance_name=inputs[2]['vm_name'])
+            app_owners = [{'guest': guest, 'clients': selected_app_clients},
+                          {'guest': dict(guest, instance_name='aap27-test-8', vm_name='zabbix-v08',
+                                         uuid='88888888-2222-3333-4444-555555555555',
+                                         disk='/opt/vms/zabbix-v08.disk.qcow2', address=other['ipv4'], mac=other['mac']), 'clients': [other]}]
         plan = RETIRE.guest_access_plan(*inputs)
-        with tempfile.TemporaryDirectory(prefix="decommission-check-preflight-") as temporary:
+        effective_previous = copy.deepcopy(plan['previous_policy'])
+        effective_previous['guest_host_clients'] += app_clients
+        effective_desired = copy.deepcopy(plan['desired_policy'])
+        effective_desired['guest_host_clients'] += [row for row in app_clients if row not in selected_app_clients]
+        def rich_rule(row):
+            return ('rule family="ipv4" priority="0" source address="%s/32" destination address="%s/32" '
+                    'port port="%s" protocol="tcp" accept' % (row['ipv4'], row['destinations'][0], row['ports'][0]))
+        application_rules = [rich_rule(row) for row in app_clients]
+        remaining_app_rules = [rich_rule(row) for row in app_clients if row not in selected_app_clients]
+        with tempfile.TemporaryDirectory(prefix='retire-native-ansible-') as temporary:
             directory = Path(temporary)
-            policy = directory / "policy.json"
-            before = json.dumps(plan["desired_policy"])
-            policy.write_text(before)
-            policy.chmod(0o600)
-            events = directory / "events.jsonl"
-            helper = directory / "isolation"
-            helper.write_text("#!/usr/bin/env python3\nimport json,pathlib,sys\n" +
-                "p=pathlib.Path(%r);log=pathlib.Path(%r)\n" % (str(policy), str(events)) +
-                "with log.open('a') as f: f.write(json.dumps(sys.argv[1:])+chr(10))\n" +
-                "assert sys.argv[1:] == ['check']\nassert json.load(sys.stdin)==json.loads(p.read_text())\n")
-            helper.chmod(0o700)
-            for executable in ("virsh", "systemctl", "firewall-cmd"):
-                stub = directory / executable
-                stub.write_text("#!/usr/bin/env python3\nimport json,pathlib,sys\n" +
-                    "log=pathlib.Path(%r)\n" % str(events) +
-                    "with log.open('a') as f: f.write(json.dumps(sys.argv)+chr(10))\n" +
-                    "xmls=%r\nnetworks=%r\n" % (inputs[4], inputs[5]) +
-                    "if 'dumpxml' in sys.argv: print(xmls[sys.argv[sys.argv.index('dumpxml')+1]])\n" +
-                    "elif 'net-dumpxml' in sys.argv: print(networks[sys.argv[sys.argv.index('net-dumpxml')+1]])\n" +
-                    "elif 'net-list' in sys.argv: print(chr(10).join(networks))\n" +
-                    "elif pathlib.Path(sys.argv[0]).name=='systemctl': assert sys.argv[1] in ('is-active','is-enabled')\n" +
-                    "else: assert any(x.startswith('--query-rich-rule=') for x in sys.argv)\n")
-                stub.chmod(0o700)
-            tasks = yaml.safe_load((ROOT / "tasks/decommission-guest-access.yml").read_text())
-            readback = yaml.safe_load((ROOT / 'tasks/decommission-network-readback.yml').read_text())
-            for task in readback:
-                if 'ansible.builtin.command' in task:
-                    task['ansible.builtin.command']['argv'][0] = str(directory / 'virsh')
-            (directory / 'decommission-network-readback.yml').write_text(yaml.safe_dump(readback, sort_keys=False))
-            for task in tasks[1]["block"]:
-                if "ansible.builtin.stat" in task:
-                    task["ansible.builtin.stat"]["path"] = str(policy)
-                if "ansible.builtin.slurp" in task:
-                    task["ansible.builtin.slurp"]["src"] = str(policy)
-                if task["name"] == "Require the existing root-owned regular isolation file":
-                    # A user-owned disposable fixture substitutes only the owner assertion.
-                    task["ansible.builtin.assert"]["that"] = [value.replace(".uid == 0", ".uid == %s" % os.getuid())
-                                                               for value in task["ansible.builtin.assert"]["that"]]
-                command = task.get("ansible.builtin.command", {})
-                if command.get("argv", [None])[0] == "/usr/local/sbin/hactar-recovery-isolation":
-                    command["argv"][0] = str(helper)
-                elif command.get("argv", [None])[0] in ("virsh", "systemctl", "firewall-cmd"):
-                    command["argv"][0] = str(directory / command["argv"][0])
-            variables = {"aap_decommission_guest_access_phase": "preflight",
-                "aap_hypervisor_pin": inputs[2]["hypervisor"], "aap_instance_route": inputs[2],
-                "aap_instance_resources": inputs[3], "aap_retirement": inputs[1],
-                "aap_retirement_domains": {"stdout_lines": list(inputs[4])},
-                "aap_hypervisor_isolation_https_clients": inputs[0]["https_clients"],
-                "aap_hypervisor_isolation_protected_ipv4": inputs[0]["protected_ipv4"],
-                "aap_hypervisor_isolation_host_clients": inputs[0]["guest_host_clients"]}
-            play = directory / "play.yml"
-            play.write_text(yaml.safe_dump([{"hosts": "localhost", "connection": "local", "become": False,
-                "gather_facts": False, "vars": variables, "tasks": tasks + [{"ansible.builtin.assert": {"that": [
-                    "aap_decommission_isolation_retirement is mapping",
-                    "not aap_decommission_guest_access_plan.requires_local_update",
-                    "aap_decommission_guest_access_plan.rich_rules_to_remove | length == 2"]}}]}], sort_keys=False))
-            config = directory / "ansible.cfg"
-            config.write_text("[defaults]\n")
-            env = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_FILTER_PLUGINS=str(ROOT / "filter_plugins"),
-                       ANSIBLE_LOCAL_TEMP=str(directory / "local"), ANSIBLE_REMOTE_TEMP=str(directory / "remote"))
-            result = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(play), "--check"],
-                                    env=env, text=True, capture_output=True, timeout=120)
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertEqual(policy.read_text(), before)
-            recorded = [json.loads(line) for line in events.read_text().splitlines()]
-            self.assertTrue(recorded)
-            self.assertFalse(any("apply" in event or any(str(part).startswith('--remove-rich-rule=')
-                                                       for part in event) for event in recorded))
-
-    def run_apply(self, fail=False, check=False):
-        inputs = fixture()
-        plan = RETIRE.guest_access_plan(*inputs)
-        with tempfile.TemporaryDirectory(prefix="retire-guest-access-") as temporary:
-            directory = Path(temporary)
-            policy = directory / "policy.json"
-            policy.write_text(json.dumps(plan["previous_policy"]))
-            native = directory / "native.json"
-            native.write_text(json.dumps({"runtime": plan["rich_rules_to_remove"] + ["unrelated"],
-                                          "permanent": plan["rich_rules_to_remove"] + ["unrelated"]}))
-            events = directory / "events.jsonl"
-            helper = directory / "isolation"
-            helper.write_text("#!/usr/bin/env python3\n" +
-                "import json,pathlib,sys\n" +
-                "p=pathlib.Path(%r); log=pathlib.Path(%r)\n" % (str(policy), str(events)) +
-                "value=json.loads(p.read_text()); action=sys.argv[1]\n" +
-                "with log.open('a') as f: f.write(json.dumps([action,value])+chr(10))\n" +
-                "if action=='check':\n value_from_stdin=json.load(sys.stdin)\n sys.exit(0 if value_from_stdin==value else 9)\n" +
-                ("if len(value.get('guest_host_clients',[]))==1: sys.exit(7)\n" if fail else "") +
-                "print('changed')\n")
-            helper.chmod(0o700)
-            firewall = directory / "firewall-cmd"
-            firewall.write_text("#!/usr/bin/env python3\nimport json,pathlib,sys\n" +
-                "p=pathlib.Path(%r); log=pathlib.Path(%r)\n" % (str(native), str(events)) +
-                "data=json.loads(p.read_text()); key='permanent' if '--permanent' in sys.argv else 'runtime'\n" +
-                "argument=next(x for x in sys.argv if x.startswith(('--query-rich-rule=','--remove-rich-rule=')))\n" +
-                "action,rule=argument.split('=',1)\n" +
-                "with log.open('a') as f: f.write(json.dumps([action,key,rule])+chr(10))\n" +
-                "if action=='--query-rich-rule': sys.exit(0 if rule in data[key] else 1)\n" +
-                "data[key].remove(rule);p.write_text(json.dumps(data))\n")
+            policy = directory/'hactar-recovery.nft'
+            policy.write_text(json.dumps(effective_previous))
+            native = directory/'firewalld-fixture.json'
+            original_native = {'runtime':plan['rich_rules_to_remove']+application_rules+['unrelated'],
+                               'permanent':plan['rich_rules_to_remove']+application_rules+['unrelated']}
+            native.write_text(json.dumps(original_native))
+            events = directory/'events.jsonl'
+            (directory/'action_plugins').mkdir()
+            (directory/'action_plugins/fixture_firewall.py').write_text(
+                'import json,pathlib\nfrom ansible.plugins.action import ActionBase\n'
+                'class ActionModule(ActionBase):\n'
+                ' def run(self,tmp=None,task_vars=None):\n'
+                '  path=pathlib.Path('+repr(str(native))+');state=json.loads(path.read_text())\n'
+                '  for item in self._templar.template(task_vars["firewall"]):\n'
+                '   if task_vars["fixture_no_delete"] and item["state"]=="disabled":continue\n'
+                '   rules=item["rich_rule"] if isinstance(item["rich_rule"],list) else [item["rich_rule"]]\n'
+                '   for kind in ("runtime","permanent"):\n'
+                '    if not item[kind]:continue\n'
+                '    for rule in rules:\n'
+                '     if item["state"]=="disabled" and rule in state[kind]:state[kind].remove(rule)\n'
+                '     elif item["state"]=="enabled" and rule not in state[kind]:state[kind].append(rule)\n'
+                '  path.write_text(json.dumps(state))\n'
+                '  return {"changed":True}\n')
+            collection=directory/'collections/ansible_collections/redhat/rhel_system_roles/roles/firewall/tasks'
+            collection.mkdir(parents=True)
+            (collection/'main.yml').write_text(yaml.safe_dump([
+                {'name':'Exercise exact certified-role inputs in isolated fixture','ansible.legacy.fixture_firewall':{}}]))
+            hactar=directory/'hactar/playbooks/tasks'
+            hactar.mkdir(parents=True)
+            (hactar/'replacement-isolation-apply.yml').write_text(yaml.safe_dump([
+                {'name':'Record complete nft policy candidate','ansible.builtin.lineinfile':{
+                    'path':str(events),'create':True,'mode':'0600','line':'{{ hactar_isolation_policy | to_json }}'}},
+                {'name':'Refuse injected native apply failure','ansible.builtin.assert':{'that':
+                    "not fixture_fail or hactar_isolation_policy == fixture_previous"}},
+                {'name':'Apply native nft fixture policy','ansible.builtin.copy':{'dest':str(policy),
+                    'content':'{{ hactar_isolation_policy | to_json }}','mode':'0600'}}]))
+            for name,data in {
+                'aap-isolation-prepare.yml':[{'name':'Prepare synthetic locked native transaction','ansible.builtin.set_fact':{
+                    'aap_isolation_lock_acquired':False,'aap_isolation_source_workspace':{},
+                    'hactar_firewall_source_root':str(directory/'hactar')}}],
+                'decommission-network-readback.yml':[{'name':'Retain synthetic actual network definitions','ansible.builtin.set_fact':{
+                    'aap_decommission_guest_network_xmls':{name:{'persistent':xml,'current':xml} for name,xml in inputs[5].items()}}}]
+            }.items():
+                (directory/name).write_text(yaml.safe_dump(data,sort_keys=False))
+            (directory/'aap-isolation-observe.yml').write_text((ROOT/'tasks/aap-isolation-observe.yml').read_text())
+            (directory/'decommission-aiops-access.yml').write_text((ROOT/'tasks/decommission-aiops-access.yml').read_text())
+            (hactar/'replacement-isolation-validate.yml').write_text(yaml.safe_dump([
+                {'name':'Validate synthetic complete native policy','ansible.builtin.assert':{'that':'hactar_isolation_policy is mapping'}}]))
+            (hactar/'replacement-isolation-readback.yml').write_text(yaml.safe_dump([
+                {'name':'Read synthetic native policy','ansible.builtin.slurp':{'src':str(policy)},'register':'fixture_native'},
+                {'name':'Compare complete native policy','ansible.builtin.set_fact':{'__hactar_isolation_matches':
+                    '{{ (fixture_native.content | b64decode | from_json) == hactar_isolation_policy }}'}}]))
+            (directory/'aap-isolation-finish.yml').write_text((ROOT/'tasks/aap-isolation-finish.yml').read_text())
+            firewall=directory/'firewall-cmd'
+            firewall.write_text('#!/usr/bin/env python3\nimport json,pathlib,sys\n'
+                'state=json.loads(pathlib.Path('+repr(str(native))+').read_text())\n'
+                'kind="permanent" if "--permanent" in sys.argv else "runtime"\n'
+                'rule=next(x.split("=",1)[1] for x in sys.argv if x.startswith("--query-rich-rule="))\n'
+                'raise SystemExit(0 if rule in state[kind] else 1)\n')
             firewall.chmod(0o700)
-            virsh = directory / 'virsh'
-            virsh.write_text('#!/usr/bin/env python3\nimport sys\nnetworks=%r\n' % inputs[5]
-                             + "if 'net-list' in sys.argv: print(chr(10).join(networks))\n"
-                             + "elif 'net-dumpxml' in sys.argv: print(networks[sys.argv[sys.argv.index('net-dumpxml')+1]])\n"
-                             + "else: raise SystemExit(9)\n")
-            virsh.chmod(0o700)
-            readback = yaml.safe_load((ROOT / 'tasks/decommission-network-readback.yml').read_text())
-            for task in readback:
-                if 'ansible.builtin.command' in task:
-                    task['ansible.builtin.command']['argv'][0] = str(virsh)
-            (directory / 'decommission-network-readback.yml').write_text(yaml.safe_dump(readback, sort_keys=False))
-            tasks = yaml.safe_load((ROOT / "tasks/decommission-guest-access.yml").read_text())
-
+            tasks=yaml.safe_load((ROOT/'tasks/decommission-guest-access.yml').read_text())
             def adapt(rows):
                 for task in rows:
-                    command = task.get("ansible.builtin.command", {})
-                    if command.get("argv", [None])[0] == "/usr/local/sbin/hactar-recovery-isolation":
-                        command["argv"][0] = str(helper)
-                    if command.get("argv", [None])[0] == "firewall-cmd":
-                        command["argv"][0] = str(firewall)
-                    if "ansible.builtin.copy" in task:
-                        task["ansible.builtin.copy"].update(dest=str(policy), owner=str(os.getuid()), group=str(os.getgid()))
-                    for field in ("block", "rescue", "always"):
-                        adapt(task.get(field, []))
+                    command=task.get('ansible.builtin.command',{})
+                    if command.get('argv',[None])[0]=='firewall-cmd':command['argv'][0]=str(firewall)
+                    for section in ('block','rescue','always'):adapt(task.get(section,[]))
             adapt(tasks)
-            play = directory / "play.yml"
-            play.write_text(yaml.safe_dump([{"hosts": "localhost", "connection": "local", "become": False,
-                "gather_facts": False, "vars": {"aap_decommission_guest_access_phase": "apply",
-                    "aap_decommission_selected_guests_stopped": True,
-                    'aap_decommission_guest_network_names': list(inputs[5]),
-                    'aap_decommission_reservations': RETIRE.reservation_plan(
-                        {name: {'persistent': xml, 'current': xml} for name, xml in inputs[5].items()}, inputs[2], inputs[3]),
-                    "aap_decommission_isolation_retirement": {key: plan[key] for key in ("previous_policy", "desired_policy", "identities")},
-                    "aap_decommission_guest_access_plan": plan}, "tasks": tasks}], sort_keys=False))
-            config = directory / "ansible.cfg"
-            config.write_text("[defaults]\nretry_files_enabled=false\n")
-            environment = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_NOCOLOR="1",
-                               ANSIBLE_FILTER_PLUGINS=str(ROOT / 'filter_plugins'),
-                               ANSIBLE_LOCAL_TEMP=str(directory / "local"), ANSIBLE_REMOTE_TEMP=str(directory / "remote"))
-            command = [sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(play)]
-            if check:
-                command.append("--check")
-            result = subprocess.run(command,
-                                    env=environment, text=True, capture_output=True, timeout=120)
-            self.assertEqual(result.returncode, 2 if fail or check else 0, result.stdout + result.stderr)
-            if check:
-                self.assertFalse(events.exists())
-                self.assertEqual(json.loads(policy.read_text()), plan["previous_policy"])
-                self.assertTrue(all(len(rules) == 3 for rules in json.loads(native.read_text()).values()))
-                return
-            self.assertEqual(json.loads(policy.read_text()), plan["previous_policy"] if fail else plan["desired_policy"])
-            self.assertEqual(json.loads(native.read_text()), {"runtime": ["unrelated"], "permanent": ["unrelated"]})
-            recorded = [json.loads(line) for line in events.read_text().splitlines()]
-            self.assertEqual(recorded[0][0], "check")
-            self.assertEqual(recorded[-1][0], "check")
-            if fail:
-                self.assertEqual(recorded[-1][1], plan["previous_policy"])
-                self.assertIn("selected guests remain stopped", result.stdout)
-            else:
-                self.assertEqual(recorded[-1][1], plan["desired_policy"])
+            variables={'aap_decommission_guest_access_phase':'apply','aap_decommission_selected_guests_stopped':True,
+                'aap_decommission_guest_network_names':list(inputs[5]),
+                'aap_instance_route':inputs[2], 'aap_retirement':inputs[1], 'aap_decommission_guest_xmls':inputs[4],
+                'aap_decommission_app_clients':selected_app_clients, 'aap_isolation_app_clients':app_clients,
+                'aap_isolation_app_owners':app_owners,
+                'aap_decommission_reservations':RETIRE.reservation_plan(
+                    {name:{'persistent':xml,'current':xml} for name,xml in inputs[5].items()},inputs[2],inputs[3]),
+                'aap_decommission_isolation_retirement':{key:plan[key] for key in ('previous_policy','desired_policy','identities')},
+                'aap_decommission_guest_access_plan':plan,'fixture_fail':fail,'fixture_previous':effective_previous,'fixture_no_delete':no_delete}
+            play=directory/'play.yml'
+            play.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','become':False,
+                'gather_facts':False,'vars':variables,'tasks':tasks}],sort_keys=False))
+            config=directory/'ansible.cfg';config.write_text('[defaults]\n')
+            env=dict(os.environ,ANSIBLE_CONFIG=str(config),ANSIBLE_FILTER_PLUGINS=str(ROOT/'filter_plugins'),
+                ANSIBLE_ACTION_PLUGINS=str(directory/'action_plugins'),ANSIBLE_COLLECTIONS_PATH=str(directory/'collections'),
+                ANSIBLE_LOCAL_TEMP=str(directory/'local'),ANSIBLE_REMOTE_TEMP=str(directory/'remote'))
+            command=[sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(play)]
+            if check:command.append('--check')
+            result=subprocess.run(command,env=env,text=True,capture_output=True,timeout=60)
+            self.assertEqual(result.returncode,2 if fail or check or no_delete else 0,result.stdout+result.stderr)
+            self.assertEqual(json.loads(policy.read_text()),effective_previous if fail or check or no_delete else effective_desired)
+            result_rules=json.loads(native.read_text())
+            for kind in ('runtime','permanent'):
+                self.assertEqual(set(result_rules[kind]),set(original_native[kind]) if fail or check or no_delete else set(remaining_app_rules+['unrelated']))
+            if check:self.assertFalse(events.exists())
 
-    def test_real_ansible_tasks_remove_only_exact_native_rules_then_apply_and_check(self):
+    def test_native_ansible_removes_only_exact_rules_and_applies_complete_cac(self):
         self.run_apply()
 
-    def test_failed_apply_restores_previous_file_and_policy_without_reenabling_native_grants(self):
+    def test_native_ansible_failure_restores_prior_cac_and_exact_rich_rule_states(self):
         self.run_apply(fail=True)
 
-    def test_check_mode_refuses_mutating_phase_without_native_or_policy_writes(self):
+    def test_selected_app_rules_are_removed_before_owner_retirement_and_other_instance_survives(self):
+        self.run_apply(applications=True)
+
+    def test_failed_selected_app_cleanup_restores_exact_states_and_retains_owner_records(self):
+        self.run_apply(fail=True, applications=True)
+
+    def test_absence_check_stops_retirement_if_a_native_rule_was_not_removed(self):
+        self.run_apply(applications=True, no_delete=True)
+
+    def test_check_mode_refuses_permission_removal_without_native_writes(self):
         self.run_apply(check=True)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

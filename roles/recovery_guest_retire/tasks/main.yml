@@ -11,6 +11,13 @@
     fail_msg: Plan exact generic guest retirement before deleting or publishing anything.
   no_log: true
 
+- name: Bind the exact selected native transaction inputs # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    aap_isolation_hypervisor: '{{ __recovery_retire_pin }}'
+    aap_isolation_trust_file: ''
+    __recovery_retire_policy_attempted: false
+  no_log: true
+
 - name: Verify native ownership or absence and publish only completed retirement
   block:
     - name: Allocate private controller trust for this phase
@@ -37,6 +44,33 @@
       check_mode: false
       no_log: true
 
+    - name: Bind the verified hypervisor trust file for native tasks # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        aap_isolation_trust_file: '{{ __recovery_retire_trust.path }}'
+      no_log: true
+
+    - name: Prepare the reviewed native source and acquire the temporary lock
+      ansible.builtin.include_tasks:
+        file: '{{ role_path }}/../../tasks/aap-isolation-prepare.yml'
+        apply:
+          delegate_to: '{{ __recovery_retire_pin.address }}'
+          become: true
+          vars: &recovery_retire_connection
+            ansible_connection: ssh
+            ansible_host: '{{ hostvars[inventory_hostname].__recovery_retire_pin.address }}'
+            ansible_user: '{{ hostvars[inventory_hostname].__recovery_retire_pin.user }}'
+            ansible_port: '{{ hostvars[inventory_hostname].__recovery_retire_pin.port }}'
+            ansible_password: ''
+            ansible_ssh_pass: ''
+            ansible_become_password: ''
+            ansible_ssh_common_args: >-
+              -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
+              -o StrictHostKeyChecking=yes
+              -o UserKnownHostsFile={{ hostvars[inventory_hostname].__recovery_retire_trust.path | quote }}
+              -o GlobalKnownHostsFile=/dev/null
+            ansible_host_key_checking: true
+            ansible_ssh_host_key_checking: true
+
     - name: Allocate a private temporary native verifier on the exact hypervisor
       ansible.builtin.tempfile:
         state: directory
@@ -44,21 +78,7 @@
         prefix: aap-guest-retire-
       delegate_to: "{{ __recovery_retire_pin.address }}"
       become: true
-      vars: &recovery_retire_connection
-        ansible_connection: ssh
-        ansible_host: "{{ hostvars[inventory_hostname].__recovery_retire_pin.address }}"
-        ansible_user: "{{ hostvars[inventory_hostname].__recovery_retire_pin.user }}"
-        ansible_port: "{{ hostvars[inventory_hostname].__recovery_retire_pin.port }}"
-        ansible_password: ''
-        ansible_ssh_pass: ''
-        ansible_become_password: ''
-        ansible_ssh_common_args: >-
-          -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
-          -o StrictHostKeyChecking=yes
-          -o UserKnownHostsFile={{ hostvars[inventory_hostname].__recovery_retire_trust.path | quote }}
-          -o GlobalKnownHostsFile=/dev/null
-        ansible_host_key_checking: true
-        ansible_ssh_host_key_checking: true
+      vars: *recovery_retire_connection
       check_mode: false
       register: __recovery_retire_runtime
       no_log: true
@@ -77,7 +97,23 @@
       check_mode: false
       no_log: true
 
-    - name: Prove selected native ownership before deletion or complete absence afterward
+    - name: Require only the complete previous or desired CaC policy on the hypervisor
+      ansible.builtin.include_tasks:
+        file: '{{ role_path }}/../../tasks/aap-isolation-observe.yml'
+        apply:
+          delegate_to: '{{ __recovery_retire_pin.address }}'
+          become: true
+          vars: *recovery_retire_connection
+      vars:
+        aap_isolation_previous_policy: '{{ recovery_guest_retire_plan.transition.previous_policy }}'
+        aap_isolation_desired_policy: '{{ recovery_guest_retire_plan.transition.desired_policy }}'
+
+    - name: Retain the current complete CaC policy for bounded native rollback
+      ansible.builtin.set_fact:
+        __recovery_retire_rollback_policy: '{{ aap_isolation_rollback_policy }}'
+      no_log: true
+
+    - name: Prove native ownership and remove only exact absent-guest DHCP reservations
       ansible.builtin.command:
         argv: [python3, "{{ __recovery_retire_runtime.path }}/aap_guest_release.py"]
         stdin: >-
@@ -104,6 +140,23 @@
           {{ recovery_guest_retire_plan | combine({'native': __recovery_retire_native.stdout | from_json}) }}
       no_log: true
 
+    - name: Mark this invocation's exact policy application before native tasks
+      ansible.builtin.set_fact:
+        __recovery_retire_policy_attempted: true
+      when: recovery_retire_phase == 'publish' and not ansible_check_mode
+      no_log: true
+
+    - name: Apply complete reduced CaC using native Hactar Ansible
+      ansible.builtin.include_tasks:
+        file: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+        apply:
+          delegate_to: '{{ __recovery_retire_pin.address }}'
+          become: true
+          vars: *recovery_retire_connection
+      vars:
+        hactar_isolation_policy: '{{ aap_isolation_effective_desired_policy }}'
+      when: recovery_retire_phase == 'publish'
+
     - name: Publish exact absence and policy removal to existing encrypted captures and source inventory
       aap_publish_instance_keys:
         operation: retire_guest
@@ -121,32 +174,19 @@
       no_log: true
 
   rescue:
-    - name: Restore only an unpublished policy reduction after verified physical absence
-      ansible.builtin.command:
-        argv: [python3, "{{ __recovery_retire_runtime.path }}/aap_guest_release.py"]
-        stdin: >-
-          {{ {'operation': 'retire_rollback', 'guest_name': __recovery_retire_name,
-              'guest': recovery_guest_retire_plan.guest, 'hypervisor': __recovery_retire_pin,
-              'transition': recovery_guest_retire_plan.transition, 'check_mode': false}
-              | combine({'guest_kind': 'windows'} if recovery_retire_guest_kind | default('') == 'windows' else {}) | to_json }}
-      delegate_to: "{{ __recovery_retire_pin.address }}"
-      become: true
-      vars: *recovery_retire_connection
-      register: __recovery_retire_rollback
-      changed_when: >-
-        __recovery_retire_rollback.rc | default(1) | int == 0 and
-        __recovery_retire_rollback.stdout | default('') | length > 0 and
-        (__recovery_retire_rollback.stdout | from_json).changed | bool
+    - name: Restore only this invocation's unpublished native policy reduction
+      ansible.builtin.include_tasks:
+        file: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+        apply:
+          delegate_to: '{{ __recovery_retire_pin.address }}'
+          become: true
+          vars: *recovery_retire_connection
+      vars:
+        hactar_isolation_policy: '{{ __recovery_retire_rollback_policy }}'
       when:
-        - recovery_retire_phase == 'publish'
-        - __recovery_retire_native is defined
-        - __recovery_retire_native is succeeded
-        - __recovery_retire_native.rc | default(1) | int == 0
-        - __recovery_retire_native.stdout | default('') | length > 0
-        - (__recovery_retire_native.stdout | from_json).changed | bool
+        - __recovery_retire_policy_attempted | bool
         - not (__recovery_retire_published.durable_policy_published | default(false) | bool)
         - not ansible_check_mode
-      no_log: true
 
     - name: Stop after incomplete exact generic guest retirement
       ansible.builtin.fail:
@@ -165,6 +205,14 @@
       check_mode: false
       when: __recovery_retire_runtime.path | default('') is match('^/tmp/aap-guest-retire-[A-Za-z0-9_]+$')
       no_log: true
+
+    - name: Release only this phase's temporary native lock and public source
+      ansible.builtin.include_tasks:
+        file: '{{ role_path }}/../../tasks/aap-isolation-finish.yml'
+        apply:
+          delegate_to: '{{ __recovery_retire_pin.address }}'
+          become: true
+          vars: *recovery_retire_connection
 
     - name: Remove only this phase's controller public-key trust file
       ansible.builtin.file:

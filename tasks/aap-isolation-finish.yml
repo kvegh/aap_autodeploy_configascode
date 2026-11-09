@@ -1,0 +1,29 @@
+---
+- name: Release only the temporary lock acquired by this invocation
+  # Never recursively delete or break a lock belonging to another invocation.
+  ansible.builtin.command:
+    argv: [rmdir, '--', /run/hactar-recovery-policy.lock]
+  when:
+    - aap_isolation_lock_acquired | default(false) | bool
+    - aap_isolation_lock_attempt.rc | default(1) == 0
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Forget the completed invocation's lock ownership
+  ansible.builtin.set_fact:
+    aap_isolation_lock_acquired: false
+  no_log: true
+
+- name: Remove only this invocation's controller source checkout
+  ansible.builtin.file:
+    path: '{{ aap_isolation_source_workspace.path }}'
+    state: absent
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  when:
+    - aap_isolation_source_workspace.path | default('') is match('^/tmp/aap-hactar-source-[A-Za-z0-9_]+$')
+  check_mode: false
+  no_log: true

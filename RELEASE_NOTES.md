@@ -1,5 +1,28 @@
 # Release notes
 
+## 0.49.0
+
+Replace custom firewall mutation and deployed JSON policy with native Hactar
+Ansible tasks and certified firewall role 1.120.5. Use the approved temporary
+transaction lock, exact reviewed source checkout, independent protected source
+identity and complete CaC in job memory. Preserve resource and production guards.
+
+Read AIOps permissions from its existing encrypted repository/bootstrap, preserving
+tagged variables and unused secret leaves. Keep canonical publication base-only.
+Mutating callers converge declared native policy; identity/provisioning pin checks
+remain read-only and direct operators to explicit reconciliation on drift.
+
+Decommission disables and verifies exact selected ordinary rules before deletion,
+preserving other instances and retaining native rollback. Do not infer ownership
+after a source tuple/record was already removed. Application-record retirement and
+new clone-record publication remain explicit private-CaC operator steps.
+
+All 103 focused source, lock, rollback, publication, ownership, lifecycle and
+version checks passed on the merged source. Strict scoped lint passed for 16
+Ansible files, and all five normal stage/decommission playbooks passed syntax
+checks. Private migration, caller pins and live AAP acceptance
+remain pending; this source publication is not a completed host rollout.
+
 ## 0.48.29
 
 Record the selected fresh Command Center defaults, first-use Beads setup and

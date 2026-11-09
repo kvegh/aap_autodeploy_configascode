@@ -1,29 +1,20 @@
 """Release or retire one verified guest, retaining production denial.
 
-Runs only on the pinned recovery hypervisor. The sibling management helper owns
-the existing protected-file, libvirt readback and atomic-write primitives.
+Runs only on the pinned recovery hypervisor. The sibling verifier gathers native
+resource facts. Ansible owns the transaction lock, firewalld and native nft rules.
 Linux remains the default; Windows requires its own explicit trusted provenance.
 """
 
 from copy import deepcopy
 from datetime import datetime
-import errno
-import fcntl
-import importlib.util
 import ipaddress
-from importlib.machinery import SourceFileLoader
 import json
-import os
 import re
 import sys
-import time
 import xml.etree.ElementTree as ET
 
 import aap_hypervisor_access as base
 
-
-POLICY_LOCK_BUSY = ('Another hypervisor policy transaction stayed active for five seconds; '
-                    'retry this job. This native attempt made no policy change.')
 
 
 def require(condition, message):
@@ -395,56 +386,25 @@ def supplemental_plan(request, state):
 
 
 def reconcile(request):
+    """Verify the existing native identities; do not mutate firewall state.
+
+    The approved Ansible caller holds the temporary lock and independently
+    checks the complete native nft table against these CaC policy candidates.
+    See ../README.md#native-firewall-transactions.
+    """
     if request.get('operation') in {'retire_plan', 'retire_apply', 'retire_rollback'}:
         return reconcile_retirement(request)
     pin, guest = request['hypervisor'], request['guest']
     route = guest['route'] if guest.get('kind') == 'aap' else {'hypervisor': pin, 'vm_name': guest['vm_name']}
-    descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        # Separate AAP jobs share this native critical section; task throttle cannot.
-        # Justification: ../roles/recovery_guest_release/README.md#native-lock-contention
-        deadline = time.monotonic() + 5
-        while True:
-            try:
-                fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                break
-            except BlockingIOError:
-                if time.monotonic() >= deadline:
-                    raise BlockingIOError(errno.EAGAIN, POLICY_LOCK_BUSY) from None
-                time.sleep(0.1)
-        if guest.get('kind') == 'windows':
-            state = base.probe(route, guest_kind='windows')
-        elif guest.get('kind') == 'aap' and (guest['primary'].get('supplemental_interfaces') or request.get('mode') == 'supplemental_interface'):
-            primary = request['transition'].get('desired_resource', guest['primary'])
-            state = base.probe(route, primary=primary)
-        else:
-            state = base.probe(route)
-        change = plan(request, state)
-        base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
-        spec = importlib.util.spec_from_loader('installed_guest_release_isolation',
-            SourceFileLoader('installed_guest_release_isolation', str(base.HELPER)))
-        helper = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(helper)
-        helper.validate_configuration(change['desired_policy'])
-        commands = [{'delete': {'table': {'family': 'inet', 'name': helper.TABLE}}}]
-        commands += [{'add': {kind: value}} for kind, value in helper.policy(change['desired_policy'])]
-        base.command(['/usr/sbin/nft', '--check', '-j', '-f', '-'], json.dumps({'nftables': commands}))
-        if request['check_mode']:
-            return dict(change, applied=False)
-        original = base.CONFIG.read_bytes()
-        try:
-            if change['changed']:
-                base.save(json.dumps(change['desired_policy']).encode())
-                base.command([str(base.HELPER), 'apply'])
-            base.command([str(base.HELPER), 'check'], json.dumps(change['desired_policy']))
-        except Exception:
-            base.save(original)
-            base.command([str(base.HELPER), 'apply'])
-            base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
-            raise
-        return dict(change, applied=True)
-    finally:
-        os.close(descriptor)
+    policy = request['transition']['desired_policy' if request['operation'] == 'rollback' else 'previous_policy']
+    if guest.get('kind') == 'windows':
+        state = base.probe(route, policy, guest_kind='windows')
+    elif guest.get('kind') == 'aap' and (guest['primary'].get('supplemental_interfaces') or request.get('mode') == 'supplemental_interface'):
+        primary = request['transition'].get('desired_resource', guest['primary'])
+        state = base.probe(route, policy, primary=primary)
+    else:
+        state = base.probe(route, policy)
+    return dict(plan(request, state), applied=False)
 
 
 def _retirement_policy(policy, guest):
@@ -694,89 +654,57 @@ def _network_shape(root):
 
 
 def reconcile_retirement(request):
+    """Retain exact native DHCP cleanup; Ansible handles policy and locking."""
     route = {'hypervisor': request['hypervisor'], 'vm_name': request['guest_name']}
-    descriptor = os.open(base.DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        probe_args = {'allow_absent_guest': True}
-        if request.get('guest_kind') == 'windows':
-            probe_args['guest_kind'] = 'windows'
-        state = base.probe(route, **probe_args)
-        change = retirement_plan(request, state)
-        base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
-        if request['operation'] == 'retire_plan':
-            return dict(change, applied=False, retirement_verified=True)
-        target = (request['transition']['previous_policy'] if request['operation'] == 'retire_rollback'
-                  else request['transition']['desired_policy'])
-        if request['operation'] == 'retire_rollback':
-            require(state['policy'] == request['transition']['desired_policy'],
-                    'Retirement rollback cannot overwrite a later policy change.')
-        spec = importlib.util.spec_from_loader('installed_guest_retirement_isolation',
-            SourceFileLoader('installed_guest_retirement_isolation', str(base.HELPER)))
-        helper = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(helper)
-        helper.validate_configuration(target)
-        commands = [{'delete': {'table': {'family': 'inet', 'name': helper.TABLE}}}]
-        commands += [{'add': {kind: value}} for kind, value in helper.policy(target)]
-        base.command(['/usr/sbin/nft', '--check', '-j', '-f', '-'], json.dumps({'nftables': commands}))
-        if request['check_mode']:
-            return dict(change, applied=False, retirement_verified=True)
-        expected_networks = deepcopy(state['network_definitions'])
-        removed = 0
-        if request['operation'] == 'retire_apply':
-            for reservation in change['reservations']:
-                network, scope = reservation['network'], reservation['scope']
-                root = ET.fromstring(expected_networks[network][scope])
-                kind = reservation.get('kind', 'ip-dhcp-host')
-                require(kind in {'ip-dhcp-host', 'dns-host'}, 'Remove only exact native guest DHCP or DNS records.')
-                parent_path = './ip/dhcp' if kind == 'ip-dhcp-host' else './dns'
-                matching = [item for item in root.findall(parent_path + '/host')
-                            if ET.tostring(item, encoding='unicode') == reservation['xml']]
-                require(len(matching) == 1, 'Remove only one exact selected static DHCP reservation.')
-                for parent in root.findall(parent_path):
-                    if matching[0] in list(parent):
-                        parent.remove(matching[0])
-                expected_networks[network][scope] = ET.tostring(root, encoding='unicode')
-                flag = '--config' if scope == 'persistent' else '--live'
-                base.command(['virsh', '-c', 'qemu:///system', 'net-update', network,
-                              'delete', kind, reservation['xml'], flag])
-                removed += 1
-            observed = base.probe(route, **probe_args)
-            retirement_plan(request, observed)
-            require(set(observed['domains']) == set(state['domains'])
-                    and set(observed['network_definitions']) == set(expected_networks),
-                    'Other domain or network identities changed during exact DHCP cleanup.')
-            for network, scopes in expected_networks.items():
-                require(set(observed['network_definitions'][network]) == set(scopes)
-                        and all(_network_shape(ET.fromstring(observed['network_definitions'][network][scope]))
-                                == _network_shape(ET.fromstring(xml)) for scope, xml in scopes.items()),
-                        'DHCP cleanup must preserve every unrelated network field and reservation.')
-            require(not _retirement_dhcp(observed, request['guest_name'], request['guest']),
-                    'A selected static DHCP reservation remains after exact cleanup.')
-        original = base.CONFIG.read_bytes()
-        try:
-            if state['policy'] != target:
-                base.save(json.dumps(target).encode())
-                base.command([str(base.HELPER), 'apply'])
-            base.command([str(base.HELPER), 'check'], json.dumps(target))
-        except Exception:
-            base.save(original)
-            base.command([str(base.HELPER), 'apply'])
-            base.command([str(base.HELPER), 'check'], json.dumps(state['policy']))
-            raise
-        return dict(change, applied=True, retirement_verified=True, dhcp_reservations_removed=removed,
-                    desired_policy=deepcopy(target), changed=state['policy'] != target or bool(removed))
-    finally:
-        os.close(descriptor)
+    probe_args = {'allow_absent_guest': True}
+    if request.get('guest_kind') == 'windows':
+        probe_args['guest_kind'] = 'windows'
+    policy = request['transition']['desired_policy' if request['operation'] == 'retire_rollback' else 'previous_policy']
+    state = base.probe(route, policy, **probe_args)
+    change = retirement_plan(request, state)
+    if request['operation'] == 'retire_plan' or request['check_mode']:
+        return dict(change, applied=False, retirement_verified=True)
+    target = (request['transition']['previous_policy'] if request['operation'] == 'retire_rollback'
+              else request['transition']['desired_policy'])
+    expected_networks = deepcopy(state['network_definitions'])
+    removed = 0
+    if request['operation'] == 'retire_apply':
+        for reservation in change['reservations']:
+            network, scope = reservation['network'], reservation['scope']
+            root = ET.fromstring(expected_networks[network][scope])
+            kind = reservation.get('kind', 'ip-dhcp-host')
+            require(kind in {'ip-dhcp-host', 'dns-host'}, 'Remove only exact native guest DHCP or DNS records.')
+            parent_path = './ip/dhcp' if kind == 'ip-dhcp-host' else './dns'
+            matching = [item for item in root.findall(parent_path + '/host')
+                        if ET.tostring(item, encoding='unicode') == reservation['xml']]
+            require(len(matching) == 1, 'Remove only one exact selected static DHCP reservation.')
+            for parent in root.findall(parent_path):
+                if matching[0] in list(parent):
+                    parent.remove(matching[0])
+            expected_networks[network][scope] = ET.tostring(root, encoding='unicode')
+            flag = '--config' if scope == 'persistent' else '--live'
+            base.command(['virsh', '-c', 'qemu:///system', 'net-update', network,
+                          'delete', kind, reservation['xml'], flag])
+            removed += 1
+        observed = base.probe(route, policy, **probe_args)
+        retirement_plan(request, observed)
+        require(set(observed['domains']) == set(state['domains'])
+                and set(observed['network_definitions']) == set(expected_networks),
+                'Other domain or network identities changed during exact DHCP cleanup.')
+        for network, scopes in expected_networks.items():
+            require(set(observed['network_definitions'][network]) == set(scopes)
+                    and all(_network_shape(ET.fromstring(observed['network_definitions'][network][scope]))
+                            == _network_shape(ET.fromstring(xml)) for scope, xml in scopes.items()),
+                    'DHCP cleanup must preserve every unrelated network field and reservation.')
+        require(not _retirement_dhcp(observed, request['guest_name'], request['guest']),
+                'A selected static DHCP reservation remains after exact cleanup.')
+    return dict(change, applied=False, retirement_verified=True, dhcp_reservations_removed=removed,
+                desired_policy=deepcopy(target), changed=state['policy'] != target or bool(removed))
 
 
 if __name__ == '__main__':
     try:
         print(json.dumps(reconcile(json.load(sys.stdin))))
-    except Exception as error:
-        if (isinstance(error, BlockingIOError) and error.errno == errno.EAGAIN
-                and error.strerror == POLICY_LOCK_BUSY):
-            print(POLICY_LOCK_BUSY, file=sys.stderr)
-            raise SystemExit(75)
-        print('Protected guest recovery-isolation release failed.', file=sys.stderr)
+    except Exception:
+        print('Protected guest resource verification failed.', file=sys.stderr)
         raise SystemExit(1)

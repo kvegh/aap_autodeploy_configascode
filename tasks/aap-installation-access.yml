@@ -3,8 +3,8 @@
   aap_publish_instance_keys:
     operation: installation_access
     phase: plan
-    route: "{{ aap_instance_route }}"
-    primary: "{{ aap_installation_primary }}"
+    route: '{{ aap_instance_route }}'
+    primary: '{{ aap_installation_primary }}'
   delegate_to: localhost
   become: false
   vars:
@@ -12,64 +12,7 @@
   register: aap_installation_access_plan
   no_log: true
 
-- name: Reconcile bounded installer access and its maintained policy copies
-  block:
-    - name: Apply exact guest public HTTPS and its own hypervisor API HTTPS permission
-      ansible.builtin.command:
-        argv: [python3, -c, "{{ lookup('ansible.builtin.file', 'src/aap_hypervisor_access.py') }}"]
-        stdin: >-
-          {{ {'route': aap_instance_route, 'primary': aap_installation_primary,
-              'declared_policy': aap_installation_access_plan.transition.previous_policy,
-              'mode': 'installation', 'check_mode': ansible_check_mode | bool} | to_json }}
-      register: aap_installation_access_apply
-      changed_when: >-
-        aap_installation_access_apply.rc | default(1) | int == 0 and
-        aap_installation_access_apply.stdout | default('') | length > 0 and
-        (aap_installation_access_apply.stdout | from_json).changed | bool
-      check_mode: false
-      no_log: true
-
-    - name: Publish installation access without creating or rotating an API token
-      aap_publish_instance_keys:
-        operation: installation_access
-        phase: publish
-        route: "{{ aap_instance_route }}"
-        primary: "{{ aap_installation_primary }}"
-        transition: "{{ aap_installation_access_plan.transition }}"
-      delegate_to: localhost
-      become: false
-      vars:
-        ansible_connection: local
-      register: aap_installation_access_publish
-      when: not ansible_check_mode
-      no_log: true
-
-  rescue:
-    - name: Restore an unpublished installation grant using its exact prior native rule states
-      ansible.builtin.command:
-        argv: [python3, -c, "{{ lookup('ansible.builtin.file', 'src/aap_hypervisor_access.py') }}"]
-        stdin: >-
-          {{ {'route': aap_instance_route, 'primary': aap_installation_primary,
-              'declared_policy': aap_installation_access_plan.transition.previous_policy,
-              'mode': 'installation', 'operation': 'rollback', 'check_mode': false,
-              'native_rule_previous': (aap_installation_access_apply.stdout | from_json).native_rule_previous} | to_json }}
-      register: aap_installation_access_rollback
-      changed_when: >-
-        aap_installation_access_rollback.rc | default(1) | int == 0 and
-        aap_installation_access_rollback.stdout | default('') | length > 0 and
-        (aap_installation_access_rollback.stdout | from_json).changed | bool
-      when:
-        - aap_installation_access_apply is defined
-        - aap_installation_access_apply is succeeded
-        - aap_installation_access_apply.rc | default(1) | int == 0
-        - aap_installation_access_apply.stdout | default('') | length > 0
-        - (aap_installation_access_apply.stdout | from_json).changed | bool
-        - not (aap_installation_access_publish.durable_policy_published | default(false) | bool)
-        - not ansible_check_mode
-      no_log: true
-
-    - name: Stop before downstream installation after incomplete access publication
-      ansible.builtin.fail:
-        msg: >-
-          AAP installation access did not finish. Any unpublished new permission was restored;
-          a durably saved policy is retained for a bounded source-inventory retry.
+- name: Configure only the preflighted installation permission using the existing native access tasks
+  ansible.builtin.include_tasks: aap-hypervisor-access.yml
+  vars:
+    aap_management_mode: installation

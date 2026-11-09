@@ -92,9 +92,10 @@ The owner requires CaC to remain the single source of truth. Each instance's
 application permissions, resource validation and target hypervisor belong in
 its own encrypted AIOps section. Applying CaC must reconcile additions, changes
 and removals; an observed rule or saved host file does not authorize retention.
-The custom isolation-helper and deployed-JSON path is being replaced with
-readable Ansible and native firewall configuration. This integration remains
-unfinished; unvalidated drafts must not be deployed.
+The public common callers now replace the isolation-helper/deployed-JSON path
+with readable Ansible and native firewall configuration. Protected CaC migration,
+coordinated caller pins, the initial host apply and live demonstration verification
+remain separate rollout steps. Do not mix old and new policy writers on one host.
 The website was restored, its button is disarmed and both EDA activations are off.
 Website recovery is not yet accepted.
 AIOps 1.1.8 now requires a fresh successful website sample before forwarding,
@@ -148,12 +149,76 @@ so AIOps can consume a newly created guest without inventory defaults or manual
 patching. Missing values are not invented, conflicting existing values refuse
 publication, and Windows keeps its WinRM fields.
 
-The existing native guest-release transaction briefly waits for a busy shared
-hypervisor lock before any probe or change; separate AAP jobs cannot coordinate
-that lock through task throttling. Exhaustion produces only a fixed safe reason.
-See [native lock contention](roles/recovery_guest_release/README.md#native-lock-contention).
-This fixes a reproduced defect; the earlier censored failure's cause remains
-unproved, and selecting the fix in callers and live verification remain separate.
+## Native firewall transactions
+
+The firewall callers use readable Ansible and native configuration. They check
+actual hypervisor and guest identity with the existing resource validators,
+apply ordinary rich rules through certified `redhat.rhel_system_roles.firewall`
+`1.120.5`, and consume Hactar's reviewed native nft validate/readback/apply tasks.
+The Python validators no longer read or write a deployed JSON policy or change
+firewall rules. Exact DHCP cleanup remains in the existing retirement verifier
+pending the separately tracked helper cleanup.
+
+Supply `aap_hactar_source_revision` as the reviewed full Git commit and
+`hactar_source_public_ip` from the existing encrypted Hactar source identity.
+The job retrieves that exact public task revision over verified HTTPS into a
+private temporary controller directory and binds `hactar_firewall_source_root`
+there. It does not borrow another AAP project's workspace. Prepare the declared
+certified collection through the existing PAH process before synchronization;
+ordinary jobs do not install missing collection or EE dependencies.
+
+Every previous/desired policy candidate is a complete CaC document. The native
+nft file/table is read only to verify that it matches a candidate, never imported
+as desired configuration. The identity/provisioning preflight stays read-only
+and rejects drift with an instruction to run explicit CaC reconciliation first.
+Mutating lifecycle callers reconcile the complete current CaC, including removals,
+instead of demanding that a deleted grant remain in a saved host snapshot. Policy
+application writes only Hactar's native `/etc/nftables/hactar-recovery.nft` and
+owned nft table. Existing source publication and unpublished-change rollback
+remain at the caller's lifecycle boundary.
+
+Application grants are read from their own private AIOps CaC through the existing
+central bootstrap reader/Vault fields. No extra credential is attached. The
+namespaced native loader preserves existing `!unsafe` and embedded `!vault`
+values without using unrelated secret leaves. Whole-file decryption uses the
+bootstrap key only through protected stdin; its 0600 temporary variables file is
+outside the Git checkout and removed by normal `always` cleanup. Source or key
+failure stops the operation rather than becoming an empty permission list.
+
+Each declared Zabbix record must have explicit
+`aiops_instances[instance].firewall.guest_host_clients`, including an empty list
+when access is removed. A never-created/retired instance without Zabbix has no
+grant. Only records on the actual pinned hypervisor contribute, after native
+UUID, current/persistent disk and MAC/network, bridge and static-address checks.
+Base publication stays base-only: native old/new/rollback candidates add current
+application CaC in job memory. Removing one app entry therefore removes it from
+the effective nft policy while other declared instances survive. No application
+grant is copied into AutoDeploy's canonical captures.
+
+Decommission keeps the selected AIOps CaC owner/tuples until exact native rich
+rules are disabled in runtime and permanent configuration. Its explicit native
+reduction removes only that instance's app grants and preserves other instances.
+After successful cleanup, the normal operator update removes the selected AIOps
+records before another apply; the base retire publisher does not edit that repo.
+Deleting the source tuple/owner first can leave an unattributable ordinary rule:
+stop for manual reconciliation, not a broad purge. Plain omission still removes
+effective nft access, but does not prove physical ordinary-rule cleanup. See
+[decommission ordering](docs/decommission.md#retire-only-the-selected-guests-permissions).
+
+Separate AAP jobs serialize their native checks, firewall changes and rollback
+using atomic `mkdir` of `/run/hactar-recovery-policy.lock`, with five one-second
+retries. `always` releases it with `rmdir` only after this invocation acquired
+it. Check-mode observations use the same temporary lock without applying policy.
+A killed controller may leave the directory behind: later jobs fail closed.
+Confirm that no policy-writing job is active before manually removing an abandoned
+empty directory; never break a lock based only on its age or recursively delete it.
+
+This lock does not coordinate with historical directory-`flock` callers. The
+switch on the selected hypervisor therefore requires a quiescent window, the
+matching Hactar native base, and coordinated AutoDeploy/Assistant/Windows caller
+pins. Do not run old policy-writing revisions on that host concurrently with the
+new callers. Unrelated production deployments retain their existing tested pins. Local fixture tests
+do not establish live migration or complete end-to-end acceptance.
 
 ## Tasks and decisions
 

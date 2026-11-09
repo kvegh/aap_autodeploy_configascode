@@ -110,30 +110,21 @@ class AapFinalReleaseTests(unittest.TestCase):
             else: state['domains']['foreign-v08'] = {'persistent': '<domain><name>foreign-v08</name><uuid>88888888-2222-3333-4444-555555555555</uuid><devices><disk device="disk"><source file="' + primary['disk'] + '"/></disk></devices></domain>'}
             with self.subTest(variant=variant), self.assertRaises((ValueError, KeyError)): runtime.plan(request, state)
 
-    def test_native_policy_only_apply_idempotence_and_bounded_rollback(self):
-        request, state = native_fixture();calls = []
-        with tempfile.TemporaryDirectory(prefix='aap-final-policy-') as directory:
-            root = Path(directory);config = root / 'policy.json';config.write_text(json.dumps(state['policy']))
-            helper = root / 'helper.py'
-            helper.write_text('TABLE="synthetic_isolation"\ndef validate_configuration(value):\n assert value["bridges"]\ndef policy(value):\n return []\n')
-            def command(arguments, data=None, allowed=(0,)):
-                calls.append(arguments)
-                if arguments == [str(helper), 'apply']: state['policy'] = json.loads(config.read_text())
-                elif arguments == [str(helper), 'check']: self.assertEqual(json.loads(data), state['policy'])
-                else: self.assertEqual(arguments[:2], ['/usr/sbin/nft', '--check'])
-            original = deepcopy(state)
-            with patch.object(runtime.base, 'DIRECTORY', root), patch.object(runtime.base, 'CONFIG', config), \
-                 patch.object(runtime.base, 'HELPER', helper), patch.object(runtime.base, 'command', side_effect=command), \
-                 patch.object(runtime.base, 'probe', side_effect=lambda *a, **k: deepcopy(state)):
-                request['check_mode'] = True
-                self.assertFalse(runtime.reconcile(request)['applied']);self.assertEqual(state, original)
-                request['check_mode'] = False
-                self.assertTrue(runtime.reconcile(request)['changed'])
-                self.assertFalse(runtime.reconcile(request)['changed'])
-                request['operation'] = 'rollback'
-                self.assertTrue(runtime.reconcile(request)['changed'])
-                self.assertEqual(state, original)
-                self.assertFalse(any(command[0] in ('virsh', 'firewall-cmd') for command in calls))
+    def test_native_resource_proof_does_not_apply_or_rollback_firewall(self):
+        request, state = native_fixture()
+        original = deepcopy(state)
+        with patch.object(runtime.base, 'probe', return_value=state), \
+             patch.object(runtime.base, 'command') as command:
+            request['check_mode'] = True
+            self.assertFalse(runtime.reconcile(request)['applied'])
+            request['check_mode'] = False
+            self.assertTrue(runtime.reconcile(request)['changed'])
+            self.assertEqual(state, original)
+            state['policy'] = deepcopy(request['transition']['desired_policy'])
+            self.assertFalse(runtime.reconcile(request)['changed'])
+            request['operation'] = 'rollback'
+            self.assertTrue(runtime.reconcile(request)['changed'])
+            command.assert_not_called()
 
     def test_native_encrypted_publication_preserves_reservation_tokens_and_source_host(self):
         with patch.object(transaction, 'fixture', side_effect=fixture):

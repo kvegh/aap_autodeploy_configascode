@@ -1,0 +1,109 @@
+---
+# Caller identity and strict SSH route must be established before this include.
+# The lock covers native resource checks, firewall changes and their rollback.
+- name: Require the pinned public Hactar source and independent production identity
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_hypervisor is mapping
+      - aap_isolation_hypervisor.machine_id is match('^[0-9a-f]{32}$')
+      - aap_isolation_hypervisor.port | type_debug == 'int'
+      - aap_isolation_hypervisor.port >= 1 and aap_isolation_hypervisor.port <= 65535
+      - aap_isolation_trust_file is string
+      - aap_isolation_trust_file | length > 0
+      - aap_hactar_source_revision is defined
+      - aap_hactar_source_revision is match('^[0-9a-f]{40}$')
+      - hactar_source_public_ip is defined
+      - hactar_source_public_ip is string
+    fail_msg: Supply the reviewed Hactar revision, protected source identity and existing pinned route.
+  no_log: true
+
+- name: Initialize only this invocation's temporary lock ownership
+  ansible.builtin.set_fact:
+    aap_isolation_lock_acquired: false
+    aap_isolation_lock_attempt: {}
+    aap_isolation_source_workspace: {}
+  no_log: true
+
+- name: Allocate this job's public source checkout
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: aap-hactar-source-
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  check_mode: false
+  register: aap_isolation_source_workspace
+
+- name: Read the exact reviewed public Hactar task revision
+  ansible.builtin.git:
+    repo: https://github.com/kvegh/hactarconfig.git
+    dest: '{{ aap_isolation_source_workspace.path }}/repository'
+    version: '{{ aap_hactar_source_revision }}'
+    recursive: false
+    update: false
+  environment:
+    GIT_TERMINAL_PROMPT: '0'
+    GIT_CONFIG_COUNT: '3'
+    GIT_CONFIG_KEY_0: credential.helper
+    GIT_CONFIG_VALUE_0: ''
+    GIT_CONFIG_KEY_1: http.followRedirects
+    GIT_CONFIG_VALUE_1: 'false'
+    GIT_CONFIG_KEY_2: http.sslVerify
+    GIT_CONFIG_VALUE_2: 'true'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  check_mode: false
+  register: aap_isolation_source_checkout
+  no_log: true
+
+- name: Bind template lookups to this exact job-local source tree
+  ansible.builtin.set_fact:
+    hactar_firewall_source_root: '{{ aap_isolation_source_workspace.path }}/repository'
+    aap_isolation_autodeploy_root: "{{ role_path ~ '/../..' if role_path is defined else playbook_dir }}"
+  no_log: true
+
+- name: Require the exact requested public source revision
+  ansible.builtin.assert:
+    that: aap_isolation_source_checkout.after == aap_hactar_source_revision
+    quiet: true
+  no_log: true
+
+- name: Acquire the approved temporary native policy transaction lock
+  # Unlike throttle, atomic mkdir serializes different AAP jobs/controllers.
+  # An abandoned lock fails closed; see ../README.md#native-firewall-transactions.
+  ansible.builtin.command:
+    argv: [mkdir, '--mode=0700', '--', /run/hactar-recovery-policy.lock]
+  register: aap_isolation_lock_attempt
+  until: aap_isolation_lock_attempt.rc == 0
+  retries: 5
+  delay: 1
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Retain this invocation's successful lock acquisition
+  ansible.builtin.set_fact:
+    aap_isolation_lock_acquired: true
+  no_log: true
+
+- name: Gather only native IPv4 addresses for the Hactar destination guard
+  ansible.builtin.setup:
+    gather_subset: ['!all', '!min', network]
+    filter: ansible_all_ipv4_addresses
+  check_mode: false
+  no_log: true
+
+- name: Verify the actual hypervisor before any policy observation or change
+  ansible.builtin.command:
+    argv: [cat, /etc/machine-id]
+  register: aap_isolation_machine_id
+  changed_when: false
+  failed_when: aap_isolation_machine_id.stdout | trim != aap_isolation_hypervisor.machine_id
+  check_mode: false
+  no_log: true
+
+- name: Load and verify application grants from their own authoritative CaC
+  ansible.builtin.include_tasks: '{{ aap_isolation_autodeploy_root }}/tasks/aap-isolation-app-permissions.yml'

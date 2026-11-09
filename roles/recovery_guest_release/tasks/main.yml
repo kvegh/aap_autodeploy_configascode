@@ -2,12 +2,16 @@
 - name: Preflight the same exact guest operation before native verification
   ansible.builtin.include_tasks: plan.yml
 
-- name: Allocate protected temporary runtime code on the pinned hypervisor
-  ansible.builtin.tempfile:
-    state: directory
-    path: /tmp
-    prefix: aap-guest-release-
-  delegate_to: "{{ __recovery_release_pin.address }}"
+- name: Bind the verified native firewall transaction inputs # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    aap_isolation_hypervisor: '{{ __recovery_release_pin }}'
+    aap_isolation_trust_file: '{{ __recovery_release_trust }}'
+    __recovery_release_runtime: {}
+    __recovery_release_policy_attempted: false
+  no_log: true
+
+- name: Verify, apply and publish the same exact guest transition
+  delegate_to: '{{ __recovery_release_pin.address }}'
   become: true
   vars: &recovery_release_connection
     ansible_connection: ssh
@@ -24,110 +28,101 @@
       -o GlobalKnownHostsFile=/dev/null
     ansible_host_key_checking: true
     ansible_ssh_host_key_checking: true
-  check_mode: false
-  register: __recovery_release_runtime
-  no_log: true
-
-- name: Apply and durably publish only the verified guest release
   block:
-    - name: Stage the existing management primitives and the selected guest release helper
+    - name: Prepare the reviewed native source and acquire the temporary transaction lock
+      ansible.builtin.include_tasks: '{{ role_path }}/../../tasks/aap-isolation-prepare.yml'
+
+    - name: Allocate protected temporary resource validators
+      ansible.builtin.tempfile:
+        state: directory
+        path: /tmp
+        prefix: aap-guest-release-
+      check_mode: false
+      register: __recovery_release_runtime
+      no_log: true
+
+    - name: Stage only the existing native resource validators
       ansible.builtin.copy:
-        src: "{{ role_path }}/../../src/{{ item }}"
-        dest: "{{ __recovery_release_runtime.path }}/{{ item }}"
+        src: '{{ role_path }}/../../src/{{ item }}'
+        dest: '{{ __recovery_release_runtime.path }}/{{ item }}'
         owner: root
         group: root
         mode: '0600'
       loop: [aap_hypervisor_access.py, aap_guest_release.py]
-      delegate_to: "{{ __recovery_release_pin.address }}"
-      become: true
-      vars: *recovery_release_connection
       check_mode: false
       no_log: true
 
-    - name: Verify exact live VM identity and atomically apply its production-blocked release
-      # The native lock coordinates separate AAP jobs; see ../README.md#native-lock-contention.
+    - name: Verify actual VM identity and the exact CaC transition without changing the firewall
+      # Existing libvirt provenance validation remains until the scoped helper cleanup.
+      # Justification: ../../../README.md#native-firewall-transactions
       ansible.builtin.command:
-        argv: [python3, "{{ __recovery_release_runtime.path }}/aap_guest_release.py"]
+        argv: [python3, '{{ __recovery_release_runtime.path }}/aap_guest_release.py']
         stdin: >-
           {{ {'operation': 'apply', 'guest': __recovery_release_guest,
-              'hypervisor': __recovery_release_pin,
-              'transition': __recovery_release_plan.transition,
-              'check_mode': ansible_check_mode | bool,
-              'mode': __recovery_release_mode} | to_json }}
-      delegate_to: "{{ __recovery_release_pin.address }}"
-      become: true
-      vars: *recovery_release_connection
+              'hypervisor': __recovery_release_pin, 'transition': __recovery_release_plan.transition,
+              'check_mode': ansible_check_mode | bool, 'mode': __recovery_release_mode} | to_json }}
       check_mode: false
       register: __recovery_release_apply
-      changed_when: >-
-        __recovery_release_apply.rc | default(1) | int == 0 and
-        __recovery_release_apply.stdout | default('') | length > 0 and
-        (__recovery_release_apply.stdout | from_json).changed | bool
+      changed_when: false
       no_log: true
+
+    - name: Require the native policy to match only the exact complete CaC candidates
+      ansible.builtin.include_tasks: '{{ role_path }}/../../tasks/aap-isolation-observe.yml'
+      vars:
+        aap_isolation_previous_policy: '{{ __recovery_release_plan.transition.previous_policy }}'
+        aap_isolation_desired_policy: '{{ __recovery_release_plan.transition.desired_policy }}'
+
+    - name: Retain the current CaC rollback candidate before applying anything
+      ansible.builtin.set_fact:
+        __recovery_release_rollback_policy: '{{ aap_isolation_rollback_policy }}'
+        __recovery_release_policy_attempted: true
+      no_log: true
+
+    - name: Apply the complete desired CaC through native Hactar Ansible tasks
+      ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+      vars:
+        hactar_isolation_policy: '{{ aap_isolation_effective_desired_policy }}'
 
     - name: Save the verified transition in existing encrypted CaC and source inventory
       aap_publish_instance_keys:
-        operation: "{{ __recovery_release_operation }}"
+        operation: '{{ __recovery_release_operation }}'
         phase: publish
-        guest: "{{ __recovery_release_guest }}"
-        hypervisor: "{{ __recovery_release_pin }}"
-        transition: "{{ __recovery_release_plan.transition }}"
+        guest: '{{ __recovery_release_guest }}'
+        hypervisor: '{{ __recovery_release_pin }}'
+        transition: '{{ __recovery_release_plan.transition }}'
       delegate_to: localhost
       become: false
+      vars:
+        ansible_connection: local
       register: __recovery_release_publish
       when: not ansible_check_mode
       no_log: true
 
   rescue:
-    - name: Roll back only this runtime transition when encrypted publication did not succeed
-      ansible.builtin.command:
-        argv: [python3, "{{ __recovery_release_runtime.path }}/aap_guest_release.py"]
-        stdin: >-
-          {{ {'operation': 'rollback', 'guest': __recovery_release_guest,
-              'hypervisor': __recovery_release_pin,
-              'transition': __recovery_release_plan.transition,
-              'check_mode': false,
-              'mode': __recovery_release_mode} | to_json }}
-      delegate_to: "{{ __recovery_release_pin.address }}"
-      become: true
-      vars: *recovery_release_connection
-      register: __recovery_release_rollback
-      changed_when: >-
-        __recovery_release_rollback.rc | default(1) | int == 0 and
-        __recovery_release_rollback.stdout | default('') | length > 0 and
-        (__recovery_release_rollback.stdout | from_json).changed | bool
+    - name: Restore only this invocation's unpublished native policy transition
+      ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+      vars:
+        hactar_isolation_policy: '{{ __recovery_release_rollback_policy }}'
       when:
-        - __recovery_release_apply is defined
-        - __recovery_release_apply is succeeded
-        - __recovery_release_apply.rc | default(1) | int == 0
-        - __recovery_release_apply.stdout | default('') | length > 0
-        - (__recovery_release_apply.stdout | from_json).changed | bool
+        - __recovery_release_policy_attempted | bool
         - not (__recovery_release_publish.durable_policy_published | default(false) | bool)
         - not ansible_check_mode
-      no_log: true
 
-    - name: Stop after an incomplete guest release publication
-      # Only fixed messages are public; native command arguments/results stay protected.
-      no_log: false
+    - name: Stop after incomplete guest verification or publication
       ansible.builtin.fail:
         msg: >-
-          {{ 'Another hypervisor policy transaction stayed active for five seconds; '
-             'retry this job. This native attempt made no policy change.'
-             if ((__recovery_release_apply | default({})).rc | default(0) | int) == 75 else
-             'Supplemental AAP interface verification or publication did not finish. Preserve network components '
-             'until a fresh authenticated plan proves canonical ownership absent.'
-             if __recovery_release_operation == 'aap_supplemental_interface' else
-             'Guest release did not finish. Any newly applied unpublished change was restored. '
-             'A durably saved release is retained for an idempotent source-inventory retry.' }}
+          Guest release did not finish. An unpublished policy change was restored;
+          a durably published release is retained. Inspect protected job diagnostics.
+      no_log: false
 
   always:
-    - name: Remove this job's protected hypervisor runtime directory
+    - name: Remove only this job's protected native resource validators
       ansible.builtin.file:
-        path: "{{ __recovery_release_runtime.path }}"
+        path: '{{ __recovery_release_runtime.path }}'
         state: absent
-      delegate_to: "{{ __recovery_release_pin.address }}"
-      become: true
-      vars: *recovery_release_connection
       check_mode: false
-      when: __recovery_release_runtime.path is match('^/tmp/aap-guest-release-[A-Za-z0-9_]+$')
+      when: __recovery_release_runtime.path | default('') is match('^/tmp/aap-guest-release-[A-Za-z0-9_]+$')
       no_log: true
+
+    - name: Release this invocation's temporary lock and public checkout
+      ansible.builtin.include_tasks: '{{ role_path }}/../../tasks/aap-isolation-finish.yml'

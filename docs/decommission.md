@@ -72,58 +72,52 @@ persisting application ownership in central allocation.
 
 ## Retire only the selected guests' permissions
 
-Before stopping any VM, the job reads the existing root-owned protected
-isolation JSON, verifies its live policy, and captures the selected domain and
-libvirt network XML. Guest bridge/MAC values come from those checked definitions;
-the AAP address comes from its registered route, and related addresses come from
-their verified source inventory artifacts. Recorded UUID, disk, MAC, bridge,
-network, address and hypervisor identity must agree when supplied. A legacy
-primary VM without recorded UUID retains the existing exact-name/single-disk
-guard. A missing VM with remaining grants needs its full recorded identity;
-the job does not invent a MAC from DHCP or assume an address still belongs to it.
-New Stage 01 publications automatically retain complete primary ownership in
-that same encrypted reservation after pinned guest verification. They therefore
-keep the required retry proof even after the primary VM definition is removed.
+Before stopping any VM, the job validates the selected domain and libvirt
+network definitions against its registered UUID, disk, MAC, bridge, network,
+address and hypervisor. The complete effective firewall policy comes from base
+CaC plus application grants read from AIOps' own encrypted CaC. No deployed JSON
+is loaded as desired policy. Missing source access or decryption stops cleanup.
 
-The pure plan removes only those exact bridge/IPv4/MAC identities from
-`guest_host_clients` and `https_clients`. Other guests, bridge coverage and
-forwarding restrictions remain. Removing the last HTTPS client also removes
-its now-unused protected-address field; the default forwarding drop remains.
-Only exact old-owned native source/destination/TCP rich rules absent from the
-desired policy are selected. No broad rich-rule scan, service opening or
-unrelated rule deletion occurs.
+The base plan removes only verified selected identities. Base publication remains
+base-only. For AIOps, retain the selected instance's Zabbix ownership record and
+`firewall.guest_host_clients` until native cleanup has completed. Those tuples
+identify the exact ordinary rich rules to remove; no host-wide rule scan or
+ownership inference is used. The record must match the selected version/domain,
+disk and preflight UUID, and changed tuples after shutdown stop the operation.
 
 All selected existing VMs are stopped and checked before permissions change.
-The job then queries, removes and verifies absence of those exact native rules
-in runtime and permanent libvirt-zone configuration. It atomically saves the
-reduced existing JSON and calls the installed isolation helper's `apply` and
-`check` commands. No helper, service, dependency or separate state store is
-installed. Only after successful permission cleanup may domain definitions,
-disks and external resources be removed.
+The certified firewall role disables only those exact base/application rich
+rules in both runtime and permanent libvirt-zone configuration. Native Hactar
+Ansible tasks then apply and verify the complete reduced nft file/table. The
+explicit decommission operation excludes only this instance's application tuples;
+other declared instances remain. Domain definitions, disks and external resources
+are removed only after this permission cleanup succeeds.
 
-If applying or verifying the reduced local policy fails, the captured previous
-JSON is restored and the same helper reapplies/checks it. The job then fails
-before domain/disk removal, with guests stopped. Removed native grants stay
-disabled; this tighter condition is safe and can be retried using exact queries.
-If that restoration itself fails, the job fails and requires protected operator
-inspection; it does not claim successful rollback.
+Native checks, changes and rollback share the approved temporary transaction
+lock. On failure, the existing rescue restores exactly the recorded rich-rule
+states and base-previous plus current application CaC. Guests remain stopped and
+not deleted. Failure of restoration also stops the job for protected operator
+inspection; it does not count as successful rollback. No host policy snapshot,
+JSON owner file or firewall writer is installed.
 
-The protected fact `aap_decommission_isolation_retirement` contains
-`previous_policy`, `desired_policy` and `identities` for the existing source
-publication action. The local plan also exposes `changed` and
-`rich_rules_to_remove`. These facts are not public job artifacts. Canonical
-encrypted/controller policy updates belong to that existing action integration;
-the local task alone does not prove successful source synchronization. A retry
-after later partial teardown accepts only the declared canonical policy or its
-exact desired policy derived from the verified selected identities. Any third
-state fails. The matched actual JSON must still pass the installed helper's
-strict kernel check and active/enabled service proof. Rich-rule cleanup always
-derives ownership from the canonical prior policy, so leftovers are removed
-even when the local JSON was already reduced. The source handoff retains both
-canonical policies, while local rollback restores the captured actual policy.
-Ordinary deployment retains its unchanged complete policy verification; there
-is no generic skip flag. Check mode performs reads and planning, ending before
-shutdown and any permission or resource writes.
+The protected `aap_decommission_isolation_retirement` handoff still contains only
+base `previous_policy`, `desired_policy` and selected `identities`. The existing
+canonical/source action receives that unchanged base-only handoff. Application
+grants are never copied into AutoDeploy's secrets. Check mode ends after ownership
+planning, before shutdown or policy/resource changes. The separate provisioning
+pin check remains read-only and requires explicit CaC reconciliation on drift.
+
+After successful native cleanup, remove the selected application ownership and
+permission entries through the existing AIOps private-CaC update procedure before
+another policy apply. The existing AutoDeploy retire publisher updates its base
+and shared records; it does not publish deletions into the AIOps private repo.
+This final application-record step remains explicit operator work in the demo.
+
+Do not delete the application permission/owner record before native decommission.
+Plain CaC omission revokes the effective nft access on reconciliation, but cannot
+safely identify an already orphaned ordinary rich rule. If the source record was
+removed too early, stop for manual reconciliation; never purge unrelated rules
+or claim that omission alone physically removed that rule.
 
 After infrastructure retirement, the existing Git writer marks the consumed
 reservation decommissioned, removes the active token and inventory entry from

@@ -7,30 +7,14 @@
 - name: Inspect and plan selected guest permission retirement
   when: aap_decommission_guest_access_phase == 'preflight'
   block:
-    - name: Inspect the existing protected isolation configuration
-      ansible.builtin.stat:
-        path: /etc/hactarconfig/replacement-isolation.json
-        follow: false
-        get_checksum: false
-      register: aap_decommission_isolation_file
-      check_mode: false
+    - name: Bind only the selected CaC transaction and pinned trust
+      ansible.builtin.set_fact:
+        aap_isolation_hypervisor: '{{ aap_hypervisor_pin }}'
+        aap_isolation_trust_file: '{{ aap_hypervisor_trust.path }}'
       no_log: true
 
-    - name: Require the existing root-owned regular isolation file
-      ansible.builtin.assert:
-        that:
-          - aap_decommission_isolation_file.stat.isreg | default(false)
-          - not aap_decommission_isolation_file.stat.islnk | default(false)
-          - aap_decommission_isolation_file.stat.uid == 0
-          - aap_decommission_isolation_file.stat.mode == '0600'
-      no_log: true
-
-    - name: Capture existing policy before any configuration replacement
-      ansible.builtin.slurp:
-        src: /etc/hactarconfig/replacement-isolation.json
-      register: aap_decommission_isolation_capture
-      check_mode: false
-      no_log: true
+    - name: Prepare the pinned native source and lock for ownership inspection
+      ansible.builtin.include_tasks: aap-isolation-prepare.yml
 
     - name: Inspect all selected domain identities without changing them
       ansible.builtin.command:
@@ -94,7 +78,7 @@
            aap_hypervisor_isolation_http_clients | default([])) |
              aap_decommission_guest_access_plan(aap_retirement, aap_instance_route, aap_instance_resources,
                aap_decommission_guest_xmls, aap_decommission_guest_network_xmls,
-               aap_decommission_isolation_capture.content | b64decode | from_json,
+               none,
                aap_related_resource_proof | default(none), aap_decommission_persistent_guest_xmls) }}
       no_log: true
 
@@ -114,13 +98,14 @@
           identities: '{{ aap_decommission_guest_access_plan.identities }}'
       no_log: true
 
-    - name: Verify existing persistent and live policy before any VM operation
-      ansible.builtin.command:
-        argv: [/usr/local/sbin/hactar-recovery-isolation, check]
-        stdin: '{{ aap_decommission_guest_access_plan.actual_policy | to_json }}'
-      changed_when: false
-      check_mode: false
-      no_log: true
+    - name: Verify the complete native policy against the exact CaC retirement candidates
+      ansible.builtin.include_tasks: aap-isolation-observe.yml
+      vars:
+        aap_isolation_previous_policy: '{{ aap_decommission_guest_access_plan.previous_policy }}'
+        aap_isolation_desired_policy: '{{ aap_decommission_guest_access_plan.desired_policy }}'
+
+    - name: Plan exact selected application removal while its CaC owner still exists
+      ansible.builtin.include_tasks: decommission-aiops-access.yml
 
     - name: Require the existing isolation service active and enabled
       ansible.builtin.command:
@@ -133,7 +118,7 @@
     - name: Check only the exact owned runtime rich rules before shutdown
       ansible.builtin.command:
         argv: [firewall-cmd, --zone=libvirt, '--query-rich-rule={{ item }}']
-      loop: '{{ aap_decommission_guest_access_plan.rich_rules_to_remove }}'
+      loop: '{{ aap_decommission_rules_to_remove }}'
       register: aap_decommission_runtime_rule_preflight
       failed_when: aap_decommission_runtime_rule_preflight.rc not in [0, 1]
       changed_when: false
@@ -143,12 +128,16 @@
     - name: Check only the exact owned permanent rich rules before shutdown
       ansible.builtin.command:
         argv: [firewall-cmd, --permanent, --zone=libvirt, '--query-rich-rule={{ item }}']
-      loop: '{{ aap_decommission_guest_access_plan.rich_rules_to_remove }}'
+      loop: '{{ aap_decommission_rules_to_remove }}'
       register: aap_decommission_permanent_rule_preflight
       failed_when: aap_decommission_permanent_rule_preflight.rc not in [0, 1]
       changed_when: false
       check_mode: false
       no_log: true
+
+  always:
+    - name: Release only this preflight's temporary lock and checkout
+      ansible.builtin.include_tasks: aap-isolation-finish.yml
 
 - name: Remove selected stopped guests permissions
   when: aap_decommission_guest_access_phase == 'apply'
@@ -162,12 +151,17 @@
           - aap_decommission_selected_guests_stopped | default(false) | bool
       no_log: true
 
-    - name: Refuse policy changes made since the ownership preflight
-      ansible.builtin.command:
-        argv: [/usr/local/sbin/hactar-recovery-isolation, check]
-        stdin: '{{ aap_decommission_guest_access_plan.actual_policy | to_json }}'
-      changed_when: false
-      no_log: true
+    - name: Prepare the pinned native source and lock for exact permission removal
+      ansible.builtin.include_tasks: aap-isolation-prepare.yml
+
+    - name: Refuse native policy changes made since the ownership preflight
+      ansible.builtin.include_tasks: aap-isolation-observe.yml
+      vars:
+        aap_isolation_previous_policy: '{{ aap_decommission_guest_access_plan.previous_policy }}'
+        aap_isolation_desired_policy: '{{ aap_decommission_guest_access_plan.desired_policy }}'
+
+    - name: Plan exact selected application removal while its CaC owner still exists
+      ansible.builtin.include_tasks: decommission-aiops-access.yml
 
     - name: Reinspect exact network reservations before selected record removal
       ansible.builtin.include_tasks: decommission-network-readback.yml
@@ -208,106 +202,101 @@
     - name: Read only exact runtime rich rules immediately before retirement
       ansible.builtin.command:
         argv: [firewall-cmd, --zone=libvirt, '--query-rich-rule={{ item }}']
-      loop: '{{ aap_decommission_guest_access_plan.rich_rules_to_remove }}'
+      loop: '{{ aap_decommission_rules_to_remove }}'
       register: aap_decommission_runtime_rules
       failed_when: aap_decommission_runtime_rules.rc not in [0, 1]
       changed_when: false
       no_log: true
 
-    - name: Disable only existing exact owned runtime rich rules
-      ansible.builtin.command:
-        argv: [firewall-cmd, --zone=libvirt, '--remove-rich-rule={{ item.item }}']
-      loop: '{{ aap_decommission_runtime_rules.results }}'
-      when: item.rc == 0
-      changed_when: true
-      no_log: true
-
     - name: Read only exact permanent rich rules immediately before retirement
       ansible.builtin.command:
         argv: [firewall-cmd, --permanent, --zone=libvirt, '--query-rich-rule={{ item }}']
-      loop: '{{ aap_decommission_guest_access_plan.rich_rules_to_remove }}'
+      loop: '{{ aap_decommission_rules_to_remove }}'
       register: aap_decommission_permanent_rules
       failed_when: aap_decommission_permanent_rules.rc not in [0, 1]
       changed_when: false
       no_log: true
 
-    - name: Disable only existing exact owned permanent rich rules
-      ansible.builtin.command:
-        argv: [firewall-cmd, --permanent, --zone=libvirt, '--remove-rich-rule={{ item.item }}']
-      loop: '{{ aap_decommission_permanent_rules.results }}'
-      when: item.rc == 0
-      changed_when: true
-      no_log: true
-
-    - name: Verify exact runtime rich rule absence
-      ansible.builtin.command:
-        argv: [firewall-cmd, --zone=libvirt, '--query-rich-rule={{ item }}']
-      loop: '{{ aap_decommission_guest_access_plan.rich_rules_to_remove }}'
-      register: aap_decommission_runtime_absence
-      failed_when: aap_decommission_runtime_absence.rc != 1
-      changed_when: false
-      no_log: true
-
-    - name: Verify exact permanent rich rule absence
-      ansible.builtin.command:
-        argv: [firewall-cmd, --permanent, --zone=libvirt, '--query-rich-rule={{ item }}']
-      loop: '{{ aap_decommission_guest_access_plan.rich_rules_to_remove }}'
-      register: aap_decommission_permanent_absence
-      failed_when: aap_decommission_permanent_absence.rc != 1
-      changed_when: false
-      no_log: true
-
-    - name: Apply the reduced persistent policy with bounded rollback # noqa no-handler
-      # Apply/check and its rescue must finish synchronously before domain deletion.
-      when: aap_decommission_guest_access_plan.requires_local_update | bool
+    - name: Apply the exact stopped-guest native firewall reduction
       block:
-        - name: Atomically save the reduced existing isolation configuration
-          ansible.builtin.copy:
-            dest: /etc/hactarconfig/replacement-isolation.json
-            content: '{{ aap_decommission_guest_access_plan.desired_policy | to_nice_json }}'
-            owner: root
-            group: root
-            mode: '0600'
-          no_log: true
+        - name: Disable only the selected CaC rich rules through the certified role
+          ansible.builtin.include_role:
+            name: redhat.rhel_system_roles.firewall
+            apply:
+              no_log: true
+          vars:
+            firewall:
+              - zone: libvirt
+                rich_rule: '{{ aap_decommission_rules_to_remove }}'
+                state: disabled
+                runtime: true
+                permanent: true
+            firewall_disable_conflicting_services: false
 
-        - name: Apply reduced isolation through the existing atomic helper
+        - name: Verify exact selected runtime rich rules are absent before further deletion
           ansible.builtin.command:
-            argv: [/usr/local/sbin/hactar-recovery-isolation, apply]
-          register: aap_decommission_isolation_apply
-          changed_when: aap_decommission_isolation_apply.stdout | trim == 'changed'
-          no_log: true
-
-        - name: Verify reduced persistent and live isolation
-          ansible.builtin.command:
-            argv: [/usr/local/sbin/hactar-recovery-isolation, check]
-            stdin: '{{ aap_decommission_guest_access_plan.desired_policy | to_json }}'
+            argv: [firewall-cmd, --zone=libvirt, '--query-rich-rule={{ item }}']
+          loop: '{{ aap_decommission_rules_to_remove }}'
+          register: aap_decommission_runtime_rule_absence
+          failed_when: aap_decommission_runtime_rule_absence.rc != 1
           changed_when: false
           no_log: true
+
+        - name: Verify exact selected permanent rich rules are absent before further deletion
+          ansible.builtin.command:
+            argv: [firewall-cmd, --permanent, --zone=libvirt, '--query-rich-rule={{ item }}']
+          loop: '{{ aap_decommission_rules_to_remove }}'
+          register: aap_decommission_permanent_rule_absence
+          failed_when: aap_decommission_permanent_rule_absence.rc != 1
+          changed_when: false
+          no_log: true
+
+        - name: Apply the complete reduced CaC through native Hactar tasks
+          ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+          vars:
+            hactar_isolation_policy: '{{ aap_isolation_effective_desired_policy }}'
 
       rescue:
-        - name: Restore the captured existing configuration after failed local application
-          ansible.builtin.copy:
-            dest: /etc/hactarconfig/replacement-isolation.json
-            content: '{{ aap_decommission_guest_access_plan.actual_policy | to_nice_json }}'
-            owner: root
-            group: root
-            mode: '0600'
+        - name: Initialize exact native rich-rule rollback from the protected queries
+          ansible.builtin.set_fact:
+            aap_decommission_native_rule_restore: []
           no_log: true
 
-        - name: Restore prior isolation using the existing atomic helper
-          ansible.builtin.command:
-            argv: [/usr/local/sbin/hactar-recovery-isolation, apply]
-          register: aap_decommission_isolation_restore
-          changed_when: aap_decommission_isolation_restore.stdout | trim == 'changed'
+        - name: Retain only each selected rule's original runtime state
+          ansible.builtin.set_fact:
+            aap_decommission_native_rule_restore: >-
+              {{ aap_decommission_native_rule_restore + [{'zone': 'libvirt', 'rich_rule': item.item,
+                   'state': 'enabled' if item.rc == 0 else 'disabled', 'runtime': true, 'permanent': false}] }}
+          loop: '{{ aap_decommission_runtime_rules.results }}'
           no_log: true
 
-        - name: Verify the restored prior policy before stopping for review
-          ansible.builtin.command:
-            argv: [/usr/local/sbin/hactar-recovery-isolation, check]
-            stdin: '{{ aap_decommission_guest_access_plan.actual_policy | to_json }}'
-          changed_when: false
+        - name: Retain only each selected rule's original permanent state
+          ansible.builtin.set_fact:
+            aap_decommission_native_rule_restore: >-
+              {{ aap_decommission_native_rule_restore + [{'zone': 'libvirt', 'rich_rule': item.item,
+                   'state': 'enabled' if item.rc == 0 else 'disabled', 'runtime': false, 'permanent': true}] }}
+          loop: '{{ aap_decommission_permanent_rules.results }}'
           no_log: true
 
-        - name: Stop before any domain or disk removal after failed permission retirement
+        - name: Restore only these exact native rule states through the certified role
+          ansible.builtin.include_role:
+            name: redhat.rhel_system_roles.firewall
+            apply:
+              no_log: true
+          vars:
+            firewall: '{{ aap_decommission_native_rule_restore }}'
+            firewall_disable_conflicting_services: false
+
+        - name: Restore only the complete current CaC rollback policy
+          ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+          vars:
+            hactar_isolation_policy: '{{ aap_isolation_rollback_policy }}'
+
+        - name: Stop before domain or disk removal after incomplete permission retirement
           ansible.builtin.fail:
-            msg: Guest permission retirement failed; prior isolation was restored and selected guests remain stopped.
+            msg: Guest permission retirement failed; prior native policy was restored and selected guests remain stopped.
+          no_log: false
+
+  always:
+    - name: Release only this removal's temporary native lock and public checkout
+      ansible.builtin.include_tasks: aap-isolation-finish.yml

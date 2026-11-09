@@ -1,63 +1,204 @@
 ---
-- name: Require the verified primary AAP resource before allowing its management connection
+- name: Select only the existing bounded management or installation operation
   ansible.builtin.assert:
-    that:
-      - aap_instance_resources.aap is mapping
-      - aap_instance_resources.aap.verified | bool
-      - aap_instance_route | aap_instance_route is mapping
-    fail_msg: Use the selected verified AAP resource and its registered hypervisor route.
-  no_log: true
+    that: aap_management_mode | default('management') in ['management', 'installation']
+    quiet: true
 
-- name: Bind the original play credentials and policy before delegation changes variable context
+- name: Bind verified native access and rollback inputs before delegation
   ansible.builtin.set_fact:
+    aap_isolation_hypervisor: '{{ aap_instance_route.hypervisor }}'
+    aap_isolation_trust_file: >-
+      {{ (aap_instance_trust | default({})).path | default((aap_hypervisor_trust | default({})).path) }}
+    aap_management_native_runtime: {}
+    aap_management_policy_attempted: false
+    aap_management_publish:
+      durable_policy_published: false
     aap_hypervisor_management_login:
-      user: "{{ vault_ansible_user }}"
-      password: "{{ vault_ansible_password }}"
-    aap_hypervisor_management_request:
-      route: "{{ aap_instance_route }}"
-      primary: "{{ aap_instance_resources.aap }}"
+      user: '{{ vault_ansible_user }}'
+      password: '{{ vault_ansible_password }}'
+    aap_management_request:
+      route: '{{ aap_instance_route }}'
+      primary: "{{ aap_installation_primary if aap_management_mode | default('management') == 'installation' else aap_instance_resources.aap }}"
       declared_policy: >-
-        {{ aap_instance_route.hypervisor | aap_hypervisor_isolation_policy(
+        {{ aap_installation_access_plan.transition.previous_policy
+           if aap_management_mode | default('management') == 'installation' else
+           aap_instance_route.hypervisor | aap_hypervisor_isolation_policy(
              aap_hypervisor_isolation_https_clients | default([]),
              aap_hypervisor_isolation_protected_ipv4 | default([]),
              aap_hypervisor_isolation_host_clients | default([]),
              aap_hypervisor_isolation_released_clients | default([]),
-           aap_hypervisor_isolation_http_clients | default([])) }}
-      check_mode: "{{ ansible_check_mode | bool }}"
+             aap_hypervisor_isolation_http_clients | default([])) }}
+      mode: "{{ aap_management_mode | default('management') }}"
+      check_mode: '{{ ansible_check_mode | bool }}'
   no_log: true
 
-- name: Reconcile exactly this AAP guest connection using the existing isolation and firewall tools
-  ansible.builtin.command:
-    argv:
-      - python3
-      - -c
-      - "{{ lookup('ansible.builtin.file', 'src/aap_hypervisor_access.py') }}"
-    stdin: "{{ hostvars[inventory_hostname].aap_hypervisor_management_request | to_json }}"
-  delegate_to: "{{ aap_instance_route.hypervisor.address }}"
+- name: Verify and apply only the selected AAP guest access
+  delegate_to: '{{ aap_instance_route.hypervisor.address }}'
   become: true
-  vars:
+  vars: &aap_management_connection
     ansible_connection: ssh
-    ansible_host: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.address }}"
-    ansible_user: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.user }}"
-    ansible_port: "{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.port }}"
-    ansible_password: ""
-    ansible_ssh_pass: ""
+    ansible_host: '{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.address }}'
+    ansible_user: '{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.user }}'
+    ansible_port: '{{ hostvars[inventory_hostname].aap_instance_route.hypervisor.port }}'
+    ansible_password: ''
+    ansible_ssh_pass: ''
+    ansible_become_password: ''
     ansible_ssh_common_args: >-
       -o BatchMode=yes -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no
       -o StrictHostKeyChecking=yes
-      -o UserKnownHostsFile={{ hostvars[inventory_hostname].aap_instance_trust.path | quote }}
+      -o UserKnownHostsFile={{ hostvars[inventory_hostname].aap_isolation_trust_file | quote }}
       -o GlobalKnownHostsFile=/dev/null
     ansible_host_key_checking: true
     ansible_ssh_host_key_checking: true
-  register: aap_hypervisor_management_result
-  changed_when: (aap_hypervisor_management_result.stdout | from_json).changed | bool
-  check_mode: false
-  no_log: true
+  block:
+    - name: Prepare reviewed Hactar source and acquire the temporary native lock
+      ansible.builtin.include_tasks: aap-isolation-prepare.yml
 
-- name: Retain the exact verified policy for the existing encrypted publication
-  ansible.builtin.set_fact:
-    aap_hypervisor_management_policy: "{{ (aap_hypervisor_management_result.stdout | from_json).desired_policy }}"
-  no_log: true
+    - name: Allocate this invocation's existing resource verifier
+      ansible.builtin.tempfile:
+        state: directory
+        path: /tmp
+        prefix: aap-management-resource-
+      check_mode: false
+      register: aap_management_native_runtime
+      no_log: true
+
+    - name: Stage the existing read-only resource validator
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/src/aap_hypervisor_access.py'
+        dest: '{{ aap_management_native_runtime.path }}/aap_hypervisor_access.py'
+        owner: root
+        group: root
+        mode: '0600'
+      check_mode: false
+      no_log: true
+
+    - name: Verify native guest identity and derive only its approved access
+      # Libvirt provenance guards are retained; firewall changes are native Ansible.
+      # Justification: ../README.md#native-firewall-transactions
+      ansible.builtin.command:
+        argv: [python3, '{{ aap_management_native_runtime.path }}/aap_hypervisor_access.py']
+        stdin: '{{ hostvars[inventory_hostname].aap_management_request | to_json }}'
+      register: aap_management_resource_proof
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Retain the existing validated complete CaC transition
+      ansible.builtin.set_fact:
+        aap_management_native_plan: '{{ aap_management_resource_proof.stdout | from_json }}'
+      no_log: true
+
+    - name: Refuse native isolation drift before opening any connection
+      ansible.builtin.include_tasks: aap-isolation-observe.yml
+      vars:
+        aap_isolation_previous_policy: '{{ aap_management_native_plan.previous_policy }}'
+        aap_isolation_desired_policy: '{{ aap_management_native_plan.desired_policy }}'
+
+    - name: Read only the exact guest rule's runtime and permanent state
+      ansible.builtin.command:
+        argv: '{{ ["firewall-cmd"] + item + ["--zone=libvirt", "--query-rich-rule=" ~ aap_management_native_plan.rich_rule] }}'
+      loop: [[], [--permanent]]
+      register: aap_management_native_rule_previous
+      failed_when: aap_management_native_rule_previous.rc not in [0, 1]
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Retain only this transaction's native rollback candidates
+      ansible.builtin.set_fact:
+        aap_management_rollback_policy: '{{ aap_isolation_rollback_policy }}'
+        aap_management_policy_attempted: true
+      no_log: true
+
+    - name: Apply the selected guest rich rule through the certified firewall role
+      ansible.builtin.include_role:
+        name: redhat.rhel_system_roles.firewall
+        apply:
+          no_log: true
+      vars:
+        firewall:
+          - zone: libvirt
+            rich_rule: '{{ aap_management_native_plan.rich_rule }}'
+            state: enabled
+            runtime: true
+            permanent: true
+        firewall_disable_conflicting_services: false
+
+    - name: Apply the complete selected CaC isolation through native Hactar tasks
+      ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+      vars:
+        hactar_isolation_policy: '{{ aap_isolation_effective_desired_policy }}'
+
+    - name: Retain the exact policy for the existing encrypted publication
+      ansible.builtin.set_fact:
+        aap_hypervisor_management_policy: '{{ aap_management_native_plan.desired_policy }}'
+      no_log: true
+
+    - name: Publish only a planned installation permission through the existing publisher
+      aap_publish_instance_keys:
+        operation: installation_access
+        phase: publish
+        route: '{{ aap_instance_route }}'
+        primary: '{{ aap_installation_primary }}'
+        transition: '{{ aap_installation_access_plan.transition }}'
+      delegate_to: localhost
+      become: false
+      vars:
+        ansible_connection: local
+      register: aap_management_publish
+      when:
+        - aap_management_mode | default('management') == 'installation'
+        - not ansible_check_mode
+      no_log: true
+
+  rescue:
+    - name: Restore only this invocation's unpublished firewall transition
+      when:
+        - aap_management_policy_attempted | bool
+        - not (aap_management_publish.durable_policy_published | default(false) | bool)
+        - not ansible_check_mode
+      block:
+        - name: Restore only the selected rich rule's original runtime and permanent state
+          ansible.builtin.include_role:
+            name: redhat.rhel_system_roles.firewall
+            apply:
+              no_log: true
+          vars:
+            firewall:
+              - zone: libvirt
+                rich_rule: '{{ aap_management_native_plan.rich_rule }}'
+                state: '{{ "enabled" if aap_management_native_rule_previous.results[0].rc == 0 else "disabled" }}'
+                runtime: true
+                permanent: false
+              - zone: libvirt
+                rich_rule: '{{ aap_management_native_plan.rich_rule }}'
+                state: '{{ "enabled" if aap_management_native_rule_previous.results[1].rc == 0 else "disabled" }}'
+                runtime: false
+                permanent: true
+            firewall_disable_conflicting_services: false
+
+        - name: Restore the complete prior CaC isolation using native tasks
+          ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
+          vars:
+            hactar_isolation_policy: '{{ aap_management_rollback_policy }}'
+
+    - name: Stop after incomplete selected AAP access configuration
+      ansible.builtin.fail:
+        msg: Selected AAP access did not finish. Unpublished changes were restored; inspect protected job diagnostics.
+      no_log: false
+
+  always:
+    - name: Remove only this invocation's temporary resource validator
+      ansible.builtin.file:
+        path: '{{ aap_management_native_runtime.path }}'
+        state: absent
+      when: aap_management_native_runtime.path | default('') is match('^/tmp/aap-management-resource-[A-Za-z0-9_]+$')
+      check_mode: false
+      no_log: true
+
+    - name: Release this invocation's temporary transaction lock and public checkout
+      ansible.builtin.include_tasks: aap-isolation-finish.yml
 
 - name: Verify the management TCP connection from the selected AAP guest
   ansible.builtin.wait_for:
@@ -76,5 +217,7 @@
     ansible_ssh_common_args: "{{ hostvars[inventory_hostname].aap_instance_ssh_args }}"
     ansible_host_key_checking: true
     ansible_ssh_host_key_checking: true
-  when: not ansible_check_mode
+  when:
+    - not ansible_check_mode
+    - aap_management_mode | default('management') == 'management'
   no_log: true

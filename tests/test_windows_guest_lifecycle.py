@@ -157,17 +157,16 @@ class WindowsGuestLifecycleTests(unittest.TestCase):
             return SimpleNamespace(stdout=text)
         def missing(path): paths.append(path);raise FileNotFoundError
         route = {'vm_name': request['guest']['vm_name'], 'hypervisor': pin}
-        with patch.object(runtime.base, 'DIRECTORY', directory), patch.object(runtime.base, 'CONFIG', config), \
-             patch.object(runtime.base.os, 'geteuid', return_value=0), patch.object(runtime.base.os, 'lstat', side_effect=missing), \
+        with patch.object(runtime.base.os, 'geteuid', return_value=0), patch.object(runtime.base.os, 'lstat', side_effect=missing), \
              patch.object(runtime.base.Path, 'read_text', return_value=pin['machine_id']), patch.object(runtime.base, 'command', side_effect=command):
-            state = runtime.base.probe(route, allow_absent_guest=True, guest_kind='windows')
+            state = runtime.base.probe(route, fixture['policy'], allow_absent_guest=True, guest_kind='windows')
             self.assertEqual(set(state['disk_states']), set(fixture['disk_states']))
             self.assertEqual(set(paths), set(fixture['disk_states']))
             self.assertFalse(any('domifaddr' in call or 'dumpxml' in call for call in calls))
-            with self.assertRaises(ValueError): runtime.base.probe(route, guest_kind='windows')
+            with self.assertRaises(ValueError): runtime.base.probe(route, fixture['policy'], guest_kind='windows')
             with patch.object(runtime.base.os, 'lstat', return_value=SimpleNamespace(st_mode=0o100600,
                     st_ino=1, st_dev=1, st_size=1, st_mtime_ns=1, st_nlink=1)):
-                with self.assertRaises(ValueError): runtime.base.probe(route, allow_absent_guest=True, guest_kind='windows')
+                with self.assertRaises(ValueError): runtime.base.probe(route, fixture['policy'], allow_absent_guest=True, guest_kind='windows')
 
     def test_source_saves_every_exact_nic_without_linux_substitutes_and_retires_only_selected_windows_guest(self):
         guest, pin, main, shared, hactar, allocation = source_fixture()
@@ -259,8 +258,8 @@ class WindowsGuestLifecycleTests(unittest.TestCase):
             with self.subTest(certificate_validated=validated), patch.object(release_tests, 'fixture', side_effect=fixture):
                 release_tests.GuestReleaseTests().exercise_action('release_guest')
 
-    def test_native_windows_cleanup_preserves_unrelated_dns_dhcp_and_recovers_failed_policy_apply(self):
-        for fail_once in (False, True):
+    def test_native_windows_cleanup_preserves_unrelated_dns_dhcp_without_firewall_writes(self):
+        for fail_once in (False,):
             request, state = retirement_request(absent=True);request['operation'] = 'retire_apply'
             for network, scopes in state['network_definitions'].items():
                 for scope, xml in scopes.items():
@@ -287,22 +286,13 @@ class WindowsGuestLifecycleTests(unittest.TestCase):
                         self.assertEqual(len(matches), 1);parent.remove(matches[0])
                         state['network_definitions'][network][scope] = ET.tostring(xml, encoding='unicode')
                         if scope == 'current': state['networks'][network] = state['network_definitions'][network][scope]
-                    elif arguments == [str(helper), 'apply']:
-                        state['policy'] = json.loads(config.read_text())
-                        if fail_once and not failed:
-                            failed = True;raise ValueError('Synthetic Windows policy apply interruption')
-                    elif arguments == [str(helper), 'check']:
-                        self.assertEqual(json.loads(data), state['policy'])
-                    else: self.assertEqual(arguments[:2], ['/usr/sbin/nft', '--check'])
-                with patch.object(runtime.base, 'DIRECTORY', root), patch.object(runtime.base, 'CONFIG', config), \
-                     patch.object(runtime.base, 'HELPER', helper), patch.object(runtime.base, 'command', side_effect=command), \
+                    else: self.fail('Resource cleanup attempted a non-libvirt mutation')
+                with patch.object(runtime.base, 'command', side_effect=command), \
                      patch.object(runtime.base, 'probe', side_effect=lambda *args, **kwargs: deepcopy(state)):
-                    if fail_once:
-                        with self.assertRaises(ValueError): runtime.reconcile_retirement(request)
-                        self.assertEqual(state['policy'], original_policy)
                     result = runtime.reconcile_retirement(request)
                     self.assertTrue(result['retirement_verified'])
-                    self.assertEqual(state['policy'], request['transition']['desired_policy'])
+                    self.assertEqual(state['policy'], original_policy)
+                    state['policy'] = deepcopy(request['transition']['desired_policy'])
                     self.assertFalse(runtime.reconcile_retirement(request)['changed'])
                     self.assertEqual(sum(command[0] == 'virsh' for command in calls), 8)
                     for scopes in state['network_definitions'].values():

@@ -58,33 +58,18 @@ class InstallationAccessTests(unittest.TestCase):
         with self.assertRaises(keys.StoreError):
             keys.installation_access_context(main, shared, retired, expected['route'], expected['primary'])
 
-    def test_runtime_installation_rollback_restores_only_new_rules_and_old_policy(self):
+    def test_runtime_installation_verifier_is_read_only_and_preserves_approved_policy(self):
         expected, observed, *_ = fixture()
-        expected['mode']='installation'
-        with tempfile.TemporaryDirectory(prefix='installation-native-rollback-')as temporary:
-            directory=Path(temporary);config=directory/'policy.json';helper=directory/'helper'
-            original=json.dumps(expected['declared_policy']).encode();config.write_bytes(original)
-            helper.write_text("TABLE='hactar_recovery'\ndef validate_configuration(value):return value\ndef policy(value):return []\n")
-            states=set();writes=[]
-            def command(arguments,data=None,allowed=(0,)):
-                if arguments[0]=='firewall-cmd':
-                    permanent='--permanent'in arguments
-                    action=next(value for value in arguments if value.startswith(('--query-rich-rule=','--add-rich-rule=','--remove-rich-rule=')))
-                    if action.startswith('--query'):return SimpleNamespace(returncode=0 if permanent in states else 1,stdout='')
-                    writes.append(arguments)
-                    if action.startswith('--add'):states.add(permanent)
-                    else:states.discard(permanent)
-                return SimpleNamespace(returncode=0,stdout='')
-            def probe(route):
-                result=deepcopy(observed);result['policy']=json.loads(config.read_text());return result
-            with mock.patch.multiple(access,DIRECTORY=directory,CONFIG=config,HELPER=helper), \
-                 mock.patch.object(access,'probe',side_effect=probe),mock.patch.object(access,'command',side_effect=command):
-                applied=access.reconcile(expected)
-                self.assertEqual(states,{False,True});self.assertTrue(applied['changed'])
-                rollback=dict(expected,operation='rollback',native_rule_previous=applied['native_rule_previous'])
-                restored=access.reconcile(rollback)
-                self.assertTrue(restored['changed']);self.assertEqual(states,set());self.assertEqual(config.read_bytes(),original)
-            self.assertTrue(all('--zone=libvirt'in args for args in writes))
+        expected['mode'] = 'installation'
+        original = deepcopy(observed)
+        with mock.patch.object(access, 'probe', return_value=observed), \
+             mock.patch.object(access, 'command') as command:
+            result = access.reconcile(expected)
+            self.assertTrue(result['changed'])
+            self.assertFalse(result['applied'])
+            self.assertEqual(result['desired_policy'], access.desired_policy(expected['route'], expected['primary'], expected['declared_policy'], 'installation'))
+            self.assertEqual(observed, original)
+            command.assert_not_called()
 
     def test_undeployed_optional_hactar_alias_requires_proved_admin_visibility(self):
         expected, _, main, shared, hactar, allocation=fixture()
@@ -197,11 +182,18 @@ class ActionModule(ActionBase):
   return {'changed':False,'rc':0,'stdout':json.dumps({'changed':False,'applied':True,'native_rule_previous':{'runtime':False,'permanent':False}})}
 '''.replace('TRACEPATH',repr(str(trace))))
             child=yaml.safe_load((root/'tasks/aap-installation-access.yml').read_text())
-            for block in child:
-                for task in block.get('block',[])+block.get('rescue',[]):
-                    if 'ansible.builtin.command' in task:
-                        task['installation_transport_proof']=task.pop('ansible.builtin.command')
-                        task['installation_transport_proof']['argv'][2]='synthetic-code-not-executed'
+            management = yaml.safe_load((root/'tasks/aap-hypervisor-access.yml').read_text())
+            transaction = next(task for task in management if 'block' in task)
+            verifier = next(task for task in transaction['block'] if task['name'].startswith('Verify native guest identity'))
+            verifier['installation_transport_proof'] = verifier.pop('ansible.builtin.command')
+            verifier['installation_transport_proof']['argv'] = ['synthetic-resource-code-not-executed']
+            publisher = next(task for task in transaction['block'] if 'aap_publish_instance_keys' in task)
+            transaction['block'] = [verifier, publisher]
+            transaction.pop('rescue', None)
+            transaction.pop('always', None)
+            native_child = directory/'aap-hypervisor-access.yml'
+            native_child.write_text(yaml.safe_dump(management[:2]+[transaction], sort_keys=False))
+            child[1]['ansible.builtin.include_tasks'] = str(native_child)
             child_path=directory/'installation.yml';child_path.write_text(yaml.safe_dump(child,sort_keys=False))
             play=yaml.safe_load((root/'04-aap-config.yml').read_text())[0]
             pre=deepcopy(play['pre_tasks'][:2])
@@ -212,7 +204,8 @@ class ActionModule(ActionBase):
             transition={'previous_policy':expected['declared_policy'],
                         'desired_policy':access.desired_policy(expected['route'],expected['primary'],expected['declared_policy'],'installation')}
             variables={'aap_instance_key':expected['route']['vm_name'],'fixture_route':expected['route'],
-                       'fixture_primary':expected['primary'],'fixture_transition':transition}
+                       'fixture_primary':expected['primary'],'fixture_transition':transition,
+                       'vault_ansible_user':'fixture_operator','vault_ansible_password':'fixture_password'}
             fixture_play=directory/'play.yml'
             fixture_play.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,
                 'vars':variables,'pre_tasks':pre,'tasks':[{'name':'Forbidden ordinary base stage',

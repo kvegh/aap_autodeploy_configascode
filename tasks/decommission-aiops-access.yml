@@ -1,0 +1,74 @@
+---
+# Keep the still-present CaC record until its exact native permissions are gone.
+- name: Select only this retired instance's verified application owner
+  ansible.builtin.set_fact:
+    aap_decommission_current_app_owners: >-
+      {{ aap_isolation_app_owners | selectattr('guest.instance_name', 'equalto', aap_instance_route.vm_name) | list }}
+  no_log: true
+
+- name: Require at most the selected version's recorded Zabbix owner
+  ansible.builtin.assert:
+    that: aap_decommission_current_app_owners | length <= 1
+    quiet: true
+  no_log: true
+
+- name: Bind application removal to the same preflighted native domain and disk
+  ansible.builtin.assert:
+    that:
+      - item.guest.vm_name == 'zabbix-' ~ aap_retirement.version
+      - >-
+        aap_retirement.domains | selectattr('name', 'equalto', item.guest.vm_name) |
+        selectattr('disk', 'equalto', item.guest.disk) | list | length == 1
+      - item.guest.vm_name in aap_decommission_guest_xmls
+      - >-
+        aap_decommission_guest_xmls[item.guest.vm_name] |
+        regex_findall('<uuid>\s*([0-9a-f-]+)\s*</uuid>') == [item.guest.uuid]
+    quiet: true
+  loop: '{{ aap_decommission_current_app_owners }}'
+  no_log: true
+
+- name: Retain only exact tuples from this selected CaC owner
+  ansible.builtin.set_fact:
+    aap_decommission_current_app_clients: >-
+      {{ aap_decommission_current_app_owners | map(attribute='clients') | flatten(levels=1) }}
+  no_log: true
+
+- name: Refuse changed application permissions after the shutdown preflight
+  ansible.builtin.assert:
+    that: aap_decommission_current_app_clients == aap_decommission_app_clients
+    fail_msg: Selected application CaC changed after preflight; preserve stopped guests and repeat the ownership checks.
+    quiet: true
+  when: aap_decommission_guest_access_phase == 'apply'
+  no_log: true
+
+- name: Save only this job's source-proven selected tuples before shutdown
+  ansible.builtin.set_fact:
+    aap_decommission_app_clients: '{{ aap_decommission_current_app_clients }}'
+  when: aap_decommission_guest_access_phase == 'preflight'
+  no_log: true
+
+- name: Initialize exact native application rules from the selected CaC tuples
+  ansible.builtin.set_fact:
+    aap_decommission_app_rich_rules: []
+  no_log: true
+
+- name: Derive only the selected guest's declared destination and port pairs
+  ansible.builtin.set_fact:
+    aap_decommission_app_rich_rules: >-
+      {{ aap_decommission_app_rich_rules +
+         ['rule family="ipv4" priority="0" source address="' ~ aap_decommission_app_clients[0].ipv4 ~
+          '/32" destination address="' ~ item.0 ~ '/32" port port="' ~ (item.1 | string) ~ '" protocol="tcp" accept'] }}
+  loop: >-
+    {{ aap_decommission_app_clients[0].destinations | product(aap_decommission_app_clients[0].ports) | list
+       if aap_decommission_app_clients | length > 0 else [] }}
+  no_log: true
+
+- name: Keep base publication separate from selected application permission removal
+  ansible.builtin.set_fact:
+    aap_decommission_rules_to_remove: >-
+      {{ (aap_decommission_guest_access_plan.rich_rules_to_remove + aap_decommission_app_rich_rules) | unique | list }}
+    aap_isolation_effective_desired_policy: >-
+      {{ aap_decommission_guest_access_plan.desired_policy | combine({'guest_host_clients':
+           (aap_decommission_guest_access_plan.desired_policy.guest_host_clients | default([]) +
+            (aap_isolation_app_clients | difference(aap_decommission_app_clients))) | unique | list}) }}
+  no_log: true

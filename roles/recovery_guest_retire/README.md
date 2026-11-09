@@ -10,7 +10,7 @@ does not alter the VM, network, firewall, Git or AAP inventory.
 
 After the caller has gracefully stopped and removed only that verified domain
 and clone disk, call the same role with `recovery_retire_phase: publish`. The
-native helper requires the selected domain and both canonical disk paths to be
+retained native resource verifier requires the selected domain and both canonical disk paths to be
 absent. It removes only matching static DHCP reservations and this guest's
 HTTPS/full-release isolation entries. Unsupported guest-to-host grants stop
 planning before physical deletion. Normal firewall rules and other guests remain
@@ -50,3 +50,10 @@ then select its existing unconfigured-clone checks only when records and matchin
 permissions are absent. This entry point does not authorize physical deletion.
 Registered guests still require the complete normal role plan before removal and
 the normal publication phase afterward. Missing provenance is an error.
+
+Firewall application and complete-policy readback now use Hactar's native
+Ansible tasks under the shared temporary transaction lock. The resource verifier
+retains the exact static-reservation cleanup, but never reads/writes a managed
+JSON policy or changes firewall rules. Supply the protected inputs and coordinate
+old caller pins as described in the
+[native firewall transaction contract](../../README.md#native-firewall-transactions).

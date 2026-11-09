@@ -1,7 +1,5 @@
-"""Reconcile one already-approved AAP guest's access using existing host tools."""
+"""Verify native AAP guest resources; Ansible owns firewall application and locking."""
 from copy import deepcopy
-import fcntl
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -9,15 +7,10 @@ import re
 import subprocess
 import stat
 import sys
-import tempfile
-import time
 import xml.etree.ElementTree as ET
 
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network
 
-DIRECTORY = Path('/etc/hactarconfig')
-CONFIG = DIRECTORY / 'replacement-isolation.json'
-HELPER = Path('/usr/local/sbin/hactar-recovery-isolation')
 
 
 OWNER = 'disconnected-windows-patching'
@@ -309,13 +302,16 @@ def plan(expected, probe):
             'rich_rule': rule, 'changed': actual != desired}
 
 
-def probe(route, allow_absent_guest=False, guest_kind=None, primary=None):
+def probe(route, policy, allow_absent_guest=False, guest_kind=None, primary=None):
+    """Gather native resource facts only; desired policy is supplied from CaC.
+
+    The caller holds the approved temporary Ansible transaction lock and checks
+    this supplied policy against complete native nft readback before mutation.
+    See ../README.md#native-firewall-transactions.
+    """
     require(guest_kind in (None, 'windows'), 'Select only default Linux or explicit Windows native provenance.')
-    require(os.geteuid() == 0 and DIRECTORY.is_dir() and not DIRECTORY.is_symlink()
-            and DIRECTORY.stat().st_uid == 0 and DIRECTORY.stat().st_mode & 0o777 == 0o700
-            and CONFIG.is_file() and not CONFIG.is_symlink() and CONFIG.stat().st_uid == 0
-            and CONFIG.stat().st_mode & 0o777 == 0o600, 'Require existing protected root-owned isolation configuration.')
-    data = {'machine_id': Path('/etc/machine-id').read_text().strip(), 'policy': json.loads(CONFIG.read_text())}
+    require(os.geteuid() == 0 and isinstance(policy, dict), 'Require root resource readback and complete CaC policy.')
+    data = {'machine_id': Path('/etc/machine-id').read_text().strip(), 'policy': deepcopy(policy)}
     addresses = json.loads(command(['/usr/sbin/ip', '-j', 'address', 'show']).stdout)
     data['addresses'] = [item['local'] for interface in addresses for item in interface.get('addr_info', []) if item.get('family') == 'inet']
     for action in ('is-active', 'is-enabled'):
@@ -383,99 +379,24 @@ def probe(route, allow_absent_guest=False, guest_kind=None, primary=None):
     return data
 
 
-def save(content):
-    descriptor, name = tempfile.mkstemp(prefix='.management-policy-', dir=str(DIRECTORY))
-    try:
-        with os.fdopen(descriptor, 'wb') as stream:
-            stream.write(content)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.chmod(name, 0o600)
-        os.replace(name, CONFIG)
-    finally:
-        if os.path.exists(name):
-            os.unlink(name)
-
 
 def reconcile(expected):
+    """Return the existing native resource plan without changing any firewall."""
     require({'route', 'primary', 'declared_policy', 'check_mode'} <= set(expected)
             and set(expected) <= {'route', 'primary', 'declared_policy', 'check_mode', 'mode', 'operation', 'native_rule_previous'}
             and type(expected['check_mode']) is bool, 'Use only the fixed verified management request.')
-    rollback = expected.get('operation', 'apply') == 'rollback'
-    require(expected.get('operation', 'apply') in ('apply', 'rollback')
-            and (not rollback or expected.get('mode') == 'installation'), 'Rollback is bounded to selected installation access.')
-    if rollback:
-        require(isinstance(expected.get('native_rule_previous'), dict)
-                and set(expected['native_rule_previous']) == {'runtime', 'permanent'}
-                and all(type(value) is bool for value in expected['native_rule_previous'].values()),
-                'Retain exact original native rule states for installation rollback.')
-    lock = os.open(DIRECTORY, os.O_RDONLY | os.O_DIRECTORY)
-    try:
-        deadline = time.monotonic() + 5
-        while True:
-            try:
-                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                break
-            except BlockingIOError:
-                require(time.monotonic() < deadline, 'Another hypervisor policy transaction is active; retry safely.')
-                time.sleep(0.1)
-        current = (probe(expected['route'], primary=expected['primary'])
-                   if expected['primary'].get('supplemental_interfaces') else probe(expected['route']))
-        change = plan(expected, current)
-        require(current['zone'] == 'libvirt', 'Use only the existing libvirt zone for the selected bridge.')
-        command([str(HELPER), 'check'], json.dumps(current['policy']))
-        spec = importlib.util.spec_from_file_location('installed_recovery_isolation', HELPER)
-        # The installed helper has no .py suffix.
-        if spec is None:
-            from importlib.machinery import SourceFileLoader
-            spec = importlib.util.spec_from_loader('installed_recovery_isolation', SourceFileLoader('installed_recovery_isolation', str(HELPER)))
-        helper = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(helper)
-        helper.validate_configuration(change['desired_policy'])
-        commands = [{'delete': {'table': {'family': 'inet', 'name': helper.TABLE}}}]
-        commands += [{'add': {kind: value}} for kind, value in helper.policy(change['desired_policy'])]
-        command(['/usr/sbin/nft', '--check', '-j', '-f', '-'], json.dumps({'nftables': commands}))
-        states = {}
-        for permanent in (False, True):
-            prefix = ['firewall-cmd'] + (['--permanent'] if permanent else []) + ['--zone=libvirt']
-            states[permanent] = command(prefix + ['--query-rich-rule=' + change['rich_rule']], allowed=(0, 1)).returncode == 0
-        previous_states = {name: states[permanent] for name, permanent in (('runtime', False), ('permanent', True))}
-        wanted = {permanent: expected['native_rule_previous'][name] if rollback else True
-                  for name, permanent in (('runtime', False), ('permanent', True))}
-        changed = change['changed'] or any(states[key] != wanted[key] for key in states)
-        if expected['check_mode']:
-            return dict(change, changed=changed, applied=False, native_rule_previous=previous_states)
-        original = CONFIG.read_bytes()
-        native_changes = []
-        try:
-            for permanent, present in states.items():
-                prefix = ['firewall-cmd'] + (['--permanent'] if permanent else []) + ['--zone=libvirt']
-                if present != wanted[permanent]:
-                    action = '--add-rich-rule=' if wanted[permanent] else '--remove-rich-rule='
-                    command(prefix + [action + change['rich_rule']])
-                    native_changes.append((prefix, present))
-                verified = command(prefix + ['--query-rich-rule=' + change['rich_rule']], allowed=(0, 1)).returncode == 0
-                require(verified == wanted[permanent], 'Native rule readback differs from the exact selected transition.')
-            command([str(HELPER), 'check'], json.dumps(current['policy']))
-            if change['changed']:
-                save(json.dumps(change['desired_policy']).encode())
-                command([str(HELPER), 'apply'])
-            command([str(HELPER), 'check'], json.dumps(change['desired_policy']))
-        except Exception:
-            save(original)
-            command([str(HELPER), 'apply'])
-            for prefix, prior in reversed(native_changes):
-                command(prefix + [('--add-rich-rule=' if prior else '--remove-rich-rule=') + change['rich_rule']])
-            command([str(HELPER), 'check'], json.dumps(current['policy']))
-            raise
-        return dict(change, changed=changed, applied=True, native_rule_previous=previous_states)
-    finally:
-        os.close(lock)
+    require(expected.get('operation', 'apply') in ('apply', 'rollback'), 'Select the exact planned operation.')
+    primary = expected['primary']
+    current = probe(expected['route'], expected['declared_policy'],
+                    **({'primary': primary} if primary.get('supplemental_interfaces') else {}))
+    change = plan(expected, current)
+    require(current['zone'] == 'libvirt', 'Use only the existing libvirt zone for the selected bridge.')
+    return dict(change, applied=False)
 
 
 if __name__ == '__main__':
     try:
         print(json.dumps(reconcile(json.load(sys.stdin))))
     except Exception:
-        print('Protected hypervisor management reconciliation failed.', file=sys.stderr)
+        print('Protected hypervisor resource verification failed.', file=sys.stderr)
         raise SystemExit(1)

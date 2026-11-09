@@ -1,0 +1,125 @@
+---
+- name: Require existing verified flat guest provenance before native commands
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_app_owner.guest.schema_version == 1
+      - aap_isolation_app_owner.guest.verified is sameas true
+      - aap_isolation_app_owner.guest.instance_number | string is match('^[1-9][0-9]{0,62}$')
+      - aap_isolation_app_owner.guest.vm_name == 'zabbix-v' ~ ('%02d' | format(aap_isolation_app_owner.guest.instance_number | int))
+      - aap_isolation_app_owner.guest.address is match('^(?:10\.|192\.168\.|172\.(?:1[6-9]|2[0-9]|3[01])\.)')
+      - aap_isolation_app_owner.guest.hypervisor_machine_id == aap_isolation_machine_id.stdout | trim
+      - aap_isolation_app_owner.guest.vm_name is match('^zabbix-v[0-9]{2,}$')
+      - aap_isolation_app_owner.guest.uuid is match('^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+      - aap_isolation_app_owner.guest.uuid != '00000000-0000-0000-0000-000000000000'
+      - aap_isolation_app_owner.guest.disk == '/opt/vms/' ~ aap_isolation_app_owner.guest.vm_name ~ '.disk.qcow2'
+      - aap_isolation_app_owner.guest.network is match('^[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}$')
+      - aap_isolation_app_owner.guest.bridge in aap_isolation_hypervisor.isolation_bridges
+      - aap_isolation_app_owner.guest.mac is match('^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$')
+    quiet: true
+  no_log: true
+
+- name: Read the selected domain's actual UUID
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', domuuid, '{{ aap_isolation_app_owner.guest.vm_name }}']
+  register: aap_isolation_app_uuid
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Read current and persistent disks of that exact domain
+  ansible.builtin.command:
+    argv: "{{ ['virsh', '-c', 'qemu:///system', 'domblklist', aap_isolation_app_owner.guest.vm_name, '--details'] + item }}"
+  loop: [[], [--inactive]]
+  environment:
+    LC_ALL: C
+  register: aap_isolation_app_disks
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Read current and persistent interfaces of that exact domain
+  ansible.builtin.command:
+    argv: "{{ ['virsh', '-c', 'qemu:///system', 'domiflist', aap_isolation_app_owner.guest.vm_name] + item }}"
+  loop: [[], [--inactive]]
+  environment:
+    LC_ALL: C
+  register: aap_isolation_app_interfaces
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Read the actual bridge assigned to the saved guest network
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', net-info, '{{ aap_isolation_app_owner.guest.network }}']
+  environment:
+    LC_ALL: C
+  register: aap_isolation_app_network
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Read the native static guest reservation even when its domain is stopped
+  ansible.builtin.command:
+    argv: [virsh, -c, 'qemu:///system', net-dumpxml, '{{ aap_isolation_app_owner.guest.network }}', --inactive]
+  environment:
+    LC_ALL: C
+  register: aap_isolation_app_addresses
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Require the actual UUID, bridge and static guest address
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_app_uuid.stdout | trim == aap_isolation_app_owner.guest.uuid
+      - >-
+        aap_isolation_app_network.stdout is search('(?m)^Bridge:\s+' ~
+          (aap_isolation_app_owner.guest.bridge | regex_escape) ~ '\s*$')
+      - aap_isolation_app_addresses.stdout is search(__aap_app_reservation_pattern)
+    quiet: true
+  vars:
+    __aap_app_reservation_pattern: >-
+      (?x)<host(?=\s)
+      (?=[^>]*\smac=['"]{{ aap_isolation_app_owner.guest.mac | regex_escape }}['"])
+      (?=[^>]*\sip=['"]{{ aap_isolation_app_owner.guest.address | regex_escape }}['"])[^>]*>
+  no_log: true
+
+- name: Require only the exact recorded disk in current and persistent configurations
+  ansible.builtin.assert:
+    that:
+      - __aap_app_disks | length == 1
+      - __aap_app_disks[0] is match('^\s*file\s+disk\s+\S+\s+' ~ (aap_isolation_app_owner.guest.disk | regex_escape) ~ '\s*$')
+    quiet: true
+  vars:
+    __aap_app_disks: '{{ item.stdout_lines | select("match", "^\s*\S+\s+disk\s+") | list }}'
+  loop: '{{ aap_isolation_app_disks.results }}'
+  no_log: true
+
+- name: Require only the recorded MAC and network in both configurations
+  ansible.builtin.assert:
+    that:
+      - __aap_app_interfaces | length == 1
+      - >-
+        __aap_app_interfaces[0] is match('^\S+\s+network\s+' ~ (aap_isolation_app_owner.guest.network | regex_escape) ~
+          '\s+\S+\s+' ~ (aap_isolation_app_owner.guest.mac | regex_escape) ~ '$')
+    quiet: true
+  vars:
+    __aap_app_interfaces: '{{ item.stdout_lines[2:] | map("trim") | reject("equalto", "") | list }}'
+  loop: '{{ aap_isolation_app_interfaces.results }}'
+  no_log: true
+
+- name: Require every grant to identify only its verified recorded guest
+  ansible.builtin.assert:
+    that:
+      - item.keys() | sort == ['bridge', 'destinations', 'ipv4', 'mac', 'ports']
+      - item.bridge == aap_isolation_app_owner.guest.bridge
+      - item.ipv4 == aap_isolation_app_owner.guest.address
+      - item.mac == aap_isolation_app_owner.guest.mac
+    quiet: true
+  loop: '{{ aap_isolation_app_owner.clients }}'
+  no_log: true
+
+- name: Retain only these verified application tuples in this job's effective policy
+  ansible.builtin.set_fact:
+    aap_isolation_app_clients: '{{ aap_isolation_app_clients + aap_isolation_app_owner.clients }}'
+  no_log: true

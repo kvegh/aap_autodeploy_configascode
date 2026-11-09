@@ -1,0 +1,267 @@
+---
+# Read each project's own CaC; never copy these grants into the base publisher.
+- name: Load only the existing encrypted AutoDeploy repository settings
+  ansible.builtin.include_vars:
+    file: '{{ aap_isolation_autodeploy_root }}/myvars'
+    name: aap_isolation_repository_settings
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Resolve the same fixed central repository used by the existing publisher
+  ansible.builtin.set_fact:
+    aap_isolation_central_namespace: >-
+      {{ aap_isolation_repository_settings.vault_cac_repository_namespace |
+         default(aap_isolation_repository_settings.git_url | default('') | regex_replace('/[^/]+/?$', '')) }}
+  no_log: true
+
+- name: Require the protected central HTTPS namespace and existing writer authentication
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_central_namespace is match('^https://[^/@\s]+/[A-Za-z0-9_.-]+$')
+      - aap_isolation_central_namespace | urlsplit('username') is none
+      - aap_isolation_central_namespace | urlsplit('password') is none
+      - aap_isolation_central_namespace | urlsplit('query') == ''
+      - aap_isolation_central_namespace | urlsplit('fragment') == ''
+      - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
+    fail_msg: Read the existing encrypted central bootstrap with its current credential before composing firewall policy.
+    quiet: true
+  no_log: true
+
+- name: Read the existing central bootstrap without another credential attachment
+  ansible.builtin.git:
+    repo: '{{ aap_isolation_central_namespace }}/aap_autodeploy_configascode-secrets.git'
+    dest: '{{ aap_isolation_source_workspace.path }}/central'
+    version: main
+    depth: 1
+    recursive: false
+    single_branch: true
+  environment:
+    GIT_TERMINAL_PROMPT: '0'
+    GIT_CONFIG_COUNT: '4'
+    GIT_CONFIG_KEY_0: credential.helper
+    GIT_CONFIG_VALUE_0: ''
+    GIT_CONFIG_KEY_1: http.followRedirects
+    GIT_CONFIG_VALUE_1: 'false'
+    GIT_CONFIG_KEY_2: http.sslVerify
+    GIT_CONFIG_VALUE_2: 'true'
+    GIT_CONFIG_KEY_3: 'http.{{ aap_isolation_central_namespace }}/.extraheader'
+    GIT_CONFIG_VALUE_3: >-
+      Authorization: Basic {{ ('x-access-token:' ~ lookup('ansible.builtin.env', 'CAC_GIT_TOKEN')) | b64encode }}
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  check_mode: false
+  no_log: true
+
+- name: Inspect the authoritative central bootstrap without following links
+  ansible.builtin.stat:
+    path: '{{ aap_isolation_source_workspace.path }}/central/cac/base_CaC_vault.yml'
+    follow: false
+    get_checksum: false
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  register: aap_isolation_base_stat
+  check_mode: false
+  no_log: true
+
+- name: Require the existing ordinary encrypted bootstrap file
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_base_stat.stat.isreg | default(false)
+      - not aap_isolation_base_stat.stat.islnk | default(false)
+    quiet: true
+  no_log: true
+
+- name: Read only the central bootstrap ciphertext
+  ansible.builtin.slurp:
+    src: '{{ aap_isolation_source_workspace.path }}/central/cac/base_CaC_vault.yml'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  register: aap_isolation_base_ciphertext
+  check_mode: false
+  no_log: true
+
+- name: Refuse an unencrypted bootstrap before loading any credential material
+  ansible.builtin.assert:
+    that: (aap_isolation_base_ciphertext.content | b64decode).startswith('$ANSIBLE_VAULT;')
+    quiet: true
+  no_log: true
+
+- name: Load the existing central bootstrap through its attached native Vault credential
+  ansible.builtin.include_vars:
+    file: '{{ aap_isolation_source_workspace.path }}/central/cac/base_CaC_vault.yml'
+    name: aap_isolation_bootstrap
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Require the already chosen AIOps repository reader and Vault material
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url is string
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url | urlsplit('scheme') == 'https'
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url | urlsplit('hostname') | length > 0
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url | urlsplit('username') is none
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url | urlsplit('password') is none
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url | urlsplit('query') == ''
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url | urlsplit('fragment') == ''
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.token is string
+      - aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.token | length > 0
+      - aap_isolation_bootstrap.cac_bootstrap_vault_credentials.aiops.vault_password is string
+      - aap_isolation_bootstrap.cac_bootstrap_vault_credentials.aiops.vault_password | length > 0
+      - aap_isolation_bootstrap.cac_bootstrap_vault_credentials.aiops.vault_id is string
+    fail_msg: The authoritative AIOps reader and Vault bootstrap must be present; missing source is not an empty policy.
+    quiet: true
+  no_log: true
+
+- name: Read AIOps permissions from their own authoritative private repository
+  ansible.builtin.git:
+    repo: '{{ aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url }}'
+    dest: '{{ aap_isolation_source_workspace.path }}/aiops'
+    version: main
+    depth: 1
+    recursive: false
+    single_branch: true
+  environment:
+    GIT_TERMINAL_PROMPT: '0'
+    GIT_CONFIG_COUNT: '4'
+    GIT_CONFIG_KEY_0: credential.helper
+    GIT_CONFIG_VALUE_0: ''
+    GIT_CONFIG_KEY_1: http.followRedirects
+    GIT_CONFIG_VALUE_1: 'false'
+    GIT_CONFIG_KEY_2: http.sslVerify
+    GIT_CONFIG_VALUE_2: 'true'
+    GIT_CONFIG_KEY_3: 'http.{{ aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.repository_url }}.extraheader'
+    GIT_CONFIG_VALUE_3: >-
+      Authorization: Basic {{ ('x-access-token:' ~ aap_isolation_bootstrap.cac_bootstrap_git_credentials.aiops.token) | b64encode }}
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  check_mode: false
+  no_log: true
+
+- name: Refuse a linked or missing authoritative encrypted capture
+  ansible.builtin.stat:
+    path: '{{ aap_isolation_source_workspace.path }}/aiops/vaults/cac/aiops-selfhealing-demo-cac-vault.yml'
+    follow: false
+    get_checksum: false
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  register: aap_isolation_app_capture_stat
+  check_mode: false
+  no_log: true
+
+- name: Require the ordinary protected CaC capture file
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_app_capture_stat.stat.isreg | default(false)
+      - not aap_isolation_app_capture_stat.stat.islnk | default(false)
+    quiet: true
+  no_log: true
+
+- name: Decrypt the whole AIOps capture with the existing protected bootstrap key
+  ansible.builtin.command:
+    argv:
+      - ansible-vault
+      - view
+      - --vault-password-file
+      - /dev/stdin
+      - '{{ aap_isolation_source_workspace.path }}/aiops/vaults/cac/aiops-selfhealing-demo-cac-vault.yml'
+    stdin: '{{ aap_isolation_bootstrap.cac_bootstrap_vault_credentials.aiops.vault_password }}'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  register: aap_isolation_app_plaintext
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Stage tag-aware variables only in this job's protected temporary directory
+  # from_yaml rejects existing !unsafe/!vault tags. Native include_vars retains
+  # them without evaluating unused leaves. See ../README.md#native-firewall-transactions.
+  ansible.builtin.copy:
+    dest: '{{ aap_isolation_source_workspace.path }}/aiops-variables.yml'
+    content: '{{ aap_isolation_app_plaintext.stdout }}'
+    mode: '0600'
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  check_mode: false
+  diff: false
+  no_log: true
+
+- name: Load only namespaced AIOps variables with the native tag-aware loader
+  ansible.builtin.include_vars:
+    file: '{{ aap_isolation_source_workspace.path }}/aiops-variables.yml'
+    name: aap_isolation_app_capture
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Require the selected project's explicit instance namespace
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_app_capture.cac_import_metadata.project_id == 'aiops-selfhealing-demo'
+      - aap_isolation_app_capture.aiops_instances is mapping
+    fail_msg: Load the authoritative AIOps capture; do not substitute an empty permission list.
+    quiet: true
+  no_log: true
+
+- name: Initialize only this job's selected application grants
+  ansible.builtin.set_fact:
+    aap_isolation_app_owners: []
+    aap_isolation_app_clients: []
+  no_log: true
+
+- name: Require explicit migrated firewall data for every declared Zabbix owner
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_app_capture.aiops_instances[item].zabbix is mapping
+      - aap_isolation_app_capture.aiops_instances[item].zabbix.instance_name == item
+      - aap_isolation_app_capture.aiops_instances[item].firewall is mapping
+      - aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients is sequence
+      - aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients is not string
+      - aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients | length <= 1
+    quiet: true
+  loop: '{{ aap_isolation_app_capture.aiops_instances.keys() | list }}'
+  when: aap_isolation_app_capture.aiops_instances[item].zabbix | default(none) is not none
+  no_log: true
+
+- name: Refuse grants without their existing guest ownership record
+  ansible.builtin.assert:
+    that: >-
+      (aap_isolation_app_capture.aiops_instances[item].firewall | default({})).guest_host_clients | default([]) | length == 0
+    quiet: true
+  loop: '{{ aap_isolation_app_capture.aiops_instances.keys() | list }}'
+  when: aap_isolation_app_capture.aiops_instances[item].zabbix | default(none) is none
+  no_log: true
+
+- name: Select only declared owners on the actual pinned hypervisor
+  ansible.builtin.set_fact:
+    aap_isolation_app_owners: >-
+      {{ aap_isolation_app_owners + [{'guest': aap_isolation_app_capture.aiops_instances[item].zabbix,
+           'clients': aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients}] }}
+  loop: '{{ aap_isolation_app_capture.aiops_instances.keys() | list }}'
+  when:
+    - aap_isolation_app_capture.aiops_instances[item].zabbix | default(none) is not none
+    - aap_isolation_app_capture.aiops_instances[item].zabbix.hypervisor_machine_id == aap_isolation_machine_id.stdout | trim
+    - aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients | length > 0
+  no_log: true
+
+- name: Verify each selected owner against actual native resources before granting access
+  ansible.builtin.include_tasks: '{{ aap_isolation_autodeploy_root }}/tasks/aap-isolation-app-instance.yml'
+  loop: '{{ aap_isolation_app_owners }}'
+  loop_control:
+    loop_var: aap_isolation_app_owner
+  no_log: true

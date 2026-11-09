@@ -6,9 +6,9 @@ source API credential, allocation Git writer and AutoDeploy CaC Vault credential
 The existing publication action preflights the running source job, encrypted
 captures and source inventory before any live change.
 
-The helper checks actual hypervisor identity, guest UUID, disk, bridge, MAC, DHCP
-lease and public bootstrap provenance, then atomically updates only the existing
-recovery isolation table. The released guest returns to normal IPv4 firewall
+The retained resource verifier checks actual hypervisor identity, guest UUID,
+disk, bridge, MAC, DHCP lease and public bootstrap provenance. Native Ansible
+then applies only the complete CaC policy to the existing recovery isolation table. The released guest returns to normal IPv4 firewall
 handling while declared production destinations remain blocked. IPv6 quarantine,
 normal firewalld rules and every other guest remain unchanged.
 
@@ -24,19 +24,17 @@ service, credential type or secret store.
 
 ## Native lock contention
 
-Separate AAP jobs can reach the same hypervisor policy transaction concurrently.
-Ansible task throttling applies within one job and cannot protect this shared
-native critical section. The existing Python helper therefore keeps the native
-exclusive directory lock and uses the management helper's bounded five-second
-wait, polling only lock acquisition every tenth of a second. It performs no
-native probe or policy change before acquiring the lock. Identity, current
-policy, production exclusion and rollback checks then run unchanged.
+Separate jobs use the approved temporary native Ansible directory lock before
+resource checks or firewall changes. It has bounded acquisition, fail-closed
+abandonment, and owner-only `rmdir` cleanup. Python no longer mutates firewall
+policy or uses the old deployed JSON file. See the shared
+[native firewall transaction contract](../../README.md#native-firewall-transactions)
+for required CaC inputs, exact Hactar source, collection preparation, rollback
+and the coordinated migration from old `flock` callers.
 
-Lock exhaustion returns code 75 and one fixed public busy message. The role
-shows that controlled reason without exposing command input or raw exceptions;
-other failures are not retried and retain sanitized diagnostics. This corrects
-a locally reproduced contention defect. The original historical release failure
-had censored diagnostics, so contention is not established as its cause.
+The existing resource guards remain; the original censored historical failure's
+cause is still unproved. The new lock fixtures demonstrate local contention and
+rollback behavior, not a fresh live deployment.
 
 ## Exact guest bootstrap
 

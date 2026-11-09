@@ -58,6 +58,23 @@ class GenericRetirementRoleTests(unittest.TestCase):
             (source / 'src').mkdir()
             for name in ('aap_guest_release.py', 'aap_hypervisor_access.py'):
                 (source / 'src' / name).write_text((ROOT / 'src' / name).read_text())
+            (source / 'tasks').mkdir()
+            hactar_tasks = root / 'hactar/playbooks/tasks'
+            hactar_tasks.mkdir(parents=True)
+            policy_file = root / 'hactar-recovery.nft'
+            policy_file.write_text(json.dumps(request['transition']['previous_policy']))
+            (source / 'tasks/aap-isolation-prepare.yml').write_text(yaml.safe_dump([
+                {'name':'Prepare isolated native transaction fixture','ansible.builtin.set_fact':{
+                    'aap_isolation_lock_acquired':False,'aap_isolation_source_workspace':{},
+                    'hactar_firewall_source_root':str(root/'hactar')}}]))
+            (source / 'tasks/aap-isolation-observe.yml').write_text(yaml.safe_dump([
+                {'name':'Retain synthetic matched CaC policy','ansible.builtin.set_fact':{
+                    'aap_isolation_rollback_policy':'{{ aap_isolation_previous_policy }}',
+                    'aap_isolation_effective_desired_policy':'{{ aap_isolation_desired_policy }}'}}]))
+            (source / 'tasks/aap-isolation-finish.yml').write_text((ROOT / 'tasks/aap-isolation-finish.yml').read_text())
+            (hactar_tasks / 'replacement-isolation-apply.yml').write_text(yaml.safe_dump([
+                {'name':'Apply complete native fixture policy','ansible.builtin.copy':{
+                    'dest':str(policy_file),'content':'{{ hactar_isolation_policy | to_json }}','mode':'0600'}}]))
             trace, api_trace = root / 'native.jsonl', root / 'api.jsonl'
             marker = root / 'physical-deletion-verified'
             stub = root / 'native.py'
@@ -88,6 +105,9 @@ class GenericRetirementRoleTests(unittest.TestCase):
                     if 'delegate_to' in task:
                         task.update(delegate_to='localhost', become=False)
                         task['vars'] = {'ansible_connection': 'local'}
+                    include = task.get('ansible.builtin.include_tasks')
+                    if isinstance(include, dict) and 'apply' in include:
+                        include['apply'].update(delegate_to='localhost', become=False, vars={'ansible_connection':'local'})
                     if 'ansible.builtin.copy' in task:
                         task['ansible.builtin.copy'].pop('owner', None)
                         task['ansible.builtin.copy'].pop('group', None)
@@ -121,13 +141,14 @@ class GenericRetirementRoleTests(unittest.TestCase):
             self.assertEqual(result.returncode == 0, behavior == 'success', result.stdout + result.stderr)
             operations = [json.loads(line) for line in trace.read_text().splitlines()]
             expected = ['retire_plan'] if behavior == 'deletion-failure' else ['retire_plan', 'retire_apply']
-            if behavior == 'unpublished': expected.append('retire_rollback')
             self.assertEqual([row['operation'] for row in operations], expected, result.stdout + result.stderr)
             self.assertTrue(all(row.get('guest_kind') == request.get('guest_kind') for row in operations))
             phases = [json.loads(line) for line in api_trace.read_text().splitlines()]
             self.assertEqual(phases, ['plan'] if behavior in ('deletion-failure', 'runtime-failure') else ['plan', 'publish'])
             self.assertTrue(all(not Path(row['_directory']).exists() for row in operations))
             self.assertTrue(all(not Path(row['_trust']).exists() for row in operations))
+            target = 'desired_policy' if behavior in ('success', 'durable') else 'previous_policy'
+            self.assertEqual(json.loads(policy_file.read_text()), request['transition'][target])
             self.assertNotIn('Expecting value', result.stdout + result.stderr)
 
     def test_native_source_plan_can_choose_existing_windows_cleanup_without_touching_hypervisor(self):
