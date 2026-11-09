@@ -43,8 +43,8 @@ successor import exhausted CoP's default 50 polls after 60.280 seconds while its
 project synchronization continued and then succeeded in 67.684 seconds. The
 longer project-specific bound stays below the role's existing 1000-second async
 execution allowance; other resources and secure failure reporting are unchanged.
-Native variable-routing checks cover the pinned role/collector; a normal AAP
-import must still verify this correction live.
+Native variable-routing checks cover the pinned role/collector. A normal
+successor self-CaC import subsequently passed in 174.539 seconds on that fix.
 
 Fresh Command Center deployment uses the application's maintained default
 installation directory and a separate `~/ccng-wd` agent workspace. The owner

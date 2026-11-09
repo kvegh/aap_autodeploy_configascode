@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Explain elapsed actions across the requested seven-day window — 2026-11-09
+
+Implementation `ce594b99c587b99c9e2191fbf2ec50b001ee1608` (0.49.6) replaces
+the accepted one-day pilot with the requested seven-day retrospective. Markdown
+remains primary; its HTML companion presents the same 64 meaningful blocks in
+nine compact diagrams. The 20 longest evidenced episodes have vivid rank bands,
+numeric ranks and observed durations directly in their boxes.
+
+The analysis distinguishes job runtime, elapsed calendar spans, documented
+waits, rework and unknown attribution. Parallel spans are not summed, and the
+longest browser-feedback wait is not described as continuous implementation or
+a proven successor-deployment blocker. Visible narrative and existing project
+history support the report; raw commands, transcripts and private reasoning do
+not appear in the interface or repository.
+
+The previous HTML used doubled digit escapes and a fixed expected node count.
+Controls now derive their IDs from the actual diagrams/details. Root replay
+passed all 64 click/keyboard/native-collapse paths and missing-runtime/control
+cases; matching structure, privacy, GFM tables and pinned Mermaid grammar checks
+passed. These are source/control-logic checks; actual browser layout and clicks
+remain unverified. Native collapsible explanations remain usable without the
+internet module.
+
 ## Wait for normal Controller project synchronization — 2026-11-09
 
 Implementation `29f2a29470fceb088e42cce892bef2307245f68e` (0.49.4) fixes the
@@ -18,8 +41,9 @@ reconciliation path, helper or polling service is added.
 The focused test resolves the actual pinned collection's project defaults and
 collector arguments, checks the selected wait and secure logging, and confirms
 the wait remains below the existing async allowance. Strict scoped lint, Python
-compilation and diff checks pass. A normal AAP import must still verify the
-published change live; local routing checks are not that acceptance result.
+compilation and diff checks pass. The normal successor self-CaC retry subsequently
+passed in 174.539 seconds on the published fix; this verifies the import repair,
+not the remaining application or full successor acceptance tests.
 
 ## Propagate existing RHSM inputs into selected AIOps runtime settings — 2026-11-09
 

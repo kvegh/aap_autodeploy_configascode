@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.49.7
+
+Record seven-day report implementation
+`ce594b99c587b99c9e2191fbf2ec50b001ee1608` (0.49.6), the timing/ranking method,
+HTML control correction and browser-verification limit. Also record the normal
+successor self-CaC import passing in 174.539 seconds on the previously published
+bounded project-wait fix.
+
 ## 0.49.6
 
 Replace the 24-hour process pilot with a frozen seven-day retrospective covering
