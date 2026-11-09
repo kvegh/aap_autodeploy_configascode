@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.48.28
+
+Document completion of the bounded source inventory of custom managed-server
+JSON and equivalent sidecar state. Keep the broader Ansible/CaC cleanup queued
+and the firewall rewrite in progress. Update task mirrors and encrypted full
+findings, distinguishing source-defined files from inspected live presence.
+This remains a documentation-only checkpoint.
+
 ## 0.48.27
 
 Document the owner's CaC-only desired-state decision, separate instance settings,

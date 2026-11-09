@@ -162,8 +162,8 @@ an already rendered diagram visible.
 
 Queued cleanup `bead-wd-72f.34` replaces unnecessary standalone helpers, custom
 plugins/modules, embedded scripts and custom server-side state files across the
-related demos. Its source inventory is `bead-wd-72f.34.1`; the firewall portion
-is already in progress separately. Use readable Ansible and certified collections
+related demos. The bounded source inventory `bead-wd-72f.34.1` is complete;
+the firewall portion is already in progress separately. Use readable Ansible and certified collections
 or vendor roles. Keep desired configuration, ownership and validation in existing
 encrypted project CaC, separated by instance, and migrate consumers before
 removing their old helpers or files. Preserve application-native authentication,
