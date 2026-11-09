@@ -236,17 +236,19 @@ do not establish live migration or complete end-to-end acceptance.
 ## Tasks and decisions
 
 The [Project Decision/Action Path Flowchart](docs/project-decision-action-path-flowchart.md)
-provides a frozen 24-hour pilot: short Mermaid summaries with expandable decisions,
-failures, fixes, outcomes and timing. It explains delivery delays without exposing
-raw action logs or environment identifiers.
+provides a frozen seven-day retrospective: short Mermaid summaries with expandable
+decisions, failures, fixes, outcomes and timing. The 20 longest evidenced episodes
+show ranks and durations directly in their coloured boxes. Elapsed spans are
+separate from actual job runtime; overlapping work is not added into a fake total.
+It explains delivery delays without exposing raw action logs or environment identifiers.
 The additional [interactive HTML version](docs/project-decision-action-path-flowchart.html)
 lets you click a diagram node to toggle its matching explanation. GitHub displays
 HTML source: download the file and open it locally in a modern browser. No server
 is needed; diagram rendering needs internet access to the pinned Mermaid runtime.
-The HTML status line distinguishes runtime import, diagram rendering and node
-controls. If it stays at “script has not started,” download/open the file locally
-rather than rely on a preview that may block JavaScript. A control error keeps
-an already rendered diagram visible.
+The HTML uses compact phase diagrams and derives its node controls from the
+current graph/detail IDs. Its status distinguishes runtime import, rendering and
+controls; a control error keeps rendered diagrams visible. If scripts do not
+start, download/open locally rather than rely on a preview that blocks JavaScript.
 
 Queued cleanup `bead-wd-72f.34` replaces unnecessary standalone helpers, custom
 plugins/modules, embedded scripts and custom server-side state files across the

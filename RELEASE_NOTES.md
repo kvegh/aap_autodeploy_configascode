@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.49.6
+
+Replace the 24-hour process pilot with a frozen seven-day retrospective covering
+64 meaningful actions across nine diagrams. Put observed durations, known job
+runtimes and the top 20 ranked elapsed spans directly in the blocks. Explain
+documented waits, rework, overlapping work and the limits of active-effort claims.
+
+Keep Markdown primary and compact the matching HTML companion. Correct its
+escaped node-ID matching and fixed node count; derive controls from the actual
+graphs and details, with click, keyboard and native-collapse support. Structural,
+privacy, grammar and control-logic checks pass. Actual browser layout and clicks
+remain unverified; diagram rendering requires the pinned internet module.
+
 ## 0.49.5
 
 Record bounded project-wait implementation

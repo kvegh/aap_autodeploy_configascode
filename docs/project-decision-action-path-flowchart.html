@@ -1,621 +1,773 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Project Decision/Action Path Flowchart</title>
-<style>html{color-scheme:light;font-family:system-ui,sans-serif;line-height:1.55;background:#f5f7fa;color:#172638}body{max-width:1040px;margin:auto;padding:1.5rem}h1,h2{line-height:1.2}a{color:#005ea8}aside,details{background:white;border:1px solid #cbd5e1;border-radius:.4rem;padding:1rem;margin:1rem 0}summary{cursor:pointer}details[open]{border-color:#005ea8}details p:last-child{margin-bottom:0}.usage{border-left:4px solid #005ea8}table{border-collapse:collapse;width:100%;background:white}th,td{border:1px solid #cbd5e1;text-align:left;padding:.6rem;vertical-align:top}#diagram{overflow:auto;padding:1rem;background:white;border:1px solid #cbd5e1;border-radius:.4rem}#diagram svg{display:block;min-width:1100px;width:100%;max-width:none!important;height:auto}#diagram .node[role=button]{cursor:pointer}#diagram .node[role=button]:focus{outline:3px solid #005ea8;outline-offset:3px}#diagram .node[aria-expanded=true] rect{stroke:#005ea8;stroke-width:3px}#diagram-status{font-size:.95rem}code{overflow-wrap:anywhere}@media(max-width:640px){body{padding:.7rem}th,td{padding:.35rem}}</style>
-</head>
-<body>
-<h1>Project Decision/Action Path Flowchart</h1><aside class="usage"><strong>Interactive HTML companion.</strong> Click a numbered diagram node, or focus it and press Enter or Space, to open or close its explanation below. All content is embedded in this file; no local server is needed. Rendering the diagram requires internet access to the pinned Mermaid 12.3.0 runtime. If it cannot load, the numbered details below remain usable. GitHub's file view displays HTML source: download this file and open it in a modern browser. <a href="project-decision-action-path-flowchart.md">Markdown source</a>.</aside>
-<p><strong>Pilot window:</strong> 5 November 2026, 08:43:12 UTC → 6 November 2026, 08:43:12 UTC.</p>
-<p>This is a retrospective of one day, not a current deployment status page. It
-follows the main chat messages and existing decision histories. Expand a numbered
-heading below the diagram for the decision, problem, response, outcome and timing.
-Mermaid automatically sizes the diagram when it is rendered. GitHub Markdown
-cannot expand a diagram node on click or redraw its layout, so the matching
-native collapsible details remain below the diagram. For node-click toggling,
-use the additional <a href="project-decision-action-path-flowchart.html">HTML companion</a>:
-download it and open it locally; its diagram loads a pinned Mermaid runtime
-from the internet.</p>
-<p>The essential demo is: deploy a fresh AAP, import a use case, run its infrastructure
-and application jobs, demonstrate the result, clean up its disposable resources,
-and use the new AAP to install its successor. Importing CaC alone proves only the
-configuration import. At the cutoff, several components worked but this whole
-sequence was still incomplete.</p>
-<h2>Where the day went</h2>
-<table>
-<thead>
-<tr>
-<th>Contributor</th>
-<th>Evidence and meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Missing repeatability</td>
-<td>The original environment already had a second network interface and working trust/network settings. Their absence on a fresh AAP exposed steps missing from automation.</td>
-</tr>
-<tr>
-<td>Rework in newer automation</td>
-<td>Ownership compatibility, retry termination, DNS-disabled networks, PowerShell serialization, primary-interface selection and oversized runtime data caused separate failures. Each required a focused fix and another real run.</td>
-</tr>
-<tr>
-<td>Real installation time</td>
-<td>One successful Assistant configuration took about <strong>39 minutes</strong>; a failed AD update run took about <strong>28 minutes</strong>; its successful retry took <strong>56 minutes</strong>. These are stated run durations, not time spent writing code.</td>
-</tr>
-<tr>
-<td>Parent continuation failure</td>
-<td>After AD completed at <strong>00:19 UTC</strong>, the next steps did not resume until the morning check at <strong>07:34 UTC</strong>: about <strong>7 hours 15 minutes</strong> of stalled continuation. The assistant explicitly acknowledged that no user decision was missing.</td>
-</tr>
-<tr>
-<td>Pending execution and approval</td>
-<td>A parent operation remained pending from <strong>16:36:59 to 20:21:05 UTC</strong>: <strong>3 hours 44 minutes 6 seconds</strong>. Records corroborate an approval-gated execution; the authorization-answer time is unavailable. This measures the pending interval, not the exact time a person spent reviewing it. A separate focused test waited roughly <strong>14 minutes</strong> the next morning before a writable temporary-path correction let it run in <strong>0.4 seconds</strong>.</td>
-</tr>
-<tr>
-<td>Overbroad sequencing</td>
-<td>Private MCP work was initially held until all Windows testing and cleanup. The assistant later acknowledged that only overlapping writes to shared AAP configuration needed serialization.</td>
-</tr>
-<tr>
-<td>Coordination and reporting</td>
-<td>Repeated status reports and restored summaries did not advance jobs. Some repeated an unverified result after the job had finished. These are grouped here rather than counted as new work.</td>
-</tr>
-</tbody>
-</table>
-<p>These intervals overlap with other workers' activity. <strong>Do not add them together</strong>
-as a partition of the 24 hours. No reliable total for active implementation time
-can be derived from the chat. A phase's first and last messages bound an observed
-interval; they do not measure uninterrupted work.</p>
-<h2>Overview</h2>
-<p>Solid arrows show the main dependency or sequence. Dotted arrows show work that
-could proceed alongside another lane. Numbers match the expandable sections.</p>
-<p id="diagram-status" role="status">The interactive script has not started. If this message remains, download this file and open it locally; this viewer may block scripts. All explanations are available below.</p>
-<pre id="diagram" class="mermaid" aria-label="Decision and action flowchart">flowchart TB
-  subgraph A[Morning: Windows connectivity and Assistant Team installation]
-    N01[&quot;01 Windows and Assistant Team tests unfinished&quot;] --&gt; N02[&quot;02 Inspect images and install tools&quot;]
-    N01 --&gt; N03[&quot;03 Assistant build fails&quot;]
-    N03 --&gt; N04[&quot;04 Keep Debian; defer UBI rebuild&quot;]
-    N02 --&gt; N05[&quot;05 Assign Windows network setup&quot;]
-    N05 --&gt; N06[&quot;06 Add the second interface&quot;]
-    N04 --&gt; N07[&quot;07 Fix checkout and retry Assistant&quot;]
-    N06 --&gt; N08[&quot;08 Import Windows jobs&quot;]
-  end
-  subgraph B[Afternoon: Assistant Team cleanup and Windows/private MCP test preparation]
-    N07 --&gt; N09[&quot;09 Fix normal Assistant cleanup&quot;]
-    N01 --&gt; N10[&quot;10 Verify native CLI and private MCP&quot;]
-    N08 --&gt; N11[&quot;11 Repair saved configuration gaps&quot;]
-    N11 --&gt; N12[&quot;12 Parent execution remains pending&quot;]
-    N12 --&gt; N13[&quot;13 Repair API trust and baseline&quot;]
-  end
-  subgraph C[Evening: run Windows for real]
-    N13 --&gt; N14[&quot;14 Fix network and SSH inputs&quot;]
-    N14 --&gt; N15[&quot;15 Fix an old saved VM record&quot;]
-    N15 --&gt; N16[&quot;16 Stop successful retries repeating&quot;]
-    N16 --&gt; N17[&quot;17 Fix DNS-disabled reservations&quot;]
-    N17 --&gt; N18[&quot;18 Fix AD result serialization&quot;]
-    N18 --&gt; N19[&quot;19 Diagnose shutdown; retry updates&quot;]
-    N10 --&gt; N20[&quot;20 Pin production before publishing&quot;]
-    N19 --&gt; N21[&quot;21 Overnight continuation stops&quot;]
-  end
-  subgraph D[Morning: resume and expose remaining defects]
-    N21 --&gt; N22[&quot;22 Correct Windows guest clocks&quot;]
-    N21 --&gt; N23[&quot;23 Release only AAP primary interface&quot;]
-    N23 --&gt; N24[&quot;24 Fix target selection and import&quot;]
-    N24 --&gt; N25[&quot;25 Reduce oversized certificate data&quot;]
-    N20 --&gt; N26[&quot;26 Scope agent forwarding and repair&quot;]
-    N22 --&gt; N27[&quot;27 Prove AD; expose expired guest&quot;]
-    N25 --&gt; N28[&quot;28 Record the incomplete cutoff&quot;]
-    N27 --&gt; N28
-    N26 --&gt; N28
-    N09 --&gt; N28
-  end
-  N06 -. parallel .-&gt; N10
-  N08 -. parallel .-&gt; N09
-  N20 -. shared writes only .-&gt; N23
-  N24 -. separate AD guest .-&gt; N27
-</pre>
-<h2>Expandable decision and action record</h2>
-<p>Timing labels: <strong>measured</strong> means a recorded timestamp interval or run duration;
-<strong>reported</strong> means an elapsed value stated in the main messages; <strong>unknown</strong> means
-no dependable duration was available. Times below are UTC. On 5 November the date
-is omitted; after midnight, entries explicitly say 6 November. Run references
-such as <strong>13-A</strong> are neutral references within this document, not controller IDs.</p>
-<details id="detail-N01">
-<summary><strong>01 — Windows and Assistant Team end-to-end tests remain unfinished</strong></summary>
-<p>At 08:44, Assistant installation was already running, Windows preparation and
-private CLI/MCP work remained unfinished, and successor deployment had not been
-proved. A running job carried into this window is not counted as a fresh launch.
-OpenShift was unavailable; the user later explicitly changed that test from
-blocked to <strong>deferred</strong> at 15:50.</p>
-<p>At 15:53 the user directed a smaller, functional demo: keep useful implementation,
-proportionate target checks and real end-to-end verification; remove complexity
-that does not help the demonstration. At 15:58 the user clarified that observed
-failures must be fixed in automation rather than accepted as manual-reset work.
-This changed priorities, not the prohibition on changing unintended resources.</p>
-<p><strong>Timing:</strong> carried-in activity; total duration unknown. <strong>Sources:</strong> main chat
-08:44, 15:50–15:58; AutoDeploy decision history and README simplification
-implementation <code>b62e89d</code>.</p>
-</details>
-<details id="detail-N02">
-<summary><strong>02 — An image-inspection detour adds work before the actual Windows test</strong></summary>
-<p>The user approved the missing guest-image tooling for the test hypervisor at
-08:48. Package run <strong>02-A</strong> failed by 08:59 because its saved source policy
-predated the Assistant guest grant; the live resource itself was not changed by
-that failure. The saved copies were aligned through the available API path.
-Retry <strong>02-B</strong> succeeded by 09:22 and installation was verified.</p>
-<p>Read-only Windows-image inspection then met an NTFS/distribution restriction.
-The user questioned why that inspection was needed when the prepared images
-already had WinRM. At 10:46 the user explicitly removed this extra prerequisite.
-That did not claim the new guests were tested: actual runtime connections still
-needed to pass. Earlier NTFS approval/installation was reported again in this
-window and is not counted as a new installation here.</p>
-<p><strong>Timing:</strong> 08:48–10:46 observed discussion/attempt interval; individual package
-runtimes unknown. <strong>Sources:</strong> main chat 08:48–09:46, 10:46; hypervisor configuration changes
-<code>63cd3e5</code>, <code>766ba1f</code>.</p>
-</details>
-<details id="detail-N03">
-<summary><strong>03 — Assistant container build exposes a certificate/bootstrap mismatch</strong></summary>
-<p>The carried-in Assistant installation <strong>03-A</strong> failed by 08:46 while building its
-CLI container, after OS prerequisites had completed. The inherited Debian-based
-container used HTTP package repositories while the new environment allowed only
-HTTPS egress. Simply changing those repositories to HTTPS also required CA trust
-inside the minimal image. Host curl/wget trust did not establish container trust.</p>
-<p>A proposed bundled-CA bootstrap was prepared with focused checks, but it was a
-choice awaiting the user's direction, not a completed deployment. Separately,
-the Windows credential had acquired stricter certificate validation without the
-necessary CA. The user retained the existing controlled lab policy at 10:50;
-that decision is distinct from the Assistant package-download choice.</p>
-<p><strong>Timing:</strong> run started before the window; remaining duration unknown. The
-08:46–11:45 discussion is not all active implementation. <strong>Sources:</strong> main chat
-08:46, 09:09, 09:41, 10:50, 11:14–11:45; Windows <code>b0bf1af</code>, AutoDeploy <code>276ad84</code>.</p>
-</details>
-<details id="detail-N04">
-<summary><strong>04 — Keep the existing Debian image and HTTP downloads; defer UBI10</strong></summary>
-<p>At 11:45 the user chose to keep the current Debian container and HTTP downloads
-for this demo. A narrowly scoped Assistant HTTP allowance was implemented in
-the existing recovery-isolation path; this was not a general removal of guest
-isolation. Publication, saved policy and the actual grant were verified before
-the next successful installation.</p>
-<p>The UBI alternative was researched at the user's request. Both hypervisors and
-the relevant guest exposed the required CPU instruction set according to the
-12:01 report. At 12:21 the user selected a UBI10 Node.js image as the <strong>deferred
-rebuild target</strong>. This was a future task, not a UBI runtime test or completed
-migration. The temporary source-download choice and permanent rebuild plan were
-recorded separately.</p>
-<p><strong>Timing:</strong> decision at 11:45; live grant reported verified by 14:55. Work overlapped
-other lanes; active effort unknown. <strong>Sources:</strong> main chat 11:25–12:21,
-14:53–14:55; AutoDeploy <code>85ee77d</code>, hypervisor configuration <code>fa4468a</code>.</p>
-</details>
-<details id="detail-N05">
-<summary><strong>05 — Decide that Windows infrastructure owns the extra AAP interface</strong></summary>
-<p>By 11:08, testing exposed a missing prerequisite: the original AAP already had a
-second interface on the Windows network, but cloning its OS image did not copy
-that VM hardware. CaC imported into a fresh AAP therefore did not reproduce the
-original machine's connectivity.</p>
-<p>The user asked whether this belonged in the AAP OS setup or Windows deployment.
-At 12:39–12:52 the user chose the existing AIOps-style pattern: importing CaC
-creates jobs; the Windows infrastructure job prepares its complete environment,
-including the optional AAP interface and persistent RHEL connection. It does not
-silently launch infrastructure during the API-only CaC import.</p>
-<p><strong>Timing:</strong> first report 11:08 → agreed direction 12:52; discussion interval, not
-measured coding time. <strong>Sources:</strong> main chat 11:08, 12:25–12:52; Windows network
-ownership decision and implementation <code>1c06083</code>.</p>
-</details>
-<details id="detail-N06">
-<summary><strong>06 — Implement interface setup, ownership and normal cleanup</strong></summary>
-<p>The Windows and shared lifecycle paths added the declared interface, persistent
-NetworkManager configuration and saved ownership needed to remove only what the
-demo created. Review caught configuration drift and the need to capture state
-before hot-plugging. Existing cleanup paths were adapted rather than granting
-unowned-resource deletion.</p>
-<p>By 14:32 the reported checks covered the shared implementation and playbook
-syntax. Public shared code was published by 14:42; Windows code followed. These
-checks supported a runtime attempt; they did not prove the complete Windows
-workflow. Later live failures show why that distinction mattered.</p>
-<p><strong>Timing:</strong> 12:53–14:43 observed implementation/publication interval; overlapping
-work, active duration unknown. <strong>Sources:</strong> main chat 12:53–14:48; AutoDeploy
-<code>eb806b7</code>, Windows <code>1c06083</code>.</p>
-</details>
-<details id="detail-N07">
-<summary><strong>07 — Fix a deleted checkout reference and complete Assistant installation</strong></summary>
-<p>The Assistant retry first stopped at stale saved-policy preflight. A later
-failure referenced a plugin in a temporary checkout that had already been
-removed. The focused fix corrected that existing checkout dependency rather
-than relaxing identity checks. The receiving policy was refreshed through
-normal CaC, then the existing configuration job was retried.</p>
-<p>Run <strong>07-A</strong> completed successfully by 15:30, after about <strong>39 minutes</strong>. It
-passed the earlier package/bootstrap failures with the exact approved HTTP
-grant. This established a working Assistant configuration on its disposable VM;
-it did not prove the separate private AAP repair scenario.</p>
-<p><strong>Timing:</strong> successful run duration <strong>reported ~39 minutes</strong>; failed precursor
-runtimes unknown. <strong>Sources:</strong> main chat 13:00–13:12, 14:53–14:55, 15:30;
-Assistant/shared decision histories and subsequent lifecycle correction <code>41c77d2</code>.</p>
-</details>
-<details id="detail-N08">
-<summary><strong>08 — Install Windows definitions, then repair obsolete workflow nodes</strong></summary>
-<p>The Windows CaC import installed the use case and populated its planned inventory
-entries. At 15:15 the report counted 35 Job Templates, but found four obsolete
-workflow nodes. The workflow was corrected to 29 nodes and validation was moved
-ahead of mutations. Saved reset bindings and the intended host rows were checked.</p>
-<p>Import run <strong>08-A</strong> subsequently succeeded by 16:58, taking about <strong>3 minutes
-57 seconds</strong>. This proved the definitions were installed and linked; no Windows
-VM had yet been created by that import. The worker then waited for the parent
-to release the actual runtime test. Concurrent private bootstrap edits from
-another use case were preserved.</p>
-<p><strong>Timing:</strong> 14:48–16:58 observed import/correction interval; <strong>08-A measured
-236.7 seconds</strong>. <strong>Sources:</strong> visible worker outcome 16:58 and main chat
-14:48–15:52; Windows <code>88fe3e7</code>.</p>
-</details>
-<details id="detail-N09">
-<summary><strong>09 — Normal Assistant retirement exposes two cleanup defects</strong></summary>
-<p>After installation, normal retirement preview passed. Apply removed the VM and
-its physical resources, but deleting the inventory entry failed. The cause was
-specific: AAP refuses to remove a host from the inventory being used by that
-same active job. Cleanup was changed to run from an existing separate execution
-inventory while keeping its resource API scope unchanged.</p>
-<p>A subsequent preview exposed a legacy null-to-empty-string comparison; the
-existing focused fix was reused. CaC refresh <strong>09-A</strong> succeeded by 16:45.
-Preview <strong>09-B</strong> and apply <strong>09-C</strong> then passed by 16:49, removing the remaining
-entry through the normal automation. No manual deletion was substituted.</p>
-<p><strong>Timing:</strong> 15:30–16:49 observed lifecycle interval; individual retry runtimes
-unknown. <strong>Sources:</strong> main chat 15:30–16:27; visible worker outcomes 16:37–16:49;
-AutoDeploy <code>41c77d2</code>, Windows reset compatibility <code>a93b3ea</code>.</p>
-</details>
-<details id="detail-N10">
-<summary><strong>10 — Native CLI installation and two read-only MCP calls work</strong></summary>
-<p>A separate native Claude installation run <strong>10-A</strong> launched at 11:11 and was
-reported successful at 11:24. It verified the private Linux and monitoring MCP
-connections without a model invocation. This deployment was distinct from the
-Assistant container discussed earlier.</p>
-<p>Later, one Vertex-backed model invocation made exactly two read-only MCP calls
-and checked the selected identities. The reported result was successful:
-<strong>16.5 seconds, three turns, approximately $0.19</strong>. Existing configuration was
-preserved. This was useful connection proof, but no alert, EDA activation,
-repair-job launch or service outage was exercised.</p>
-<p><strong>Timing:</strong> installation 11:11–11:24 observed message interval; exact runtime
-unknown. Model test <strong>reported 16.5 seconds</strong>, confirmed in visible worker
-messages at 16:14–16:19. <strong>Sources:</strong> main chat 11:11–11:24, 16:16;
-visible worker outcome 16:19.</p>
-</details>
-<details id="detail-N11">
-<summary><strong>11 — Saved policies and missing bootstrap credentials interrupt backfill</strong></summary>
-<p>Re-running ordinary AutoDeploy configuration was needed to publish selected
-private MCP metadata and provision missing repository bootstrap credentials.
-A receiving import <strong>11-A</strong> stopped at a protected CoP task. Readback showed
-inventory/host updates had completed, but an unrelated new use-case template
-could not be created because its required credentials were absent.</p>
-<p>This was not proof that all preceding changes rolled back. The next action was
-to complete normal base provisioning and refresh only the stale saved policy
-fields. Concurrent reader/Vault bootstrap entries from another worker had to be
-retained. Endpoint/token mapping stayed instance-specific; no new auth store or
-SSH API fallback was introduced by this correction.</p>
-<p><strong>Timing:</strong> import launched 16:26, failure reported 16:29; exact job runtime
-unknown. Morning completion appears in section 24. <strong>Sources:</strong> visible worker
-messages 16:24–16:31; main chat 16:27, 20:32 and 6 November 07:38–07:41;
-AutoDeploy <code>8237ce6</code>.</p>
-</details>
-<details id="detail-N12">
-<summary><strong>12 — A pending parent operation delays the next live test</strong></summary>
-<p>The parent entered a pending approval-gated execution at 16:36:59. It returned at
-20:21:05, when completed worker outcomes were delivered together. During this
-interval the Assistant cleanup and Windows import finished in their own lanes,
-but the next Windows runtime test was not released by the parent.</p>
-<p>The records measure <strong>3 hours 44 minutes 6 seconds pending</strong>, not that much shell
-execution or coding. They do not reveal the exact approval-answer timestamp, so
-this cannot be attributed entirely to human review. It is distinct from the
-later overnight continuation failure. The next main-chat action at 20:21
-acknowledged the finished imports and proceeded to live Windows testing.</p>
-<p><strong>Timing:</strong> <strong>measured pending interval</strong>; allocation between approval handling,
-execution availability and other waiting is unknown. <strong>Sources:</strong> parent
-operation boundary timestamps, corroborating visible outcomes at 16:49/16:58
-and main-chat continuation 20:21. No command/action-list interface is reproduced.</p>
-</details>
-<details id="detail-N13">
-<summary><strong>13 — Repair API certificate trust before capturing the Windows baseline</strong></summary>
-<p>Initial Windows baseline run <strong>13-A</strong> failed at ownership collection before any
-VM creation. A safer diagnostic retry <strong>13-B</strong> exposed the real certificate
-validation error. The relevant existing credential lacked the new AAP's CA.
-The CA was added without replacing unrelated credential values, followed by
-normal CaC refresh <strong>13-C</strong>.</p>
-<p>Baseline retry <strong>13-D</strong> succeeded by 20:55 and saved the immutable pre-demo state.
-The clean deployment workflow <strong>13-E</strong> then started. This was an authentication
-and repeatability defect, not evidence that the original environment had never
-worked. The original environment's pre-existing trust was not reproduced.</p>
-<p><strong>Timing:</strong> 20:26–20:55 observed diagnostic/fix/retry interval; individual run
-durations unknown. <strong>Sources:</strong> main chat 20:26–20:55; Windows safe error
-reporting <code>3a59989</code> and certificate correction recorded in private decision history.</p>
-</details>
-<details id="detail-N14">
-<summary><strong>14 — Fix network precedence and multiline SSH credential handling</strong></summary>
-<p>Workflow <strong>13-E</strong> (continued here) stopped at network/SSH checks. A generic network default was
-overriding the AD deployment's selected network. The precedence fix was published
-and the specific path retried. A second check unnecessarily demanded every
-recorded SSH key algorithm; one correctly pinned key was sufficient.</p>
-<p>Clean workflow <strong>14-B</strong> then exposed a different problem: the execution
-environment received only the first line of a multiline known-hosts value.
-Private-address pins were on later lines. Existing pinned names and addresses
-were represented together without disabling host-key verification. Normal CaC
-refresh <strong>14-C</strong> passed; clean workflow <strong>14-D</strong> started at 21:20.</p>
-<p><strong>Timing:</strong> 20:57–21:20 observed sequence, exact run durations unknown.
-<strong>Sources:</strong> main chat 20:57–21:20; Windows <code>1f579b1</code>, <code>0108c05</code>.</p>
-</details>
-<details id="detail-N15">
-<summary><strong>15 — Remove one redundant legacy ownership field</strong></summary>
-<p>The next source preflight failed with its useful reason hidden by protected
-logging. A focused safe diagnostic showed that the legacy saved ownership record
-contained one redundant field rejected by the newer schema. Its eight relevant
-identity fields were still valid. Only the obsolete field was removed from the
-encrypted record; identity matching was retained.</p>
-<p>Workflow <strong>15-A</strong> passed the previous guards by 21:36 and proceeded to network
-readback and ownership publication. The user asked why imported definitions did
-not immediately work: the explicit answer was that successful CaC import had
-not tested the complete runtime deployment on the new hypervisor.</p>
-<p><strong>Timing:</strong> 21:25–21:36 observed diagnostic/correction interval; exact runtime
-unknown. <strong>Sources:</strong> main chat 21:25–21:36; Windows <code>7233188</code> and associated
-private ownership-record correction.</p>
-</details>
-<details id="detail-N16">
-<summary><strong>16 — Stop a retry loop after successful network setup</strong></summary>
-<p>At 21:41 the worker found queued retries continuing after the network transaction
-had already succeeded. Only the affected attempts were stopped. The fix made a
-successful transaction terminate that job's retry path, then verified that saved
-ownership still matched the actual network before continuing.</p>
-<p>Workflow <strong>16-A</strong> reused the verified completed setup. By 21:49 it had moved on
-to disk cloning; it did not repeat or broaden the successful network changes.
-This was a new retry-control defect in the automation, rather than a missing
-prerequisite on the old environment.</p>
-<p><strong>Timing:</strong> 21:41–21:49 observed stop/fix/continuation interval; exact runtime
-unknown. <strong>Sources:</strong> main chat 21:41–21:51; Windows <code>a0a569c</code>.</p>
-</details>
-<details id="detail-N17">
-<summary><strong>17 — Handle a DNS-disabled network and continue safe disk copies</strong></summary>
-<p>Two guest creations succeeded. Three others stopped after copying disks because
-the reservation helper tried to add DNS records to a libvirt network that
-intentionally had DNS disabled. The correction skipped DNS work only for that
-actual network setting while preserving DHCP reservation checks.</p>
-<p>The failed attempts had left unbooted copies. Continuation was restricted to the
-expected pristine copy, with no existing VM ownership or disk references and a
-matching source. Normal creation retries <strong>17-A</strong>, <strong>17-B</strong> and <strong>17-C</strong> launched
-at 22:16–22:17; all five guest creations were successful by 22:22. Successful
-creations were preserved.</p>
-<p>The user also requested cleanup of standalone Python helpers, custom plugins,
-modules and embedded scripts. That larger readability/certified-collection
-review was recorded in the existing task tracker and Git overview. The inventory
-reported 83 non-test Python files across four related repositories, plus embedded
-YAML blocks; their consolidation was not claimed complete during these repairs.</p>
-<p><strong>Timing:</strong> first failures around 21:50–22:00 → all creations verified 22:22;
-exact per-guest runtimes unknown. <strong>Sources:</strong> main chat 21:51–22:22;
-Windows <code>7e3cada</code>, AutoDeploy <code>3f5c7e2</code>, <code>632d2cb</code>.</p>
-</details>
-<details id="detail-N18">
-<summary><strong>18 — Diagnose AD validation instead of changing its network</strong></summary>
-<p>The first AD configuration attempts stopped at validation. An inherited update
-URL was investigated but contained no URLs, so it was not established as the
-cause. Diagnostic retries <strong>18-A</strong> and <strong>18-B</strong> made the actual provenance error
-visible.</p>
-<p>PowerShell's default serialization depth had truncated nested address data:
-validation received a string where it expected a list. The existing task's
-output depth was corrected; no guest-network change or validation bypass was
-needed. Retry <strong>18-C</strong> started by 22:37 and passed that previously failing check.
-Job numbers mentioned in the chat identified receiving-controller runs, not VMs
-or release versions.</p>
-<p><strong>Timing:</strong> 22:22–22:37 observed investigation/fix interval; individual failed
-run durations unknown. <strong>Sources:</strong> main chat 22:22–22:49; Windows <code>6d3f45f</code>,
-<code>799dc3d</code>.</p>
-</details>
-<details id="detail-N19">
-<summary><strong>19 — A licensing shutdown interrupts AD updates; guarded retry succeeds</strong></summary>
-<p>AD update run <strong>19-A</strong> passed network validation and guest isolation release,
-then waited for a VM that had powered off. It failed after about <strong>28 minutes</strong>.
-One identity-checked start and normal diagnostic job <strong>19-B</strong> showed that the
-Windows evaluation service had requested shutdown. After restart, that guest
-reported a valid evaluation with 180 days remaining; the discrepancy was not yet
-explained and no activation/rearm was performed.</p>
-<p>A license readiness guard was added before updates. Retry <strong>19-C</strong> launched at
-23:22 and completed on 6 November at <strong>00:19</strong>, after <strong>56 minutes</strong>. The later
-verification reported six updates installed, none remaining and no pending
-reboot. Other guests, source images and the immutable baseline were preserved.</p>
-<p><strong>Timing:</strong> <strong>19-A reported ~28 minutes</strong>; <strong>19-C reported ~56 minutes</strong>.
-The latter started within this window and finished within it. <strong>Sources:</strong> main
-chat 23:07–23:22 and 6 November 07:34–07:38; Windows <code>e22e5c7</code>, <code>9bcf202</code>.</p>
-</details>
-<details id="detail-N20">
-<summary><strong>20 — Protect the tested production runner before publishing the new one</strong></summary>
-<p>Private AAP MCP support and a bounded repair runner were prepared, but publishing
-main would also affect the existing production consumer. The user explicitly
-approved pinning that project to its tested commit before publication for the
-test AAP. The pin and successful project-sync run <strong>20-A</strong> were verified; other
-project settings were preserved. New public/private code was then published.</p>
-<p>Live MCP testing had been held behind all Windows testing and cleanup. When
-questioned, the assistant acknowledged that this was overly conservative: MCP
-itself does not depend on Windows. Only simultaneous writes to shared saved
-AAP configuration needed to be serialized. Read-only checks could proceed.</p>
-<p><strong>Timing:</strong> approval 22:42 → pin verified 22:48; publication reported 22:48–22:49.
-Broader hold duration unknown and overlaps Windows work. <strong>Sources:</strong> main chat
-22:37–22:53; AIOps bounded-runner change <code>8422662</code> and published checkpoint
-<code>0f16827</code>.</p>
-</details>
-<details id="detail-N21">
-<summary><strong>21 — Successful overnight work does not trigger the next stage</strong></summary>
-<p>AD updates completed at 00:19 on 6 November. No subsequent runtime job followed.
-At 07:34 the parent finally checked the result; no workers were active. It
-acknowledged that Windows was waiting for its next instruction and MCP work was
-waiting for review of prepared saved-data changes. <strong>No user decision or
-permission was missing.</strong></p>
-<p>The parent also acknowledged stale reports: an unverified running status had
-been repeated after completion. Both workers resumed around 07:35 with explicit
-instructions to continue authorized stages, coordinating only shared writes.
-Restored copies of earlier chat and repeated reports are not counted here as
-fresh implementations, launches or fresh failures.</p>
-<p><strong>Timing:</strong> completion 00:19 → result checked 07:34: <strong>about 7 hours 15 minutes</strong>
-of stalled continuation. This is not seven hours of job runtime. <strong>Sources:</strong>
-main chat 6 November 07:33–07:46, including the explicit explanation of the hold.</p>
-</details>
-<details id="detail-N22">
-<summary><strong>22 — Diagnose another shutdown and align regular Windows guests to UTC</strong></summary>
-<p>The regular newest Windows guest was powered off. After verifying its identity,
-one diagnostic start and inspection run <strong>22-A</strong> confirmed another licensing
-shutdown. Its clock was nine hours ahead: virtual hardware supplied the
-hypervisor's local time while the guest used a different time zone.</p>
-<p>All four regular guests had the mismatch. The existing preparation was corrected
-to pair a UTC virtual clock with UTC guest settings. Persistent hardware-clock
-changes were verified without altering guest identity, disks or interfaces.
-The dedicated AD guest, core VMs and golden images were excluded. License state
-would be reread after actual time correction; no activation, rearm or extra
-network grant was included.</p>
-<p><strong>Timing:</strong> diagnostic start/inspection around 07:46–07:53; persistent correction
-verified 08:00. Individual diagnostic runtime unknown. <strong>Sources:</strong> main chat
-6 November 07:38–08:02 and visible worker outcomes 07:57–08:00;
-Windows <code>0675643</code>, <code>e842b5c</code>.</p>
-</details>
-<details id="detail-N23">
-<summary><strong>23 — Keep final AAP release primary-only; remove an avoidable test wait</strong></summary>
-<p>Normal base-configuration run <strong>23-A</strong> completed earlier configuration but failed
-its final release preflight. The shared interface enumerator now included the
-Windows-owned second interface; final AAP release intentionally grants only the
-primary interface. The fix aligned identity comparison with that existing
-boundary, preserving verification and secondary isolation.</p>
-<p>A focused regression was first attempted with unwritable temporary paths. Its
-approval-gated retry remained pending for about 14 minutes. The parent stopped
-that wait; using writable temporary paths made the check pass in <strong>0.4 seconds</strong>.
-The fix was published, and normal retry <strong>23-B</strong> succeeded before the imports.
-Source-controller job numbering caused concern, so actual targets were checked:
-only the test hypervisor and test AAP were managed; source-side saved AAP
-inventory fields changed, not the production hypervisor's OS, VMs or firewall.</p>
-<p><strong>Timing:</strong> <strong>23-A measured 2 minutes 48 seconds</strong>; <strong>23-B measured 2 minutes
-52 seconds</strong>. Test wait <strong>reported ~14 minutes</strong>, overlapping other work.
-<strong>Sources:</strong> main chat 6 November 07:41–08:08; AutoDeploy <code>437fe9f</code>, documentation
-release <strong>0.46.3</strong>.</p>
-</details>
-<details id="detail-N24">
-<summary><strong>24 — Fix target selection, finish bootstrap and verify the receiving surveys</strong></summary>
-<p>Successful base configuration published selected private MCP metadata and the
-missing bootstrap credentials. AutoDeploy import <strong>24-A</strong> then stopped before
-changes because the physical VM name had been supplied where the inventory name
-was required. The corrected input was used for <strong>24-B</strong>, which succeeded by
-08:15.</p>
-<p>A separate successor-readiness review found that three receiving stage templates
-could not accept a new instance name. Their surveys were updated to require the
-exact Stage 01 VM name, preserving other settings, credentials and labels.
-Normal CaC import and independent readback verified the correction. The importer
-selects an inventory entry, while later infrastructure stages select a physical
-VM; documentation now distinguishes these inputs. This prepared successor
-selection, but did not actually deploy a successor.</p>
-<p><strong>Timing:</strong> first import failure/correction 08:09–08:11; successful import
-<strong>measured about 2 minutes 5 seconds</strong>; survey verification reported 08:16.
-<strong>Sources:</strong> main chat 6 November 08:08–08:16 and visible worker outcome 08:16;
-survey implementation <code>1c54154</code> in encrypted configuration history.</p>
-</details>
-<details id="detail-N25">
-<summary><strong>25 — A full CA bundle makes the AIOps import too large</strong></summary>
-<p>AIOps import <strong>25-A</strong> failed while updating the existing repair runner. The actual
-reason was HTTP 413: 147 root certificates had expanded encrypted runtime data
-past the proxy's 1 MiB request limit. The response was to carry the installed
-AAP issuer, not increase the limit or disable TLS verification.</p>
-<p>One approximately 2 KiB issuer certificate verified both the selected API and
-private MCP identities; ordinary provider trust stayed intact. The producer fix
-was published as AutoDeploy <strong>0.46.6</strong>. Corrected encrypted stores/runtime were
-published and verified by 08:41, reducing runtime data to about <strong>18 KiB</strong> while
-preserving tokens, endpoints and other instances. Normal base republishing
-<strong>25-B</strong> was running at the cutoff. Its later outcome is outside this audit.</p>
-<p><strong>Timing:</strong> <strong>25-A measured about 1 minute 45 seconds</strong>; diagnosis/correction
-08:21–08:41 observed interval. <strong>Sources:</strong> main chat 6 November 08:15–08:33;
-visible worker outcomes 08:31–08:42; AutoDeploy <code>bde1120</code>, documentation <code>7b186c6</code>.</p>
-</details>
-<details id="detail-N26">
-<summary><strong>26 — Complete the missing agent alert-to-repair wiring without a public MCP</strong></summary>
-<p>Read-only review found that the website forwarding action worked, but the
-inherited unfiltered agent action remained disabled. The existing event stream
-already served the website and agent activations; no new stream or credential
-was needed. A scoped action was added for only the selected demo agent trigger,
-keeping inherited unfiltered forwarding disabled.</p>
-<p>Acceptance was tightened to require at least one actual successful repair child,
-not merely a model exit. The obsolete permission-bypass instructions were
-removed. Focused checks and syntax/lint passed and the code was published.
-The planned live test would stop only the selected agent once, observe alert →
-EDA → bounded runner → existing repair job, then require a fresh monitoring
-recovery. At cutoff, activation, fault injection and that full repair proof had
-not run. MCP remained private.</p>
-<p><strong>Timing:</strong> review 07:57–08:03; scoped implementation/publication 08:05–08:18.
-These are message intervals, active duration unknown. <strong>Sources:</strong> visible
-worker review and outcomes 6 November 08:03–08:21; AIOps <code>c618d1f</code>, <code>17aaab1</code>.</p>
-</details>
-<details id="detail-N27">
-<summary><strong>27 — AD and LDAPS pass while the corrected clock exposes a real license failure</strong></summary>
-<p>Independent AD deployment <strong>27-A</strong> ran alongside regular-guest work because it
-changed a separate guest. Directory/DNS installation, forest creation and
-subsequent LDAPS run <strong>27-B</strong> succeeded; certificate and LDAPS verification passed
-by 08:33.</p>
-<p>Windows basics <strong>27-C</strong> applied UTC correction to all four regular guests. The
-newest guest still reported an expired evaluation after its clock was corrected;
-the worker requested a delayed reread before considering activation access.
-Thus the clock repair succeeded, but the complete regular-guest configuration
-was not established as successful. A real license prerequisite remains distinct
-from the earlier incorrect-clock defect. No activation or license alteration was
-performed within this window.</p>
-<p><strong>Timing:</strong> <strong>27-A measured about 7 minutes 2 seconds</strong>; <strong>27-B measured about
-2 minutes 9 seconds</strong>. <strong>27-C measured about 7 minutes 52 seconds</strong> and stopped
-at its license guard. Overlapping jobs are not summed. <strong>Sources:</strong> main chat
-6 November 08:21–08:33; visible worker outcomes 08:19–08:42;
-Windows UTC change <code>e842b5c</code>.</p>
-</details>
-<details id="detail-N28">
-<summary><strong>28 — Freeze the evidence; do not call component progress end-to-end completion</strong></summary>
-<p>At 08:43:12 the evidence supported successful Assistant install/normal retirement,
-native CLI/private read-only MCP calls, all five Windows VM creations, AD
-preparation/updates, directory deployment and LDAPS. AutoDeploy base retry and
-receiving target surveys also passed.</p>
-<p>Still unfinished were complete regular Windows configuration/patching, the
-newest guest's license prerequisite, the corrected AIOps import/installer,
-agent alert-to-repair demonstration, successor deployment and the later
-conditional retirement/rebuild sequence. OpenShift testing was deferred, not a
-missing permission. No later successful job is pulled backward into this window.</p>
-<p>The user requested this retrospective at 08:36 and chose Markdown with separate
-expandable sections by 08:42. That documentation decision did not itself finish
-any deployment. The most useful next execution step was to verify the pending
-normal publication, resolve the observed Windows prerequisite and continue the
-remaining functional tests without another unnecessary parent hold.</p>
-<p><strong>Timing:</strong> exact audit cutoff, not a deployment completion timestamp.
-<strong>Sources:</strong> main chat 6 November 08:33–08:43 and the final visible worker updates.</p>
-</details>
-<h2>Evidence, publication and limits</h2>
-<p>The narrative was checked against the local main conversation, clearly linked
-visible worker outcomes and the related repositories' existing decision histories.
-Underlying execution records were used only to corroborate timings and causes;
-commands, process rows and raw action lists are deliberately not reproduced.
-Repeated/restored history, quoted old results and periodic status messages were
-not treated as new runs. Some delegated-message bodies were unavailable in clear
-text; gaps are not filled with guessed activity or intent. This is a narrative
-audit, not a claim to have reconstructed every underlying tool operation.</p>
-<p>Public references use UTC times, generic resource roles and local run aliases.
-Sensitive source records and the internal identifier mapping remain outside Git.
-No AAP/API, hypervisor or monitoring query was made to produce this audit.</p>
-<p>At the cutoff, the latest explicitly verified AutoDeploy publication was
-<strong>0.46.6 / <code>7b186c6</code></strong>. Windows <strong>1.0.47 / <code>50063d4</code></strong> was a verified documentation-only publication
-inside the window; its functional runtime remained <strong>1.0.46 / <code>e608cf0</code></strong>. Assistant <strong>1.11.9</strong> was reported publication-verified; AIOps
-publication was verified by commit, including <code>c618d1f</code> and its documentation
-checkpoint. Formal tagged releases were not established by this audit.</p>
-<p>The Markdown version uses standard Mermaid and native HTML details. In viewers
-without Mermaid, its diagram remains readable as text; details depend on that
-viewer's HTML support. The HTML companion embeds the same narrative and uses a
-pinned Mermaid browser runtime plus a small allowlisted node-toggle handler.
-Its content and detail headings remain usable if the runtime cannot load. It
-requires no local server, backend or deployment component. The HTML toggle logic
-and content parity were checked; real browser rendering was unavailable because
-no browser executable was installed.</p>
-
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Seven-day project decision/action path</title><style>html{
+font:14px/1.45 system-ui,sans-serif;
+color:#172638;
+background:#f4f7fb;
+color-scheme:light}
+body{
+max-width:1540px;
+margin:0 auto;
+padding:1rem}
+h1{
+font-size:1.7rem;
+margin:.2rem 0}
+h2{
+font-size:1.3rem;
+margin:1.3rem 0 .6rem}
+h3{
+font-size:1rem;
+margin:.2rem 0 .6rem}
+p{
+margin:.55rem 0}
+a{
+color:#075985}
+header,.explanation,aside{
+background:#fff;
+border:1px solid #ccd6e0;
+border-radius:6px;
+padding:.8rem}
+header p{
+max-width:115ch}
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+gap:.7rem}
+.phase{
+min-width:0;
+padding:.65rem;
+background:#fff;
+border:1px solid #ccd6e0;
+border-radius:6px;
+align-self:start}
+.mermaid{
+overflow:auto;
+margin:0;
+font:11px/1.2 monospace;
+min-height:1rem}
+.mermaid svg{
+display:block;
+max-width:100%!important;
+height:auto;
+margin:0 auto}
+.mermaid .node[role=button]{
+cursor:pointer}
+.mermaid .node[role=button]:focus{
+outline:3px solid #172638;
+outline-offset:3px}
+.mermaid .node[aria-expanded=true] rect{
+stroke-width:4px}
+.legend{
+display:flex;
+flex-wrap:wrap;
+gap:.4rem;
+list-style:none;
+padding:0}
+.legend li{
+padding:.35rem .6rem;
+border-radius:4px;
+font-weight:700;
+color:#fff}
+.band1{
+--rank:#9d174d}
+.band2{
+--rank:#9a3412}
+.band3{
+--rank:#075985}
+.band4{
+--rank:#4338ca}
+.legend li{
+background:var(--rank)}
+table{
+border-collapse:collapse;
+width:100%;
+background:#fff}
+th,td{
+text-align:left;
+vertical-align:top;
+border:1px solid #ccd6e0;
+padding:.4rem}
+.table-scroll{
+overflow:auto}
+td:first-child{
+white-space:nowrap}
+#diagram-status{
+padding:.55rem;
+border-left:4px solid #075985;
+background:#fff}
+.details-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+gap:.5rem}
+.explanation{
+margin:0;
+align-self:start;
+border-left:5px solid var(--rank,#ccd6e0)}
+summary{
+cursor:pointer;
+font-weight:650;
+line-height:1.35}
+summary .time{
+display:block;
+font-size:.9rem;
+font-weight:400;
+margin-top:.15rem}
+.explanation[open]{
+grid-column:1/-1;
+max-width:115ch}
+.explanation .back{
+font-size:.9rem}
+.small{
+font-size:.9rem;
+color:#3d5269}
+@media(max-width:760px){
+html{
+font-size:13px}
+body{
+padding:.6rem}
+.grid,.details-grid{
+grid-template-columns:1fr}
+.table-scroll{
+max-width:100%}
+th,td{
+padding:.3rem}
+}
+</style></head><body>
+<header><h1>Project Decision/Action Path Flowchart</h1><p><strong>Frozen seven-day window:</strong> 2 Nov 2026 09:55:47 → 9 Nov 2026 09:55:47 UTC.</p><p><strong>64 blocks · nine compact diagrams · 20 longest elapsed episodes highlighted.</strong> <a href="https://github.com/kvegh/aap_autodeploy_configascode/blob/main/docs/project-decision-action-path-flowchart.md">Primary Markdown report</a>.</p><p>This replaces the one-day pilot with a frozen seven-day retrospective. It explains meaningful decisions, execution, failures, fixes and waits; it is <strong>not a current deployment-status page</strong>. Markdown is the primary report. The compact HTML companion contains the same blocks and lets a diagram node open its matching explanation.</p><p>The target was a repeatable chain: recover the test hypervisor, install AAP, import each use case, run its actual infrastructure/application jobs, demonstrate functionality, clean up owned resources, then let one AAP install its successor. <strong>CaC import, software installation and functional acceptance are different results.</strong> Production infrastructure remained outside the rebuild target.</p><p>At the cutoff, AAP v17 existed and many staged tests had passed. Website recovery/firewall rollout, live private-MCP builds and fresh CCNG acceptance still had gaps. <strong>The complete test-hypervisor reinstall and v18 deployment had not started.</strong></p></header>
+<h2>Read the timings correctly</h2><p>Elapsed values below are rounded observations between recorded starts/failures/requests and the corresponding result, decision or cutoff. They are <strong>not active working time</strong>. A stated or measured job runtime is shown separately inside the block. Unknown runtime, active effort and wait attribution remain unknown.</p><p>The top 20 rank <strong>concrete action episodes</strong>, including explicit pending episodes—not umbrella goals such as “finish the project” or “wait for v18.” Scope decisions, milestones and a sub-repair already contained in a ranked episode are not ranked. Rank colours encode elapsed order only, <strong>not success or failure</strong>. Every coloured box also states its rank and duration.</p><p><strong>Do not add the rows.</strong> Workstreams overlap and some waits allowed other progress. No cumulative implementation total or numerical critical path is claimed. In particular, the longest item is a documentation/browser-feedback wait, not 72 hours of coding and not a demonstrated v18 blocker. Production CCNG proxy work was a parallel lane, not evidence that successor work technically required it.</p><p>Solid arrows show observed sequence, not a proven dependency for every pair. Dotted arrows mark overlapping episode spans. Blocks are grouped by the work being explained, so a block can start in one phase and finish on a later date. Expand its explanation for the actual bounds.</p>
+<h2>Why this took several days</h2><div class="table-scroll"><table><thead><tr><th>Contributor</th><th>Evidence-supported interpretation</th></tr></thead><tbody>
+<tr><td><strong>Missing reproducibility</strong></td><td>The original environment concealed prerequisites: network interfaces, issuer trust, usable repositories, tool setup and instance-specific settings. Fresh v16/v17 runs exposed them.</td></tr>
+<tr><td><strong>Repeated boundary defects</strong></td><td>Numeric strings, templating/literal tags, workflow payloads, legacy ownership data, libvirt views, PowerShell depth and Python-version compatibility caused real stop/fix/retry cycles.</td></tr>
+<tr><td><strong>Documented waits and missed continuation</strong></td><td>Narrow access/setup approvals, the RAM/outage decision, pending Codex approval operation and an explicitly acknowledged overnight hold created long calendar spans. Not every wait was a user delay, and reports did not continue jobs.</td></tr>
+<tr><td><strong>Real software time</strong></td><td>The backup transfer was reported around 1h 20m; an AAP installer 30m 42s; Assistant software runs about 39m and 46m; one AD retry about 56m. These explain execution time without inflating it to whole-day effort.</td></tr>
+<tr><td><strong>Acceptance was broader than an import</strong></td><td>Successful imports and configuration checks did not prove monitoring samples, model-driven repair, fresh unattended replay or safe teardown. Real tests found gaps that fixture checks had missed.</td></tr>
+<tr><td><strong>Scope and ownership changed during delivery</strong></td><td>One importer replaced duplicate playbooks; credential naming/types were corrected; cloned services were retargeted; firewall ownership and offline MCP transport were later revised. Those were additional implementation episodes.</td></tr>
+<tr><td><strong>Side lanes are not the critical path</strong></td><td>HTML feedback, production proxy work and small UI changes happened alongside factory tests. Their long recorded spans must not all be called time lost before v18.</td></tr>
+</tbody></table></div><h2>The 20 longest evidenced episodes</h2><ul class="legend" aria-label="Elapsed duration ranking, not success or failure">
+<li class="band1">Ranks 1–5</li>
+<li class="band2">Ranks 6–10</li>
+<li class="band3">Ranks 11–15</li>
+<li class="band4">Ranks 16–20</li>
+</ul><p>Colours mean elapsed ranking only. Ranks and durations are also written in every highlighted box.</p><div class="table-scroll"><table><thead><tr><th>Rank</th><th>Episode</th><th>Elapsed</th><th>Interpretation</th></tr></thead><tbody>
+<tr><td><strong>01</strong></td><td><a href="#detail-N39">39 — Publish the pilot report and wait for actual HTML feedback</a></td><td><strong>72h 28m</strong></td><td>Documentation/browser-feedback wait; not a demonstrated v18 blocker</td></tr>
+<tr><td><strong>02</strong></td><td><a href="#detail-N42">42 — Prepare fresh CCNG prerequisites and its private reader</a></td><td><strong>28h 30m</strong></td><td>Prerequisite approval/token wait, then target setup</td></tr>
+<tr><td><strong>03</strong></td><td><a href="#detail-N43">43 — Unblock the Nexus package pipeline with a narrow allowlist change</a></td><td><strong>28h 10m</strong></td><td>Narrow access approval, then package tests</td></tr>
+<tr><td><strong>04</strong></td><td><a href="#detail-N53">53 — Resolve CCNG first-password assumptions without copying an existing login</a></td><td><strong>≥ 21h 32m</strong></td><td>Fresh-auth design/source mismatch; unresolved at cutoff</td></tr>
+<tr><td><strong>05</strong></td><td><a href="#detail-N59">59 — Repair website monitoring and untangle firewall ownership</a></td><td><strong>≥ 14h 22m</strong></td><td>Live website probe and firewall-ownership dependency</td></tr>
+<tr><td><strong>06</strong></td><td><a href="#detail-N25">25 — Remove the unnecessary Windows image-inspection prerequisite</a></td><td><strong>13h 16m</strong></td><td>Avoidable image-inspection prerequisite</td></tr>
+<tr><td><strong>07</strong></td><td><a href="#detail-N57">57 — Resolve the held MCP artifact-key delivery proposal</a></td><td><strong>10h 00m</strong></td><td>Held offline transport proposal; later replaced</td></tr>
+<tr><td><strong>08</strong></td><td><a href="#detail-N26">26 — Repair Assistant API trust before its first VM test</a></td><td><strong>8h 29m</strong></td><td>Trust repair spanning overnight; active/wait split unknown</td></tr>
+<tr><td><strong>09</strong></td><td><a href="#detail-N46">46 — Make the existing production CCNG proxy work with trusted backend TLS</a></td><td><strong>8h 24m</strong></td><td>Production proxy lane, parallel to successor acceptance</td></tr>
+<tr><td><strong>10</strong></td><td><a href="#detail-N52">52 — Free RAM through an approved source-AAP shutdown</a></td><td><strong>8h 12m</strong></td><td>RAM capacity and explicit source-AAP outage decision</td></tr>
+<tr><td><strong>11</strong></td><td><a href="#detail-N45">45 — Finish Windows v16 cleanup through normal retirement jobs</a></td><td><strong>7h 16m</strong></td><td>Cleanup repairs, partial removal and disk approval</td></tr>
+<tr><td><strong>12</strong></td><td><a href="#detail-N35">35 — Restart authorized work after an overnight continuation failure</a></td><td><strong>7h 15m</strong></td><td>Explicit failure to continue already-authorized work</td></tr>
+<tr><td><strong>13</strong></td><td><a href="#detail-N28">28 — Fix the Assistant container bootstrap and complete software installation</a></td><td><strong>6h 44m</strong></td><td>Container prerequisites plus a real software run</td></tr>
+<tr><td><strong>14</strong></td><td><a href="#detail-N49">49 — Install the testable v17 CaC catalog through the normal importer</a></td><td><strong>6h 12m</strong></td><td>CaC repair, prerequisites and serialized imports</td></tr>
+<tr><td><strong>15</strong></td><td><a href="#detail-N54">54 — Exercise the v17 Windows lab and its owned cleanup</a></td><td><strong>5h 44m</strong></td><td>Real Windows provisioning, configuration, updates and cleanup</td></tr>
+<tr><td><strong>16</strong></td><td><a href="#detail-N03">03 — Build AAP CaC extraction/comparison and verify the real preview</a></td><td><strong>5h 23m</strong></td><td>New feature implementation and live-preview correction</td></tr>
+<tr><td><strong>17</strong></td><td><a href="#detail-N32">32 — Resume Windows after a pending Codex approval request</a></td><td><strong>3h 44m</strong></td><td>Pending Codex approval operation; internal split unknown</td></tr>
+<tr><td><strong>18</strong></td><td><a href="#detail-N60">60 — Implement target-side MCP builds and attempt the first real run</a></td><td><strong>3h 42m</strong></td><td>New target-build path; live attempt failed before building</td></tr>
+<tr><td><strong>19</strong></td><td><a href="#detail-N29">29 — Add the Windows-only second AAP network interface</a></td><td><strong>3h 35m</strong></td><td>Windows-interface ownership decision and implementation</td></tr>
+<tr><td><strong>20</strong></td><td><a href="#detail-N15">15 — Unblock website deployment on missing Git and DNS convergence</a></td><td><strong>3h 24m</strong></td><td>Missing Git approval plus DNS convergence</td></tr>
+</tbody></table></div><h2>Decision/action flow</h2><p>Click a numbered node, or use Enter/Space, to open its explanation. A native heading below closes it again. All written content is embedded; diagrams need internet access to the pinned Mermaid runtime.</p><p id="diagram-status" role="status">Script has not started. Download this HTML and open it locally if this viewer blocks scripts; the explanations below remain usable.</p><div class="grid">
+<section class="phase" id="phase-1"><h3>2 November — recover images and install the first AAP</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N01[&quot;01 Build the backup-image downloader&lt;br/&gt;Elapsed 35m&quot;]
+  N02[&quot;02 Download and verify seven images&lt;br/&gt;Elapsed 1h 22m&lt;br/&gt;Download job ~1h 20m&quot;]
+  N03[&quot;03 Build AAP CaC extract/compare preview&lt;br/&gt;Rank 16 • elapsed 5h 23m&lt;br/&gt;Feature build + preview repair&quot;]
+  N04[&quot;04 Reserve names; pin the new route&lt;br/&gt;Elapsed 1h 20m&lt;br/&gt;VM creation job ~99s&quot;]
+  N05[&quot;05 Repair certificate and DNS inputs&lt;br/&gt;Elapsed 56m&quot;]
+  N06[&quot;06 Run the AAP installer&lt;br/&gt;Elapsed 33m&lt;br/&gt;Job 30m 42s&quot;]
+  N07[&quot;07 Preserve literal credential templates&lt;br/&gt;Elapsed 13m&lt;br/&gt;Base retry 2m 05s&quot;]
+  N08[&quot;08 Separate the AIOps private capture&lt;br/&gt;Elapsed 35m&quot;]
+  N01 --&gt; N02
+  N02 -. overlaps .-&gt; N03
+  N03 -. overlaps .-&gt; N04
+  N04 --&gt; N05
+  N05 --&gt; N06
+  N06 --&gt; N07
+  N07 --&gt; N08
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N03 band4
+  class N01,N02,N04,N05,N06,N07,N08 ordinary</pre></section>
+<section class="phase" id="phase-2"><h3>3 November — simplify CaC imports and replace the trial instance</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N09[&quot;09 Split repository reader/Vault entries&lt;br/&gt;Elapsed 29m&quot;]
+  N10[&quot;10 Unify five CaC importers&lt;br/&gt;Elapsed 2h 42m&quot;]
+  N11[&quot;11 Replace the in-use writer credential&lt;br/&gt;Elapsed 31m&quot;]
+  N12[&quot;12 Finish the first AIOps CaC import&lt;br/&gt;Elapsed 1h 06m&quot;]
+  N13[&quot;13 Repair the decommission disk guard&lt;br/&gt;Elapsed 8m&quot;]
+  N14[&quot;14 Finish delegated proxy publication&lt;br/&gt;Elapsed 1h 09m&quot;]
+  N09 --&gt; N10
+  N10 --&gt; N11
+  N11 --&gt; N12
+  N12 --&gt; N13
+  N13 --&gt; N14
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N09,N10,N11,N12,N13,N14 ordinary</pre></section>
+<section class="phase" id="phase-3"><h3>4 November — monitoring, isolation release and v16 self-import</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N15[&quot;15 Unblock website Git and DNS&lt;br/&gt;Rank 20 • elapsed 3h 24m&lt;br/&gt;Git approval + DNS convergence&quot;]
+  N16[&quot;16 Fix the private monitoring MCP probe&lt;br/&gt;Elapsed 14m&quot;]
+  N17[&quot;17 Retarget monitoring; prove recovery&lt;br/&gt;Elapsed 1h 23m&quot;]
+  N18[&quot;18 Make repeat activation imports safe&lt;br/&gt;Elapsed 56m&quot;]
+  N19[&quot;19 Complete safe isolation release&lt;br/&gt;Elapsed 1h 48m&quot;]
+  N20[&quot;20 Agree the repeatability test&lt;br/&gt;Decision / context; not ranked&quot;]
+  N21[&quot;21 Make task history recoverable&lt;br/&gt;Elapsed 42m&quot;]
+  N22[&quot;22 Prove v16 self-CaC import&lt;br/&gt;Elapsed 3h 02m&quot;]
+  N23[&quot;23 Fix minimal-guest monitoring&lt;br/&gt;Elapsed 41m&quot;]
+  N15 -. overlaps .-&gt; N16
+  N16 --&gt; N17
+  N17 --&gt; N18
+  N18 --&gt; N19
+  N19 -. overlaps .-&gt; N20
+  N20 --&gt; N21
+  N21 --&gt; N22
+  N22 -. overlaps .-&gt; N23
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N15 band4
+  class N16,N17,N18,N19,N20,N21,N22,N23 ordinary</pre></section>
+<section class="phase" id="phase-4"><h3>4–5 November — prepare Assistant and the Windows network</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N24[&quot;24 Sequence tests within RAM&lt;br/&gt;Decision / context; not ranked&quot;]
+  N25[&quot;25 Drop image-inspection detour&lt;br/&gt;Rank 06 • elapsed 13h 16m&lt;br/&gt;Prerequisite later removed&quot;]
+  N26[&quot;26 Repair Assistant API trust&lt;br/&gt;Rank 08 • elapsed 8h 29m&lt;br/&gt;Overnight repair split unknown&quot;]
+  N27[&quot;27 Resume Assistant registration&lt;br/&gt;Elapsed 1h 18m&quot;]
+  N28[&quot;28 Finish Assistant software install&lt;br/&gt;Rank 13 • elapsed 6h 44m&lt;br/&gt;Prerequisite repair + software install&lt;br/&gt;Successful job ~39m&quot;]
+  N29[&quot;29 Reproduce the Windows network&lt;br/&gt;Rank 19 • elapsed 3h 35m&lt;br/&gt;Ownership decision + network work&quot;]
+  N30[&quot;30 Repair Windows CaC workflow&lt;br/&gt;Elapsed 2h 09m&lt;br/&gt;Import job ~3m 14s&quot;]
+  N31[&quot;31 Repair Assistant retirement&lt;br/&gt;Elapsed 1h 19m&quot;]
+  N24 --&gt; N25
+  N25 -. overlaps .-&gt; N26
+  N26 --&gt; N27
+  N27 --&gt; N28
+  N28 -. overlaps .-&gt; N29
+  N29 --&gt; N30
+  N30 -. overlaps .-&gt; N31
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N25,N26 band2
+  class N28 band3
+  class N29 band4
+  class N24,N27,N30,N31 ordinary</pre></section>
+<section class="phase" id="phase-5"><h3>5–6 November — repair first Windows execution and resume stalled work</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N32[&quot;32 Windows waits on a Codex approval request&lt;br/&gt;Rank 17 • elapsed 3h 44m&lt;br/&gt;Pending, not measured human review&quot;]
+  N33[&quot;33 Repair fresh Windows provisioning&lt;br/&gt;Elapsed 2h 10m&quot;]
+  N34[&quot;34 Finish AD updates after shutdown&lt;br/&gt;Elapsed 1h 37m&lt;br/&gt;Update retry ~56m&quot;]
+  N35[&quot;35 Overnight work does not resume&lt;br/&gt;Rank 12 • elapsed 7h 15m&lt;br/&gt;No user input was missing&quot;]
+  N36[&quot;36 Repair base/MCP prerequisites&lt;br/&gt;Elapsed 34m&lt;br/&gt;Base retry ~2m 18s; import ~2m 05s&quot;]
+  N37[&quot;37 Fix oversized CA payload&lt;br/&gt;Elapsed 37m&lt;br/&gt;Failed import ~1m 45s&quot;]
+  N32 --&gt; N33
+  N33 --&gt; N34
+  N34 --&gt; N35
+  N35 --&gt; N36
+  N36 --&gt; N37
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N35 band3
+  class N32 band4
+  class N33,N34,N36,N37 ordinary</pre></section>
+<section class="phase" id="phase-6"><h3>6–7 November — prove repairs, finish Windows and handle waits</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N38[&quot;38 Activate Windows and clean up&lt;br/&gt;Elapsed 1h 41m&quot;]
+  N39[&quot;39 Documentation/browser feedback wait&lt;br/&gt;Rank 01 • elapsed 72h 28m&lt;br/&gt;Feedback wait; not a v18 blocker&quot;]
+  N40[&quot;40 Complete real AIOps repair&lt;br/&gt;Elapsed 1h 27m&quot;]
+  N41[&quot;41 Finish AD functional checks&lt;br/&gt;Elapsed 1h 01m&quot;]
+  N42[&quot;42 Wait for CCNG setup inputs&lt;br/&gt;Rank 02 • elapsed 28h 30m&lt;br/&gt;Input/setup dependency&quot;]
+  N43[&quot;43 Wait for Nexus access; test apps&lt;br/&gt;Rank 03 • elapsed 28h 10m&lt;br/&gt;Access wait ~27h 39m&quot;]
+  N44[&quot;44 Verify WSUS and OS patching&lt;br/&gt;Elapsed 1h 59m&quot;]
+  N45[&quot;45 Complete Windows-only retirement&lt;br/&gt;Rank 11 • elapsed 7h 16m&lt;br/&gt;Repair + approval + cleanup&quot;]
+  N38 -. overlaps .-&gt; N39
+  N39 -. overlaps .-&gt; N40
+  N40 --&gt; N41
+  N41 -. overlaps .-&gt; N42
+  N42 -. overlaps .-&gt; N43
+  N43 -. overlaps .-&gt; N44
+  N44 --&gt; N45
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N39,N42,N43 band1
+  class N45 band3
+  class N38,N40,N41,N44 ordinary</pre></section>
+<section class="phase" id="phase-7"><h3>7–8 November — production HTTPS and the v17 successor</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N46[&quot;46 Production proxy: parallel work&lt;br/&gt;Rank 09 • elapsed 8h 24m&lt;br/&gt;Parallel production-access lane&quot;]
+  N47[&quot;47 Publish scoped button layout fix&lt;br/&gt;Elapsed 11m&quot;]
+  N48[&quot;48 Deploy the successor AAP v17&lt;br/&gt;Elapsed 1h 18m&quot;]
+  N49[&quot;49 Install v17 use-case definitions&lt;br/&gt;Rank 14 • elapsed 6h 12m&lt;br/&gt;Repairs + serialized imports&quot;]
+  N50[&quot;50 Deploy the successor website&lt;br/&gt;Elapsed 56m&quot;]
+  N51[&quot;51 Verify and retire Assistant v17&lt;br/&gt;Elapsed 56m&lt;br/&gt;Software job ~46m&quot;]
+  N46 -. overlaps .-&gt; N47
+  N47 --&gt; N48
+  N48 --&gt; N49
+  N49 -. overlaps .-&gt; N50
+  N50 --&gt; N51
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N46 band2
+  class N49 band3
+  class N47,N48,N50,N51 ordinary</pre></section>
+<section class="phase" id="phase-8"><h3>8 November — v17 runtime tests and new monitoring failure</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N52[&quot;52 Wait for Windows RAM window&lt;br/&gt;Rank 10 • elapsed 8h 12m&lt;br/&gt;RAM/outage approval and shutdown&lt;br/&gt;Shutdown 39s&quot;]
+  N53[&quot;53 Resolve fresh CCNG auth mismatch&lt;br/&gt;Rank 04 • elapsed ≥ 21h 32m&lt;br/&gt;Design/source mismatch; still open&quot;]
+  N54[&quot;54 Run Windows v17 end to end&lt;br/&gt;Rank 15 • elapsed 5h 44m&lt;br/&gt;Install/update/retry/cleanup&quot;]
+  N55[&quot;55 Fix demonstrated lock contention&lt;br/&gt;Elapsed 38m&quot;]
+  N56[&quot;56 Remove only the older AAP&lt;br/&gt;Elapsed 1h 04m&quot;]
+  N57[&quot;57 Replace the offline MCP proposal&lt;br/&gt;Rank 07 • elapsed 10h 00m&lt;br/&gt;Held proposal; later replaced&quot;]
+  N58[&quot;58 Provision v17 core demo guests&lt;br/&gt;Elapsed 40m&quot;]
+  N59[&quot;59 Fix website probe and ownership&lt;br/&gt;Rank 05 • elapsed ≥ 14h 22m&lt;br/&gt;Ownership plus live rollout pending&quot;]
+  N52 -. overlaps .-&gt; N53
+  N53 -. overlaps .-&gt; N54
+  N54 -. overlaps .-&gt; N55
+  N55 --&gt; N56
+  N56 --&gt; N57
+  N57 -. overlaps .-&gt; N58
+  N58 --&gt; N59
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N53,N59 band1
+  class N52,N57 band2
+  class N54 band3
+  class N55,N56,N58 ordinary</pre></section>
+<section class="phase" id="phase-9"><h3>9 November — factory gaps still open at the cutoff</h3><pre class="mermaid" data-flowchart>flowchart TB
+  N60[&quot;60 Build MCP on target; find repo gap&lt;br/&gt;Rank 18 • elapsed 3h 42m&lt;br/&gt;Build never reached image step&quot;]
+  N61[&quot;61 Repair fresh CCNG prerequisites&lt;br/&gt;Elapsed 2h 34m&quot;]
+  N62[&quot;62 Capture new account settings safely&lt;br/&gt;Elapsed 2h 07m&quot;]
+  N63[&quot;63 Require the access gate first&lt;br/&gt;Decision / context; not ranked&quot;]
+  N64[&quot;64 v18 reinstall has not started&lt;br/&gt;Not started at cutoff&quot;]
+  N60 -. overlaps .-&gt; N61
+  N61 -. overlaps .-&gt; N62
+  N62 -. overlaps .-&gt; N63
+  N63 --&gt; N64
+  classDef band1 fill:#9d174d,color:#ffffff,stroke:#500724,stroke-width:3px
+  classDef band2 fill:#9a3412,color:#ffffff,stroke:#431407,stroke-width:3px
+  classDef band3 fill:#075985,color:#ffffff,stroke:#082f49,stroke-width:3px
+  classDef band4 fill:#4338ca,color:#ffffff,stroke:#1e1b4b,stroke-width:3px
+  classDef ordinary fill:#edf2f7,color:#172638,stroke:#64748b,stroke-width:1px
+  class N60 band4
+  class N61,N62,N63,N64 ordinary</pre></section>
+</div><h2>Expandable explanations</h2><div class="details-grid">
+<details class="explanation ordinary" id="detail-N01" data-step="N01"><summary>01 — Implement a reconnectable image downloader<span class="time">35m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Recovery lacked an rclone download playbook that survives controller disconnects.</p>
+<p><strong>Decision, action and result:</strong> Used native Ansible async with a saved job identifier, encrypted remote configuration, image hashes and safe publication checks; an initially discussed systemd service was not retained. Reported 59 distinct tests plus syntax/lint passing; encrypted inputs ready, live download not yet launched.</p>
+<p><strong>Why the time passed:</strong> Observed request-to-checkpoint span. Includes explanation/design discussion; no measured active-development duration.</p>
+<p><strong>Timing:</strong> 02 Nov 09:56:46 → 02 Nov 10:32:00 UTC; <strong>35m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-1">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N02" data-step="N02"><summary>02 — Download and verify the backup image set<span class="time">1h 22m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The replacement needed seven large disk images before recovery could proceed.</p>
+<p><strong>Decision, action and result:</strong> Launched the normal download job; monitored bytes, then checked all hashes before publication. All seven images verified and published; requested staging/obsolete-disk cleanup reported finished. A separately requested upstream image copy was size/hash-verified, and later confirmed in local and offhost storage; its upload completion time is unknown.</p>
+<p><strong>Why the time passed:</strong> Queue-to-success observation includes transfer and verification. Do not label this all implementation effort.</p>
+<p><strong>Timing:</strong> 02 Nov 11:42:45 → 02 Nov 13:04:45 UTC; <strong>1h 22m observed</strong>. About 1h 20m reported controller job runtime; observed queued-to-success span is separately calculated.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-1">Back to this diagram</a></p></details>
+<details class="explanation band4" id="detail-N03" data-step="N03"><summary>03 — Build AAP CaC extraction/comparison and verify the real preview<span class="time">Rank 16 · 5h 23m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> No generic extraction/update path handled additions, changes, removals and concurrent repository edits.</p>
+<p><strong>Decision, action and result:</strong> Built comparison/update playbook and preview template. Live preview first failed; diagnosed missing private issuing CA, retained existing API credential type and supplied separate CA trust. Real preview passed with zero conflicts/validation errors; differences were reported without accepting a baseline or pushing configuration.</p>
+<p><strong>Why the time passed:</strong> Long observed feature span, NOT a continuous five-hour runtime. Significant implementation visibility gap between early comparison tests and publication; exact active/wait attribution is unknown.</p>
+<p><strong>Timing:</strong> 02 Nov 11:56:42 → 02 Nov 17:19:44 UTC; <strong>5h 23m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-1">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N04" data-step="N04"><summary>04 — Shared VM-name reservation and pinned replacement route<span class="time">1h 20m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The name counter and inherited private-network SSH route were unsuitable for creating uniquely named AAPs on another hypervisor.</p>
+<p><strong>Decision, action and result:</strong> Persisted reservations in encrypted Git before creation and bound each instance to its hypervisor identity and SSH route. New VM created, pinned guest host key checked through replacement, then login and administrator access and distinct machine identity verified.</p>
+<p><strong>Why the time passed:</strong> Observed design/build/verification span overlaps the image transfer. Never sum these as serial work.</p>
+<p><strong>Timing:</strong> 02 Nov 12:19:23 → 02 Nov 13:39:10 UTC; <strong>1h 20m observed</strong>. VM creation job itself reported about 99s.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-1">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N05" data-step="N05"><summary>05 — Repair certificate, DNS and installation prerequisites<span class="time">56m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Certificate tooling absent, saved DNS credential returned HTTP 401, and first pre-install audit also rejected capacity/tools/connectivity expectations.</p>
+<p><strong>Decision, action and result:</strong> Approved Certbot packages installed through the existing base path; certificate account registered after legal/contact approval; refreshed stale DNS credential and retried after public DNS convergence; refined preparation checks. Infrastructure and prerequisite audit passed, leaving installer-owned preparation steps to the installer.</p>
+<p><strong>Why the time passed:</strong> Observed multi-prerequisite repair span. Includes approval, publication and DNS propagation; these cannot be apportioned precisely from visible messages.</p>
+<p><strong>Timing:</strong> 02 Nov 16:20:27 → 02 Nov 17:15:58 UTC; <strong>56m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-1">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N06" data-step="N06"><summary>06 — Run the AAP installer<span class="time">33m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Fresh guest still needed the actual AAP platform installed after prerequisites passed.</p>
+<p><strong>Decision, action and result:</strong> Launched bounded asynchronous preparation/installation and monitored progress and endpoint readiness until terminal success. Installer successful and intended Controller endpoint returned HTTP 200.</p>
+<p><strong>Why the time passed:</strong> Reported measured job duration is more useful than the launch/report observation span. Messages show CPU/disk progress during the wait.</p>
+<p><strong>Timing:</strong> 02 Nov 17:17:18 → 02 Nov 17:49:59 UTC; <strong>33m observed</strong>. 30m42s reported successful installer runtime.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-1">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N07" data-step="N07"><summary>07 — Fix premature credential-template evaluation in base CaC<span class="time">13m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Installed platform base configuration failed while combining CaC variables: credential templates evaluated too early.</p>
+<p><strong>Decision, action and result:</strong> Reproduced against real configuration/collection version, preserved literal tags and retried only failed base stage. Base job succeeded; follow-up states44 affected template strings retained literal tags without changed values.</p>
+<p><strong>Why the time passed:</strong> Observed failure-report-to-success span includes focused code fix/publication and retry; successful installer was not rerun.</p>
+<p><strong>Timing:</strong> 02 Nov 17:52:45 → 02 Nov 18:05:17 UTC; <strong>13m observed</strong>. Successful base retry reported2m05s.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-1">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N08" data-step="N08"><summary>08 — Separate the AIOps private capture and bootstrap access<span class="time">35m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> AIOps shared a private capture and token with another project; existing token could not read the newly created companion.</p>
+<p><strong>Decision, action and result:</strong> Copied encrypted capture unchanged, added repository-scoped bootstrap reader and verified user-supplied PAT before switching importer bindings. Private capture, URL, credential binding and publication verified; separate runtime vault location remained explicitly unresolved. Earlier, the user selected base-only AutoDeploy with optional use-case imports. The label audit found incomplete API/UI coverage, so labels could not provide universal ownership.</p>
+<p><strong>Why the time passed:</strong> Contains a visible PAT-input wait: inability reported19:19:39.943; user supplied token19:37:32.577. Other bootstrap work continued meanwhile.</p>
+<p><strong>Timing:</strong> 02 Nov 19:14:51 → 02 Nov 19:49:32 UTC; <strong>35m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time. Decision history: 3b6d48f separates AIOps bootstrap access; the Nov 2 label audit (1846f71) leaves universal ownership unresolved.</p><p class="back"><a href="#phase-1">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N09" data-step="N09"><summary>09 — Split and rename per-repository read/Vault credentials<span class="time">29m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Repository credential names/references were unclear and five secret repositories shared one Vault credential object.</p>
+<p><strong>Decision, action and result:</strong> After explicit split approval, created five named reader/Vault pairs, changed bootstrap/CaC references and reassigned14 templates. Independent source/receiving-controller readbacks and active-reference checks passed. Later status confirmation was not extra execution time.</p>
+<p><strong>Why the time passed:</strong> Implementation/verification span ends11:34; the later13:27 completion reply should not inflate this to over two hours.</p>
+<p><strong>Timing:</strong> 03 Nov 11:04:39 → 03 Nov 11:34:05 UTC; <strong>29m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time. Decision history: 7e5f672 binds repository-specific reader/Vault pairs.</p><p class="back"><a href="#phase-2">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N10" data-step="N10"><summary>10 — Unify five importers, migrate capture names and remove wrappers<span class="time">2h 42m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Five import playbooks duplicated logic; some apparent special cases already existed in CoP. Implementation also retained wrappers contrary to the requested direct extra-variable design.</p>
+<p><strong>Decision, action and result:</strong> Analysed differences, agreed one importer with fixed project ID per JT, renamed five capture files, preserved activation state, then removed wrappers and corrected deployment names/naming collision. Five direct shared-playbook templates verified with IDs/credentials/links preserved; no use-case runtime launched. The user required API authentication exclusively and removed installer-password lookup over SSH as a fallback.</p>
+<p><strong>Why the time passed:</strong> Observed analysis-to-final-correction span includes a long alternative-design discussion, three coordinated agents and avoidable wrapper/name rework. Actual implementation approval begins14:47:16.359; earlier interval is analysis/decision time.</p>
+<p><strong>Timing:</strong> 03 Nov 13:42:51 → 03 Nov 16:24:53 UTC; <strong>2h 42m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time. Decision history: b5fb34b removes wrappers and calls one playbook with saved project-ID extra variables.</p><p class="back"><a href="#phase-2">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N11" data-step="N11"><summary>11 — Replace the allocation writer without changing an in-use type<span class="time">31m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Desired writer credential type could not be changed on the source controller because its credential had job history.</p>
+<p><strong>Decision, action and result:</strong> Verified dedicated writer/read-only token permissions, updated code to the existing user-owned token type, then obtained replacement approval and switched assignments before deleting retired credential. Both controllers verified, retired credential removed and source/private configuration published. Earlier registry simplification reused the repository Vault and reader; extra registry credentials were unnecessary.</p>
+<p><strong>Why the time passed:</strong> Observed migration span includes real API limitation and approval wait; do not call it an unexplained stall.</p>
+<p><strong>Timing:</strong> 03 Nov 17:13:37 → 03 Nov 17:44:45 UTC; <strong>31m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time. Decision history records reuse of the existing repository Vault and reader rather than extra registry credentials.</p><p class="back"><a href="#phase-2">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N12" data-step="N12"><summary>12 — Complete AIOps import through sequential rendering/input/content failures<span class="time">1h 06m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Importer failed on unresolved organization expression, then empty numeric timeout, TLS-value handling and missing required collection in PAH.</p>
+<p><strong>Decision, action and result:</strong> Reproduced rendering in actual EE/native modes, supplied explicit timeout, fixed protected values, prepared selected collection prerequisites and retried only failed import. AIOps CaC deployment reported successful; website infrastructure itself remained a separate subsequent task. A fixed target credential could not handle multiple instances: the populated custom token store selected URL/token by instance name, with missing, mismatched and expired inputs checked.</p>
+<p><strong>Why the time passed:</strong> Observed investigation-to-success span overlaps token-selection/store implementation. Successful previous import phases exposed the next real missing prerequisite.</p>
+<p><strong>Timing:</strong> 03 Nov 18:42:04 → 03 Nov 19:48:21 UTC; <strong>1h 06m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-2">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N13" data-step="N13"><summary>13 — Correct the decommission disk validator<span class="time">8m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Preview rejected native libvirt disk XML because its ordinary index metadata attribute was unexpected.</p>
+<p><strong>Decision, action and result:</strong> Accepted the legitimate attribute while keeping exact disk ownership and foreign/additional disk refusal; reran preview before authorized deletion. Selected old instance VM/disk/proxy/certificate/DNS/access records removed; images and consumed name preserved.</p>
+<p><strong>Why the time passed:</strong> Bounded failure-to-success repair span. This does not represent all earlier decommission implementation work.</p>
+<p><strong>Timing:</strong> 03 Nov 20:38:09 → 03 Nov 20:46:01 UTC; <strong>8m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-2">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N14" data-step="N14"><summary>14 — Repair delegated proxy publication after successful installation<span class="time">1h 09m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Installation succeeded but following hypervisor check/proxy publication failed. Separate identity probe passed; an attempted resume also failed reading completed installer output.</p>
+<p><strong>Decision, action and result:</strong> Diagnosed wrong inventory-variable lookup under delegation, bound route lookup to original instance entry and retried only TLS/nginx publication. Proxy retry and public API check succeeded without reinstalling AAP; base configuration subsequently succeeded.</p>
+<p><strong>Why the time passed:</strong> Observed span includes explicit ownership hold from21:59:22.141 until user-driven resume22:45:53.951 (46m31.810s). Diagnosis/resume/publication after that took22m15.646s to success; not69m continuous debugging.</p>
+<p><strong>Timing:</strong> 03 Nov 21:59:22 → 03 Nov 23:08:09 UTC; <strong>1h 09m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-2">Back to this diagram</a></p></details>
+<details class="explanation band4" id="detail-N15" data-step="N15"><summary>15 — Unblock website deployment on missing Git and DNS convergence<span class="time">Rank 20 · 3h 24m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Website job found Git absent even though later base manifest declared it; after installation a new DNS record had not converged for certificate issuance.</p>
+<p><strong>Decision, action and result:</strong> Waited for package approval, installed Git via existing package path, retried website, retained rollback on certificate failure, verified public DNS convergence and retried. TrustedHTTPS, content and correct new-AAP webhook verified; button disarmed.</p>
+<p><strong>Why the time passed:</strong> Long observed dependency span, not three hours of active coding. Pending Git approval is explicitly restated at02:27,02:46,03:05; installation authorized/resumed05:20 and completed05:23. Other MCP work progressed during wait.</p>
+<p><strong>Timing:</strong> 04 Nov 02:09:39 → 04 Nov 05:33:32 UTC; <strong>3h 24m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N16" data-step="N16"><summary>16 — Fix private monitoring MCP protocol verification<span class="time">14m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Installed MCP container first could not read private configuration due UID mismatch; after access repair, verifier rejected an authenticated quoted JSON-string result.</p>
+<p><strong>Decision, action and result:</strong> Matched container UID to private-file owner, then narrowly normalized the legitimate successful response while retaining malformed/error rejection; reran normal job. Normal retry succeeded with authenticated read-only MCP query; Linux MCP settings preserved.</p>
+<p><strong>Why the time passed:</strong> Observed two-defect repair span; no evidence of a model invocation or unprotected configuration workaround.</p>
+<p><strong>Timing:</strong> 04 Nov 02:46:34 → 04 Nov 03:00:48 UTC; <strong>14m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N17" data-step="N17"><summary>17 — Retarget cloned monitoring, prove EDA loop and install the limited agent<span class="time">1h 23m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Clone inherited old names/endpoints and forwarding was deliberately off; targeted agent job separately used wrong Project, then package download hit recovery isolation.</p>
+<p><strong>Decision, action and result:</strong> Retargeted checks/media/auth to selected instance, verified event-stream delivery, enabled only intended action; corrected agent Project and applied approved scoped egress before retry. Real outage→automatic restore→rearm passed; user repeat also passed. Agent installation succeeded and agent.ping returned 1 on the intended guest.</p>
+<p><strong>Why the time passed:</strong> Coherent monitoring integration span with parallel branches: EDA loop passed06:54:12.867; agent branch finished07:12:47.368. Isolation/ownership/publication decisions appear within span, so not one measured job duration.</p>
+<p><strong>Timing:</strong> 04 Nov 05:49:28 → 04 Nov 07:12:47 UTC; <strong>1h 23m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N18" data-step="N18"><summary>18 — Make repeat import of a running activation idempotent<span class="time">56m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> A normal CaC refresh tried changing an already-running activation. Initial nested-object/ID hypothesis did not reproduce.</p>
+<p><strong>Decision, action and result:</strong> Found native templating converted settings text to dictionary and dropped trailing newline; preserved exact text and tested unchanged versus changed/null/omitted settings; fixed lint cache path after permission prompt. Normal import passed on fixed code; live website activation, stream URL and existing template count preserved.</p>
+<p><strong>Why the time passed:</strong> Observed failure-to-live-success span. Visible record explicitly retracts the initial hypothesis; lint-stall duration cannot be quantified from one later report.</p>
+<p><strong>Timing:</strong> 04 Nov 08:12:44 → 04 Nov 09:09:04 UTC; <strong>56m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds; later confirmations are not added to elapsed time.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N19" data-step="N19"><summary>19 — Verify automatic release after guest configuration<span class="time">1h 48m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The new release hook had to run through the normal job without recreating the configured guest.</p>
+<p><strong>Decision, action and result:</strong> A transient certified-collection checksum failure did not reproduce. The real retry exposed a persistent-versus-running libvirt description mismatch; the focused fix retained live identity checks. The normal configuration job then released only the selected guest.</p>
+<p><strong>Why the time passed:</strong> The span includes publication, a collection-sync retry, a real validator fix and independent saved-policy checks; it is not one long firewall command.</p>
+<p><strong>Timing:</strong> 04 Nov 09:52:37 → 04 Nov 11:40:36 UTC; <strong>1h 48m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N20" data-step="N20"><summary>20 — Define successor acceptance and protect production<span class="time">decision/context · Decision</span></summary>
+<p><strong>Context / issue:</strong> Working on the original host did not establish that its automation could reconstruct an independent environment.</p>
+<p><strong>Decision, action and result:</strong> The user defined success as one test AAP installing a functional successor. Future jobs must support the selected local or remote test hypervisor, with production excluded. Older production templates stay outside future CaC; Orchestrator retains its intended external-cluster integration.</p>
+<p><strong>Why the time passed:</strong> This is a scope decision, not a measured deployment or active-effort interval.</p>
+<p><strong>Timing:</strong> 04 Nov 09:56:27 → 04 Nov 10:16:10 UTC; <strong>decision/context observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N21" data-step="N21"><summary>21 — Save task history and restart decisions in Git<span class="time">42m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Beads alone would not preserve recovery knowledge through a host rebuild.</p>
+<p><strong>Decision, action and result:</strong> Generated public task summaries and encrypted complete records were committed, published and independently checked. The older teardown template was compared with the modern job and added no cleanup capability.</p>
+<p><strong>Why the time passed:</strong> Publication met intermittent SSH/GitHub failures. Individual repositories succeeded on retries without changing keys or transport; other workers continued.</p>
+<p><strong>Timing:</strong> 04 Nov 10:18:24 → 04 Nov 10:59:59 UTC; <strong>42m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N22" data-step="N22"><summary>22 — Make v16 import its own AutoDeploy configuration<span class="time">3h 02m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Imported definitions still contained production defaults and mismatched launch requirements.</p>
+<p><strong>Decision, action and result:</strong> Corrected trust handling, an optional absent inventory, five credential-prompt flags and an existing Vault credential name. Normal preparation and self-import succeeded; 69 template identities and bindings were preserved.</p>
+<p><strong>Why the time passed:</strong> Several sequential runtime mismatches required import/readback/retry cycles. Monitoring proceeded in parallel. This proved self-import, not successor VM deployment.</p>
+<p><strong>Timing:</strong> 04 Nov 15:34:17 → 04 Nov 18:36:24 UTC; <strong>3h 02m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N23" data-step="N23"><summary>23 — Correct monitoring for the minimal Linux test guest<span class="time">41m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The cloned monitoring included Apache checks although the minimal guest had no Apache.</p>
+<p><strong>Decision, action and result:</strong> Enabled Linux/connectivity checks and disabled irrelevant Apache checks while retaining history. Two normal deployment runs and independent readings passed.</p>
+<p><strong>Why the time passed:</strong> The observed span overlaps self-CaC repair. It must not be added as serial time.</p>
+<p><strong>Timing:</strong> 04 Nov 15:46:11 → 04 Nov 16:26:55 UTC; <strong>41m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-3">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N24" data-step="N24"><summary>24 — Sequence RAM-heavy tests and agree the rebuild gate<span class="time">decision/context · Decision</span></summary>
+<p><strong>Context / issue:</strong> A complete duplicate environment plus the Windows and Assistant guests would exceed the available memory budget.</p>
+<p><strong>Decision, action and result:</strong> The user approved sequential use-case runs and their cleanup, existing Vertex authentication reuse and encrypted instance-setting writes. Full test-hypervisor reinstall and v18 remained conditional on successful acceptance; OpenShift testing was deferred.</p>
+<p><strong>Why the time passed:</strong> Planning/approval discussion is not a job runtime. New per-instance settings and decommission coverage became explicit work rather than hidden prerequisites.</p>
+<p><strong>Timing:</strong> 04 Nov 19:45:23 → 04 Nov 21:10:34 UTC; <strong>decision/context observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-4">Back to this diagram</a></p></details>
+<details class="explanation band2" id="detail-N25" data-step="N25"><summary>25 — Remove the unnecessary Windows image-inspection prerequisite<span class="time">Rank 06 · 13h 16m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Runtime testing was held for offline image inspection, first missing NTFS tooling and then missing guest-filesystem support.</p>
+<p><strong>Decision, action and result:</strong> Approved packages were installed through the existing host playbook after checksum and recovery-scope corrections. Inspection still failed. The user removed this extra step because the prepared images already had WinRM; actual guest connectivity still had to be tested.</p>
+<p><strong>Why the time passed:</strong> Includes overnight input/approval delivery, package retries and an avoidable prerequisite. Do not call all of it human review time: an approval arrived through coordination after being reported pending.</p>
+<p><strong>Timing:</strong> 04 Nov 21:30:16 → 05 Nov 10:46:01 UTC; <strong>13h 16m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-4">Back to this diagram</a></p></details>
+<details class="explanation band2" id="detail-N26" data-step="N26"><summary>26 — Repair Assistant API trust before its first VM test<span class="time">Rank 08 · 8h 29m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The first Assistant job failed its inventory check before creating a VM because its private CA replaced the working trust bundle.</p>
+<p><strong>Decision, action and result:</strong> Preserved existing trust and added the selected issuer. The next morning normal configuration refresh succeeded with the trust and retirement changes.</p>
+<p><strong>Why the time passed:</strong> This bounds an overnight repair/publication episode. The fix was reported already published by the morning resume; the exact active effort and overnight wait split are unknown.</p>
+<p><strong>Timing:</strong> 04 Nov 21:39:59 → 05 Nov 06:08:52 UTC; <strong>8h 29m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-4">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N27" data-step="N27"><summary>27 — Repair Assistant inventory registration and resume the preserved clone<span class="time">1h 18m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> A clone existed, but group association failed on a rendered host-ID type. Initial repair checks also assumed a group alias and leaked into later plays.</p>
+<p><strong>Decision, action and result:</strong> Fixed the association and bounded repair path, previewed it, then changed only the intended group membership. A numeric-string SSH-port mismatch was normalized. Configuration resumed on the same VM without another allocation.</p>
+<p><strong>Why the time passed:</strong> Several small compatibility failures were exposed one after another by real previews and jobs. Preserving the clone avoided repeating disk provisioning.</p>
+<p><strong>Timing:</strong> 05 Nov 07:15:10 → 05 Nov 08:32:47 UTC; <strong>1h 18m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-4">Back to this diagram</a></p></details>
+<details class="explanation band3" id="detail-N28" data-step="N28"><summary>28 — Fix the Assistant container bootstrap and complete software installation<span class="time">Rank 13 · 6h 44m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The inherited Debian container needed HTTP package access, while the new bootstrap initially allowed only HTTPS. Rewriting to HTTPS exposed missing in-container CA trust.</p>
+<p><strong>Decision, action and result:</strong> The user retained the demo image and HTTP downloads; UBI10 rebuilding was deferred. Applied only the approved guest access, corrected a stale checkout reference and completed the normal configuration run.</p>
+<p><strong>Why the time passed:</strong> Includes diagnosis, user-selected download policy, publication and retry. Host curl/wget trust did not prove container trust. The successful job took about 39 minutes; the remaining span is not measured coding effort.</p>
+<p><strong>Timing:</strong> 05 Nov 08:46:27 → 05 Nov 15:30:19 UTC; <strong>6h 44m observed</strong>. Successful software job: reported about 39 minutes.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-4">Back to this diagram</a></p></details>
+<details class="explanation band4" id="detail-N29" data-step="N29"><summary>29 — Add the Windows-only second AAP network interface<span class="time">Rank 19 · 3h 35m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The original AAP already had a second interface on the isolated Windows network; the fresh AAP did not.</p>
+<p><strong>Decision, action and result:</strong> The user put that setup in Windows infrastructure, following the AIOps infrastructure pattern. Deployment and retirement were aligned on interface ownership, and the published implementation reproduced the network setup.</p>
+<p><strong>Why the time passed:</strong> Discussion selected the correct owner before implementation. Completion is reported to minute precision in the existing pilot evidence; this is not a measured three-hour job.</p>
+<p><strong>Timing:</strong> 05 Nov 11:08:23 → 05 Nov 14:43:00 UTC; <strong>3h 35m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible discussion plus the existing published pilot timing: completion reported by 5 Nov 14:43 UTC.</p><p class="back"><a href="#phase-4">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N30" data-step="N30"><summary>30 — Import Windows definitions and repair obsolete workflow links<span class="time">2h 09m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Saved workflow-node data no longer matched the receiving AAP interface.</p>
+<p><strong>Decision, action and result:</strong> Corrected the workflow links and later saved-configuration gaps, then completed the normal import. Existing template identities were retained; importing definitions did not run the Windows lab.</p>
+<p><strong>Why the time passed:</strong> Multiple correction/import cycles dominate the elapsed span. The successful import itself was roughly three minutes, not two hours.</p>
+<p><strong>Timing:</strong> 05 Nov 14:48:50 → 05 Nov 16:58:00 UTC; <strong>2h 09m observed</strong>. Successful import: previously measured about 3m 14s.</p>
+<p class="small"><strong>Evidence:</strong> Visible launch plus terminal minute/runtime retained in the published pilot evidence.</p><p class="back"><a href="#phase-4">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N31" data-step="N31"><summary>31 — Finish the normal Assistant retirement after its software test<span class="time">1h 19m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Normal cleanup removed the VM and disk but left a follow-up inventory association.</p>
+<p><strong>Decision, action and result:</strong> Reused the focused registration correction in retirement, refreshed CaC and reran the preview/apply path until owned resources were removed.</p>
+<p><strong>Why the time passed:</strong> Software success did not prove lifecycle cleanup. This observed retirement interval includes configuration refresh and verification; exact individual runtimes are unavailable.</p>
+<p><strong>Timing:</strong> 05 Nov 15:30:19 → 05 Nov 16:49:00 UTC; <strong>1h 19m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible successful software message plus retirement terminal minute retained in the published pilot.</p><p class="back"><a href="#phase-4">Back to this diagram</a></p></details>
+<details class="explanation band4" id="detail-N32" data-step="N32"><summary>32 — Resume Windows after a pending Codex approval request<span class="time">Rank 17 · 3h 44m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The main Codex session was waiting on an approval-gated operation, so it did not handle completed worker results or start the next Windows steps.</p>
+<p><strong>Decision, action and result:</strong> When that pending operation returned, the main session reconciled the completed work and resumed the approved test sequence.</p>
+<p><strong>Why the time passed:</strong> The existing pilot records 3h 44m 6s pending. The specific operation and the split between an approval answer and subsequent processing are not established in the retained evidence. This is neither four hours of shell execution nor a measured human-review duration.</p>
+<p><strong>Timing:</strong> 05 Nov 16:36:59 → 05 Nov 20:21:05 UTC; <strong>3h 44m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Previously recorded native-event timing in the published pilot; visible narrative corroborates the delayed continuation.</p><p class="back"><a href="#phase-5">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N33" data-step="N33"><summary>33 — Fix fresh Windows creation without discarding completed disk copies<span class="time">2h 10m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Real creation exposed missing trust, wrong network precedence, truncated SSH pins, an excessive host-key requirement, legacy ownership data, repeated successful setup and DNS writes on a DNS-disabled network.</p>
+<p><strong>Decision, action and result:</strong> Corrected each demonstrated mismatch, preserved verified disk copies and resumed only incomplete branches. All five creation stages passed. PowerShell output depth then fixed the next AD provenance check.</p>
+<p><strong>Why the time passed:</strong> Each successful guard exposed another untested producer/consumer boundary. Broad protected logging slowed diagnosis. This was substantial rework in automation, not just slow VM copying.</p>
+<p><strong>Timing:</strong> 05 Nov 20:26:57 → 05 Nov 22:37:04 UTC; <strong>2h 10m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-5">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N34" data-step="N34"><summary>34 — Recover the AD guest and finish its update retry<span class="time">1h 37m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> An AD update run waited on a guest that had powered off. Windows licensing events identified an evaluation-related shutdown.</p>
+<p><strong>Decision, action and result:</strong> Started the verified guest once, checked licensing and retried only the failed configuration. The retry completed with no remaining updates or pending reboot.</p>
+<p><strong>Why the time passed:</strong> The failed run took about 28 minutes and the successful retry about 56 minutes. The licensing/time discrepancy required further checks; the later report time must not extend this run into the morning.</p>
+<p><strong>Timing:</strong> 05 Nov 22:42:04 → 06 Nov 00:19:00 UTC; <strong>1h 37m observed</strong>. Reported runs: about 28 minutes failed, then 56 minutes successful.</p>
+<p class="small"><strong>Evidence:</strong> Run completion at 00:19 UTC reported in the 6 Nov 07:34 narrative and existing pilot.</p><p class="back"><a href="#phase-5">Back to this diagram</a></p></details>
+<details class="explanation band3" id="detail-N35" data-step="N35"><summary>35 — Restart authorized work after an overnight continuation failure<span class="time">Rank 12 · 7h 15m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The successful AD job was followed by no next job; reports repeated stale status.</p>
+<p><strong>Decision, action and result:</strong> The assistant explicitly acknowledged leaving both workers waiting for its next instruction. It resumed Windows and MCP work after the morning check. No user permission was missing.</p>
+<p><strong>Why the time passed:</strong> About 7h 15m was a documented continuation gap, not installer runtime or an approval delay. Reports themselves did not advance execution.</p>
+<p><strong>Timing:</strong> 06 Nov 00:19:00 → 06 Nov 07:34:17 UTC; <strong>7h 15m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Recorded AD completion and 6 Nov 07:34/07:42/07:46 explanation.</p><p class="back"><a href="#phase-5">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N36" data-step="N36"><summary>36 — Fix final AAP release and publish missing MCP credentials<span class="time">34m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Base configuration reached its final release guard but interpreted the Windows second interface as the primary interface. Required bootstrap credentials were also absent.</p>
+<p><strong>Decision, action and result:</strong> Restricted release to the true primary interface, preserved the selected VM checks, completed normal base provisioning and corrected a stale inventory alias before import.</p>
+<p><strong>Why the time passed:</strong> A focused local test spent roughly 14 minutes pending before writable temporary paths let it finish in 0.4 seconds. Successful base and import jobs were only a few minutes each.</p>
+<p><strong>Timing:</strong> 06 Nov 07:41:03 → 06 Nov 08:15:25 UTC; <strong>34m observed</strong>. Base attempts previously measured about 2m 48s and 2m 18s; successful import 2m 4.786s.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-5">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N37" data-step="N37"><summary>37 — Shrink the private API certificate payload instead of weakening nginx<span class="time">37m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> AIOps import attempted to save 147 CA certificates and exceeded the proxy request limit.</p>
+<p><strong>Decision, action and result:</strong> Kept only the actual small issuer chain, verified both AAP and private MCP trust, and completed the imports. Normal provider trust and nginx limits stayed intact.</p>
+<p><strong>Why the time passed:</strong> The import failure was reported at 08:21 and the reduced issuer verified by 08:33; passed imports were reported by 08:58. The elapsed observation includes shared import sequencing.</p>
+<p><strong>Timing:</strong> 06 Nov 08:21:19 → 06 Nov 08:58:33 UTC; <strong>37m observed</strong>. Failed import previously measured about 1m 45s.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-5">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N38" data-step="N38"><summary>38 — Activate Server 2025 with temporary connectivity and remove it afterward<span class="time">1h 41m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Time correction did not activate this new guest; the existing activation path needed a bounded exception through recovery isolation.</p>
+<p><strong>Decision, action and result:</strong> Used the approved temporary network attachment, ran normal activation and independently verified license status. Fixed a cleanup command and confirmed the temporary adapter, rules and network were gone.</p>
+<p><strong>Why the time passed:</strong> A read-only MCP request hung for about 29 minutes before being interrupted; this delayed obtaining the activation result. The activation and cleanup are distinct from publication of their fix.</p>
+<p><strong>Timing:</strong> 06 Nov 09:05:00 → 06 Nov 10:45:45 UTC; <strong>1h 41m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-6">Back to this diagram</a></p></details>
+<details class="explanation band1" id="detail-N39" data-step="N39"><summary>39 — Publish the pilot report and wait for actual HTML feedback<span class="time">Rank 01 · 72h 28m · Partial result: diagram seen; controls still faulty at cutoff</span></summary>
+<p><strong>Context / issue:</strong> The published HTML did not show the expected diagram for the user. Parsing and JavaScript syntax checks had not proved browser rendering.</p>
+<p><strong>Decision, action and result:</strong> Separated import/render/control errors, retained visible SVG after control failure and published diagnostics. The user later confirmed the downloaded diagram works, but its control warning remained and requested a clearer seven-day report.</p>
+<p><strong>Why the time passed:</strong> This long span largely records unresolved browser feedback while infrastructure work continued. It is not three days of active HTML debugging. The current report fixes the separately identified doubled-escape/node-count bug after the frozen cutoff.</p>
+<p><strong>Timing:</strong> 06 Nov 09:26:10 → 09 Nov 09:54:08 UTC; <strong>72h 28m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-6">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N40" data-step="N40"><summary>40 — Prove a real model-driven monitoring repair<span class="time">1h 27m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The first controlled runner expected a project-ID variable AAP does not supply. Its retry mishandled an unset workspace; another run hit a turn limit after the repair child had succeeded.</p>
+<p><strong>Decision, action and result:</strong> Fixed those bounded preflights and raised the existing turn cap while retaining time/job limits. A real alert then launched EDA, one model invocation and one repair job; service, fresh monitoring and original-alert recovery passed.</p>
+<p><strong>Why the time passed:</strong> Several runner failures occurred around successful child repairs, so neither model prose nor a child success alone was accepted as end-to-end completion.</p>
+<p><strong>Timing:</strong> 06 Nov 09:33:58 → 06 Nov 11:01:15 UTC; <strong>1h 27m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-6">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N41" data-step="N41"><summary>41 — Finish AD functional checks despite a transient AAP outage<span class="time">1h 01m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> AD continuation initially required all resources before it could create missing ones. AAP also briefly stalled.</p>
+<p><strong>Decision, action and result:</strong> Allowed missing resources only during initial inspection, retaining final completeness/ownership validation. The functional run passed directory logins, permission checks and test jobs. WSUS/Nexus configuration progressed separately.</p>
+<p><strong>Why the time passed:</strong> One outage showed database timeouts; a later one showed a watchdog-respawned worker. The original cause was not proved. It recovered without a restart and was closed as non-recurring on 8 Nov, not claimed fixed.</p>
+<p><strong>Timing:</strong> 06 Nov 11:01:15 → 06 Nov 12:01:46 UTC; <strong>1h 01m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-6">Back to this diagram</a></p></details>
+<details class="explanation band1" id="detail-N42" data-step="N42"><summary>42 — Prepare fresh CCNG prerequisites and its private reader<span class="time">Rank 02 · 28h 30m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The test workstation lacked the native Codex/Beads environment and private-repository reader input, although Machine and Vault choices were already resolved.</p>
+<p><strong>Decision, action and result:</strong> The user approved prerequisite/compiler installation and supplied the repository token the next afternoon. Used available signed RHEL packages when the guest had no enabled repositories; tool and build checks completed.</p>
+<p><strong>Why the time passed:</strong> Most of the observed span preceded the explicit setup approval/token confirmation. The preparation then took about 42 minutes by message bounds. It did not establish a fresh AAP-driven CCNG application deployment.</p>
+<p><strong>Timing:</strong> 06 Nov 11:36:44 → 07 Nov 16:06:40 UTC; <strong>28h 30m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-6">Back to this diagram</a></p></details>
+<details class="explanation band1" id="detail-N43" data-step="N43"><summary>43 — Unblock the Nexus package pipeline with a narrow allowlist change<span class="time">Rank 03 · 28h 10m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> AAP reached the external test repository through a primary address absent from that VM firewall allowlist. Remaining package tests could not run.</p>
+<p><strong>Decision, action and result:</strong> After the user approved the single-source port rule on 7 Nov, applied it through the normal job. Synchronization, export/import, baseline applications and upgrades then passed.</p>
+<p><strong>Why the time passed:</strong> The access request remained pending for roughly 27h 39m. Approval-to-final-result observation was about 31 minutes. Other work progressed during that wait; these are not additive project-hours.</p>
+<p><strong>Timing:</strong> 06 Nov 12:02:07 → 07 Nov 16:12:02 UTC; <strong>28h 10m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-6">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N44" data-step="N44"><summary>44 — Complete the Windows OS patch tests and consent safeguards<span class="time">1h 59m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The test needed imported update metadata, actual patch/reboot checks and a stop when an agreement requires acceptance.</p>
+<p><strong>Decision, action and result:</strong> Removed automatic agreement acceptance, verified the PowerShell safeguards and completed both managed-server OS patch tests with no approved updates or pending reboot.</p>
+<p><strong>Why the time passed:</strong> Real metadata processing and update installation took time. Exact job runtimes are unavailable; the nearly two-hour message span also includes safeguard work.</p>
+<p><strong>Timing:</strong> 06 Nov 12:17:50 → 06 Nov 14:16:53 UTC; <strong>1h 59m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-6">Back to this diagram</a></p></details>
+<details class="explanation band3" id="detail-N45" data-step="N45"><summary>45 — Finish Windows v16 cleanup through normal retirement jobs<span class="time">Rank 11 · 7h 16m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Cleanup rejected ordinary memberships, then used an unsupported Python file-check API after removing a VM definition. Its disk remained; follow-up policy cleanup failed too.</p>
+<p><strong>Decision, action and result:</strong> Allowed only verified normal memberships, published the compatibility repair, obtained specific leftover-disk permission and continued the normal jobs. All five Windows guests and owned resources were removed; core guests and golden images were preserved.</p>
+<p><strong>Why the time passed:</strong> The interval includes a long gap before removal, a partial-cleanup repair and a separate disk approval. It is not seven hours of deleting VMs. No wider environment teardown was authorized by it.</p>
+<p><strong>Timing:</strong> 07 Nov 16:18:35 → 07 Nov 23:34:09 UTC; <strong>7h 16m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-6">Back to this diagram</a></p></details>
+<details class="explanation band2" id="detail-N46" data-step="N46"><summary>46 — Make the existing production CCNG proxy work with trusted backend TLS<span class="time">Rank 09 · 8h 24m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Public HTTPS initially reached an app listening only on loopback. Backend TLS support, the actual installation directory and saved host overrides also needed reconciliation.</p>
+<p><strong>Decision, action and result:</strong> Configured frontend TLS/Basic authentication, generated and explicitly trusted the backend certificate, corrected the installation path and respected user-owned restart. A proposed host-setting removal was rejected and not applied. The user confirmed both public and localhost access.</p>
+<p><strong>Why the time passed:</strong> The long observation includes user updates/password setup, a stalled filesystem-approval request, changing app versions and the listener restart boundary. Local 401/TLS checks alone had not proved browser access.</p>
+<p><strong>Timing:</strong> 07 Nov 15:36:36 → 08 Nov 00:00:51 UTC; <strong>8h 24m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-7">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N47" data-step="N47"><summary>47 — Publish the small approval-button layout correction<span class="time">11m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Two approval buttons wrapped and displayed different heights.</p>
+<p><strong>Decision, action and result:</strong> Published the isolated one-line-label/short-height correction with checks and build passing; the app builder retained it in later releases. Subsequent misplaced UI requests were handed back rather than implemented here.</p>
+<p><strong>Why the time passed:</strong> This was a small, separate source change alongside proxy work. Publication did not itself prove deployed appearance.</p>
+<p><strong>Timing:</strong> 07 Nov 23:31:13 → 07 Nov 23:42:05 UTC; <strong>11m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-7">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N48" data-step="N48"><summary>48 — Use v16 to build AAP v17 without reallocating the failed first stage<span class="time">1h 18m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Stage one created and booted v17 but the guest check inherited the hypervisor SSH port.</p>
+<p><strong>Decision, action and result:</strong> Fixed variable handling, resumed guest verification on the same VM, restored normal template settings and completed DNS/TLS, installation and base configuration. Authenticated API and independent identity checks passed.</p>
+<p><strong>Why the time passed:</strong> There was one real continuation repair. The total observation is about 1h 18m; the installer was reported progressing during polling. This did not prove a fresh fully unattended repeat.</p>
+<p><strong>Timing:</strong> 08 Nov 00:16:50 → 08 Nov 01:34:59 UTC; <strong>1h 18m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-7">Back to this diagram</a></p></details>
+<details class="explanation band3" id="detail-N49" data-step="N49"><summary>49 — Install the testable v17 CaC catalog through the normal importer<span class="time">Rank 14 · 6h 12m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The source catalog lagged, AIOps rejected a numeric-string SSH port, a direct Windows import skipped collection prerequisites and the RHEL case unnecessarily demanded PAH content already in its execution image.</p>
+<p><strong>Decision, action and result:</strong> Refreshed the source catalog, corrected those concrete gaps and used normal prerequisite/import paths. Six use-case definitions and v17 self-import were verified; CCNG remained separate. Production source pins were retained before publishing new test code.</p>
+<p><strong>Why the time passed:</strong> Imports were sequenced around shared writes and the Assistant test. The six-hour span includes those dependencies and fixes, not six hours of importing configuration.</p>
+<p><strong>Timing:</strong> 08 Nov 01:42:40 → 08 Nov 07:55:09 UTC; <strong>6h 12m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-7">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N50" data-step="N50"><summary>50 — Deploy the v17 website while handling negative DNS caching<span class="time">56m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The new public record had converged externally while the operator resolver still cached an earlier negative response.</p>
+<p><strong>Decision, action and result:</strong> The normal website deployment completed with trusted HTTPS, intended AAP link and a disarmed button. Verification used the approved public endpoint while preserving certificate checks.</p>
+<p><strong>Why the time passed:</strong> The observed delay includes DNS convergence/caching. It was not a reason to recreate the website resources or disable TLS verification.</p>
+<p><strong>Timing:</strong> 08 Nov 04:39:03 → 08 Nov 05:34:35 UTC; <strong>56m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-7">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N51" data-step="N51"><summary>51 — Run and retire the v17 Assistant software test<span class="time">56m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Fresh v17 settings and a small independent guest were needed without consuming the Windows lab memory budget.</p>
+<p><strong>Decision, action and result:</strong> The software test passed, then its normal retirement removed only the disposable guest and records. Existing v16 settings and the five original guests were preserved; provider authentication transfer was disabled.</p>
+<p><strong>Why the time passed:</strong> The software job was reported at about 46 minutes; the full launch-through-cleanup observation was about 56 minutes. No model inference was demonstrated by this software-only test.</p>
+<p><strong>Timing:</strong> 08 Nov 06:37:23 → 08 Nov 07:33:38 UTC; <strong>56m observed</strong>. Reported software job: about 46 minutes.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-7">Back to this diagram</a></p></details>
+<details class="explanation band2" id="detail-N52" data-step="N52"><summary>52 — Free RAM through an approved source-AAP shutdown<span class="time">Rank 10 · 8h 12m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The full Windows lab required more memory than was free with both AAPs and the core guests running.</p>
+<p><strong>Decision, action and result:</strong> Obtained approval for a temporary source-AAP outage, verified an independent recovery route and shut down only that AAP gracefully. Other core guests stayed running; the resulting capacity was sufficient for the Windows test.</p>
+<p><strong>Why the time passed:</strong> The decision was granted at 12:41; shutdown itself took 39 seconds. The preceding eight-hour observation was a capacity/approval dependency, not a slow shutdown.</p>
+<p><strong>Timing:</strong> 08 Nov 04:36:17 → 08 Nov 12:48:10 UTC; <strong>8h 12m observed</strong>. Reported graceful shutdown: 39 seconds.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-8">Back to this diagram</a></p></details>
+<details class="explanation band1" id="detail-N53" data-step="N53"><summary>53 — Resolve CCNG first-password assumptions without copying an existing login<span class="time">Rank 04 · ≥ 21h 32m · Open at cutoff</span></summary>
+<p><strong>Context / issue:</strong> The manual predeployment password request conflicted with the user’s fresh first-opening setup requirement. Interactive installer behavior and unattended AAP behavior were repeatedly conflated.</p>
+<p><strong>Decision, action and result:</strong> Withdrew the request, preserved existing-password behavior and separated the application feature from this deployment lane. A later claim that setup already handled it removed a blocker, but the actual target still had no authentication. A new first-browser source release was reported near the cutoff, not live verified here.</p>
+<p><strong>Why the time passed:</strong> This is an elapsed unresolved compatibility/decision episode. Repeated status reports and an obsolete input record extended confusion. No reliable numerical coding-versus-wait split is available.</p>
+<p><strong>Timing:</strong> 08 Nov 12:23:51 → 09 Nov 09:55:47 UTC; <strong>≥ 21h 32m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-8">Back to this diagram</a></p></details>
+<details class="explanation band3" id="detail-N54" data-step="N54"><summary>54 — Exercise the v17 Windows lab and its owned cleanup<span class="time">Rank 15 · 5h 44m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Fresh execution still needed the selected AAP CA, corrected clock/licensing order and a retry after one VM identity/release branch failed.</p>
+<p><strong>Decision, action and result:</strong> Fixed the demonstrated prerequisites, preserved successful branches, passed AD and both OS/application checks, then removed all five Windows guests and the Windows-owned interface. A fully clean uninterrupted replay remained unproved.</p>
+<p><strong>Why the time passed:</strong> This roughly six-hour episode includes real installation/updates, targeted fixes and teardown. The reproduced shared-lock defect is detailed separately but is contained here, not counted again as another ranked span.</p>
+<p><strong>Timing:</strong> 08 Nov 12:48:10 → 08 Nov 18:32:04 UTC; <strong>5h 44m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-8">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N55" data-step="N55"><summary>55 — Repair the reproduced shared-release lock defect<span class="time">38m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> Parallel creation touched shared release state. The original failure reason was censored, so its cause could not be established.</p>
+<p><strong>Decision, action and result:</strong> A local reproduction proved immediate lock failure and poor diagnostics. Added bounded waiting and a safe busy error; focused real-lock tests passed and the correction was published.</p>
+<p><strong>Why the time passed:</strong> A reproduced defect was fixed, but it was not proved to be the original hidden exception. This is a sub-episode contained in the Windows run and is not ranked independently.</p>
+<p><strong>Timing:</strong> 08 Nov 16:27:55 → 08 Nov 17:05:55 UTC; <strong>38m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-8">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N56" data-step="N56"><summary>56 — Retire only AAP v16 after the Windows baseline checks<span class="time">1h 04m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The user no longer needed v16, but the existing decommission job would remove its whole versioned environment.</p>
+<p><strong>Decision, action and result:</strong> Waited for Windows baseline checks, preserved the non-AAP guests and used the approved exact AAP-only removal. Corrected an XML-view comparison before deleting only its VM and owned disk.</p>
+<p><strong>Why the time passed:</strong> Dependency on Windows cleanup and exact-scope verification explain the hour. It did not require restarting v16. DNS/proxy/credential records were deliberately left for later full cleanup.</p>
+<p><strong>Timing:</strong> 08 Nov 17:36:39 → 08 Nov 18:40:55 UTC; <strong>1h 04m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-8">Back to this diagram</a></p></details>
+<details class="explanation band2" id="detail-N57" data-step="N57"><summary>57 — Resolve the held MCP artifact-key delivery proposal<span class="time">Rank 07 · 10h 00m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The offline image/RPM approach required giving the installation job another hypervisor SSH key. That delivery choice remained unanswered.</p>
+<p><strong>Decision, action and result:</strong> Other VM and Zabbix jobs continued. The user later rejected copying image/RPM caches and selected builds on the target, removing the old key-delivery question. Offhost artifact backup was still useful recovery evidence.</p>
+<p><strong>Why the time passed:</strong> This roughly ten-hour span is an explicit decision hold on one transport proposal, not ten hours of transferring files. The subsequent target-build implementation is a separate episode.</p>
+<p><strong>Timing:</strong> 08 Nov 18:40:55 → 09 Nov 04:40:28 UTC; <strong>10h 00m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-8">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N58" data-step="N58"><summary>58 — Provision v17 testserver/TRA and configure cloned Zabbix<span class="time">40m · Completed episode</span></summary>
+<p><strong>Context / issue:</strong> The new Zabbix needed the new test guest, instance settings and a usable frontend without inheriting wrong endpoints.</p>
+<p><strong>Decision, action and result:</strong> Normal jobs created testserver and TRA, installed the limited agent and configured the existing Zabbix clone. A negative DNS cache required a bounded retry. Configuration and frontend authentication checks passed.</p>
+<p><strong>Why the time passed:</strong> About 40 minutes covers several dependent jobs. Configuration success did not prove the website had a real monitoring sample; the next test exposed that gap.</p>
+<p><strong>Timing:</strong> 08 Nov 18:42:25 → 08 Nov 19:22:41 UTC; <strong>40m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-8">Back to this diagram</a></p></details>
+<details class="explanation band1" id="detail-N59" data-step="N59"><summary>59 — Repair website monitoring and untangle firewall ownership<span class="time">Rank 05 · ≥ 14h 22m · Open at cutoff</span></summary>
+<p><strong>Context / issue:</strong> A real outage produced no restore job because Zabbix had never obtained a valid website sample. Isolation blocked its required guest-to-hypervisor HTTPS route, and complete-policy validation coupled that rule to AutoDeploy secrets.</p>
+<p><strong>Decision, action and result:</strong> Restored the site and disabled activations. Fixed a health-check override that hid exhausted retries. The user moved Zabbix rules to AIOps and reclaimed the mistaken handoff. The user then rejected custom deployed JSON/ownership helpers: per-instance CaC must drive Ansible additions, changes and removals. A temporary Ansible lock was approved. Native firewall/caller source and isolated-kernel checks passed, but coordinated host rollout and website recovery remained unverified at cutoff.</p>
+<p><strong>Why the time passed:</strong> The elapsed episode includes diagnosis, ownership clarification, handoff/reclaim and a coordinated multi-repository change. Successful syntax/namespace tests are not a live website-recovery result.</p>
+<p><strong>Timing:</strong> 08 Nov 19:33:36 → 09 Nov 09:55:47 UTC; <strong>≥ 14h 22m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds. Git/decision corroboration: 90edda0 implements native firewall CaC; fd22084 records source checks and the still-unapplied rollout boundary.</p><p class="back"><a href="#phase-8">Back to this diagram</a></p></details>
+<details class="explanation band4" id="detail-N60" data-step="N60"><summary>60 — Implement target-side MCP builds and attempt the first real run<span class="time">Rank 18 · 3h 42m · Build path published; live attempt failed before build</span></summary>
+<p><strong>Context / issue:</strong> The selected design changed from copied artifacts to container builds and normal package installation on the target.</p>
+<p><strong>Decision, action and result:</strong> Published the new build path with focused checks, refreshed CaC and ran the normal Linux MCP job. It stopped at package installation before building because the target had no enabled RHEL repositories. Existing encrypted registration inputs were identified before cutoff; a successful build was not yet shown.</p>
+<p><strong>Why the time passed:</strong> The span includes implementation, tests, publication and first live failure. It must not be described as a multi-hour image build: the image build never started.</p>
+<p><strong>Timing:</strong> 09 Nov 04:40:28 → 09 Nov 08:22:25 UTC; <strong>3h 42m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-9">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N61" data-step="N61"><summary>61 — Fix the fresh CCNG workspace/tool assumption exposed by its actual job<span class="time">2h 34m · Source fix published; fresh runtime unverified</span></summary>
+<p><strong>Context / issue:</strong> The first actual CCNG deployment reached the target but stopped because its configured agent workspace was absent; Beads and authentication were absent too.</p>
+<p><strong>Decision, action and result:</strong> The user selected the default app directory, a separate clean agent workspace, fresh native tracker and newest source each deployment. Published missing-tool/workspace initialization changes while preserving existing tracker/auth and production installation.</p>
+<p><strong>Why the time passed:</strong> This was a real first-run prerequisite gap, not another repository-access failure. Passing source/build checks did not prove a fresh deployment; the new prerequisite code still needed its normal target rerun and the mandatory access gate.</p>
+<p><strong>Timing:</strong> 09 Nov 06:14:24 → 09 Nov 08:48:22 UTC; <strong>2h 34m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds. Decision-history corroboration: 6dffea9 records the fresh-workspace choice and target-side MCP status.</p><p class="back"><a href="#phase-9">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N62" data-step="N62"><summary>62 — Capture the external-account token while preserving production CloudCLI<span class="time">2h 07m · Token captured/temporary file removed; integration open</span></summary>
+<p><strong>Context / issue:</strong> A second account had a newer CloudCLI and its own AAP MCP token. Its private home could not be inspected with the available access.</p>
+<p><strong>Decision, action and result:</strong> The user required production’s old version to stay unchanged and selected the newer account’s version for future guests. A supplied protected token file was validated, saved encrypted and removed through an identity-checked privileged job. Exact CloudCLI version capture and complete deployment integration remained unverified.</p>
+<p><strong>Why the time passed:</strong> Access boundaries and protected handoff were real dependencies. Token-file cleanup succeeded before cutoff; that must not be promoted to completed two-account deployment.</p>
+<p><strong>Timing:</strong> 09 Nov 07:45:13 → 09 Nov 09:52:38 UTC; <strong>2h 07m observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-9">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N63" data-step="N63"><summary>63 — Require the nginx password gate before any fresh CCNG deployment<span class="time">decision/context · Decision / preparation open</span></summary>
+<p><strong>Context / issue:</strong> Fresh browser setup must not become reachable before the approved external password gate exists.</p>
+<p><strong>Decision, action and result:</strong> The user made verified htpasswd protection mandatory and authorized reusing the existing hashed entry through encrypted CaC. Preparation was underway; no fresh browser-setup acceptance was established at cutoff.</p>
+<p><strong>Why the time passed:</strong> This late explicit prerequisite is a deployment gate, not a request to invent or copy an application password.</p>
+<p><strong>Timing:</strong> 09 Nov 09:26:27 → 09 Nov 09:55:47 UTC; <strong>decision/context observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-9">Back to this diagram</a></p></details>
+<details class="explanation ordinary" id="detail-N64" data-step="N64"><summary>64 — Keep v18 and the bare-metal reinstall behind acceptance<span class="time">decision/context · Not started</span></summary>
+<p><strong>Context / issue:</strong> The rebuild was conditional on successful v17 functionality, owned cleanup and offhost recovery inputs.</p>
+<p><strong>Decision, action and result:</strong> At cutoff, v17 existed and many staged tests passed, but website recovery/firewall rollout, live MCP builds and fresh CCNG acceptance remained unfinished. No full host teardown, hardware reinstall or v18 deployment was evidenced.</p>
+<p><strong>Why the time passed:</strong> A planned successor milestone is not an executed action and is excluded from duration ranking. Production remains outside the rebuild scope.</p>
+<p><strong>Timing:</strong> 09 Nov 09:55:47 → 09 Nov 09:55:47 UTC; <strong>decision/context observed</strong>. Individual job runtime and active effort are unknown.</p>
+<p class="small"><strong>Evidence:</strong> Visible narrative at the stated bounds.</p><p class="back"><a href="#phase-9">Back to this diagram</a></p></details>
+</div><h2>Evidence and limits</h2><p>The analysis examined 2,602 visible user/assistant narrative records in the frozen window, including repeated status reports and coordinator context. Repeated reports were grouped; they were not counted as new execution. Private reasoning was excluded. Existing decision/Git histories and the earlier pilot supported chronology; tool/job events informed timing only. No AAP lookup was made for this report.</p><p>A result described as reported or published remains that kind of evidence. It is not silently upgraded to deployed, independently verified or fully unattended success. Closed investigations with unproved causes remain unproved. Deferrals such as OpenShift access and the future UBI rebuild are not coded as ongoing failed work. Withdrawn/off-topic UI requests are not new AAP implementation tasks.</p><p>The earlier HTML had doubled digit-regex escapes and a fixed 28-node expectation. This companion derives IDs from the actual graph declarations and detail sections, maps each rendered node to its own explanation, and preserves diagrams if controls fail. It does not need a local server; diagram rendering uses pinned Mermaid 12.3.0 from the internet. Native details remain usable if scripts or that download are unavailable. Browser-layout and click acceptance are separate from structural/script checks.</p>
 <script type="module">
-const diagram = document.getElementById('diagram');
 const status = document.getElementById('diagram-status');
-const allowedIds = new Set(Array.from({ length: 28 }, (_, i) => `N${String(i + 1).padStart(2, '0')}`));
-
-function bindNodeDetails() {
-  let count = 0;
-  for (const node of diagram.querySelectorAll('g.node')) {
-    const id = /^flowchart-(N\d{2})-\d+$/.exec(node.id)?.[1];
-    if (!allowedIds.has(id)) continue;
-    const detail = document.getElementById(`detail-${id}`);
+const figures = Array.from(document.querySelectorAll('[data-flowchart]')).map(element => ({
+  element,
+  expected: new Set(Array.from(element.textContent.matchAll(/^\s*(N\d+)\[/gm), match => match[1]))
+}));
+const details = new Map(Array.from(document.querySelectorAll('details[data-step]'), detail => [detail.dataset.step, detail]));
+function bindControls(figure) {
+  const bound = new Set();
+  for (const node of figure.element.querySelectorAll('g.node')) {
+    const dataId = node.getAttribute('data-id');
+    const id = figure.expected.has(dataId) ? dataId : /^flowchart-(N\d+)-\d+$/.exec(node.id)?.[1];
+    if (!figure.expected.has(id) || bound.has(id)) continue;
+    const detail = details.get(id);
     if (!detail) continue;
+    bound.add(id);
     node.setAttribute('role', 'button');
     node.setAttribute('tabindex', '0');
     node.setAttribute('aria-controls', detail.id);
@@ -623,59 +775,44 @@ function bindNodeDetails() {
     const toggle = () => {
       detail.open = !detail.open;
       sync();
-      if (detail.open) detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (detail.open) detail.scrollIntoView({ block: 'nearest' });
     };
     node.addEventListener('click', toggle);
-    node.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        toggle();
-      }
+    node.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggle(); }
     });
     detail.addEventListener('toggle', sync);
     sync();
-    count += 1;
   }
-  if (count !== allowedIds.size) throw new Error('The diagram did not expose all 28 expected nodes.');
+  return { bound, missing: Array.from(figure.expected).filter(id => !bound.has(id)) };
 }
-
-function showFailure(stage, error) {
-  const reason = String(error?.message || error).replace(/\s+/g, ' ').slice(0, 240);
-  const guidance = stage === 'Mermaid import'
-    ? ' Check CDN access and whether this viewer blocks JavaScript modules, possibly through its Content Security Policy. Download and open the file locally.'
-    : ' The numbered explanation headings below remain usable.';
-  status.textContent = `${stage} failed: ${reason}.${guidance}`;
-  // A control-binding failure must not hide an otherwise valid rendered chart.
-  diagram.hidden = !diagram.querySelector('svg');
-}
-
-async function startDiagram() {
+async function start() {
+  const declared = new Set(figures.flatMap(figure => Array.from(figure.expected)));
+  if (!declared.size || declared.size !== details.size || Array.from(declared).some(id => !details.has(id))) {
+    status.textContent = 'Diagram/detail declarations disagree. The written explanations remain usable.';
+    return;
+  }
+  status.textContent = 'Loading the pinned Mermaid runtime…';
   let mermaid;
-  status.textContent = 'Loading the pinned Mermaid runtime from the CDN…';
-  try {
-    ({ default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs'));
-  } catch (error) {
-    showFailure('Mermaid import', error);
-    return;
+  try { ({ default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@12.3.0/dist/mermaid.esm.min.mjs')); }
+  catch { status.textContent = 'Mermaid could not load. Internet access is needed for diagrams; all written explanations remain usable.'; return; }
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default',
+    themeVariables: { fontSize: '12px' }, flowchart: { htmlLabels: false, nodeSpacing: 14, rankSpacing: 16, padding: 8, curve: 'linear' } });
+  let rendered = 0;
+  const bound = new Set();
+  const warnings = [];
+  for (const figure of figures) {
+    try { await mermaid.run({ nodes: [figure.element] }); rendered += 1; }
+    catch { warnings.push('a diagram could not render'); continue; }
+    try {
+      const result = bindControls(figure);
+      for (const id of result.bound) bound.add(id);
+      if (result.missing.length) warnings.push('missing controls: ' + result.missing.join(', '));
+    } catch { warnings.push('node controls could not bind for one diagram'); }
   }
-  status.textContent = 'Mermaid loaded. Rendering the diagram…';
-  try {
-    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'default', flowchart: { htmlLabels: false } });
-    await mermaid.run({ nodes: [diagram] });
-  } catch (error) {
-    showFailure('Diagram rendering', error);
-    return;
-  }
-  try {
-    bindNodeDetails();
-  } catch (error) {
-    showFailure('Diagram node controls', error);
-    return;
-  }
-  status.textContent = 'Diagram ready. Click a numbered node to toggle its explanation, or use Enter/Space.';
+  status.textContent = `Rendered ${rendered}/${figures.length} diagrams; ${bound.size}/${declared.size} node controls ready.` +
+    (warnings.length ? ' ' + warnings.join('; ') + '. Rendered diagrams stay visible; use the native detail headings below.' : ' Click a numbered node or use Enter/Space.');
 }
-
-await startDiagram();
+await start();
 </script>
-</body>
-</html>
+</body></html>
