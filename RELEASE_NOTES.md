@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.50.3
+
+Document implementation `c56ac82a848f11e67be57026325f3ba3c1533cfc` (0.50.2),
+durable related-VM CaC ownership and successor permission preservation. All
+69 focused tests pass; scoped strict production lint, syntax and whitespace
+checks pass. Independent source review found no significant defect. Publication,
+normal live teardown and final end-to-end acceptance remain pending.
+
 ## 0.50.2
 
 Fix external-controller retirement to reuse verified VM ownership from the

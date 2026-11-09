@@ -1,5 +1,37 @@
 # Design decisions history
 
+## Retire related test VMs from their durable application CaC — 2026-11-09
+
+Implementation `c56ac82a848f11e67be57026325f3ba3c1533cfc` (0.50.2) fixes
+external-controller cleanup when a successor's VM inventory exists only on the
+successor controller. The owner's existing architecture makes per-instance
+AIOps CaC authoritative for its auxiliary VM identities, while the allocation
+registry owns the primary AAP VM, hypervisor and counter. The normal teardown
+already loaded that private CaC for application permissions; it now reuses that
+same capture before related-resource validation and final source comparisons.
+No alternate loader, credential, target API read, inventory copy or handoff
+store was introduced. Present source rows must agree with the durable identities.
+
+Surviving registered primary VMs and same-hypervisor application VM records also
+supply permission-owner identities when their external inventory rows are
+absent. Only the selected instance enters the deletion plan. Runtime settings
+are excluded from projected ownership. Existing source-versus-target, namespace,
+hypervisor, SSH trust, native domain/storage/network checks and production
+exclusions remain in force. Private VM records stay available until successful
+cleanup, allowing a new job to reconstruct ownership after partial completion.
+Missing canonical primary identity with an absent VM remains a refusal; the
+existing registered-primary/missing-VM cleanup remains supported.
+
+Sixty-nine focused local tests pass, including selected-instance cleanup with a
+surviving successor's four records absent externally, encrypted Git recovery
+after partial source deletion, identity conflicts, supplemental interfaces and
+installation access. Scoped strict production lint passed across thirteen
+encountered files; the teardown syntax check passed on local ansible-core
+2.16.19 using the established environment Vault identity. An independent agent
+review found no significant defect and passed seven focused cases. These are
+local implementation checks; normal live teardown and final end-to-end
+acceptance remain the parent task's responsibility and were not run here.
+
 ## Keep Zabbix configuration with its existing VM definition — 2026-11-09
 
 Implementation `bdda318620ae30ebea455376442dc509ec7fb583` (0.50.0) follows
