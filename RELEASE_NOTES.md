@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.50.4
+
+Fix native loading of the existing central bootstrap and AIOps capture during
+permission preparation. Whole-file namespaces previously evaluated unrelated
+installation templates before selecting valid reader or instance fields. Reuse
+the existing global native loader; ownership actions consume its raw registered
+facts. Vault tags, literal values, credential delivery, all prerequisite guards
+and protected route/pin facts remain unchanged.
+
+All 75 directly affected tests pass, including a native regression reproducing
+both old namespace failures, corrected loading, literal credentials and an unused
+Vault value with an unattached key. Scoped strict production lint, syntax and
+actual accepted-CaC in-memory guard/collision checks pass.
+Normal live check-mode preview and end-to-end teardown remain pending.
+
 ## 0.50.3
 
 Document implementation `c56ac82a848f11e67be57026325f3ba3c1533cfc` (0.50.2),

@@ -122,7 +122,7 @@ class ActionModule(ActionBase):
                     shared = AnsibleLoader(self._loader._vault.decrypt(
                         git("show", "FETCH_HEAD:cac/host_inventory.yml").encode())).get_single_data()
                     proof = keys.source_related_resources(source, shared, configuration["aap_vm_allocation"], route["vm_name"],
-                        (task_vars or {}).get("aap_isolation_app_capture"))
+                        (task_vars or {}).get("aap_isolation_app_capture", {}).get("ansible_facts"))
                     proof.update(source_job_id=str((task_vars or {}).get("awx_job_id")),
                                  source_project_revision=(task_vars or {}).get("awx_project_revision"))
                     ownership = dict(ownership, **proof["related_resources"])

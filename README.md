@@ -212,8 +212,12 @@ remain at the caller's lifecycle boundary.
 
 Application grants are read from their own private AIOps CaC through the existing
 central bootstrap reader/Vault fields. No extra credential is attached. The
-namespaced native loader preserves existing `!unsafe` and embedded `!vault`
-values without using unrelated secret leaves. Whole-file decryption uses the
+native tag-aware loader preserves existing `!unsafe` and embedded `!vault`
+values without using unrelated secret leaves. Both files use the existing global
+`include_vars` pattern, so YAML reads only the required credential or instance
+branches. Ownership actions consume the AIOps loader's raw registered facts.
+Wrapping a whole file in a namespace previously evaluated unrelated `pah_base`
+or `aiops_eda_organization_name` references before selecting those branches. Whole-file decryption uses the
 bootstrap key only through protected stdin; its 0600 temporary variables file is
 outside the Git checkout and removed by normal `always` cleanup. Source or key
 failure stops the operation rather than becoming an empty permission list.

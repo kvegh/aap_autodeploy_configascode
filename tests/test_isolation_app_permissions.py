@@ -102,6 +102,104 @@ class ApplicationPolicyTests(unittest.TestCase):
                 self.assertEqual(observed['GIT_CONFIG_VALUE_1'], 'false')
                 self.assertEqual(observed['GIT_CONFIG_VALUE_2'], 'true')
 
+    def test_bootstrap_native_loading_does_not_template_unrelated_base_configuration(self):
+        tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-permissions.yml').read_text())
+        load = next(task for task in tasks if task['name'].startswith('Load the existing central bootstrap'))
+        guard = next(task for task in tasks if task['name'].startswith('Require the already chosen AIOps'))
+        app_load = next(task for task in tasks if task['name'].startswith('Load AIOps variables'))
+        app_guard = next(task for task in tasks if task['name'] == "Require the selected project's explicit instance namespace")
+        self.assertNotIn('name', load['ansible.builtin.include_vars'])
+        self.assertNotIn('name', app_load['ansible.builtin.include_vars'])
+        self.assertEqual(app_load['register'], 'aap_isolation_app_capture')
+        with tempfile.TemporaryDirectory(prefix='bootstrap-native-scope-') as temporary:
+            root = Path(temporary)
+            bootstrap = {
+                'pah_base': 'https://hub.example.invalid',
+                'unrelated_pah_remote': '{{ pah_base }}/api/',
+                'unrelated_runtime': '{{ unavailable_runtime_setting }}',
+                'cac_bootstrap_git_credentials': {'aiops': {
+                    'repository_url': 'https://git.example.invalid/fixture/aiops-secrets.git',
+                    'token': 'synthetic-bootstrap-reader-canary'}},
+                'cac_bootstrap_vault_credentials': {'aiops': {
+                    'vault_id': 'cac', 'vault_password': 'synthetic-bootstrap-password-canary'}}}
+            plain = yaml.safe_dump(bootstrap).replace(
+                'token: synthetic-bootstrap-reader-canary',
+                'token: !unsafe "synthetic-bootstrap-reader-canary {{ must_remain_literal }}"')
+            plain += 'literal_marker: !unsafe "{{ must_remain_literal }}"\n'
+            unused = VaultLib().encrypt(b'synthetic-unused-bootstrap-secret',
+                                        VaultSecret(b'synthetic-unattached-key')).decode()
+            plain += 'unused_secret: !vault |\n' + ''.join('  ' + line + '\n' for line in unused.splitlines())
+            key = root / 'vault-password'
+            key.write_bytes(b'synthetic-bootstrap-key')
+            key.chmod(0o600)
+            encrypted = root / 'central/cac/base_CaC_vault.yml'
+            encrypted.parent.mkdir(parents=True)
+            encrypted.write_bytes(VaultLib().encrypt(plain, VaultSecret(key.read_bytes()), vault_id='cac'))
+            app_plain = yaml.safe_dump({
+                'cac_import_metadata': {'project_id': 'aiops-selfhealing-demo'},
+                'aiops_instances': {'fixture-17': owner(17)},
+                'aiops_eda_organization_name': 'fixture-organization',
+                'unused_organization': '{{ aiops_eda_organization_name }}',
+                'unused_app_runtime': '{{ unavailable_app_runtime }}'})
+            app_plain += 'app_literal: !unsafe "{{ preserve_app_literal }}"\n'
+            app_plain += 'unused_secret: !vault |\n' + ''.join('  ' + line + '\n' for line in unused.splitlines())
+            app_file = root / 'aiops-variables.yml'
+            app_file.write_text(app_plain)
+            app_file.chmod(0o600)
+            for case in ('old_base_namespace', 'old_app_namespace', 'global_branches'):
+                selected_load, selected_guard = deepcopy(load), deepcopy(guard)
+                selected_app_load, selected_app_guard = deepcopy(app_load), deepcopy(app_guard)
+                if case == 'old_base_namespace':
+                    selected_load['ansible.builtin.include_vars']['name'] = 'aap_isolation_bootstrap'
+                    selected_guard['ansible.builtin.assert']['that'] = [
+                        expression.replace('cac_bootstrap_', 'aap_isolation_bootstrap.cac_bootstrap_')
+                        for expression in selected_guard['ansible.builtin.assert']['that']]
+                if case == 'old_app_namespace':
+                    selected_app_load['ansible.builtin.include_vars']['name'] = 'aap_isolation_app_capture'
+                    selected_app_load.pop('register')
+                    selected_app_guard['ansible.builtin.assert']['that'] = [
+                        expression.replace('cac_import_metadata', 'aap_isolation_app_capture.cac_import_metadata')
+                                  .replace('aiops_instances', 'aap_isolation_app_capture.aiops_instances')
+                        for expression in selected_app_guard['ansible.builtin.assert']['that']]
+                checks = [{'name': 'Preserve literal tagged values without unrelated runtime evaluation',
+                           'ansible.builtin.assert': {'that': [
+                               'literal_marker == fixture_expected_literal',
+                               "literal_marker | type_debug == 'AnsibleUnsafeText'",
+                               "cac_bootstrap_git_credentials.aiops.token == ('synthetic-bootstrap-reader-canary ' ~ literal_marker)",
+                               "cac_bootstrap_git_credentials.aiops.token | type_debug == 'AnsibleUnsafeText'",
+                               "app_literal | type_debug == 'AnsibleUnsafeText'",
+                               'aap_hypervisor_pin == fixture_pin', 'aap_instance_key == fixture_instance']},
+                           'no_log': True}]
+                play = [{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
+                    'vars': {'aap_isolation_source_workspace': {'path': str(root)},
+                             'fixture_expected_literal': yaml.safe_load('"{{ must_remain_literal }}"'),
+                             'fixture_pin': {'machine_id': '1' * 32},
+                             'aap_hypervisor_pin': {'machine_id': '1' * 32},
+                             'aap_instance_key': 'fixture-instance', 'fixture_instance': 'fixture-instance'},
+                    'tasks': [selected_load, selected_guard, selected_app_load, selected_app_guard]
+                             + (checks if case == 'global_branches' else [])}]
+                # The comparison value itself must remain literal as well.
+                path = root / 'play.yml'
+                text = yaml.safe_dump(play, sort_keys=False)
+                text = text.replace("fixture_expected_literal: '{{ must_remain_literal }}'",
+                                    'fixture_expected_literal: !unsafe "{{ must_remain_literal }}"')
+                path.write_text(text)
+                config = root / 'ansible.cfg'
+                config.write_text('[defaults]\n')
+                env = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_LOCAL_TEMP=str(root / 'local'),
+                           ANSIBLE_REMOTE_TEMP=str(root / 'remote'))
+                result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,',
+                    str(path), '--vault-id', 'cac@' + str(key)], env=env, text=True, capture_output=True, timeout=45)
+                self.assertNotIn('synthetic-bootstrap-reader-canary', result.stdout + result.stderr)
+                self.assertNotIn('synthetic-bootstrap-password-canary', result.stdout + result.stderr)
+                self.assertNotIn('synthetic-unused-bootstrap-secret', result.stdout + result.stderr)
+                if case != 'global_branches':
+                    self.assertNotEqual(result.returncode, 0)
+                    failure = selected_guard if case == 'old_base_namespace' else selected_app_guard
+                    self.assertIn(failure['name'], result.stdout)
+                else:
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def run_native(self, entries, missing_migration=False, wrong_key=False, wrong_uuid=False, strict=False):
         with tempfile.TemporaryDirectory(prefix='app-policy-fixture-') as temporary, \
              tempfile.TemporaryDirectory(prefix='aap-hactar-source-') as workspace:
@@ -135,6 +233,7 @@ class ApplicationPolicyTests(unittest.TestCase):
             inner = vault.encrypt(b'synthetic-unused-secret', VaultSecret(unrelated_key)).decode()
             plaintext = yaml.safe_dump({'cac_import_metadata': {'project_id': 'aiops-selfhealing-demo'},
                 'aiops_instances': entries}, sort_keys=False)
+            plaintext += 'aiops_eda_organization_name: fixture-organization\nunused_organization: "{{ aiops_eda_organization_name }}"\nunused_app_runtime: "{{ unavailable_app_runtime }}"\n'
             plaintext += 'unused_literal: !unsafe "{{ must_remain_literal }}"\nunused_secret: !vault |\n'
             plaintext += ''.join('  ' + line + '\n' for line in inner.splitlines())
             (app / 'vaults/cac/aiops-selfhealing-demo-cac-vault.yml').write_bytes(

@@ -530,7 +530,7 @@ class InstanceKeyTests(unittest.TestCase):
                 plugin._loader = loader
                 return plugin.run(task_vars={"awx_job_id": job_id, "awx_job_template_id": 456, "awx_project_revision": "a" * 40,
                     "aap_registered_target": {"related_resource_proof": preflight_proof},
-                    "aap_isolation_app_capture": application_capture(context)})
+                    "aap_isolation_app_capture": {"ansible_facts": application_capture(context)}})
 
             with mock.patch.object(ActionBase, "run", return_value={}), mock.patch.object(module.ActionModule, "_project_root", return_value=project), \
                  mock.patch.object(module, "SourceClient", return_value=client), \
@@ -544,7 +544,7 @@ class InstanceKeyTests(unittest.TestCase):
                         "read_related_resources": related, "allow_retired": related})
                     plugin._loader = loader
                     return plugin.run(task_vars={"awx_job_id": job_id, "awx_job_template_id": 456, "awx_project_revision": "a" * 40,
-                        "aap_isolation_app_capture": application_capture(context)})
+                        "aap_isolation_app_capture": {"ansible_facts": application_capture(context)}})
 
                 with mock.patch.object(reader, "__file__", str(project / "action_plugins/aap_read_instance.py")), \
                      mock.patch.object(reader, "source_keys", side_effect=AssertionError("Normal reads must not load source API access")):

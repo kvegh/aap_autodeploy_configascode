@@ -49,8 +49,9 @@ of ambiguous named reservations.
 The initial selection reads only the primary registry route. During the existing
 protected permission preflight, native preparation loads AIOps CaC using its
 already configured dedicated reader and Vault identity. The same related-resource
-reader then consumes that namespaced capture and rechecks the unchanged registry
-route. It does not contact the selected AAP or create inventory copies.
+reader then consumes the native loader's raw registered facts and rechecks the
+unchanged registry route. YAML selects the globally loaded credential and instance
+branches directly, avoiding eager evaluation of unrelated installation settings. It does not contact the selected AAP or create inventory copies.
 
 The selected instance's `zabbix`, `testserver1` and `tra` definitions supply
 verified `vm_name`, `address`, `uuid`, `disk`, `mac`, `network`, `bridge`,
