@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-118 tasks: 28 outstanding; 90 closed.
+122 tasks: 29 outstanding; 93 closed.
 
 ## Outstanding tasks
 
@@ -25,13 +25,14 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
 | bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | in_progress | P1 | feature | bead-wd-72f.31.2 |
-| bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | blocked | P1 | task | bead-wd-72f.31.2 |
+| bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | in_progress | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31, bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | in_progress | P1 | bug | bead-wd-72f.31.6 |
+| bead-wd-72f.31.6.4.4 | Wire native firewall inputs into use-case CaC jobs | in_progress | P1 | task | bead-wd-72f.31.6.4 |
+| bead-wd-72f.31.6.4.5 | Choose when fresh Zabbix VM details enter AIOps CaC | blocked | P1 | decision | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6.5 | Build MCP containers on the target during deployment | in_progress | P1 | feature | bead-wd-72f.31.6 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
-| bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
@@ -98,11 +99,14 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.6.3 | Include the selected AAP issuer in Windows CaC trust | closed | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.6.4.1 | Choose how Hactar retains applied application firewall permissions | closed | P1 | decision | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6.4.2 | Choose the Ansible firewall transaction lock | closed | P1 | decision | bead-wd-72f.31.6.4 |
+| bead-wd-72f.31.6.4.3 | Move application firewall grants into per-instance CaC | closed | P1 | task | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.8 | Prepare successor Assistant test settings without replacing predecessor data | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.9 | Run successor Assistant software test and owned retirement | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.33.1 | Add Claude installation with private Linux and Zabbix MCP setup | closed | P1 | feature | bead-wd-72f.33 |
 | bead-wd-72f.34.1 | Inventory JSON and custom state deployed on managed servers | closed | P1 | task | bead-wd-72f.34 |
+| bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.36 | Map seven days of project decisions, actions and delays | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.4 | Verify and correct disabled EDA activation semantics before importer migration | closed | P1 | bug | bead-wd-72f |
 | bead-wd-72f.5 | Implement project-ID-based generic CaC deployment | closed | P1 | feature | bead-wd-72f |
 | bead-wd-72f.5.1 | Rename all five CaC captures and migrate repository references | closed | P1 | task | bead-wd-72f.5 |

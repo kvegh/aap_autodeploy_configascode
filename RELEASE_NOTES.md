@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.49.8
+
+Document the current Beads-derived task overview and encrypted recovery
+checkpoint after source publication. Both process reports are complete, while
+firewall source-authentication delivery is back in progress after the normal
+setup job could not fetch its private configuration source. The fresh-instance
+Zabbix ownership-publication decision is blocked. Native firewall rollout,
+MCP builds, fresh CCNG acceptance and the conditional host rebuild retain their
+actual unfinished states. The shared encrypted checkpoint preserves 181 records,
+all 180 prior IDs and all 258 comments; the public AutoDeploy overview contains
+122 tasks, with 29 outstanding and 93 closed.
+
 ## 0.49.7
 
 Record seven-day report implementation

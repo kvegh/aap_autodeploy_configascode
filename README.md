@@ -269,6 +269,13 @@ explain recovery without the current tracker. Lasting decisions and implementati
 commits remain in `design_decisions_history.md`; older run evidence belongs there
 or in the protected task records, rather than the README's opening instructions.
 
+The current checkpoint preserves 181 complete selected recovery records and the
+122-task AutoDeploy overview. Published native firewall source and private input
+preparation remain separate from successful source retrieval and host application:
+authentication delivery is in progress after a normal setup fetch failed.
+The fresh-instance Zabbix ownership-publication decision is blocked; its saved
+record must not be assumed to appear automatically.
+
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
 conversation association and original parent so the existing export includes
 them. Moving a task preserves its actual state; an unanswered credential-source
