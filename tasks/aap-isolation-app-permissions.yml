@@ -224,15 +224,22 @@
     aap_isolation_app_clients: []
   no_log: true
 
+- name: Refuse the former parallel firewall section before composing any permissions
+  ansible.builtin.assert:
+    that: "'firewall' not in aap_isolation_app_capture.aiops_instances[item]"
+    quiet: true
+    fail_msg: Migrate firewall configuration into its existing Zabbix VM section before applying policy.
+  loop: '{{ aap_isolation_app_capture.aiops_instances.keys() | list }}'
+  no_log: true
+
 - name: Require explicit migrated firewall data for every declared Zabbix owner
   ansible.builtin.assert:
     that:
       - aap_isolation_app_capture.aiops_instances[item].zabbix is mapping
-      - aap_isolation_app_capture.aiops_instances[item].zabbix.instance_name == item
-      - aap_isolation_app_capture.aiops_instances[item].firewall is mapping
-      - aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients is sequence
-      - aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients is not string
-      - aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients | length <= 1
+      - aap_isolation_app_capture.aiops_instances[item].zabbix.configuration.firewall is mapping
+      - aap_isolation_app_capture.aiops_instances[item].zabbix.configuration.firewall.guest_host_clients is sequence
+      - aap_isolation_app_capture.aiops_instances[item].zabbix.configuration.firewall.guest_host_clients is not string
+      - aap_isolation_app_capture.aiops_instances[item].zabbix.configuration.firewall.guest_host_clients | length <= 1
     quiet: true
   loop: '{{ aap_isolation_app_capture.aiops_instances.keys() | list }}'
   when: aap_isolation_app_capture.aiops_instances[item].zabbix | default(none) is not none
@@ -241,22 +248,34 @@
 - name: Refuse grants without their existing guest ownership record
   ansible.builtin.assert:
     that: >-
-      (aap_isolation_app_capture.aiops_instances[item].firewall | default({})).guest_host_clients | default([]) | length == 0
+      (aap_isolation_app_capture.aiops_instances[item].zabbix.configuration.firewall | default({})).guest_host_clients | default([]) | length == 0
     quiet: true
   loop: '{{ aap_isolation_app_capture.aiops_instances.keys() | list }}'
   when: aap_isolation_app_capture.aiops_instances[item].zabbix | default(none) is none
+  no_log: true
+
+- name: Refuse declared permissions before the VM has verified ownership
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_app_capture.aiops_instances[item].zabbix.verified | default(false) is sameas true
+      - aap_isolation_app_capture.aiops_instances[item].zabbix.instance_name == item
+    quiet: true
+  loop: '{{ aap_isolation_app_capture.aiops_instances.keys() | list }}'
+  when: >-
+    (aap_isolation_app_capture.aiops_instances[item].zabbix.configuration.firewall | default({})).guest_host_clients | default([]) | length > 0
   no_log: true
 
 - name: Select only declared owners on the actual pinned hypervisor
   ansible.builtin.set_fact:
     aap_isolation_app_owners: >-
       {{ aap_isolation_app_owners + [{'guest': aap_isolation_app_capture.aiops_instances[item].zabbix,
-           'clients': aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients}] }}
+           'clients': aap_isolation_app_capture.aiops_instances[item].zabbix.configuration.firewall.guest_host_clients}] }}
   loop: '{{ aap_isolation_app_capture.aiops_instances.keys() | list }}'
   when:
     - aap_isolation_app_capture.aiops_instances[item].zabbix | default(none) is not none
+    - aap_isolation_app_capture.aiops_instances[item].zabbix.verified | default(false) | bool
     - aap_isolation_app_capture.aiops_instances[item].zabbix.hypervisor_machine_id == aap_isolation_machine_id.stdout | trim
-    - aap_isolation_app_capture.aiops_instances[item].firewall.guest_host_clients | length > 0
+    - aap_isolation_app_capture.aiops_instances[item].zabbix.configuration.firewall.guest_host_clients | length > 0
   no_log: true
 
 - name: Verify each selected owner against actual native resources before granting access

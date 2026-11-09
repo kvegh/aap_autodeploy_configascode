@@ -25,7 +25,8 @@ def owner(number, machine='1' * 32):
              'hypervisor_machine_id': machine, 'verified': True}
     row = {'bridge': guest['bridge'], 'ipv4': guest['address'], 'mac': guest['mac'],
            'destinations': ['192.168.70.1'], 'ports': [443]}
-    return {'zabbix': guest, 'firewall': {'guest_host_clients': [row]}}
+    guest['configuration'] = {'firewall': {'guest_host_clients': [row]}}
+    return {'zabbix': guest}
 
 
 class ApplicationPolicyTests(unittest.TestCase):
@@ -130,7 +131,7 @@ class ApplicationPolicyTests(unittest.TestCase):
                 VaultSecret(central_key), vault_id='cac'))
             entries = deepcopy(entries)
             if missing_migration:
-                next(iter(entries.values())).pop('firewall')
+                next(iter(entries.values()))['zabbix']['configuration'].pop('firewall')
             inner = vault.encrypt(b'synthetic-unused-secret', VaultSecret(unrelated_key)).decode()
             plaintext = yaml.safe_dump({'cac_import_metadata': {'project_id': 'aiops-selfhealing-demo'},
                 'aiops_instances': entries}, sort_keys=False)
@@ -146,7 +147,8 @@ class ApplicationPolicyTests(unittest.TestCase):
                                    capture_output=True, text=True, timeout=15)
             trace = root / 'native-probes'
             virsh = root / 'virsh'
-            records = {row['zabbix']['vm_name']: row['zabbix'] for row in entries.values() if row.get('zabbix')}
+            records = {row['zabbix']['vm_name']: row['zabbix'] for row in entries.values()
+                       if row.get('zabbix', {}).get('verified') is True}
             virsh.write_text('#!/usr/bin/python3.12\nimport json,pathlib,sys\n'
                 'records=' + repr(records) + '\n'
                 'with pathlib.Path(' + repr(str(trace)) + ').open("a") as f:f.write(sys.argv[3]+"\\n")\n'
@@ -188,7 +190,7 @@ class ApplicationPolicyTests(unittest.TestCase):
             expected = []
             for value in entries.values():
                 if value.get('zabbix', {}).get('hypervisor_machine_id') == '1' * 32:
-                    expected.extend(value.get('firewall', {}).get('guest_host_clients', []))
+                    expected.extend(value.get('zabbix', {}).get('configuration', {}).get('firewall', {}).get('guest_host_clients', []))
             assertions = [
                 'aap_isolation_app_clients == fixture_expected',
                 'aap_isolation_effective_desired_policy.guest_host_clients == fixture_expected',
@@ -230,20 +232,21 @@ class ApplicationPolicyTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                 policy = json.loads(desired_file.read_text())
                 self.assertEqual(policy['guest_host_clients'], expected)
-                if all(not row.get('firewall', {}).get('guest_host_clients') or
+                if all(not row.get('zabbix', {}).get('configuration', {}).get('firewall', {}).get('guest_host_clients') or
                        row.get('zabbix', {}).get('hypervisor_machine_id') != '1' * 32 for row in entries.values()):
                     self.assertFalse(trace.exists())
                 return policy
 
     def test_tagged_source_selects_actual_hypervisor_and_removes_only_deleted_app_permission(self):
-        entries = {'fixture-17': owner(17), 'fixture-18': owner(18), 'remote-19': owner(19, '9' * 32), 'not-created': {}}
+        entries = {'fixture-17': owner(17), 'fixture-18': owner(18), 'remote-19': owner(19, '9' * 32), 'not-created': {},
+                   'planned': {'zabbix': {'configuration': {'firewall': {'guest_host_clients': []}}}}}
         entries['remote-19']['zabbix']['instance_name'] = 'remote-19'
         entries['fixture-18']['zabbix']['instance_number'] = '18'
         first = self.run_native(entries)
-        entries['fixture-17']['firewall']['guest_host_clients'] = []
+        entries['fixture-17']['zabbix']['configuration']['firewall']['guest_host_clients'] = []
         second = self.run_native(entries)
         self.assertEqual(len(first['guest_host_clients']), 2)
-        self.assertEqual(second['guest_host_clients'], entries['fixture-18']['firewall']['guest_host_clients'])
+        self.assertEqual(second['guest_host_clients'], entries['fixture-18']['zabbix']['configuration']['firewall']['guest_host_clients'])
 
     def test_missing_migration_and_failed_decryption_never_become_empty_permissions(self):
         entries = {'fixture-17': owner(17)}

@@ -219,7 +219,7 @@ outside the Git checkout and removed by normal `always` cleanup. Source or key
 failure stops the operation rather than becoming an empty permission list.
 
 Each declared Zabbix record must have explicit
-`aiops_instances[instance].firewall.guest_host_clients`, including an empty list
+`aiops_instances[instance].zabbix.configuration.firewall.guest_host_clients`, including an empty list
 when access is removed. A never-created/retired instance without Zabbix has no
 grant. Only records on the actual pinned hypervisor contribute, after native
 UUID, current/persistent disk and MAC/network, bridge and static-address checks.
@@ -227,6 +227,12 @@ Base publication stays base-only: native old/new/rollback candidates add current
 application CaC in job memory. Removing one app entry therefore removes it from
 the effective nft policy while other declared instances survive. No application
 grant is copied into AutoDeploy's canonical captures.
+
+Fresh Zabbix deployment publishes its authenticated VM row in the existing
+native source inventory, then invokes the existing AIOps importer. That importer
+keeps the VM's firewall and importer settings inside its own `configuration`
+mapping, seals the existing Vault files and renders the updated consumer inputs.
+See [native monitoring record publication](docs/aiops-instance-preparation.md#native-monitoring-record-publication).
 
 Decommission keeps the selected AIOps CaC owner/tuples until exact native rich
 rules are disabled in runtime and permanent configuration. Its explicit native

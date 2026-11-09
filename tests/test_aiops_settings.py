@@ -18,6 +18,7 @@ from ansible.parsing.vault import VaultLib, VaultSecret
 from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
 from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
+from ansible.template import Templar
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +67,7 @@ def zabbix_guest(context):
     for field in ("vcpus", "memory_mb", "disk_gb", "source_image_sha256", "packages_updated"):
         resource.pop(field)
     resource.update(schema_version=1, instance_name=context["instance_name"], instance_number=context["instance_number"],
+        gateway="192.168.70.1",
         source_sha256="c" * 64, guest_host_keys=deepcopy(resource["host_keys"]), ip=resource["address"],
         public_hostname=context["zabbix_fqdn"], certificate=context["zabbix_fqdn"],
         api_url="http://" + resource["address"] + "/api_jsonrpc.php",
@@ -87,6 +89,13 @@ class ReadOnlyTarget:
             "eda_credential": {"name": "Selected Basic", "inputs": {"username": "stream-user", "password": "$encrypted$"}}}
         self.kind = {"id": 1, "kind": "ssh", "managed": True}
         self.credential = {"id": 4, "name": "Base guest Machine", "credential_type": 1}
+        native = fixture(context["instance_number"])[3]
+        self.importer = {"id": 101, "inventory": 102, "playbook": "deploy-cac-project.yml",
+                         "extra_vars": {"aap_cac_project_id": "aiops-selfhealing-demo"}}
+        self.source_hosts = [{"id": 103, "inventory": 102, "name": "aap27-v%02d" % context["instance_number"],
+                              "variables": native}]
+        self.source_groups = [{"id": 104, "inventory": 102,
+                               "variables": {"hypervisor_host": context["hypervisor_name"]}}]
 
     def rows(self, path):
         self.calls.append(("GET", path))
@@ -98,8 +107,14 @@ class ReadOnlyTarget:
         if parsed.path.endswith("/projects/"):
             return [{"id": 2, "name": "Self Healing"}]
         if parsed.path.endswith("/job_templates/"):
+            if query.get("name") == ["Deploy AIOps Selfhealing Demo CaC"]:
+                return [deepcopy(self.importer)]
             assert query == {"name": ["Simulate Website Outage"], "project": ["2"]}
             return [deepcopy(self.template)]
+        if parsed.path.endswith("/hosts/"):
+            return deepcopy(self.source_hosts)
+        if parsed.path.endswith("/groups/"):
+            return deepcopy(self.source_groups)
         if parsed.path.endswith("/event-streams/"):
             return [deepcopy(self.stream)]
         raise AssertionError(path)
@@ -123,10 +138,78 @@ def resources(password):
 
 
 class InstancePreparationTests(unittest.TestCase):
-    def prepare(self, capture=None, runtime=None, context=None, source_hosts=None):
+    def prepare(self, capture=None, runtime=None, context=None, source_hosts=None, source_bindings=None):
         default, old, old_runtime, _, _ = fixture()
         return settings.prepare_documents(capture or old, runtime or old_runtime, context or default,
-            "Base guest Machine", source_hosts, password_factory=lambda: "new-synthetic-password-" + "x" * 48)
+            "Base guest Machine", source_hosts, password_factory=lambda: "new-synthetic-password-" + "x" * 48,
+            source_bindings=source_bindings)
+
+    def test_fresh_vm_configuration_is_nested_and_uses_the_existing_native_importer(self):
+        context, capture, runtime, _, _ = fixture()
+        native = ReadOnlyTarget(context)
+        bindings = {"importer": native.importer, "hosts": native.source_hosts, "groups": native.source_groups}
+        first, protected = self.prepare(capture, runtime, source_bindings=bindings)
+        vm = first['aiops_instances'][context['instance_name']]['zabbix']
+        self.assertEqual(set(vm), {'configuration'})
+        self.assertEqual(vm['configuration']['cac_import']['aap_instance_key'], 'aap27-v07')
+        self.assertEqual(vm['configuration']['cac_import']['job_template_id'], native.importer['id'])
+        self.assertEqual(vm['configuration']['firewall']['guest_host_clients'], [])
+        self.assertNotIn('firewall', first['aiops_instances'][context['instance_name']])
+        first['aiops_zabbix_source_image'] = {'sha256': 'c' * 64}
+        source = zabbix_guest(context)
+        second, protected = self.prepare(first, protected, source_hosts={'zabbix-v07': source}, source_bindings=bindings)
+        vm = second['aiops_instances'][context['instance_name']]['zabbix']
+        self.assertEqual(vm['uuid'], source['vm_resource']['uuid'])
+        grant = vm['configuration']['firewall']['guest_host_clients'][0]
+        self.assertEqual(grant, {'bridge': 'vmbr0', 'ipv4': source['ansible_host'],
+            'mac': source['vm_resource']['mac'], 'destinations': [source['vm_resource']['gateway']], 'ports': [443]})
+        vm['configuration']['firewall']['guest_host_clients'] = []
+        third, _ = self.prepare(second, protected, source_hosts={'zabbix-v07': source}, source_bindings=bindings)
+        self.assertEqual(third['aiops_instances'][context['instance_name']]['zabbix']['configuration']['firewall']['guest_host_clients'], [])
+
+    def test_migration_keeps_one_vm_configuration_and_preserves_other_data(self):
+        context, capture, runtime, _, _ = fixture()
+        source = zabbix_guest(context)['vm_resource']
+        capture['aiops_instances'][context['instance_name']] = {'event_stream_password': wrap_var('x' * 64),
+            'guest_machine_credential_name': 'Base guest Machine', 'zabbix': source,
+            'firewall': {'guest_host_clients': []}, 'other': wrap_var('{{ preserved_literal }}')}
+        after, _ = self.prepare(capture, runtime)
+        row = after['aiops_instances'][context['instance_name']]
+        self.assertNotIn('firewall', row)
+        self.assertEqual(row['zabbix']['configuration']['firewall'], {'guest_host_clients': []})
+        self.assertEqual(row['other'], capture['aiops_instances'][context['instance_name']]['other'])
+        self.assertIsInstance(row['other'], AnsibleUnsafeText)
+        self.assertNotIn('configuration', capture['aiops_instances'][context['instance_name']]['zabbix'])
+
+    def test_foreign_importer_alias_and_missing_fresh_gateway_are_refused(self):
+        context, capture, runtime, _, _ = fixture()
+        native = ReadOnlyTarget(context)
+        bindings = {'importer': native.importer, 'hosts': native.source_hosts, 'groups': native.source_groups}
+        invalid = deepcopy(bindings)
+        invalid['hosts'][0]['variables']['ansible_fqdn'] = 'foreign.example.invalid'
+        with self.assertRaises(Exception): self.prepare(source_bindings=invalid)
+        capture['aiops_zabbix_source_image'] = {'sha256': 'c' * 64}
+        source = zabbix_guest(context)
+        source['vm_resource'].pop('gateway')
+        with self.assertRaises(Exception): self.prepare(capture, runtime, source_hosts={'zabbix-v07': source}, source_bindings=bindings)
+
+    def test_planned_vm_projection_renders_without_fabricating_native_fields(self):
+        context, capture, runtime, instance, hypervisor = fixture()
+        native = ReadOnlyTarget(context)
+        bindings = {'importer': native.importer, 'hosts': native.source_hosts, 'groups': native.source_groups}
+        expression = "{{ hostvars[hostvars[aap_instance_key].hypervisor_host].isolation_policy | combine({'guest_host_clients': (aiops_instances.values() | selectattr('zabbix', 'defined') | selectattr('zabbix.hypervisor_machine_id', 'equalto', hostvars[hostvars[aap_instance_key].hypervisor_host].machine_id) | map(attribute='firewall.guest_host_clients') | flatten) | unique | list}) }}"
+        capture['controller_hosts_aiops_demo'] = [{'variables': {'demo_zabbix_deployment': {
+            'isolation_policy': expression, 'firewall': {'guest': 'old projection'}}}}]
+        planned, _ = self.prepare(capture, runtime, source_bindings=bindings)
+        variables = {'aap_instance_key': 'aap27-v07', 'aiops_instances': planned['aiops_instances'],
+                     'hostvars': {'aap27-v07': instance, 'recovery-host': hypervisor}}
+        rendered = Templar(loader=DataLoader(), variables=variables).template(
+            planned['controller_hosts_aiops_demo'][0]['variables']['demo_zabbix_deployment'])
+        self.assertEqual(rendered['firewall']['guest'], {})
+        self.assertEqual(rendered['isolation_policy']['guest_host_clients'], [])
+        self.assertEqual(rendered['cac_import']['job_template_id'], native.importer['id'])
+        self.assertIn("selectattr('zabbix.hypervisor_machine_id', 'defined')",
+                      planned['controller_hosts_aiops_demo'][0]['variables']['demo_zabbix_deployment']['isolation_policy'])
 
     def test_names_come_from_selected_allocation_not_inventory_alias(self):
         context, _, _, instance, hypervisor = fixture()
@@ -332,7 +415,8 @@ class InstancePreparationTests(unittest.TestCase):
         source = zabbix_guest(context)
         source["aap_instance_number"] = "7"
         after, _ = self.prepare(capture, runtime, source_hosts={"zabbix-v07": source})
-        self.assertEqual(after["aiops_instances"][context["instance_name"]]["zabbix"], source["vm_resource"])
+        prepared = after["aiops_instances"][context["instance_name"]]["zabbix"]
+        self.assertEqual({key: value for key, value in prepared.items() if key != "configuration"}, source["vm_resource"])
         self.assertNotIn("source_image_sha256", after["aiops_instances"][context["instance_name"]]["zabbix"])
         for field, bad in [("schema_version", True), ("source_sha256", "d" * 64),
                            ("api_url", "http://192.168.70.99/api_jsonrpc.php"), ("public_hostname", "foreign.example.invalid"),
@@ -502,7 +586,8 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.assertTrue(result["prepared"])
         capture, runtime, cipher, runtime_cipher = self.remote_pair()
         selected = capture["aiops_instances"][self.context["instance_name"]]
-        self.assertEqual(set(selected), {"guest_machine_credential_name", "event_stream_password", "testserver_monitoring_enabled"})
+        self.assertEqual(set(selected), {"guest_machine_credential_name", "event_stream_password", "testserver_monitoring_enabled", "zabbix"})
+        self.assertEqual(set(selected["zabbix"]), {"configuration"})
         subscription = runtime["instances"][self.context["instance_name"]]["demo_mcp_subscription"]
         self.assertEqual(subscription["instance_name"], self.context["instance_name"])
         self.assertEqual(subscription["organization"], self.subscription["organization"])

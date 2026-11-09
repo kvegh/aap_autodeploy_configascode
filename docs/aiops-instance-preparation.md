@@ -52,6 +52,50 @@ Zabbix retains its distinct native clone schema, saved-image hash, frontend/API
 references and native monitoring IDs. It is not converted into a generic Linux
 deployment record.
 
+## Native monitoring record publication
+
+Each instance keeps its Zabbix VM definition at `aiops_instances[instance].zabbix`.
+Its `configuration.firewall.guest_host_clients` contains that VM's explicit
+permission, and `configuration.cac_import` identifies the existing target-local
+importer, source inventory, placement group and actual AAP inventory alias.
+The importer resolves these native IDs from the selected AAP; none is hardcoded.
+The former sibling `instance.firewall` is moved into this one VM configuration,
+with conflicting copies refused. Existing VM fields, other instances and secrets
+remain intact. Before creation, the VM section can contain configuration only;
+UUIDs, addresses and machine identity are never invented.
+
+After pinned SSH verifies a real clone, the existing Zabbix job writes its
+`vm_resource` and connection fields to the existing native source inventory.
+The observed bridge gateway joins that same verified resource. It then launches
+the existing AIOps CaC importer with its saved credentials. This pre-import phase
+reads the newly available host variables, validates the complete VM record, and
+derives only the fresh owner's own-bridge TCP 443 permission. A later explicit
+permission removal is preserved rather than recreated on every import.
+
+The same existing action publishes the encrypted capture/runtime pair through
+its already approved token and concurrency checks. The existing target API
+client retains its fixed-origin HTTPS and redirect guard during discovery.
+No new Git publisher, credential type, task store, service or Job Template is
+introduced. The parent waits without a firewall lock and reloads the newly
+rendered inventory host and saved-template ciphertext before configuration and
+permission application continue. This reloading is required because an already
+running job retains its original inventory and Extra Variables.
+
+The small validation functions remain in the existing settings module: native
+Controller content supplies API operations, while these pure data checks enforce
+the demo's cross-record VM identity and one-copy layout before encrypted writes.
+Native collection modules do not implement this project-specific data model.
+Tests exercise real local Git/Vault publication, native Ansible call sequences
+with substituted Controller endpoints, collisions and importer failure. Those
+fixtures do not prove a live fresh-instance deployment.
+
+Upgrade the code, common-source pins and protected layout together. Before
+running the updated policy readers, use the normal importer to move existing
+firewall data into each Zabbix VM's `configuration` and render its importer
+binding. Windows and Assistant consumers must use the matching updated common
+source; an older common pin cannot read this layout. Keep deployment jobs
+stopped during that coordinated migration, then verify the normal Zabbix job.
+
 ## After the existing roles create resources
 
 Preparation reads the selected target's native website fault-template ID and
@@ -90,8 +134,7 @@ new secrets or claim a usable first deployment.
 ## Functional boundaries
 
 This removes the first-import requirement for already-created auxiliary guests.
-It does not add VM orchestration. Testserver/TRA creation, Zabbix deployment,
-MCP target-side builds and application readiness still use their existing
+Testserver/TRA creation, Zabbix deployment, MCP target-side builds and application readiness still use their existing
 deployment paths. Shared DNS/frontend/provider inputs must come from explicitly
 approved sources. Instance URLs, native identifiers, ownership records and
 target-local AAP/EDA credentials remain specific to the selected environment.

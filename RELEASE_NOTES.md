@@ -1,5 +1,28 @@
 # Release notes
 
+## 0.50.0
+
+Keep Zabbix configuration inside its existing per-instance VM definition. The
+existing importer resolves native source-inventory, placement-group and importer
+bindings, migrates the former sibling firewall section without copying it, and
+seals the existing protected files. Authenticated fresh VM facts and their
+observed gateway derive only that new owner's exact permission; explicit later
+permission removal remains removed. Planned VMs contain configuration without
+fabricated identities. Native policy readers consume this single layout.
+
+The matching AIOps producer uses Controller collection modules and the existing
+importer, then reloads rendered host variables, runtime ciphertext and cached
+policy before continuing. Common-source pins and the protected layout must be
+migrated together while affected jobs are stopped. Local fixtures substitute
+Controller operations; live fresh-instance acceptance remains pending.
+
+Validation: 39 importer/settings and five native policy fixtures pass on the
+current source. Matching AIOps checks cover three producer sequences, nine
+runtime/Vault cases and four configuration/provenance cases. Scoped strict
+production lint, syntax and whitespace checks pass. The existing local
+Ansible/Python `crypt` deprecation remains visible; this is not a completed
+formal review or live deployment acceptance.
+
 ## 0.49.14
 
 Document checkpoint implementation

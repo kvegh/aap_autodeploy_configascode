@@ -114,6 +114,107 @@ def same_material(old, new, label):
     require(old == new, "The existing " + label + " changed; preserve it for explicit review.")
 
 
+def zabbix_import_binding(data, context):
+    """Bind the existing target-local importer and its actual inventory alias."""
+    require(isinstance(data, dict) and set(data) == {"importer", "hosts", "groups"},
+            "Read the existing AIOps importer and its native inventory before preparing the VM configuration.")
+    importer, hosts = data["importer"], data["hosts"]
+    require(isinstance(importer, dict) and positive_id(importer.get("id"))
+            and positive_id(importer.get("inventory"))
+            and importer.get("playbook") == "deploy-cac-project.yml"
+            and keys.inventory_variables({"variables": importer.get("extra_vars", {})}).get("aap_cac_project_id") == "aiops-selfhealing-demo"
+            and isinstance(hosts, list) and len(hosts) <= 256,
+            "Use the existing saved AIOps importer and bounded source inventory.")
+    selected = []
+    for row in hosts:
+        require(isinstance(row, dict) and row.get("inventory") == importer["inventory"],
+                "Every source host must belong to the importer's existing inventory.")
+        value = keys.inventory_variables(row)
+        resource = value.get("vm_resource", {})
+        if resource.get("vm_name") == context["instance_name"]:
+            require(resource.get("verified") is True and value.get("ansible_fqdn") == context["aap_fqdn"]
+                    and value.get("hypervisor_host") == context["hypervisor_name"]
+                    and resource.get("hypervisor_machine_id") == context["hypervisor"]["machine_id"],
+                    "The importer inventory must identify this exact selected AAP and hypervisor.")
+            selected.append(row)
+    require(len(selected) == 1 and isinstance(selected[0].get("name"), str),
+            "Resolve exactly one native inventory alias for the selected AAP.")
+    groups = data["groups"]
+    require(isinstance(groups, list) and len(groups) <= 256,
+            "Read the existing bounded hypervisor placement groups.")
+    placement = [row for row in groups if row.get("inventory") == importer["inventory"]
+                 and keys.inventory_variables(row).get("hypervisor_host") == context["hypervisor_name"]]
+    require(len(placement) == 1 and positive_id(placement[0].get("id")),
+            "Use exactly the existing placement group for this hypervisor.")
+    return {"controller_host": context["aap_origin"], "inventory_id": importer["inventory"],
+            "job_template_id": importer["id"], "group_id": placement[0]["id"],
+            "aap_instance_key": selected[0]["name"]}
+
+
+def prepare_zabbix_configuration(capture, context, binding=None, new_owners=()):
+    """Keep the permission and importer settings inside their existing VM section."""
+    instances = capture["aiops_instances"]
+    for name, row in instances.items():
+        if "firewall" not in row and "zabbix" not in row:
+            continue
+        vm = row.get("zabbix")
+        require(vm is None or isinstance(vm, dict), "Preserve the existing Zabbix VM definition.")
+        vm = row.setdefault("zabbix", {}) if vm is not None else {}
+        row["zabbix"] = vm
+        configuration = vm.setdefault("configuration", {})
+        require(isinstance(configuration, dict), "Keep Zabbix configuration inside its VM definition.")
+        old = row.pop("firewall", None)
+        if old is not None:
+            require(isinstance(old, dict) and ("firewall" not in configuration or configuration["firewall"] == old),
+                    "Conflicting firewall copies require review; no parallel ownership is retained.")
+            configuration["firewall"] = old
+        firewall = configuration.setdefault("firewall", {"guest_host_clients": []})
+        require(isinstance(firewall, dict) and set(firewall) == {"guest_host_clients"}
+                and isinstance(firewall["guest_host_clients"], list) and len(firewall["guest_host_clients"]) <= 1,
+                "Keep only this VM's explicit firewall configuration.")
+        require(not (vm.get("verified") is True and name in new_owners) or "gateway" in vm,
+                "A freshly published Zabbix owner needs its observed native gateway.")
+        require(not firewall['guest_host_clients'] or vm.get('verified') is True,
+                'Declared Zabbix permissions require its verified VM owner.')
+        if vm.get("verified") is True and "gateway" in vm:
+            gateway = str(ipaddress.IPv4Address(vm["gateway"]))
+            require(gateway == vm["gateway"] and gateway != vm["address"]
+                    and ipaddress.IPv4Address(gateway).is_private,
+                    "Use the bridge gateway observed with this verified guest.")
+            grant = {"bridge": vm["bridge"], "ipv4": vm["address"], "mac": vm["mac"],
+                     "destinations": [gateway], "ports": [443]}
+            require(not firewall["guest_host_clients"] or firewall["guest_host_clients"] == [grant],
+                    "The existing Zabbix grant differs from its verified native resource.")
+            if name in new_owners:
+                firewall["guest_host_clients"] = [grant]
+    if binding is not None:
+        row = instances[context["instance_name"]]
+        configuration = row.setdefault("zabbix", {}).setdefault("configuration", {})
+        configuration.setdefault("firewall", {"guest_host_clients": []})
+        require("cac_import" not in configuration or configuration["cac_import"] == binding,
+                "The existing Zabbix CaC importer binding changed; preserve it for review.")
+        configuration["cac_import"] = deepcopy(binding)
+    for row in capture.get("controller_hosts_aiops_demo", []):
+        deployment = row.get("variables", {}).get("demo_zabbix_deployment")
+        if not isinstance(deployment, dict):
+            continue
+        deployment["cac_import"] = "{{ aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name].zabbix.configuration.cac_import }}"
+        policy = deployment.get("isolation_policy")
+        if isinstance(policy, str):
+            old_path = "map(attribute='firewall.guest_host_clients')"
+            new_path = "map(attribute='zabbix.configuration.firewall.guest_host_clients')"
+            require(old_path in policy or new_path in policy,
+                    "Review the maintained Zabbix policy projection before changing its VM section.")
+            policy = policy.replace(old_path, new_path)
+            defined = "selectattr('zabbix.hypervisor_machine_id', 'defined')"
+            if defined not in policy:
+                match = "selectattr('zabbix.hypervisor_machine_id', 'equalto',"
+                require(match in policy, "Keep the explicit hypervisor filter in the maintained projection.")
+                policy = policy.replace(match, defined + " | " + match)
+            deployment["isolation_policy"] = policy
+        deployment["firewall"]["guest"] = "{{ aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name].zabbix | dict2items | rejectattr('key', 'equalto', 'configuration') | items2dict }}"
+
+
 def zabbix_resource(value, context, source_sha256):
     """Validate Zabbix's native clone provenance without imposing a Linux image schema."""
     require(isinstance(value, dict) and value.get("schema_version") == 1
@@ -202,6 +303,8 @@ def merge_source_guest(instances, context, role, source, zabbix_source_sha256=No
                     "Another allocation or role already owns this guest identity.")
     result = deepcopy(instances)
     current = result[name].get(role)
+    if role == "zabbix" and isinstance(current, dict) and set(current) == {"configuration"}:
+        current = None
     if current is not None:
         require(isinstance(current, dict) and all(current.get(field) == resource[field]
                 for field in ("vm_name", "uuid", "disk", "network", "address", "mac", "machine_id",
@@ -212,12 +315,15 @@ def merge_source_guest(instances, context, role, source, zabbix_source_sha256=No
                     "Existing Zabbix provenance changed; preserve its native records for review.")
         result[name][role] = dict(deepcopy(current), **deepcopy(resource))
     else:
+        configuration = result[name].get(role, {}).get("configuration") if role == "zabbix" else None
         result[name][role] = deepcopy(resource)
+        if configuration is not None:
+            result[name][role]["configuration"] = deepcopy(configuration)
     return result
 
 
 def prepare_documents(capture, runtime, context, credential_name, source_hosts=None, password_factory=None,
-                      mcp_access=None, authentication=None, subscription=None, source_git_token=None):
+                      mcp_access=None, authentication=None, subscription=None, source_git_token=None, source_bindings=None):
     """Seed only missing selected data and preserve every existing instance/secret."""
     require(isinstance(capture, dict) and isinstance(capture.get("aiops_instances"), dict),
             "Keep the reviewed AIOps capture and existing instance mapping.")
@@ -293,12 +399,16 @@ def prepare_documents(capture, runtime, context, credential_name, source_hosts=N
         require(existing_access is None or existing_access == desired_access,
                 "Existing selected AAP MCP access differs; review token or CA replacement explicitly.")
         settings["instances"][name]["demo_aap_mcp"] = desired_access
+    new_zabbix_owners = {name for name, row in instances.items()
+                         if not (row.get("zabbix") or {}).get("verified", False)}
     for role in ("testserver1", "tra", "zabbix"):
         source_name = role + "-v%02d" % context["instance_number"]
         if source_name in (source_hosts or {}):
             instances = merge_source_guest(instances, context, role, source_hosts[source_name],
                 result.get("aiops_zabbix_source_image", {}).get("sha256"))
     result["aiops_instances"] = instances
+    binding = zabbix_import_binding(source_bindings, context) if source_bindings is not None else None
+    prepare_zabbix_configuration(result, context, binding, new_zabbix_owners)
     return result, settings
 
 

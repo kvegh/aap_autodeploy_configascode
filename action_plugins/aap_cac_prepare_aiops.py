@@ -129,9 +129,20 @@ class ActionModule(ActionBase):
                         if name in hostvars:
                             sources[name] = record(name, ("aap_instance_number", "hypervisor_host", "vm_resource",
                                 "ansible_host", "vm_uuid", "machine_id", "host_keys", "ansible_user", "ansible_port"))
+                    # This action already discovers target API resources; retain its
+                    # selected-origin Client and existing redirect refusal.
+                    # Justification: ../docs/aiops-instance-preparation.md#native-monitoring-record-publication
+                    importer = settings.lifecycle.one(client.rows("/api/controller/v2/job_templates/" +
+                        settings.lifecycle.query(name="Deploy AIOps Selfhealing Demo CaC")), "existing AIOps CaC importer")
+                    require(settings.positive_id(importer.get("inventory")), "The existing importer needs its saved inventory.")
+                    source_bindings = {"importer": importer, "hosts": client.rows("/api/controller/v2/hosts/" +
+                        settings.lifecycle.query(inventory=importer["inventory"], page_size=200)),
+                        "groups": client.rows("/api/controller/v2/groups/" +
+                        settings.lifecycle.query(inventory=importer["inventory"], page_size=200))}
                     desired, runtime = settings.prepare_documents(before, old_runtime, context, credential_name, sources,
                         mcp_access=self._task.args.get("mcp_connection"), authentication=auth,
-                        subscription=self._task.args["subscription"], source_git_token=self._task.args["source_git_token"])
+                        subscription=self._task.args["subscription"], source_git_token=self._task.args["source_git_token"],
+                        source_bindings=source_bindings)
                 else:
                     require(before["aiops_instances"][context["instance_name"]]["guest_machine_credential_name"] == credential_name,
                             "Keep the pre-import base Machine credential binding.")
