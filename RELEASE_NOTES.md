@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.49.4
+
+Allow Controller project imports 180 one-second async status polls through the
+existing CoP project-role settings. A normal successor import exhausted the
+default 50 polls after 60.280 seconds while project synchronization continued
+and subsequently succeeded in 67.684 seconds. The project-specific bound remains
+below the role's existing 1000-second async execution allowance.
+
+Preserve secure logging, normal failure reporting and all other resource waits.
+The focused native check resolves the actual pinned CoP 4.10 role/defaults and
+collector arguments; strict scoped lint, compilation and diff checks pass.
+A normal AAP import remains the live acceptance check.
+
 ## 0.49.3
 
 Record RHSM propagation implementation

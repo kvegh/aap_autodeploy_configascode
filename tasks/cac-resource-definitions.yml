@@ -6,6 +6,9 @@
       no_log: true
   vars:
     dispatch_include_wildcard_vars: false
+    # A cold project/collection sync exceeded CoP's default 50 status polls.
+    controller_configuration_projects_async_retries: 180
+    controller_configuration_projects_async_delay: 1
     aap_configuration_dispatcher_exclude_roles:
       - controller_applications
       - controller_job_launch

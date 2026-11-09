@@ -38,6 +38,14 @@ Use-case repositories provide their runtime instructions. Current task states an
 live results are in [TODO.md](TODO.md) and its encrypted full records, rather
 than a second checklist here.
 
+Controller project imports allow 180 one-second async status polls. A normal
+successor import exhausted CoP's default 50 polls after 60.280 seconds while its
+project synchronization continued and then succeeded in 67.684 seconds. The
+longer project-specific bound stays below the role's existing 1000-second async
+execution allowance; other resources and secure failure reporting are unchanged.
+Native variable-routing checks cover the pinned role/collector; a normal AAP
+import must still verify this correction live.
+
 Fresh Command Center deployment uses the application's maintained default
 installation directory and a separate `~/ccng-wd` agent workspace. The owner
 selected the newest application source at deployment and a fresh Beads tracker
