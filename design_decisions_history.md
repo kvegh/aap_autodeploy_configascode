@@ -3555,3 +3555,28 @@ protected captures in both native rendering modes. Three playbook syntax checks
 and production lint passed. The public overview and existing encrypted recovery
 export retain current task outcomes and all 150 baseline records. Live Command
 Center import and application acceptance remain separate work.
+# Authenticate the private native firewall source — 2026-11-09
+
+Implementation: `b1587dc7e76df7320815fc8199be1a98144e2fe5` (0.49.10).
+
+The native firewall task source is private. Credential-free checkout failed;
+the ordinary base reader could not read the exact commit, while the existing
+source-only SCM reader could. Reuse that reader through existing encrypted
+project settings instead of adding a credential type or replacing the allocation
+writer's token. Git receives a process-local header scoped to the fixed
+repository, with verified HTTPS, no redirects, no credential helper and the
+unchanged exact-revision check. Temporary checkout cleanup remains unchanged.
+
+The existing protected AIOps pre-import preparation also seeds this setting in
+new selected runtime namespaces. It preserves other instances and identical
+retries and refuses an unexpected existing credential change. No provenance
+schema, secret store, wrapper or additional job was introduced.
+
+Forty focused native-source, application-policy and encrypted factory tests,
+two-file strict production lint and five normal playbook syntax checks passed.
+The local Git fixture checks the actual checkout for absent persisted auth,
+keeps the separate writer token intact and rejects missing/multiline auth before
+Git runs. The encrypted input's other values, literal tags, Vault key and header
+were preserved. These checks do not establish live AAP source authentication or
+full downstream demo acceptance.
+

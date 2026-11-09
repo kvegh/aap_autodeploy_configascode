@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.49.11
+
+Document private source-authentication implementation
+`b1587dc7e76df7320815fc8199be1a98144e2fe5` (0.49.10), its existing-Vault
+delivery, fresh-instance seeding, focused checks and pending live acceptance.
+
 ## 0.49.10
 
 Authenticate the pinned private Hactar source through the existing encrypted
