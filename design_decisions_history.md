@@ -3555,7 +3555,7 @@ protected captures in both native rendering modes. Three playbook syntax checks
 and production lint passed. The public overview and existing encrypted recovery
 export retain current task outcomes and all 150 baseline records. Live Command
 Center import and application acceptance remain separate work.
-# Authenticate the private native firewall source — 2026-11-09
+## Authenticate the private native firewall source — 2026-11-09
 
 Implementation: `b1587dc7e76df7320815fc8199be1a98144e2fe5` (0.49.10).
 
@@ -3579,4 +3579,3 @@ keeps the separate writer token intact and rejects missing/multiline auth before
 Git runs. The encrypted input's other values, literal tags, Vault key and header
 were preserved. These checks do not establish live AAP source authentication or
 full downstream demo acceptance.
-

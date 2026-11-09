@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.49.12
+
+Document the source-authentication history with consistent heading and trailing
+whitespace formatting. Functional source remains implementation `b1587dc`.
+
 ## 0.49.11
 
 Document private source-authentication implementation
