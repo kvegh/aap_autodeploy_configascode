@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.50.7
+
+Document implementation `03e09d72505468181e2bf0fb228774cdcfd545a1` (0.50.6),
+the safe boolean failure context, unchanged identity checks and focused native
+security verification. No functional changes beyond the reviewed assertion.
+Live VM mismatch diagnosis and cleanup acceptance remain pending.
+
 ## 0.50.6
 
 Expose only safe UUID/bridge/static-reservation match booleans from the existing

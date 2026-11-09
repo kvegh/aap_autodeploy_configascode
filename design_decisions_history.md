@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Report only safe native identity check outcomes — 2026-11-09
+
+Implementation `03e09d72505468181e2bf0fb228774cdcfd545a1` (0.50.6) makes
+the existing application identity assertion explain which comparison failed.
+It still requires the same UUID, bridge and static-reservation checks together.
+Only the generic `uuid_matches`, `bridge_matches` and
+`static_reservation_matches` boolean outcomes are visible. The native command
+reads and every other protected task remain hidden; the change adds no flag,
+loader, diagnostic job, ownership exception or repair behavior.
+
+Seven directly affected native-policy tests pass. The actual native Ansible
+verbose-output regression exercises each mismatch and all-match success with
+unsafe stdout and confirms UUID, IP, MAC, key and token canaries never appear.
+Scoped strict production lint and whitespace checks pass. Independent security
+review repeated the native fixture and checked bounded malformed/missing input
+cases without sensitive output. These source checks do not establish the cause
+of the live VM mismatch or authorize acceptance of changed ownership; live
+diagnosis and final cleanup acceptance remain pending.
+
 ## Select private configuration branches without eager whole-file evaluation — 2026-11-09
 
 Implementation `859b6ccd7835a0ef3e69da0fab668d139c9ff689` (0.50.4) corrects
