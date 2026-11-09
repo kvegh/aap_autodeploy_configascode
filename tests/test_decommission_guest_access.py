@@ -202,6 +202,16 @@ class GuestAccessRetirementTests(unittest.TestCase):
                          if task.get("ansible.builtin.include_tasks") == "tasks/decommission-guest-access.yml")
         end = next(index for index, task in enumerate(play["pre_tasks"]) if "ansible.builtin.meta" in task)
         self.assertLess(preflight, end)
+        self.assertFalse(play["pre_tasks"][0]["vars"]["aap_read_related_resources"])
+        ownership_tasks = yaml.safe_load((ROOT / "tasks/decommission-guest-access.yml").read_text())[1]["block"]
+        prepare = next(i for i, task in enumerate(ownership_tasks)
+                       if task.get("ansible.builtin.include_tasks") == "aap-isolation-prepare.yml")
+        selected = next(i for i, task in enumerate(ownership_tasks)
+                        if task.get("ansible.builtin.include_tasks") == "aap-instance-select.yml")
+        related = next(i for i, task in enumerate(ownership_tasks)
+                       if task.get("ansible.builtin.include_tasks") == "decommission-related-check.yml")
+        self.assertLess(prepare, selected)
+        self.assertLess(selected, related)
         tasks = play["tasks"]
         stopped = next(index for index, task in enumerate(tasks)
                        if "aap_decommission_selected_guests_stopped" in task.get("ansible.builtin.set_fact", {}))

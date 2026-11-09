@@ -163,6 +163,12 @@ def retirement_fixture():
     return context, transition, main, shared, hactar, allocation
 
 
+def application_capture(context):
+    return {"cac_import_metadata": {"project_id": "aiops-selfhealing-demo"},
+            "aiops_instances": {context["route"]["vm_name"]: {
+                guest["role"]: deepcopy(guest["metadata"]) for guest in context["guests"] if guest["role"] != "aap"}}}
+
+
 class FakeRetirementSource(FakeSource):
     def __init__(self, main, shared, hactar):
         super().__init__()
@@ -210,7 +216,12 @@ class InstanceKeyTests(unittest.TestCase):
         context, transition, main, shared, hactar, allocation = retirement_fixture()
         client = FakeRetirementSource(main, shared, hactar)
         original = deepcopy(allocation)
-        proof = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"])
+        for row in client.hosts.values():
+            values = keys.inventory_variables(row)
+            if row["name"] in {"zabbix-v07", "testserver1-v07", "tra-v07"}:
+                values["vm_resource"]["source_image_sha256"] = "a" * 64
+                row["variables"] = json.dumps(values)
+        proof = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], application_capture(context))
         self.assertEqual(set(proof["related_resources"]), {"zabbix", "testserver1", "tra"})
         self.assertEqual(proof["missing_roles"], [])
         self.assertEqual(len(proof["policy_owners"]), 5)
@@ -218,6 +229,113 @@ class InstanceKeyTests(unittest.TestCase):
         self.assertEqual(allocation, original)
         self.assertEqual(set(allocation["aap_vm_allocation"]["reservations"]["selected-request"]["instance_resources"]), {"aap"})
         self.assertEqual(client.calls, [])
+
+    def test_remote_inventory_absence_and_new_job_retry_use_unchanged_durable_cac(self):
+        context, transition, main, shared, hactar, allocation = retirement_fixture()
+        client = FakeRetirementSource(main, shared, hactar)
+        capture = application_capture(context)
+        original = deepcopy(capture)
+        client.hosts = {key: row for key, row in client.hosts.items()
+                        if row["name"] not in {guest["name"] for guest in context["guests"]}}
+        for attempt in range(2):
+            proof = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"],
+                                                  context["route"]["vm_name"], capture)
+            self.assertEqual(set(proof["related_resources"]), {"zabbix", "testserver1", "tra"})
+            self.assertEqual(proof["missing_roles"], [])
+            self.assertEqual(capture, original)
+            self.assertEqual(client.calls, [])
+        capture["aiops_instances"][context["route"]["vm_name"]]["zabbix"]["configuration"] = {"secret": "never-copy"}
+        proof = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"],
+                                              context["route"]["vm_name"], capture)
+        self.assertNotIn("secret", json.dumps(proof))
+
+    def test_missing_primary_uses_registry_identity_with_durable_related_cac(self):
+        from test_decommission_guest_access import RETIRE
+        context, transition, main, shared, hactar, allocation = retirement_fixture()
+        client = FakeRetirementSource(main, shared, hactar)
+        client.hosts = {key: row for key, row in client.hosts.items() if row["name"] != context["route"]["vm_name"]}
+        proof = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"],
+                                              context["route"]["vm_name"], application_capture(context))
+        resources = dict(allocation["aap_vm_allocation"]["reservations"]["selected-request"]["instance_resources"],
+                         **proof["related_resources"])
+        plan = RETIRE.guest_access_plan(transition["previous_policy"],
+            RETIRE.resources(context["route"], "example.invalid", "/opt/vms", resources), context["route"], resources,
+            {}, {"isolated": '<network><name>isolated</name><bridge name="vmbr0"/></network>'}, source_proof=proof)
+        self.assertEqual(len(plan["identities"]), 4)
+        self.assertEqual(plan["desired_policy"], transition["desired_policy"])
+        # Missing registry ownership plus an absent native primary must not turn
+        # this whole-namespace teardown into auxiliary-only deletion.
+        resources.pop("aap")
+        with self.assertRaises(AnsibleFilterError):
+            RETIRE.guest_access_plan(transition["previous_policy"],
+                RETIRE.resources(context["route"], "example.invalid", "/opt/vms", resources),
+                context["route"], resources, {},
+                {"isolated": '<network><name>isolated</name><bridge name="vmbr0"/></network>'}, source_proof=proof)
+
+    def test_retire_16_preserves_registry_primary_and_cac_auxiliary_17_without_external_rows(self):
+        from test_decommission_guest_access import RETIRE
+        # Same controlled topology as the observed external-controller gap.
+        context, transition, main, shared, hactar, allocation = json.loads(json.dumps(retirement_fixture(), default=list)
+            .replace("test-7", "test-16").replace("v07", "v16"))
+        selected = allocation["aap_vm_allocation"]["reservations"]["selected-request"]
+        selected["number"] = 16
+        for row in shared["host_inventory_configuration"]["hosts"]:
+            values = keys.inventory_variables(row)
+            if values.get("aap_instance_number") == 7:
+                values["aap_instance_number"] = 16
+                keys.set_inventory_variables(row, values)
+        capture = application_capture(context)
+        successor = deepcopy(selected)
+        successor.update(vm_name="aap27-test-17", number=17)
+        successor["instance_route"].update(vm_name="aap27-test-17", vm_ip="192.168.70.70",
+                                          aap_hostname="https://aap27.v17.example.invalid")
+        primary = successor["instance_resources"]["aap"]
+        primary.update(uuid="cccccccc-bbbb-cccc-dddd-eeeeeeeeeeee", address="192.168.70.70",
+                       mac="52:54:00:12:34:70", disk="/opt/vms/aap27-test-17.disk.qcow2")
+        allocation["aap_vm_allocation"]["reservations"]["successor-request"] = successor
+        successor_vms = {}
+        for counter, (role, resource) in enumerate(capture["aiops_instances"]["aap27-test-16"].items(), 71):
+            resource = deepcopy(resource)
+            resource.update(vm_name=role + "-v17", disk="/opt/vms/" + role + "-v17.disk.qcow2",
+                address="192.168.70.%d" % counter, mac="52:54:00:12:34:%02d" % counter,
+                uuid="%08d-bbbb-cccc-dddd-eeeeeeeeeeee" % counter, machine_id="%032d" % counter)
+            successor_vms[role] = resource
+        capture["aiops_instances"]["aap27-test-17"] = successor_vms
+        client = FakeRetirementSource(main, shared, hactar)
+        self.assertFalse(any("v17" in row["name"] or "test-17" in row["name"] for row in client.hosts.values()))
+        proof = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], "aap27-test-16", capture)
+        successor_clients = [{"bridge": resource["bridge"], "ipv4": resource["address"], "mac": resource["mac"]}
+                             for resource in [primary, *successor_vms.values()]]
+        self.assertTrue(all(owner in proof["policy_owners"] for owner in successor_clients))
+        self.assertTrue(all(resource["vm_name"].endswith("-v16") for resource in proof["related_resources"].values()))
+        policy = deepcopy(transition["previous_policy"])
+        policy["https_clients"] += successor_clients
+        resources = dict(selected["instance_resources"], **proof["related_resources"])
+        plan = RETIRE.guest_access_plan(policy,
+            RETIRE.resources(context["route"], "example.invalid", "/opt/vms", resources), context["route"], resources,
+            {}, {"isolated": '<network><name>isolated</name><bridge name="vmbr0"/></network>'}, source_proof=proof)
+        self.assertTrue(all(owner in plan["desired_policy"]["https_clients"] for owner in successor_clients))
+        self.assertEqual(len(plan["identities"]), 4)
+        self.assertEqual(client.calls, [])
+
+    def test_cac_wrong_instance_hypervisor_identity_and_missing_authority_refuse(self):
+        context, transition, main, shared, hactar, allocation = retirement_fixture()
+        for field, value in (("vm_name", "tra-v08"), ("instance_name", "aap27-test-8"),
+                             ("instance_number", 8), ("hypervisor_machine_id", "9" * 32),
+                             ("uuid", "00000000-0000-0000-0000-000000000000"),
+                             ("disk", "/opt/vms/production.qcow2"), ("verified", False),
+                             ("machine_id", context["route"]["hypervisor"]["machine_id"])):
+            client = FakeRetirementSource(main, shared, hactar)
+            client.hosts = {key: row for key, row in client.hosts.items() if row["name"] != "tra-v07"}
+            capture = application_capture(context)
+            capture["aiops_instances"][context["route"]["vm_name"]]["tra"][field] = value
+            with self.subTest(field=field), self.assertRaises((keys.StoreError, AnsibleFilterError)):
+                keys.source_related_resources(client, shared, allocation["aap_vm_allocation"],
+                                              context["route"]["vm_name"], capture)
+        for capture in (None, {}, {"aiops_instances": {}}):
+            with self.assertRaises(keys.StoreError):
+                keys.source_related_resources(client, shared, allocation["aap_vm_allocation"],
+                                              context["route"]["vm_name"], capture)
 
     def test_source_ownership_rejects_tampered_resource_counter_address_uuid_and_pin(self):
         context, transition, main, shared, hactar, allocation = retirement_fixture()
@@ -230,32 +348,32 @@ class InstanceKeyTests(unittest.TestCase):
             else: values["vm_resource"][field] = "foreign"
             row["variables"] = json.dumps(values)
             with self.subTest(field=field), self.assertRaises((keys.StoreError, AnsibleFilterError)):
-                keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"])
+                keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], application_capture(context))
             self.assertEqual(client.calls, [])
         client = FakeRetirementSource(main, shared, hactar)
         values = json.loads(client.hosts[10]["variables"])
         values["machine_id"] = "9" * 32
         client.hosts[10]["variables"] = json.dumps(values)
         with self.assertRaises(keys.StoreError):
-            keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"])
+            keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], application_capture(context))
 
     def test_source_facts_retained_in_one_invocation_require_extant_rows_unchanged(self):
         context, transition, main, shared, hactar, allocation = retirement_fixture()
         client = FakeRetirementSource(main, shared, hactar)
-        first = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"])
+        first = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], application_capture(context))
         identity = next(identity for identity, row in client.hosts.items() if row["name"] == "tra-v07")
         del client.hosts[identity]
-        second = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], first)
-        self.assertIn("tra", second["missing_roles"])
+        second = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], application_capture(context), first)
+        self.assertEqual(second["missing_roles"], [])
         self.assertEqual(second["related_resources"], first["related_resources"])
-        fresh = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"])
-        self.assertNotIn("tra", fresh["related_resources"])
+        fresh = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], application_capture(context))
+        self.assertEqual(fresh["related_resources"], first["related_resources"])
         row = next(row for row in client.hosts.values() if row["name"] == "testserver1-v07")
         values = json.loads(row["variables"])
-        values["vm_resource"]["port"] = 2223
+        values["vm_resource"]["machine_id"] = "9" * 32
         row["variables"] = json.dumps(values)
         with self.assertRaises(keys.StoreError):
-            keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], first)
+            keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], application_capture(context), first)
 
     def test_never_deployed_optional_guest_is_safe_only_without_orphaned_grants(self):
         from test_decommission_guest_access import RETIRE
@@ -263,7 +381,9 @@ class InstanceKeyTests(unittest.TestCase):
         client = FakeRetirementSource(main, shared, hactar)
         identity = next(identity for identity, row in client.hosts.items() if row["name"] == "zabbix-v07")
         del client.hosts[identity]
-        proof = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"])
+        capture = application_capture(context)
+        del capture["aiops_instances"][context["route"]["vm_name"]]["zabbix"]
+        proof = keys.source_related_resources(client, shared, allocation["aap_vm_allocation"], context["route"]["vm_name"], capture)
         self.assertEqual(proof["missing_roles"], ["zabbix"])
         resources = dict(allocation["aap_vm_allocation"]["reservations"]["selected-request"]["instance_resources"], **proof["related_resources"])
         retirement = RETIRE.resources(context["route"], "example.invalid", "/opt/vms", resources)
@@ -350,7 +470,14 @@ class InstanceKeyTests(unittest.TestCase):
         module = load("test_isolation_retirement_action", "action_plugins/aap_publish_instance_keys.py")
         context, transition, main, shared, hactar, allocation = retirement_fixture()
         client = FakeRetirementSource(main, shared, hactar)
-        # Application ownership exists only in the live source inventory, not encrypted AutoDeploy data.
+        # The external artifact may include useful non-ownership runtime fields;
+        # immutable identity must still match the separate authoritative CaC.
+        for row in client.hosts.values():
+            if row["name"] in {"zabbix-v07", "testserver1-v07", "tra-v07"}:
+                values = keys.inventory_variables(row)
+                values["vm_resource"]["source_image_sha256"] = "a" * 64
+                row["variables"] = json.dumps(values)
+        # No application identity is copied into encrypted AutoDeploy data.
         app_names = {guest["name"] for guest in context["guests"] if guest["role"] != "aap"} | {"other-v08"}
         shared["host_inventory_configuration"]["hosts"] = [row for row in shared["host_inventory_configuration"]["hosts"]
             if row["name"] not in app_names]
@@ -402,7 +529,8 @@ class InstanceKeyTests(unittest.TestCase):
                     "operation": "retire", "isolation_retirement": supplied}, check_mode=False)
                 plugin._loader = loader
                 return plugin.run(task_vars={"awx_job_id": job_id, "awx_job_template_id": 456, "awx_project_revision": "a" * 40,
-                    "aap_registered_target": {"related_resource_proof": preflight_proof}})
+                    "aap_registered_target": {"related_resource_proof": preflight_proof},
+                    "aap_isolation_app_capture": application_capture(context)})
 
             with mock.patch.object(ActionBase, "run", return_value={}), mock.patch.object(module.ActionModule, "_project_root", return_value=project), \
                  mock.patch.object(module, "SourceClient", return_value=client), \
@@ -415,7 +543,8 @@ class InstanceKeyTests(unittest.TestCase):
                     plugin._task = SimpleNamespace(args={"instance_key": context["route"]["vm_name"],
                         "read_related_resources": related, "allow_retired": related})
                     plugin._loader = loader
-                    return plugin.run(task_vars={"awx_job_id": job_id, "awx_job_template_id": 456, "awx_project_revision": "a" * 40})
+                    return plugin.run(task_vars={"awx_job_id": job_id, "awx_job_template_id": 456, "awx_project_revision": "a" * 40,
+                        "aap_isolation_app_capture": application_capture(context)})
 
                 with mock.patch.object(reader, "__file__", str(project / "action_plugins/aap_read_instance.py")), \
                      mock.patch.object(reader, "source_keys", side_effect=AssertionError("Normal reads must not load source API access")):

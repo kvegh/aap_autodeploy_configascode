@@ -137,7 +137,8 @@ class ActionModule(ActionBase):
                                      "Use the fixed encrypted shared inventory for source ownership lookup.")
                         ownership_capture = AnsibleLoader(self._loader._vault.decrypt(ownership_path.read_bytes())).get_single_data()
                         source_ownership_snapshot = keys.source_related_resources(source, ownership_capture,
-                            allocation["aap_vm_allocation"], args["instance_name"], source_ownership_snapshot)
+                            allocation["aap_vm_allocation"], args["instance_name"],
+                            variables.get("aap_isolation_app_capture"), source_ownership_snapshot)
                         if attempt == 0:
                             keys.require(isinstance(preflight_ownership, dict)
                                 and preflight_ownership.get("source_job_id") == str(job_id)
@@ -316,7 +317,8 @@ class ActionModule(ActionBase):
                             ownership_capture = AnsibleLoader(self._loader._vault.decrypt(
                                 git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
                             source_ownership_snapshot = keys.source_related_resources(source, ownership_capture,
-                                latest_allocation["aap_vm_allocation"], args["instance_name"], source_ownership_snapshot)
+                                latest_allocation["aap_vm_allocation"], args["instance_name"],
+                                variables.get("aap_isolation_app_capture"), source_ownership_snapshot)
                             keys.verify_remaining_guest_grants(retirement_context["desired_policy"], source_ownership_snapshot)
                             keys.require(len(latest_records) == 1 and latest_records[0].get("decommissioned") is True
                                 and keys.isolation_retirement_context(latest_records[0], args["instance_name"],

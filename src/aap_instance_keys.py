@@ -273,8 +273,12 @@ def set_inventory_variables(row, values):
         row["variables"] = values
 
 
-def source_related_resources(client, shared, allocation, selected, retained=None):
-    """Read optional same-version ownership only from the fixed source inventory."""
+def source_related_resources(client, shared, allocation, selected, aiops_capture, retained=None):
+    """Validate durable application CaC against any present source inventory rows.
+
+    Native/certified inventory modules do not enforce our cross-repository VM
+    identity schema; see ../README.md#cac-owned-related-resource-retirement.
+    """
     records = [row for row in allocation["reservations"].values() if row.get("vm_name") == selected]
     require(len(records) == 1, "Resolve exactly one selected AAP reservation for source ownership.")
     record = records[0]
@@ -305,6 +309,70 @@ def source_related_resources(client, shared, allocation, selected, retained=None
                 and values.get("host_keys") == pin["host_keys"],
                 "Captured and live source hypervisor identity must match the exact registered pin.")
     names = {role + "-v%02d" % number: role for role in ("zabbix", "testserver1", "tra")}
+    require(isinstance(aiops_capture, dict)
+            and aiops_capture.get("cac_import_metadata", {}).get("project_id") == "aiops-selfhealing-demo"
+            and isinstance(aiops_capture.get("aiops_instances"), dict),
+            "Load authoritative application CaC through the existing protected reader before retirement.")
+    aap_records = {row["vm_name"]: row for row in allocation["reservations"].values()
+                   if row.get("instance_route", {}).get("hypervisor") == pin}
+    # Keep all surviving same-hypervisor owners visible even when the external
+    # controller has never imported their inventory. Deletion remains selected-only.
+    fields = {"vm_name", "address", "uuid", "disk", "mac", "network", "bridge", "machine_id",
+              "host_keys", "hypervisor_machine_id", "verified"}
+    cac_resources, cac_numbers, cac_names = {}, {}, set(names)
+    for instance_name, entry in aap_records.items():
+        instance = aiops_capture["aiops_instances"].get(instance_name, {})
+        require(isinstance(instance, dict), "Application CaC must contain instance mappings.")
+        instance_number = entry["number"]
+        require(type(instance_number) is int and instance_number > 0
+                and instance_name == entry["instance_route"]["vm_name"]
+                and re.fullmatch(r"aap[0-9]+-test-" + str(instance_number), instance_name)
+                and entry.get("hypervisor_id") == pin["machine_id"],
+                "Application owners must belong to registered numbered test instances on the pinned hypervisor.")
+        for role in ("zabbix", "testserver1", "tra"):
+            name = role + "-v%02d" % instance_number
+            cac_names.add(name)
+            resource = instance.get(role)
+            if resource is None:
+                continue
+            if isinstance(resource, dict) and set(resource) == {"configuration"}:
+                require(isinstance(resource["configuration"], dict), "Planned VM configuration must be a mapping.")
+                continue
+            require(isinstance(resource, dict) and fields <= set(resource)
+                    and "supplemental_interfaces" not in resource and resource.get("kind") != "windows"
+                    and resource.get("instance_name", instance_name) == instance_name
+                    and type(resource.get("instance_number", instance_number)) is int
+                    and resource.get("instance_number", instance_number) == instance_number,
+                    "Application CaC requires complete same-instance VM ownership.")
+            # Never copy runtime configuration or credentials into ownership proof.
+            cac_resources[name] = {key: deepcopy(resource[key]) for key in fields}
+            cac_numbers[name] = instance_number
+    for field in ("uuid", "disk", "address", "mac", "machine_id"):
+        identities = [resource[field] for resource in cac_resources.values()]
+        require(all(isinstance(value, str) for value in identities) and len(set(identities)) == len(identities),
+                "Application VM ownership identities must be distinct.")
+    for row in rows:
+        if row.get("name") not in cac_names:
+            continue
+        values = inventory_variables(row)
+        resource = values.get("vm_resource")
+        require(row["name"] in cac_resources and isinstance(resource, dict)
+                and "supplemental_interfaces" not in resource and resource.get("kind") != "windows"
+                and all(resource.get(key) == value for key, value in cac_resources[row["name"]].items())
+                and values.get("hypervisor_host") == hypervisor["name"]
+                and type(values.get("aap_instance_number")) is int
+                and values["aap_instance_number"] == cac_numbers[row["name"]]
+                and values.get("ansible_host") == resource["address"]
+                and values.get("vm_uuid") == resource["uuid"]
+                and values.get("machine_id") == resource["machine_id"]
+                and values.get("host_keys") == resource["host_keys"],
+                "Existing inventory ownership disagrees with authoritative application CaC.")
+    cac_rows = [{"name": name, "variables": {
+        "hypervisor_host": hypervisor["name"], "aap_instance_number": cac_numbers[name],
+        "ansible_host": resource["address"], "vm_uuid": resource["uuid"],
+        "machine_id": resource["machine_id"], "host_keys": resource["host_keys"],
+        "vm_resource": resource}} for name, resource in cac_resources.items()]
+    rows = [row for row in rows if row.get("name") not in cac_names] + cac_rows
     related, owners = {}, []
 
     def add_owner(resource):
@@ -314,8 +382,13 @@ def source_related_resources(client, shared, allocation, selected, retained=None
                     "Remaining inventory guest permission ownership must be unique.")
             owners.append(identity)
 
-    aap_records = {row["vm_name"]: row for row in allocation["reservations"].values()
-                   if row.get("instance_route", {}).get("hypervisor") == pin}
+    for instance_name, entry in aap_records.items():
+        present = any(inventory_variables(row).get("vm_resource", {}).get("vm_name", row.get("name")) == instance_name
+                      for row in rows)
+        if not present and not entry.get("decommissioned") and entry.get("instance_resources", {}).get("aap"):
+            primary = entry["instance_resources"]["aap"]
+            validate_aap_primary(entry["instance_route"], primary)
+            add_owner(primary)
     for row in rows:
         name, values = row.get("name"), inventory_variables(row)
         if name == hypervisor["name"]:
@@ -410,10 +483,8 @@ def source_related_resources(client, shared, allocation, selected, retained=None
     if retained is not None:
         require(all(proof[key] == retained.get(key) for key in ("instance_name", "inventory_name", "inventory_id",
                     "hypervisor_name", "hypervisor_machine_id")), "Source resource scope changed during retirement.")
-        for role, resource in retained["related_resources"].items():
-            require(role not in related or related[role] == resource,
-                    "An extant source vm_resource changed during retirement.")
-            related.setdefault(role, deepcopy(resource))
+        require(related == retained["related_resources"],
+                "Durable application CaC ownership changed during retirement.")
     return proof
 
 
@@ -454,7 +525,7 @@ def isolation_retirement_context(record, selected, target, transition, related_r
     if related_resources is not None:
         require(set(resources) <= {"aap"} and isinstance(related_resources, dict)
                 and set(related_resources) <= {"zabbix", "testserver1", "tra"},
-                "Keep application ownership in the existing source inventory, not central allocation.")
+                "Keep application ownership in authoritative AIOps CaC, not central allocation.")
         resources = dict(resources, **deepcopy(related_resources))
     guests = []
     for role in ("aap", "zabbix", "testserver1", "tra"):
@@ -770,8 +841,10 @@ def source_inventory_operations(client, shared, autodeploy, hactar, context, pol
         for row in selected_rows:
             retirement_host_matches(row, guest, context["route"], hypervisor["name"])
             if guest["role"] != "aap":
-                require(inventory_variables(row).get("vm_resource") == guest["metadata"],
-                        "An extant related source vm_resource changed before deletion.")
+                resource = inventory_variables(row).get("vm_resource")
+                require(isinstance(resource, dict) and "supplemental_interfaces" not in resource
+                        and all(resource.get(key) == value for key, value in guest["metadata"].items()),
+                        "An extant related source VM ownership changed before deletion.")
             operations[("DELETE", "hosts/%s/" % row["id"])] = None
 
     recovery_rows = [row for row in autodeploy["autodeploy_configuration"]["inventories"]

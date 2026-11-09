@@ -15,7 +15,8 @@ step. An unexpected destination stops the job for review.
 
 The complete deployment scope includes AAP, matching versioned Zabbix,
 testserver and TRA guests, and the demo website. Related guests require recorded
-UUID/disk ownership in the existing source AAP inventory before deletion.
+UUID/disk ownership in the selected instance's existing encrypted AIOps VM
+definitions before deletion.
 AutoDeploy's encrypted reservation retains only primary AAP ownership.
 Its optional Windows-owned supplemental interface remains part of that same
 AAP resource, not a separate application VM record. Current and persistent NIC
@@ -43,32 +44,38 @@ ownership preflight and its route address. It creates no synthetic verified
 record. An absent VM without complete saved ownership cannot authorize cleanup
 of ambiguous named reservations.
 
-## Read related ownership from the existing source inventory
+## Read related ownership from the existing application CaC
 
-Only this playbook enables `aap_read_instance.read_related_resources`. Ordinary
-stage selection remains registry-only and never constructs the source API client.
-The optional reader verifies trusted source HTTPS and that its credential can
-identify the current running job/template/revision. Its inventory name comes
-from the fixed encrypted shared capture, selecting the independently pinned
-hypervisor; callers cannot provide another inventory, endpoint or resource map.
+The initial selection reads only the primary registry route. During the existing
+protected permission preflight, native preparation loads AIOps CaC using its
+already configured dedicated reader and Vault identity. The same related-resource
+reader then consumes that namespaced capture and rechecks the unchanged registry
+route. It does not contact the selected AAP or create inventory copies.
 
-Present related guests require a full verified `vm_resource` on their source
-inventory row. Required fields are `vm_name`, `address`, `uuid`, `disk`, `mac`,
-`network`, `bridge`, `machine_id`, `host_keys`, `hypervisor_machine_id` and
-`verified: true`. The row's address, UUID, machine ID, keys, hypervisor placement
-and integer `aap_instance_number` must agree with that artifact and the selected
-counter. Exact same-counter role names and bounded disk paths are required.
-Other artifact fields are retained in protected memory, never copied into the
-AutoDeploy secrets repository. Application CaC stays with its own use case.
+The selected instance's `zabbix`, `testserver1` and `tra` definitions supply
+verified `vm_name`, `address`, `uuid`, `disk`, `mac`, `network`, `bridge`,
+`machine_id`, `host_keys`, `hypervisor_machine_id` and `verified: true`.
+Exact same-counter names, bounded disks and the registered hypervisor are
+required. Only these ownership fields enter the protected proof; runtime
+configuration and credentials stay outside it.
 
-A role can legitimately be undeployed. A missing source row is accepted only
-after the existing target preflight proves no corresponding VM and neither
-bounded disk variant exists. Every permission left after the selected cleanup
-must resolve to a surviving verified source VM or proper AAP resource on this
-same hypervisor. Unknown or orphaned permissions fail closed. An extant row
-without valid `vm_resource` fails even if its VM is absent. This also permits a
-new cleanup job after some source host rows were already deleted, without
-persisting application ownership in central allocation.
+The existing source API client still verifies its trusted HTTPS endpoint and the
+running job/template/revision. It reads the fixed encrypted shared inventory's
+selected hypervisor and checks any present related rows against application CaC.
+A missing external row is allowed; a conflicting row stops cleanup. Source
+inventory records never substitute for missing durable application ownership.
+Surviving registered primary AAPs and same-hypervisor auxiliary CaC records also
+supply permission-owner identities when their external inventory rows are absent.
+They are preservation inputs only; the deletion plan contains the selected
+instance's four bounded roles.
+
+A missing or configuration-only VM definition represents an undeployed role.
+The native preflight must then prove no corresponding domain or either bounded
+disk variant exists. Surviving permissions must still have verified ownership.
+An absent primary is supported only with its complete canonical registry record;
+it does not authorize deleting arbitrary related resources. Preserve all selected
+private VM records until cleanup succeeds, so a fresh job can recover after a
+partial failure without the old job's memory or a running target controller.
 
 ## Retire only the selected guests' permissions
 
@@ -137,10 +144,11 @@ that pin and proves the desired policy is exactly removal of the selected
 recorded identities. It rejects omitted selected permissions, foreign identities,
 new grants and conflicting current policy. Current encrypted policy may equal
 only the captured previous or desired value for an idempotent retry.
-It independently rereads source ownership, compares extant records with this
-same running job's protected reader result and retains those verified facts only
-in memory while its own API deletions progress. No caller resource argument or
-encrypted application-metadata fallback is accepted.
+It revalidates durable application ownership and any extant source rows against
+this same running job's protected reader result while its own API deletions
+progress. The authoritative application CaC remains unchanged for cross-job
+recovery. No caller-supplied resource map or alternative ownership source is
+accepted.
 
 The same encrypted commit updates the canonical recovery inventory, both
 hypervisor policy aliases in the shared capture, and equivalent metadata in the

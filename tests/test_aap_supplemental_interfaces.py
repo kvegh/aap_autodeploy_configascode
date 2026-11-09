@@ -21,6 +21,7 @@ from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
 from test_aap_final_release import fixture as aap_fixture
 from test_aap_hypervisor_access import fixture as native_fixture
+from test_instance_keys import application_capture
 from test_decommission_guest_access import RETIRE
 from test_decommission_guest_access import fixture as legacy_fixture
 import test_guest_release as transaction
@@ -189,7 +190,8 @@ class SupplementalInterfaceTests(unittest.TestCase):
         shared = keys.guest_release_inventory_capture(shared,release,'shared')
         hactar = keys.guest_release_inventory_capture(hactar,release,'hactar')
         source = transaction.Source(main,shared,hactar)
-        proof = keys.source_related_resources(source,shared,allocation['aap_vm_allocation'],guest['route']['vm_name'])
+        proof = keys.source_related_resources(source,shared,allocation['aap_vm_allocation'],guest['route']['vm_name'],
+                                            application_capture(transaction.retirement_fixture()[0]))
         expected = [{'bridge':nic['bridge'],'ipv4':nic['address'],'mac':nic['mac']}
                     for nic in windows['interfaces']+[guest['supplemental_interface']]]
         self.assertTrue(all(identity in proof['policy_owners'] for identity in expected))

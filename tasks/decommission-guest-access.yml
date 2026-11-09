@@ -16,6 +16,25 @@
     - name: Prepare the pinned native source and lock for ownership inspection
       ansible.builtin.include_tasks: aap-isolation-prepare.yml
 
+    # Reuse the application CaC loaded by prepare; no additional repository reader.
+    - name: Read related ownership from the already loaded durable application CaC
+      ansible.builtin.include_tasks: aap-instance-select.yml
+      vars:
+        aap_read_related_resources: true
+
+    - name: Derive selected resource paths from registry and authoritative application CaC
+      ansible.builtin.set_fact:
+        aap_retirement: >-
+          {{ aap_instance_route | aap_decommission_resources(vault_domain, vm_dir, aap_instance_resources) }}
+      no_log: true
+
+    - name: Check every related guest and orphaned disk before any deletion
+      ansible.builtin.include_tasks: decommission-related-check.yml
+      loop: '{{ aap_retirement.domains[1:] }}'
+      loop_control:
+        loop_var: aap_related_guest
+      no_log: true
+
     - name: Inspect all selected domain identities without changing them
       ansible.builtin.command:
         argv: [virsh, -c, 'qemu:///system', dumpxml, '{{ item.name }}']

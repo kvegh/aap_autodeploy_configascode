@@ -370,6 +370,28 @@ application ownership in the AAP-only allocation record. See
 Code validation and a successful live decommission remain distinct results in
 the task records.
 
+### CaC-owned related-resource retirement
+
+Related VM ownership comes from the selected instance's existing encrypted
+AIOps VM definitions, loaded by the existing native policy preparation. No
+additional repository credential, source controller copy or target API read is
+needed. AutoDeploy's reservation remains authoritative for the primary AAP VM,
+hypervisor and consumed counter. Any present source inventory row must agree
+with the durable application identity; a missing row does not erase that
+identity. Registered primaries and CaC-owned auxiliary guests from surviving
+instances on that same hypervisor remain visible to permission validation even
+without source inventory rows; deletion stays limited to the selected instance.
+Runtime settings and secrets are excluded from the ownership proof.
+
+The existing Python validator/action integration checks this project-specific
+cross-repository identity contract, which Controller collection inventory modules
+do not validate. Native Ansible still loads the private capture and performs
+hypervisor, domain, disk, snapshot, network and firewall operations. A failed job
+can reconstruct the same related records from unchanged private CaC on retry;
+retain those private records until normal cleanup has succeeded. Missing or
+conflicting CaC never authorizes deletion by name alone. See the focused
+retirement tests and [decommission procedure](docs/decommission.md).
+
 The Windows importer creates groups before linking their memberships, so
 asynchronous group creation cannot leave references to missing children.
 Its capture includes the infrastructure, patch assessment, bounded WSUS update

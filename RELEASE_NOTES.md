@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.50.2
+
+Fix external-controller retirement to reuse verified VM ownership from the
+already loaded per-instance AIOps CaC. Primary AAP identities and counters stay
+in the existing allocation registry. Present inventory rows must agree;
+missing external rows do not erase durable ownership. Surviving same-hypervisor
+instances remain permission owners while deletion stays selected-instance-only.
+Runtime settings are excluded from identity comparisons and private VM records
+remain available for retry until explicit successful-cleanup removal.
+
+Validation: focused ownership/encrypted-Git recovery, decommission, supplemental
+interface and installation-access fixtures; scoped strict production lint and
+syntax checks. Live teardown and final end-to-end acceptance remain pending.
+
 ## 0.50.1
 
 Document implementation `bdda318620ae30ebea455376442dc509ec7fb583` (0.50.0),

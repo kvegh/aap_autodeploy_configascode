@@ -17,7 +17,7 @@ from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
 
 from test_aap_hypervisor_access import fixture, access
-from test_instance_keys import FakeRetirementSource, keys, load, vault_yaml, retirement_fixture
+from test_instance_keys import FakeRetirementSource, keys, load, vault_yaml, retirement_fixture, application_capture
 
 
 class InstallationAccessTests(unittest.TestCase):
@@ -134,7 +134,7 @@ class InstallationAccessTests(unittest.TestCase):
         for group in shared['host_inventory_configuration']['groups']:
             if group['inventory']=='Shared':group['hosts']=[alias if name==physical else name for name in group['hosts']]
         client=FakeRetirementSource(main,shared,hactar)
-        proof=keys.source_related_resources(client,shared,allocation['aap_vm_allocation'],physical)
+        proof=keys.source_related_resources(client,shared,allocation['aap_vm_allocation'],physical,application_capture(context))
         self.assertEqual(set(proof['related_resources']),{'zabbix','testserver1','tra'})
         retired=keys.retire_inventory_capture(shared,context,'shared')
         self.assertNotIn(alias,[row['name']for row in retired['host_inventory_configuration']['hosts']if row['inventory']=='Shared'])

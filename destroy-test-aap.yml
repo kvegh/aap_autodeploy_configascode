@@ -12,7 +12,7 @@
     - name: Read the registered instance before any infrastructure connection
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml
       vars:
-        aap_read_related_resources: true
+        aap_read_related_resources: false
     - name: Require confirmation and the independently pinned recovery hypervisor
       ansible.builtin.assert:
         that:
@@ -77,12 +77,6 @@
       ansible.builtin.assert:
         that: aap_retirement_snapshots.stdout | trim | length == 0
       when: vm_name in aap_retirement_domains.stdout_lines
-      no_log: true
-    - name: Check every related guest and orphaned disk before any deletion
-      ansible.builtin.include_tasks: tasks/decommission-related-check.yml
-      loop: '{{ aap_retirement.domains[1:] }}'
-      loop_control:
-        loop_var: aap_related_guest
       no_log: true
     - name: Read the entire DNS zone to discover orphaned version records
       ansible.builtin.include_tasks: tasks/decommission-dns-page.yml
