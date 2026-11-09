@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.50.1
+
+Document implementation `bdda318620ae30ebea455376442dc509ec7fb583` (0.50.0),
+the owner-selected VM configuration placement, focused local checks and required
+coordinated layout/common-reader migration. Functional source is unchanged; live
+fresh-instance acceptance remains pending.
+
 ## 0.50.0
 
 Keep Zabbix configuration inside its existing per-instance VM definition. The

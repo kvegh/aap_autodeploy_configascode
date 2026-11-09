@@ -1,5 +1,31 @@
 # Design decisions history
 
+## Keep Zabbix configuration with its existing VM definition — 2026-11-09
+
+Implementation `bdda318620ae30ebea455376442dc509ec7fb583` (0.50.0) follows
+the owner's selected instance → VM → configuration placement. Existing firewall
+settings move into the Zabbix VM definition with one copy; verified native VM
+facts and unrelated protected values remain intact. The existing importer
+resolves native source inventory, placement group and target alias instead of
+introducing another publisher or Job Template.
+
+The matching Zabbix deployment saves its authenticated VM facts and observed
+gateway into that source inventory, invokes the same importer and reloads its
+rendered host, runtime ciphertext and cached policy. Fresh permission is derived
+once from verified ownership; a later explicit removal stays removed. Planned
+VMs carry configuration without fabricated resource identity. Controller
+collection operations supply the API behavior; the existing settings checks
+retain project-specific ownership and layout validation.
+
+Thirty-nine settings/publication and five native policy fixtures pass, as do
+three matching producer sequences, nine runtime/Vault and four configuration
+checks. Scoped strict lint, syntax and whitespace checks pass. Controller
+operations are substituted in producer fixtures; no live fresh-clone acceptance
+is claimed. The existing local Ansible/Python crypt deprecation remains visible.
+Protected layout and every pinned common reader must be upgraded together before
+affected runtime jobs resume; that coordinated migration is separate from these
+local source checks.
+
 ## Save new VM details inside the existing application VM definition — 2026-11-09
 
 The owner approved saving newly verified monitoring VM details in encrypted
