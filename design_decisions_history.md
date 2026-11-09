@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Save new VM details inside the existing application VM definition — 2026-11-09
+
+The owner approved saving newly verified monitoring VM details in encrypted
+AIOps CaC before configuration continues, using the existing importer. The
+placement is the selected instance's existing Zabbix VM definition, with its
+configuration nested there. A separate metadata section/store or saved Job
+Template was not selected. Implementation remains active and is not claimed by
+this documentation checkpoint.
+
+Implementation `5cddc87948bce4d5c7808784e343ecc2f9475282`, release 0.49.13,
+refreshes the public task overview and the existing encrypted recovery export.
+It preserves all 181 prior IDs and 258 prior comments across 182 current records
+and 260 total comments. Both Beads mirror checks and native Vault preservation
+checks pass. Source-reader fixes, successful normal imports/retrieval and the
+later firewall readback failure are retained separately from unfinished MCP,
+fresh application, Windows and host-rebuild acceptance. No executable source,
+host firewall, VM or hardware state changes are part of this checkpoint.
+
 ## Preserve blocked inputs in the recovery checkpoint — 2026-11-09
 
 Implementation `96e5e29f19511441eb977eb9ef8757c8fd68924b` (0.49.8) refreshes

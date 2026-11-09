@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.49.14
+
+Document checkpoint implementation
+`5cddc87948bce4d5c7808784e343ecc2f9475282` (0.49.13) and the matching Hactar
+recovery export `fcc219147834f02e1b288aaf855b17e85cb3be20`. Current-Beads
+mirror checks, prior-ID/comment preservation, named Vault/header validation and
+whitespace checks pass. Functional source remains unchanged.
+
 ## 0.49.13
 
 Refresh the Beads-derived public overview and encrypted recovery checkpoint.
