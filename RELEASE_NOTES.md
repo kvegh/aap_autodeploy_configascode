@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.50.5
+
+Document implementation `859b6ccd7835a0ef3e69da0fab668d139c9ff689` (0.50.4),
+the two eager whole-file evaluation failures and the existing native loading
+pattern used to fix them. All 75 affected tests, scoped strict lint, syntax,
+whitespace and accepted-CaC in-memory guards pass. Independent review found no
+significant defect. Live preview and end-to-end teardown remain pending.
+
 ## 0.50.4
 
 Fix native loading of the existing central bootstrap and AIOps capture during

@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Select private configuration branches without eager whole-file evaluation — 2026-11-09
+
+Implementation `859b6ccd7835a0ef3e69da0fab668d139c9ff689` (0.50.4) corrects
+the existing native permission preparation loader. The central bootstrap's reader
+and Vault values were valid, but selecting them through a whole-file namespace
+first evaluated unrelated `pah_base` references. The same behavior affected the
+AIOps capture through unrelated `aiops_eda_organization_name` references. These
+were variable-loading failures, not missing credentials or invalid ownership.
+
+Both files now follow the existing global native `include_vars` pattern. YAML
+selects the needed credential, metadata and instance branches directly; the
+existing ownership actions consume the AIOps loader's raw registered facts
+without templating unrelated application configuration. No loader, helper,
+repository read, credential, fallback or persisted store was added. Existing
+Vault/literal tags, protected stdin, cleanup, TLS and all guards remain intact.
+Accepted private-source checks found no overlapping existing/protected variable
+names, preserved the route/pin/source prerequisites, and passed all fourteen
+credential and project-metadata guards plus instance iteration in memory.
+
+All seventy-five directly affected tests pass, including native reproductions of
+both former failures, literal credentials, an unused nested Vault value without
+its key, complete policy loading and real encrypted partial-cleanup retry.
+Scoped strict production lint passed across fourteen encountered files, syntax
+and whitespace checks passed, and an independent agent reviewed the combined
+change without significant findings. These are local checks; the parent retains
+the normal live check-mode retry and final end-to-end acceptance.
+
 ## Retire related test VMs from their durable application CaC — 2026-11-09
 
 Implementation `c56ac82a848f11e67be57026325f3ba3c1533cfc` (0.50.2) fixes
