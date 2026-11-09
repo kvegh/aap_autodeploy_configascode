@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Use fresh default Command Center setup and target-side MCP builds — 2026-11-09
+
+The owner selected the latest Command Center source at deployment, its maintained
+default installation directory, a separate home-relative agent workspace and a
+fresh Beads tracker on first setup. Repeated deployments preserve existing
+tracker data and authentication. No demonstration-repository checkout is needed
+as a prerequisite. The missing-tools/workspace Ansible patch is prepared and
+locally checked, with publication and live application acceptance still pending.
+
+Public AIOps implementation `7a973353e2c7e0215473b1d9393b5b984d54be57`,
+release 1.2.0, implements the previously selected target-side MCP image builds.
+The obsolete rendered artifact prerequisite is removed while preserving existing
+encrypted instance records and runtime secrets. Four build fixtures, ten MCP
+regressions, syntax and focused strict lint passed; real builds and authenticated
+queries remain to be verified through the existing application jobs.
+
+The owner also requested reproducible CloudCLI setup for two new-TRA accounts
+using the newer release currently installed in the selected existing account,
+while preserving the production account's older installation. Its existing AAP
+MCP settings belong in encrypted AIOps CaC. Reading that private account requires
+a protected operator export; no credential has been copied or guessed.
+
 ## Use CaC and Ansible instead of custom deployed state — 2026-11-09
 
 The owner superseded the host-state proposals documented after `2b25410`

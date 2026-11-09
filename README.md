@@ -38,6 +38,16 @@ Use-case repositories provide their runtime instructions. Current task states an
 live results are in [TODO.md](TODO.md) and its encrypted full records, rather
 than a second checklist here.
 
+Fresh Command Center deployment uses the application's maintained default
+installation directory and a separate `~/ccng-wd` agent workspace. The owner
+selected the newest application source at deployment and a fresh Beads tracker
+on first setup; updates must preserve existing trackers and authentication.
+The focused Ansible prerequisite/workspace patch is prepared and locally
+checked, but has not yet completed its successor deployment.
+AIOps deployment release 1.2.0 now builds its MCP images on the selected TRA
+instead of staging image/RPM bundles through the hypervisor. Source publication
+is verified; live builds and authenticated queries remain acceptance work.
+
 The source AAP has completed an AAP-only successor deployment through these four
 stages, with trusted HTTPS/API authentication, a valid license and ready
 Controller. Original guests and source images were preserved. Stage 01 needed

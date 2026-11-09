@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.48.29
+
+Record the selected fresh Command Center defaults, first-use Beads setup and
+latest-source behavior, alongside the prepared prerequisite patch. Record
+published AIOps 1.2.0 target-side MCP builds separately from live acceptance.
+Refresh full encrypted task records, including the requested CloudCLI setup
+and protected existing MCP-token capture. No production application update,
+firewall application or new credential design is included in this checkpoint.
+
 ## 0.48.28
 
 Document completion of the bounded source inventory of custom managed-server

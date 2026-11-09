@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-114 tasks: 27 outstanding; 87 closed.
+118 tasks: 28 outstanding; 90 closed.
 
 ## Outstanding tasks
 
@@ -24,8 +24,9 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
-| bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
-| bead-wd-72f.31.4.7 | Diagnose and fix Windows VM creation release failure | in_progress | P1 | bug | bead-wd-72f.31.4 |
+| bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | in_progress | P1 | feature | bead-wd-72f.31.2 |
+| bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | blocked | P1 | task | bead-wd-72f.31.2 |
+| bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31, bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | in_progress | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.6.5 | Build MCP containers on the target during deployment | in_progress | P1 | feature | bead-wd-72f.31.6 |
@@ -52,6 +53,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-1rl.40.1 | Install CCNG prerequisites on the selected test workstation | closed | P1 | task | bead-wd-1rl.40 |
 | bead-wd-1rl.40.2 | Configure HTTPS reverse proxy for the existing Command Center instance | closed | P1 | task | bead-wd-1rl.40 |
 | bead-wd-1rl.40.3 | Integrate Command Center through the shared AAP CaC importer | closed | P1 | task | bead-wd-1rl.40 |
+| bead-wd-1rl.40.4 | Choose the project for the fresh test Command Center | closed | P1 | decision | bead-wd-1rl.40 |
 | bead-wd-2i1 | Separate AIOps CaC into its private companion repository | closed | P1 | task | — |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
@@ -91,9 +93,11 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.4.5 | Fix Windows completion checks after evaluation activation | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.5.1 | Pin the production Windows project to its tested revision | closed | P1 | task | bead-wd-72f.31.4.5 |
 | bead-wd-72f.31.4.6 | Approve temporary source AAP outage for successor Windows testing | closed | P1 | task | bead-wd-72f.31.4 |
+| bead-wd-72f.31.4.7 | Diagnose and fix Windows VM creation release failure | closed | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6.2 | Allow reviewed EE-based use cases without PAH repository prerequisites | closed | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.6.3 | Include the selected AAP issuer in Windows CaC trust | closed | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.6.4.1 | Choose how Hactar retains applied application firewall permissions | closed | P1 | decision | bead-wd-72f.31.6.4 |
+| bead-wd-72f.31.6.4.2 | Choose the Ansible firewall transaction lock | closed | P1 | decision | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.8 | Prepare successor Assistant test settings without replacing predecessor data | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.9 | Run successor Assistant software test and owned retirement | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | closed | P1 | task | bead-wd-72f |
