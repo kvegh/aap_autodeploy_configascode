@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.49.3
+
+Record RHSM propagation implementation
+`8efa9df482fc7497c0ffb9e6e3fe8fab5f9e2735` (0.49.2), its protected selected-instance
+inputs, preservation behavior and native serialization correction. Keep the
+36 passing source/fixture checks separate from future-instance live acceptance.
+Executable content is unchanged in this documentation follow-up.
+
 ## 0.49.2
 
 Prepare the selected AIOps instance's MCP subscription settings during its

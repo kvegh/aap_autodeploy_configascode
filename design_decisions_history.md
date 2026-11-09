@@ -1,5 +1,33 @@
 # Design decisions history
 
+## Propagate existing RHSM inputs into selected AIOps runtime settings — 2026-11-09
+
+Implementation `8efa9df482fc7497c0ffb9e6e3fe8fab5f9e2735` (0.49.2) prepares the
+RHEL prerequisite inputs needed by the existing MCP jobs. The source's existing
+vaulted organization and activation key already support AAP's RHEL setup; the
+existing AIOps pre-import phase now reuses that approved material for the
+selected allocation's encrypted runtime namespace. No new credential, store,
+helper or job is introduced, and configuration import registers no host.
+
+The instance name is derived from the verified selected allocation. The runtime
+entry includes only that name, the protected RHSM inputs and the required RHEL 9
+BaseOS/AppStream repositories. Existing matching material is retained; a
+different organization or key stops for review rather than being replaced.
+Other instances and unrelated runtime settings stay unchanged. Protected inputs
+are accepted only in the action's no-log pre-import phase and omitted afterward.
+
+The actual native-mode fixture exposed a missing exact-type serializer handler:
+Ansible's string conversion produced a native unsafe string whose literal tag
+was lost during YAML writing. Existing roundtrip validation correctly refused
+publication. Adding that type to the existing literal-string serializer fixes
+the failure without weakening validation or adding another serialization path.
+
+All 34 preparation tests and both serializer/CoP merge tests pass, including the
+actual pre/post tasks in both native modes, encrypted local Git publication,
+selected-instance preservation, repeats and mismatch refusal without credential
+output. Scoped strict lint, Python compilation and diff checks pass. These
+results do not establish future-instance live import, registration or MCP use.
+
 ## Apply source-owned firewall CaC through native Ansible — 2026-11-09
 
 Implementation `90edda0546fe149d317846d8d257fefe7abf6319` (0.49.0) replaces Python firewall mutation
