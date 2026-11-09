@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.48.27
+
+Document the owner's CaC-only desired-state decision, separate instance settings,
+and Ansible replacement of the custom isolation-helper/JSON path. Expand the
+existing cleanup task to cover helpers and custom server-side state; retain
+application data and intended-resource protections. Refresh the public task
+overview and encrypted recovery records. This checkpoint changes documentation
+and tracking only; the source inventory and firewall implementation remain open.
+
 ## 0.48.26
 
 Document the owner's CCNG setup clarification and withdraw the incorrect

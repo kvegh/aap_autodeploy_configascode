@@ -78,10 +78,13 @@ The live outage test found that the website probe times out before generating
 an event. The proved cause is a missing guest-to-hypervisor HTTPS permission.
 The owner chose AIOps-owned permissions: deployment adds its required access
 and decommission removes it. The earlier AutoDeploy exception is superseded.
-Existing checks still compare the complete policy with AutoDeploy's saved copy;
-the assigned integration work remains unfinished. A helper change to validate
-the general policy together with applied use-case permissions is proposed,
-not implemented. Unvalidated drafts must not be deployed.
+The owner requires CaC to remain the single source of truth. Each instance's
+application permissions, resource validation and target hypervisor belong in
+its own encrypted AIOps section. Applying CaC must reconcile additions, changes
+and removals; an observed rule or saved host file does not authorize retention.
+The custom isolation-helper and deployed-JSON path is being replaced with
+readable Ansible and native firewall configuration. This integration remains
+unfinished; unvalidated drafts must not be deployed.
 The website was restored, its button is disarmed and both EDA activations are off.
 Website recovery is not yet accepted.
 AIOps 1.1.8 now requires a fresh successful website sample before forwarding,
@@ -157,11 +160,16 @@ controls. If it stays at “script has not started,” download/open the file lo
 rather than rely on a preview that may block JavaScript. A control error keeps
 an already rendered diagram visible.
 
-Queued cleanup `bead-wd-72f.34` reviews standalone helpers, custom plugins/modules
-and scripts embedded in playbooks across the related demos. Certified collections
-and vendor roles come first; remaining custom code needs a concrete capability
-gap. The result must be readable and maintainable, with fewer components and
-clear errors, while preserving target/security checks and the working demo.
+Queued cleanup `bead-wd-72f.34` replaces unnecessary standalone helpers, custom
+plugins/modules, embedded scripts and custom server-side state files across the
+related demos. Its source inventory is `bead-wd-72f.34.1`; the firewall portion
+is already in progress separately. Use readable Ansible and certified collections
+or vendor roles. Keep desired configuration, ownership and validation in existing
+encrypted project CaC, separated by instance, and migrate consumers before
+removing their old helpers or files. Preserve application-native authentication,
+data and necessary native service configuration. Any remaining capability gap
+needs a concrete explanation and owner consultation. This is planned cleanup,
+not a completed migration or authority for blanket live deletion.
 
 Beads is authoritative. `scripts/sync_todo.py` generates the public task overview
 and encrypts complete scoped records in the existing Hactar repository; run its

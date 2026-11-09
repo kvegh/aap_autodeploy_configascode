@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Use CaC and Ansible instead of custom deployed state — 2026-11-09
+
+The owner superseded the host-state proposals documented after `2b25410`
+(0.48.26). Encrypted project CaC is the single desired-state authority, including
+ownership, validation and the target hypervisor. Each instance has its own
+section; adding another instance must preserve existing sections. Applying
+changed CaC must remove deleted permissions rather than preserve observed rules.
+
+The immediate firewall work replaces the custom isolation-helper/JSON path
+with readable Ansible and native firewall configuration. The broader existing
+cleanup task now includes custom helpers and deployed sidecar state; a parallel
+source inventory identifies writers and consumers before migration. Native
+application authentication/data and essential resource/production checks remain
+protected. These are selected requirements and work in progress, not a claim of
+implementation or live acceptance. This conversation owns the firewall work;
+the application-builder conversation retains application development.
+
+The owner also selected target-side MCP image builds, with public build recipes
+and encrypted per-instance AIOps configuration. The offline key-delivery choice
+is superseded. A registry or separate development/build host remains deferred.
+
 ## Correct the CCNG blocker and preserve separate firewall ownership — 2026-11-09
 
 The owner confirmed existing CCNG setup creates a password when absent and
