@@ -1,7 +1,7 @@
 """Preserve explicit literal-template tags when writing protected CaC YAML."""
 
 from ansible.parsing.yaml.dumper import AnsibleDumper
-from ansible.utils.unsafe_proxy import AnsibleUnsafeText
+from ansible.utils.unsafe_proxy import AnsibleUnsafeText, NativeJinjaUnsafeText
 
 
 class VaultDumper(AnsibleDumper):
@@ -13,6 +13,7 @@ def literal_text(dumper, value):
 
 
 VaultDumper.add_representer(AnsibleUnsafeText, literal_text)
+VaultDumper.add_representer(NativeJinjaUnsafeText, literal_text)
 VaultDumper.add_multi_representer(AnsibleUnsafeText, literal_text)
 
 

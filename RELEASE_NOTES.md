@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.49.2
+
+Prepare the selected AIOps instance's MCP subscription settings during its
+existing pre-import phase. Reuse the vaulted RHSM organization/activation key
+already used by AAP RHEL setup and persist only the selected instance name and
+required RHEL 9 BaseOS/AppStream repositories in the existing runtime Vault.
+Preserve other instances and existing material; refuse conflicts without
+credential rotation. The post-import phase receives no RHSM material.
+
+Preserve native Jinja unsafe-string tags through the existing YAML serializer,
+fixing the concrete roundtrip refusal found by the native-mode test. All 34
+preparation tests and both serializer/CoP merge tests pass, including real local
+encrypted Git and both native Ansible modes. Strict scoped lint, compilation and
+diff checks pass. This publication adds no live registration or deployment proof.
+
 ## 0.49.1
 
 Document the owner-selected native Ansible/CaC firewall implementation at

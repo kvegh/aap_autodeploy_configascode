@@ -182,6 +182,39 @@ class InstancePreparationTests(unittest.TestCase):
         self.assertEqual((capture, runtime), before)
         self.assertIsInstance(after["unrelated"]["injector"], AnsibleUnsafeText)
 
+    def test_subscription_seeds_only_the_selected_namespace_and_repeats_without_rotation(self):
+        context, capture, runtime, _, _ = fixture()
+        runtime["instances"]["aap27-test-6"] = {"demo_mcp_subscription": {"keep": wrap_var("{{ previous_literal }}")}}
+        runtime["instances"][context["instance_name"]] = {"demo_zabbix_mcp_api_token": wrap_var("existing-zabbix-token")}
+        before = deepcopy((capture, runtime))
+        subscription = {"organization": "synthetic-org", "activation_keys": ["synthetic-key-{{ literal }}"]}
+        after, protected = settings.prepare_documents(capture, runtime, context, "Base guest Machine", subscription=subscription)
+        selected = protected["instances"][context["instance_name"]]
+        self.assertEqual(selected["demo_zabbix_mcp_api_token"], "existing-zabbix-token")
+        self.assertEqual(selected["demo_mcp_subscription"]["instance_name"], context["instance_name"])
+        self.assertEqual(selected["demo_mcp_subscription"]["organization"], subscription["organization"])
+        self.assertEqual(selected["demo_mcp_subscription"]["activation_keys"], subscription["activation_keys"])
+        self.assertIsInstance(selected["demo_mcp_subscription"]["activation_keys"][0], AnsibleUnsafeText)
+        self.assertEqual(protected["instances"]["aap27-test-6"], runtime["instances"]["aap27-test-6"])
+        self.assertEqual((capture, runtime), before)
+        repeated = settings.prepare_documents(after, protected, context, "Base guest Machine", subscription=subscription)
+        self.assertEqual(repeated, (after, protected))
+
+    def test_subscription_mismatch_or_invalid_input_refuses_without_secret_output(self):
+        context, capture, runtime, _, _ = fixture()
+        subscription = {"organization": "synthetic-org", "activation_keys": ["synthetic-sensitive-activation-key"]}
+        after, protected = settings.prepare_documents(capture, runtime, context, "Base guest Machine", subscription=subscription)
+        before = deepcopy((after, protected))
+        cases = [{"organization": "another-org", "activation_keys": subscription["activation_keys"]},
+                 {"organization": subscription["organization"], "activation_keys": ["another-key"]},
+                 {"organization": "", "activation_keys": subscription["activation_keys"]},
+                 {"organization": subscription["organization"], "activation_keys": []}]
+        for value in cases:
+            with self.subTest(value=value), self.assertRaises(Exception) as raised:
+                settings.prepare_documents(after, protected, context, "Base guest Machine", subscription=value)
+            self.assertNotIn(subscription["activation_keys"][0], str(raised.exception))
+            self.assertEqual((after, protected), before)
+
     def test_released_linux_guest_is_consumable_without_inventory_defaults(self):
         context, _, _, _, _ = fixture()
         resource = guest(context)["vm_resource"]
@@ -368,6 +401,8 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.workspace.mkdir(mode=0o700)
         self.checkout = self.workspace / "repository"
         self.context, capture, runtime, self.instance, self.hypervisor = fixture()
+        self.subscription = {"organization": wrap_var("synthetic-rhsm-org"),
+                             "activation_keys": [wrap_var("synthetic-rhsm-key-{{ protected_rhsm_literal }}")]}
         capture.update(aiops_website_dns_zone="example.invalid", aiops_guest_machine_credential_name="Base guest Machine",
                        aiops_configuration_ready=True)
         capture["cac_import_metadata"] = {"schema_version": 1, "project_id": "aiops-selfhealing-demo",
@@ -430,10 +465,12 @@ class EncryptedPublicationTests(unittest.TestCase):
         return (AnsibleLoader(self.vault.decrypt(capture)).get_single_data(),
                 AnsibleLoader(self.vault.decrypt(runtime)).get_single_data(), capture, runtime)
 
-    def action(self, operation="pre", vault=None):
+    def action(self, operation="pre", vault=None, subscription=None, no_log=True):
         action = object.__new__(self.plugin.ActionModule)
-        action._task = SimpleNamespace(check_mode=False, args={"operation": operation, "authentication": {
+        action._task = SimpleNamespace(check_mode=False, no_log=no_log, args={"operation": operation, "authentication": {
             "hostname": self.context["aap_origin"], "token": "synthetic-api-token", "username": "", "password": ""}})
+        if operation == "pre":
+            action._task.args["subscription"] = self.subscription if subscription is None else subscription
         action._loader = DataLoader()
         action._loader.set_vault_secrets((vault or self.vault).secrets)
         action._templar = SimpleNamespace(available_variables={}, template=deepcopy)
@@ -449,18 +486,40 @@ class EncryptedPublicationTests(unittest.TestCase):
         capture, runtime, cipher, runtime_cipher = self.remote_pair()
         selected = capture["aiops_instances"][self.context["instance_name"]]
         self.assertEqual(set(selected), {"guest_machine_credential_name", "event_stream_password", "testserver_monitoring_enabled"})
-        self.assertEqual(runtime["instances"][self.context["instance_name"]], {})
+        subscription = runtime["instances"][self.context["instance_name"]]["demo_mcp_subscription"]
+        self.assertEqual(subscription["instance_name"], self.context["instance_name"])
+        self.assertEqual(subscription["organization"], self.subscription["organization"])
+        self.assertEqual(subscription["activation_keys"], self.subscription["activation_keys"])
+        self.assertIsInstance(subscription["activation_keys"][0], AnsibleUnsafeText)
         self.assertEqual(capture["unrelated"], before_capture["unrelated"])
         self.assertEqual(runtime["instances"]["aap27-test-6"], before_runtime["instances"]["aap27-test-6"])
         self.assertTrue(cipher.startswith(b"$ANSIBLE_VAULT;1.2;AES256;cac\n"))
         self.assertTrue(runtime_cipher.startswith(b"$ANSIBLE_VAULT;1.1;AES256\n"))
         self.assertEqual(capture["aiops_runtime_settings_vault"], runtime_cipher.decode())
         self.assertNotIn(selected["event_stream_password"].encode(), cipher + runtime_cipher)
+        self.assertNotIn(self.subscription["activation_keys"][0].encode(), cipher + runtime_cipher)
         accepted = self.git("--git-dir", str(self.bare), "rev-parse", "main")
         self.assertFalse(self.action()["changed"])
         self.assertEqual(self.git("--git-dir", str(self.bare), "rev-parse", "main"), accepted)
         self.assertFalse(list(self.checkout.rglob(".aiops-settings-*")))
         self.assertEqual(self.git("-C", str(self.checkout), "status", "--porcelain"), "")
+
+    def test_conflicting_subscription_refuses_publication_and_exposes_no_credentials(self):
+        self.action()
+        accepted = self.git("--git-dir", str(self.bare), "rev-parse", "main")
+        changed = dict(self.subscription, activation_keys=["synthetic-other-activation-key"])
+        with self.assertRaises(AnsibleActionFail) as raised:
+            self.action(subscription=changed)
+        self.assertNotIn(self.subscription["activation_keys"][0], str(raised.exception))
+        self.assertNotIn(changed["activation_keys"][0], str(raised.exception))
+        self.assertEqual(self.git("--git-dir", str(self.bare), "rev-parse", "main"), accepted)
+
+    def test_subscription_requires_protected_logging_before_any_api_or_git_work(self):
+        accepted = self.git("--git-dir", str(self.bare), "rev-parse", "main")
+        with self.assertRaisesRegex(AnsibleActionFail, "no-log pre-import"):
+            self.action(no_log=False)
+        self.assertFalse(self.client.calls)
+        self.assertEqual(self.git("--git-dir", str(self.bare), "rev-parse", "main"), accepted)
 
     def test_post_reads_native_ids_then_publishes_ciphertext_and_preserves_key(self):
         self.action()
@@ -604,17 +663,18 @@ class EncryptedPublicationTests(unittest.TestCase):
         password = "{{ aiops_instances['aap27-test-7'].event_stream_password }}"
         variables = {key: value for key, value in self.variables.items() if key != "hostvars"}
         variables["cac_import_resources"] = resources(password)
+        variables["cac_api_auth"] = {"hostname": self.context["aap_origin"], "token": "synthetic-api-token", "username": "", "password": ""}
+        variables["vault_rhsm_org_id"] = self.subscription["organization"]
+        variables["vault_rhsm_activation_key"] = self.subscription["activation_keys"][0]
         playbook = self.root / "fixture.yml"
         playbook.write_text(yaml.dump([{"hosts": "localhost", "connection": "local", "gather_facts": False,
             "vars": variables, "tasks": [
-                {"name": "Prepare encrypted selected namespace before any roles", "aap_cac_prepare_aiops": {
-                    "operation": "pre", "authentication": {"hostname": self.context["aap_origin"],
-                    "token": "synthetic-api-token", "username": "", "password": ""}}, "no_log": True},
-                {"name": "Reload accepted capture for native nested rendering", "ansible.builtin.include_vars": {
-                    "file": str(self.checkout / self.plugin.CAPTURE)}, "no_log": True},
-                {"name": "Retain native target identifiers after simulated existing roles", "aap_cac_prepare_aiops": {
-                    "operation": "post", "authentication": {"hostname": self.context["aap_origin"],
-                    "token": "synthetic-api-token", "username": "", "password": ""}}, "no_log": True},
+                {"name": "Prepare encrypted selected namespace using the real pre-import task",
+                 "ansible.builtin.include_tasks": str(ROOT / "tasks/cac-aiops-settings.yml"),
+                 "vars": {"cac_aiops_settings_phase": "pre"}},
+                {"name": "Retain native target identifiers using the real post-import task",
+                 "ansible.builtin.include_tasks": str(ROOT / "tasks/cac-aiops-settings.yml"),
+                 "vars": {"cac_aiops_settings_phase": "post"}},
             ]}], Dumper=self.plugin.vault_yaml.VaultDumper, sort_keys=False))
         environment = dict(os.environ, ANSIBLE_LOCAL_TEMP=str(self.root / "local"),
             ANSIBLE_REMOTE_TEMP=str(self.root / "remote"), ANSIBLE_ACTION_PLUGINS=str(plugin_dir) + ":" + str(ROOT / "action_plugins"),
@@ -630,6 +690,8 @@ class EncryptedPublicationTests(unittest.TestCase):
                          capture["aiops_instances"][self.context["instance_name"]]["event_stream_password"])
         self.assertEqual(capture["aiops_runtime_settings_vault"], runtime_cipher.decode())
         self.assertNotIn(selected["demo_zabbix_event_stream"]["password"], result.stdout + result.stderr)
+        self.assertEqual(selected["demo_mcp_subscription"]["activation_keys"], self.subscription["activation_keys"])
+        self.assertNotIn(self.subscription["activation_keys"][0], result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

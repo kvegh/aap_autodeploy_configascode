@@ -30,6 +30,18 @@ Retries retain the accepted password, including a lost Git push acknowledgement.
 Existing deployments' known runtime/password material is preserved rather than
 rotated or copied into another allocation.
 
+The same pre-import phase reads the existing vaulted `vault_rhsm_org_id` and
+`vault_rhsm_activation_key` already used for AAP's RHEL installation. It seeds
+only this instance's `demo_mcp_subscription` in the existing runtime Vault,
+with its physical instance key and the required RHEL 9 BaseOS/AppStream
+repositories. Existing selected values must agree; a different organization or
+activation key stops for review instead of replacing credentials. All other
+runtime settings and instances are preserved. The protected input is passed
+only to the existing preparation action, with `no_log`, before import; the
+post-import phase receives no RHSM material. This creates no new credential,
+store, job or registration activity. The existing MCP job later performs the
+actual RHEL prerequisite configuration on its verified TRA.
+
 Absent auxiliary guests remain absent. Only matching existing native source
 inventory `vm_resource` records can populate a guest entry. Their VM name,
 number, hypervisor, UUID, disk, network, address, machine ID, SSH keys, account
@@ -79,7 +91,7 @@ new secrets or claim a usable first deployment.
 
 This removes the first-import requirement for already-created auxiliary guests.
 It does not add VM orchestration. Testserver/TRA creation, Zabbix deployment,
-MCP artifact preparation and application readiness still use their existing
+MCP target-side builds and application readiness still use their existing
 deployment paths. Shared DNS/frontend/provider inputs must come from explicitly
 approved sources. Instance URLs, native identifiers, ownership records and
 target-local AAP/EDA credentials remain specific to the selected environment.

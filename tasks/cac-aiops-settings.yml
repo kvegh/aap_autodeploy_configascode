@@ -4,6 +4,9 @@
     operation: "{{ cac_aiops_settings_phase }}"
     authentication: "{{ cac_api_auth }}"
     mcp_connection: "{{ cac_selected_instance_access.mcp_connection | default(omit) }}"
+    subscription: >-
+      {{ {'organization': vault_rhsm_org_id | string, 'activation_keys': [vault_rhsm_activation_key]}
+         if cac_aiops_settings_phase == 'pre' else omit }}
   no_log: true
 
 - name: Reload the verified encrypted AIOps capture after publication

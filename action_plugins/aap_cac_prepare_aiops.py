@@ -39,11 +39,14 @@ class ActionModule(ActionBase):
             self._templar.available_variables = variables
             require = settings.require
             require({"operation", "authentication"} <= set(self._task.args)
-                    <= {"operation", "authentication", "mcp_connection"}
+                    <= {"operation", "authentication", "mcp_connection", "subscription"}
                     and self._task.args["operation"] in ("pre", "post"),
                     "Choose pre-import preparation or post-import native resource readback.")
             require(not self._task.check_mode, "Encrypted AIOps preparation needs a normal import, not check mode.")
             operation = self._task.args["operation"]
+            require((operation == "pre" and "subscription" in self._task.args and self._task.no_log is True)
+                    or (operation == "post" and "subscription" not in self._task.args),
+                    "Pass protected RHSM inputs only during no-log pre-import preparation.")
             contract = self._templar.template(variables["cac_project_contract"])
             require(contract["project_id"] == "aiops-selfhealing-demo"
                     and contract["configuration_file"] == CAPTURE,
@@ -126,7 +129,8 @@ class ActionModule(ActionBase):
                             sources[name] = record(name, ("aap_instance_number", "hypervisor_host", "vm_resource",
                                 "ansible_host", "vm_uuid", "machine_id", "host_keys", "ansible_user", "ansible_port"))
                     desired, runtime = settings.prepare_documents(before, old_runtime, context, credential_name, sources,
-                        mcp_access=self._task.args.get("mcp_connection"), authentication=auth)
+                        mcp_access=self._task.args.get("mcp_connection"), authentication=auth,
+                        subscription=self._task.args["subscription"])
                 else:
                     require(before["aiops_instances"][context["instance_name"]]["guest_machine_credential_name"] == credential_name,
                             "Keep the pre-import base Machine credential binding.")

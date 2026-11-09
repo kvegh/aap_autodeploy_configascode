@@ -217,7 +217,7 @@ def merge_source_guest(instances, context, role, source, zabbix_source_sha256=No
 
 
 def prepare_documents(capture, runtime, context, credential_name, source_hosts=None, password_factory=None,
-                      mcp_access=None, authentication=None):
+                      mcp_access=None, authentication=None, subscription=None):
     """Seed only missing selected data and preserve every existing instance/secret."""
     require(isinstance(capture, dict) and isinstance(capture.get("aiops_instances"), dict),
             "Keep the reviewed AIOps capture and existing instance mapping.")
@@ -256,6 +256,24 @@ def prepare_documents(capture, runtime, context, credential_name, source_hosts=N
     require(isinstance(selected["event_stream_password"], str) and len(selected["event_stream_password"]) >= 16,
             "Keep the selected instance's persisted Event Stream password.")
     settings["instances"].setdefault(name, {})
+    if subscription is not None:
+        require(isinstance(subscription, dict) and set(subscription) == {"organization", "activation_keys"}
+                and isinstance(subscription["organization"], str) and subscription["organization"].strip()
+                and isinstance(subscription["activation_keys"], list) and subscription["activation_keys"]
+                and all(isinstance(key, str) and key.strip() for key in subscription["activation_keys"]),
+                "Use the existing protected RHSM organization and activation keys.")
+        desired_subscription = wrap_var({
+            "instance_name": name, "organization": subscription["organization"],
+            "activation_keys": deepcopy(subscription["activation_keys"]),
+            "repositories": [
+                {"name": "rhel-9-for-x86_64-baseos-rpms", "state": "enabled"},
+                {"name": "rhel-9-for-x86_64-appstream-rpms", "state": "enabled"},
+            ],
+        })
+        existing_subscription = settings["instances"][name].get("demo_mcp_subscription")
+        require(existing_subscription is None or existing_subscription == desired_subscription,
+                "Existing selected RHSM inputs differ; review replacement explicitly without rotating credentials.")
+        settings["instances"][name]["demo_mcp_subscription"] = desired_subscription
     if mcp_access is not None:
         connection = keys.mcp_connection(mcp_access)
         require(connection["url"] == "https://" + context["aap_private_address"] + ":8448/mcp"

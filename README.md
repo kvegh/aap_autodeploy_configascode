@@ -44,9 +44,14 @@ selected the newest application source at deployment and a fresh Beads tracker
 on first setup; updates must preserve existing trackers and authentication.
 The focused Ansible prerequisite/workspace patch is prepared and locally
 checked, but has not yet completed its successor deployment.
-AIOps deployment release 1.2.0 now builds its MCP images on the selected TRA
-instead of staging image/RPM bundles through the hypervisor. Source publication
-is verified; live builds and authenticated queries remain acceptance work.
+AIOps deployment release 1.3.0 prepares RHEL repository prerequisites and builds
+its MCP images on the selected TRA instead of staging image/RPM bundles through
+the hypervisor. Its source publication is verified; live builds and authenticated
+queries remain acceptance work. AutoDeploy's existing AIOps pre-import step now
+seeds the selected encrypted runtime namespace from the same vaulted RHSM inputs
+used for AAP's RHEL installation. Repeated imports preserve those values, and
+conflicting values stop for review. Thirty-six preparation/serialization checks
+and strict scoped lint pass; future-instance live propagation remains unverified.
 
 The source AAP has completed an AAP-only successor deployment through these four
 stages, with trusted HTTPS/API authentication, a valid license and ready

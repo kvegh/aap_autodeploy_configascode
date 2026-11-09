@@ -12,7 +12,7 @@ import unittest
 
 import yaml
 from ansible.parsing.yaml.loader import AnsibleLoader
-from ansible.utils.unsafe_proxy import AnsibleUnsafeText
+from ansible.utils.unsafe_proxy import AnsibleUnsafeText, NativeJinjaUnsafeText
 from ansible.utils.unsafe_proxy import wrap_var
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,14 +28,16 @@ class BaseWildcardMergeTests(unittest.TestCase):
     ):
         values = {
             "literal": wrap_var("{{ api_token }}"),
+            "native_literal": NativeJinjaUnsafeText("{{ native_token }}"),
             "input": "{{ fixture_upstream_token }}",
         }
         rendered = yaml.dump(values, Dumper=vault_yaml.VaultDumper)
         loaded = AnsibleLoader(rendered).get_single_data()
         self.assertEqual(loaded, values)
         self.assertIsInstance(loaded["literal"], AnsibleUnsafeText)
+        self.assertIsInstance(loaded["native_literal"], AnsibleUnsafeText)
         self.assertNotIsInstance(loaded["input"], AnsibleUnsafeText)
-        self.assertEqual(vault_yaml.literal_paths(loaded), {("literal",)})
+        self.assertEqual(vault_yaml.literal_paths(loaded), {("literal",), ("native_literal",)})
 
     def test_exact_vendor_merge_preserves_literal_injectors_and_resolves_ordinary_inputs(
         self,
