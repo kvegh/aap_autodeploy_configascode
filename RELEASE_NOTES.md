@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.49.9
+
+Document task-mirror implementation
+`96e5e29f19511441eb977eb9ef8757c8fd68924b` (0.49.8) and the matching encrypted
+Hactar checkpoint `a8681163134ef3432bafe7ac42ceaf3e3231903c`. The export retains
+181 records, all prior IDs and all 258 comments. Both live Beads mirror checks,
+native Vault preservation checks and nineteen focused mirror/version tests pass.
+No source-authentication or live application success is implied by this recovery
+documentation update.
+
 ## 0.49.8
 
 Document the current Beads-derived task overview and encrypted recovery

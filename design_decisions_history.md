@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Preserve blocked inputs in the recovery checkpoint — 2026-11-09
+
+Implementation `96e5e29f19511441eb977eb9ef8757c8fd68924b` (0.49.8) refreshes
+the existing public task mirror. Matching Hactar checkpoint
+`a8681163134ef3432bafe7ac42ceaf3e3231903c` preserves 181 complete selected
+records, all 180 previously exported IDs and all 258 comments under the existing
+Vault scope and header. AutoDeploy lists 122 tasks; Hactar lists 80. The existing
+exporters remain authoritative projections of Beads, not another task store.
+
+The native firewall source consumers are published, but ordinary setup still
+failed fetching its private configuration source. Authentication delivery is
+therefore back in progress rather than complete. The new fresh-instance Zabbix
+ownership-publication decision remains blocked. Private input preparation and
+publication do not establish successful source retrieval, host application,
+MCP builds, fresh Command Center acceptance or readiness for the physical rebuild.
+
+Both exporters' current-state checks, native Vault roundtrip/preservation,
+nine AutoDeploy mirror tests, six Hactar mirror tests, four version-tool tests
+and whitespace checks passed. The process diagrams, functional source and user
+handover were unchanged. No live controller, guest, firewall, DNS or credential
+operation was performed by this documentation checkpoint.
+
 ## Explain elapsed actions across the requested seven-day window — 2026-11-09
 
 Implementation `ce594b99c587b99c9e2191fbf2ec50b001ee1608` (0.49.6) replaces
