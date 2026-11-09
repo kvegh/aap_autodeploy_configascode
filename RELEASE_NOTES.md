@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.49.1
+
+Document the owner-selected native Ansible/CaC firewall implementation at
+`90edda0546fe149d317846d8d257fefe7abf6319` (0.49.0), its verified source checks,
+base-only publication boundary, exact decommission ordering and remaining
+operator/live rollout steps. Executable content is unchanged.
+
 ## 0.49.0
 
 Replace custom firewall mutation and deployed JSON policy with native Hactar

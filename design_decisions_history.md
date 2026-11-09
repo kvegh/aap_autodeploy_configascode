@@ -1,5 +1,37 @@
 # Design decisions history
 
+## Apply source-owned firewall CaC through native Ansible — 2026-11-09
+
+Implementation `90edda0546fe149d317846d8d257fefe7abf6319` (0.49.0) replaces Python firewall mutation
+and the deployed JSON policy with readable Ansible, certified firewall role
+1.120.5 and reviewed Hactar native nft tasks. The owner selected CaC as desired
+state, including removals, and approved temporary atomic-directory locking across
+independent jobs. Existing resource/production guards and source-publication
+boundaries remain; read-only provisioning pin checks require an explicit apply
+when native policy differs. The same-host switch must quiesce old flock writers.
+
+Application permissions remain in their own encrypted AIOps instance records.
+Existing central bootstrap authentication loads that source without a second
+colliding Git credential. Native tagged loading preserves unsafe literals and
+unused encrypted leaves; no deployed state file becomes policy authority. Only
+native old/new/rollback policy combines base with current application grants.
+Canonical base publication remains base-only. The independent protected source
+address and reviewed public Hactar revision are required caller inputs.
+
+Exact selected decommission disables and verifies ordinary rich rules before
+removing domains or source records, while retaining other instances. Arbitrary
+source omission cannot identify an already orphaned ordinary rule: stop for
+manual reconciliation rather than infer ownership or purge unrelated rules.
+New clone-record publication and final AIOps-record retirement remain explicit
+private-CaC operator steps; no new publisher, registry, credential type or service
+was introduced.
+
+The merged functional source passed 103 focused tests, strict scoped lint for
+16 Ansible files and syntax checks of the five normal stage/decommission
+playbooks. These are source/fixture results. Protected migration, coordinated
+consumer pins, host application and live AAP demonstration acceptance remain
+separate rollout work. No formal review or live acceptance is claimed.
+
 ## Use fresh default Command Center setup and target-side MCP builds — 2026-11-09
 
 The owner selected the latest Command Center source at deployment, its maintained
