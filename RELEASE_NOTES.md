@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.49.5
+
+Record bounded project-wait implementation
+`29f2a29470fceb088e42cce892bef2307245f68e` (0.49.4), the observed polling
+exhaustion and subsequently successful synchronization, and the existing-role
+validation. Executable content is unchanged in this documentation follow-up;
+normal AAP import acceptance remains separate.
+
 ## 0.49.4
 
 Allow Controller project imports 180 one-second async status polls through the

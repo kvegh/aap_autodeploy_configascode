@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Wait for normal Controller project synchronization — 2026-11-09
+
+Implementation `29f2a29470fceb088e42cce892bef2307245f68e` (0.49.4) fixes the
+observed successor CaC import failure while creating its Controller project.
+The exact pinned CoP 4.10 role allowed 50 one-second status polls. Protected
+event metadata showed all 50 attempts were exhausted after 60.280 seconds;
+the underlying project update continued and then succeeded in 67.684 seconds.
+The importer's outer wait ended before the ordinary synchronization completed.
+
+The existing dispatcher call now supplies the documented project-specific
+180 retries and one-second delay. This retains bounded completion below the
+role's existing 1000-second async module allowance without changing other
+resource waits, secure logging or failure reporting. No second retry job,
+reconciliation path, helper or polling service is added.
+
+The focused test resolves the actual pinned collection's project defaults and
+collector arguments, checks the selected wait and secure logging, and confirms
+the wait remains below the existing async allowance. Strict scoped lint, Python
+compilation and diff checks pass. A normal AAP import must still verify the
+published change live; local routing checks are not that acceptance result.
+
 ## Propagate existing RHSM inputs into selected AIOps runtime settings — 2026-11-09
 
 Implementation `8efa9df482fc7497c0ffb9e6e3fe8fab5f9e2735` (0.49.2) prepares the
