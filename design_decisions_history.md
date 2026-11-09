@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Correct the CCNG blocker and preserve separate firewall ownership — 2026-11-09
+
+The owner confirmed existing CCNG setup creates a password when absent and
+reuses an existing one. Source `f6c28a1` (0.37.0) documents that interactive
+behavior; its AAP task requires protected input only without authentication.
+The earlier claim that a new application setup feature was required is withdrawn.
+The rollout is ordinary unfinished work: update the selected successor data,
+verify its existing setup path, deploy through AAP and check actual login.
+No user password, default, auth transfer or changed authentication design is
+supplied by this clarification. Production proxy task completion remains separate.
+
+The owner also chose AIOps ownership for Zabbix-specific firewall permissions,
+added on deployment and removed on decommission. The earlier exception question
+is superseded. Building Command Center owns the integration; its draft calls
+interfaces that do not yet exist and has no live validation. This documentation
+does not publish that draft or implement the proposed base/use-case policy check.
+
 ## Stop monitoring setup on an invalid sample and preserve the ownership choice — 2026-11-08
 
 AIOps implementation `f1b5d64` (1.1.8) requires a fresh successful website

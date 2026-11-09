@@ -17,7 +17,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 
 | Task | Title | Status | Priority | Type | Parent / dependency IDs |
 |---|---|---|---|---|---|
-| bead-wd-1rl.40 | Deploy Command Center from AAP to the selected workstation | blocked | P1 | task | bead-wd-1rl |
+| bead-wd-1rl.40 | Deploy Command Center from AAP to the selected workstation | in_progress | P1 | task | bead-wd-1rl |
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
@@ -28,7 +28,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.7 | Diagnose and fix Windows VM creation release failure | in_progress | P1 | bug | bead-wd-72f.31.4 |
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
-| bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | blocked | P1 | bug | bead-wd-72f.31.6 |
+| bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | open | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.34 | Replace unnecessary non-Ansible code with standard Ansible content | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | blocked | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |

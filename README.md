@@ -76,13 +76,17 @@ bounded DNS wait covers the observed negative cache.
 The frontend's trusted HTTPS Basic-authentication gate passed independently.
 The live outage test found that the website probe times out before generating
 an event. The proved cause is a missing guest-to-hypervisor HTTPS permission.
-Applying it is held on the ownership of existing shared firewall records;
-automatic publication from the saved-image Zabbix job is not implemented.
+The owner chose AIOps-owned permissions: deployment adds its required access
+and decommission removes it. The earlier AutoDeploy exception is superseded.
+Existing checks still compare the complete policy with AutoDeploy's saved copy;
+the assigned integration work remains unfinished. A helper change to validate
+the general policy together with applied use-case permissions is proposed,
+not implemented. Unvalidated drafts must not be deployed.
 The website was restored, its button is disarmed and both EDA activations are off.
 Website recovery is not yet accepted.
 AIOps 1.1.8 now requires a fresh successful website sample before forwarding,
 with standard retry-exhaustion handling. Fifteen focused tests and strict lint
-passed; live acceptance of that correction waits for the policy decision.
+passed; live acceptance of that correction waits for the firewall integration.
 Private MCP setup and the complete AI-driven outage/repair test remain open;
 the existing non-AI website recovery route is a separate functional check.
 
@@ -647,12 +651,16 @@ downloads the public application source over verified HTTPS without a Git token.
 Pin the AAP project and guest checkout to the same tested application commit.
 Choose a published revision that supports the intended configuration format;
 importing CaC does not upgrade a running application or restart active agents.
-Fresh application setup must let the operator create the password at first
-browser opening, without a default or a password supplied in deployment settings.
-Reruns preserve existing user authentication. The application owner confirmed
-published CCNG 0.35.1 does not yet support this first-opening flow, so fresh
-deployment remains held for that implementation and verification. The earlier
-request to place an initial application password in the Vault is withdrawn.
+The owner clarified that existing setup creates a user-chosen password when
+authentication is absent and preserves configured authentication on updates.
+The earlier claim that an application password-setup feature was missing is
+withdrawn. Published CCNG 0.37.0 documents this interactive setup; its Ansible
+path requires protected input only when authentication is absent. Verify the
+selected guest and the existing noninteractive setup path before requesting
+anything further. Do not create a default password or copy production auth.
+The successor application deployment and login checks remain unfinished;
+working production proxy access is a separate completed task. No password
+input is currently requested from the owner.
 Both mappings may be omitted when replacement-access bootstrap is not wanted.
 The production and existing fresh-instance credential names, grants and bindings
 were verified after migration. Configuration templates keep their own repository

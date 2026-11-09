@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.48.26
+
+Document the owner's CCNG setup clarification and withdraw the incorrect
+missing-feature blocker. Published 0.37.0 already creates a chosen password
+during fresh interactive setup and preserves existing authentication. The
+successor AAP-driven deployment and its noninteractive authentication handling
+remain under verification, with no new password input requested.
+
+Document the decision that Zabbix-specific permissions belong to AIOps and
+follow deployment/removal. The earlier AutoDeploy exception is superseded;
+the assigned firewall integration remains unfinished and is not deployed here.
+Refresh task records without including the other worker's unvalidated draft.
+
 ## 0.48.25
 
 Document the proved missing monitoring-guest permission to the hypervisor bridge
