@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-122 tasks: 29 outstanding; 93 closed.
+123 tasks: 29 outstanding; 94 closed.
 
 ## Outstanding tasks
 
@@ -30,7 +30,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | in_progress | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.6.4.4 | Wire native firewall inputs into use-case CaC jobs | in_progress | P1 | task | bead-wd-72f.31.6.4 |
-| bead-wd-72f.31.6.4.5 | Choose when fresh Zabbix VM details enter AIOps CaC | blocked | P1 | decision | bead-wd-72f.31.6.4 |
+| bead-wd-72f.31.6.4.6 | Save verified new Zabbix VM details into existing CaC definitions | in_progress | P1 | task | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6.5 | Build MCP containers on the target during deployment | in_progress | P1 | feature | bead-wd-72f.31.6 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
@@ -100,6 +100,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.6.4.1 | Choose how Hactar retains applied application firewall permissions | closed | P1 | decision | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6.4.2 | Choose the Ansible firewall transaction lock | closed | P1 | decision | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6.4.3 | Move application firewall grants into per-instance CaC | closed | P1 | task | bead-wd-72f.31.6.4 |
+| bead-wd-72f.31.6.4.5 | Choose when fresh Zabbix VM details enter AIOps CaC | closed | P1 | decision | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.8 | Prepare successor Assistant test settings without replacing predecessor data | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.9 | Run successor Assistant software test and owned retirement | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | closed | P1 | task | bead-wd-72f |

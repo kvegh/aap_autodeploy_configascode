@@ -52,14 +52,22 @@ selected the newest application source at deployment and a fresh Beads tracker
 on first setup; updates must preserve existing trackers and authentication.
 The focused Ansible prerequisite/workspace patch is prepared and locally
 checked, but has not yet completed its successor deployment.
-AIOps deployment release 1.3.0 prepares RHEL repository prerequisites and builds
+AIOps deployment release 1.4.1 prepares RHEL repository prerequisites and builds
 its MCP images on the selected TRA instead of staging image/RPM bundles through
-the hypervisor. Its source publication is verified; live builds and authenticated
-queries remain acceptance work. AutoDeploy's existing AIOps pre-import step now
-seeds the selected encrypted runtime namespace from the same vaulted RHSM inputs
-used for AAP's RHEL installation. Repeated imports preserve those values, and
-conflicting values stop for review. Thirty-six preparation/serialization checks
-and strict scoped lint pass; future-instance live propagation remains unverified.
+the hypervisor. Registration, repositories and packages passed on the selected
+runtime guest; its container build failed and protected log diagnosis remains
+unfinished. Authenticated queries and repair still need acceptance. AutoDeploy's
+existing pre-import step seeds the selected encrypted runtime namespace with the
+same vaulted RHSM inputs used for AAP and the existing private Hactar source
+reader. Repeated imports preserve matching values and refuse conflicts. Native
+source retrieval passed in a normal monitoring job; live firewall reconciliation
+and the complete monitoring/EDA loop remain unfinished.
+
+Newly verified monitoring-VM details must be saved inside that instance's existing
+Zabbix VM definition, with its configuration nested there. The owner approved
+reusing the existing CaC importer after VM creation, then continuing configuration
+from CaC. This fresh-instance producer is being implemented; no separate metadata
+store, ownership file or additional saved template is approved.
 
 The source AAP has completed an AAP-only successor deployment through these four
 stages, with trusted HTTPS/API authentication, a valid license and ready

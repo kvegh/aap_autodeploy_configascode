@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.49.13
+
+Refresh the Beads-derived public overview and encrypted recovery checkpoint.
+The owner answered the fresh Zabbix placement/sequence question: verified VM
+details belong inside the selected instance's existing Zabbix VM definition and
+configuration. Its implementation remains active, using the existing importer.
+Record published source-reader fixes and the normal import/retrieval results
+separately from unresolved live firewall drift, MCP builds and fresh application
+acceptance. The public overview contains 123 tasks, 29 outstanding and 94 closed.
+The encrypted checkpoint retains 182 records, all 181 prior IDs and all 258 prior
+comments, with 260 comments in total. No executable source or host state changes.
+
 ## 0.49.12
 
 Document the source-authentication history with consistent heading and trailing
