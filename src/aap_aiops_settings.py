@@ -217,7 +217,7 @@ def merge_source_guest(instances, context, role, source, zabbix_source_sha256=No
 
 
 def prepare_documents(capture, runtime, context, credential_name, source_hosts=None, password_factory=None,
-                      mcp_access=None, authentication=None, subscription=None):
+                      mcp_access=None, authentication=None, subscription=None, source_git_token=None):
     """Seed only missing selected data and preserve every existing instance/secret."""
     require(isinstance(capture, dict) and isinstance(capture.get("aiops_instances"), dict),
             "Keep the reviewed AIOps capture and existing instance mapping.")
@@ -256,6 +256,14 @@ def prepare_documents(capture, runtime, context, credential_name, source_hosts=N
     require(isinstance(selected["event_stream_password"], str) and len(selected["event_stream_password"]) >= 16,
             "Keep the selected instance's persisted Event Stream password.")
     settings["instances"].setdefault(name, {})
+    if source_git_token is not None:
+        require(isinstance(source_git_token, str) and source_git_token.strip()
+                and not re.search(r"[\r\n]", source_git_token),
+                "Supply the reviewed nonempty single-line Hactar source reader.")
+        existing_source_token = settings["instances"][name].get("hactar_source_git_token")
+        require(existing_source_token is None or existing_source_token == source_git_token,
+                "Existing selected Hactar source authentication differs; review replacement explicitly.")
+        settings["instances"][name]["hactar_source_git_token"] = wrap_var(source_git_token)
     if subscription is not None:
         require(isinstance(subscription, dict) and set(subscription) == {"organization", "activation_keys"}
                 and isinstance(subscription["organization"], str) and subscription["organization"].strip()

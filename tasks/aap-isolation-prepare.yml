@@ -1,7 +1,7 @@
 ---
 # Caller identity and strict SSH route must be established before this include.
 # The lock covers native resource checks, firewall changes and their rollback.
-- name: Require the pinned public Hactar source and independent production identity
+- name: Require the pinned Hactar source, protected reader and independent production identity
   ansible.builtin.assert:
     that:
       - aap_isolation_hypervisor is mapping
@@ -12,9 +12,13 @@
       - aap_isolation_trust_file | length > 0
       - aap_hactar_source_revision is defined
       - aap_hactar_source_revision is match('^[0-9a-f]{40}$')
+      - hactar_source_git_token is defined
+      - hactar_source_git_token is string
+      - hactar_source_git_token | length > 0
+      - hactar_source_git_token is not search('[\r\n]')
       - hactar_source_public_ip is defined
       - hactar_source_public_ip is string
-    fail_msg: Supply the reviewed Hactar revision, protected source identity and existing pinned route.
+    fail_msg: Supply the reviewed Hactar revision, encrypted source reader, protected source identity and existing pinned route.
   no_log: true
 
 - name: Initialize only this invocation's temporary lock ownership
@@ -24,7 +28,7 @@
     aap_isolation_source_workspace: {}
   no_log: true
 
-- name: Allocate this job's public source checkout
+- name: Allocate this job's protected source checkout
   ansible.builtin.tempfile:
     state: directory
     prefix: aap-hactar-source-
@@ -35,7 +39,7 @@
   check_mode: false
   register: aap_isolation_source_workspace
 
-- name: Read the exact reviewed public Hactar task revision
+- name: Read the exact reviewed private Hactar task revision
   ansible.builtin.git:
     repo: https://github.com/kvegh/hactarconfig.git
     dest: '{{ aap_isolation_source_workspace.path }}/repository'
@@ -44,13 +48,16 @@
     update: false
   environment:
     GIT_TERMINAL_PROMPT: '0'
-    GIT_CONFIG_COUNT: '3'
+    GIT_CONFIG_COUNT: '4'
     GIT_CONFIG_KEY_0: credential.helper
     GIT_CONFIG_VALUE_0: ''
     GIT_CONFIG_KEY_1: http.followRedirects
     GIT_CONFIG_VALUE_1: 'false'
     GIT_CONFIG_KEY_2: http.sslVerify
     GIT_CONFIG_VALUE_2: 'true'
+    GIT_CONFIG_KEY_3: http.https://github.com/kvegh/hactarconfig.git.extraheader
+    GIT_CONFIG_VALUE_3: >-
+      Authorization: Basic {{ ('x-access-token:' ~ hactar_source_git_token) | b64encode }}
   delegate_to: localhost
   become: false
   vars:
@@ -65,7 +72,7 @@
     aap_isolation_autodeploy_root: "{{ role_path ~ '/../..' if role_path is defined else playbook_dir }}"
   no_log: true
 
-- name: Require the exact requested public source revision
+- name: Require the exact requested source revision
   ansible.builtin.assert:
     that: aap_isolation_source_checkout.after == aap_hactar_source_revision
     quiet: true

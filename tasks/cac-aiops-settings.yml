@@ -7,6 +7,7 @@
     subscription: >-
       {{ {'organization': vault_rhsm_org_id | string, 'activation_keys': [vault_rhsm_activation_key]}
          if cac_aiops_settings_phase == 'pre' else omit }}
+    source_git_token: "{{ hactar_source_git_token if cac_aiops_settings_phase == 'pre' else omit }}"
   no_log: true
 
 - name: Reload the verified encrypted AIOps capture after publication

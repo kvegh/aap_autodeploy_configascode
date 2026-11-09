@@ -174,7 +174,19 @@ pending the separately tracked helper cleanup.
 
 Supply `aap_hactar_source_revision` as the reviewed full Git commit and
 `hactar_source_public_ip` from the existing encrypted Hactar source identity.
-The job retrieves that exact public task revision over verified HTTPS into a
+Hactar source is private: supply `hactar_source_git_token` through the existing
+encrypted project settings and attached Vault credential. AutoDeploy loads it
+from its encrypted `myvars`; other callers retain their own encrypted runtime
+transport. Never put the token in ordinary saved or launch-time Extra Variables.
+The source-only reader is separate from the allocation writer's `CAC_GIT_TOKEN`.
+Git receives a process-local authentication header scoped to the fixed Hactar
+repository, with credential helpers disabled, redirects refused and TLS verified.
+No credential is written into the checkout configuration.
+Normal AIOps preparation also seeds this reader into the selected instance's
+existing encrypted runtime file, using the same protected pre-import path as
+subscription settings. Other instances are preserved, an identical retry makes
+no change, and conflicting existing authentication stops for explicit review.
+The job retrieves that exact task revision over verified HTTPS into a
 private temporary controller directory and binds `hactar_firewall_source_root`
 there. It does not borrow another AAP project's workspace. Prepare the declared
 certified collection through the existing PAH process before synchronization;

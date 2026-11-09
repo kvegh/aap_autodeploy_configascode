@@ -1,5 +1,6 @@
 """Exercise native encrypted source loading and CaC-only effective composition."""
 from copy import deepcopy
+import base64
 import json
 import os
 from pathlib import Path
@@ -28,6 +29,78 @@ def owner(number, machine='1' * 32):
 
 
 class ApplicationPolicyTests(unittest.TestCase):
+    def test_fixed_private_source_checkout_uses_only_scoped_runtime_auth_and_cleans_up(self):
+        """Exercise the actual Git task with real Git against an isolated repository."""
+        for token in ('synthetic-hactar-reader-canary', '', 'invalid\nheader'):
+            with self.subTest(token_present=bool(token)), tempfile.TemporaryDirectory(prefix='private-source-fixture-') as temporary:
+                root = Path(temporary)
+                origin = root / 'origin'
+                origin.mkdir()
+                (origin / 'source').write_text('reviewed task source\n')
+                for arguments in (['init', '-q', '-b', 'main'], ['add', '.'],
+                                  ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
+                                   'commit', '-q', '-m', 'Prepare source fixture']):
+                    subprocess.run(['git', '-C', str(origin), *arguments], check=True,
+                                   text=True, capture_output=True, timeout=15)
+                revision = subprocess.check_output(['git', '-C', str(origin), 'rev-parse', 'HEAD'], text=True).strip()
+                trace = root / 'git-environment'
+                executable = root / 'git'
+                # The fixed production URL remains in the actual module task;
+                # this test-only executable substitutes a local bare source.
+                executable.write_text('#!' + sys.executable + '\nimport json,os,pathlib,subprocess,sys\n'
+                    'args=sys.argv[1:]\n'
+                    'fixed="https://github.com/kvegh/hactarconfig.git"\n'
+                    'assert all(not x.startswith(("http://","https://")) or x==fixed for x in args)\n'
+                    'record={k:v for k,v in os.environ.items() if k.startswith("GIT_CONFIG_") or k=="CAC_GIT_TOKEN"}\n'
+                    'pathlib.Path(' + repr(str(trace)) + ').write_text(json.dumps(record))\n'
+                    'args=[' + repr(str(origin)) + ' if x==fixed else x for x in args]\n'
+                    'raise SystemExit(subprocess.run(["/usr/bin/git",*args]).returncode)\n')
+                executable.chmod(0o700)
+                tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-prepare.yml').read_text())
+                git_task = next(task for task in tasks if 'ansible.builtin.git' in task)
+                self.assertEqual(git_task['ansible.builtin.git']['repo'], 'https://github.com/kvegh/hactarconfig.git')
+                git_task['ansible.builtin.git']['executable'] = str(executable)
+                tasks = tasks[:next(i for i, task in enumerate(tasks) if task['name'].startswith('Acquire the approved'))]
+                variables = {'aap_isolation_hypervisor': {'machine_id': '1' * 32, 'port': 22},
+                             'aap_isolation_trust_file': str(root / 'known-hosts'),
+                             'aap_hactar_source_revision': revision, 'hactar_source_public_ip': '198.51.100.5',
+                             'hactar_source_git_token': token}
+                inspect = [
+                    {'name': 'Read the actual checkout configuration before cleanup', 'ansible.builtin.slurp': {
+                        'src': '{{ aap_isolation_source_workspace.path }}/repository/.git/config'},
+                     'register': 'fixture_checkout_config', 'no_log': True},
+                    {'name': 'Prove authentication was not persisted in the actual checkout', 'ansible.builtin.assert': {
+                        'that': ["'extraheader' not in (fixture_checkout_config.content | b64decode)",
+                                 'hactar_source_git_token not in (fixture_checkout_config.content | b64decode)']}, 'no_log': True}]
+                play = [{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False, 'vars': variables,
+                         'tasks': [{'name': 'Read only the protected fixed source', 'block': tasks + inspect,
+                                    'always': [{'name': 'Remove this invocation source checkout',
+                                                'ansible.builtin.file': {'path': '{{ aap_isolation_source_workspace.path }}',
+                                                                        'state': 'absent'},
+                                                'when': 'aap_isolation_source_workspace.path is defined', 'no_log': True}]}]}]
+                path = root / 'play.yml'
+                path.write_text(yaml.safe_dump(play, sort_keys=False))
+                config = root / 'ansible.cfg'; config.write_text('[defaults]\n')
+                env = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_LOCAL_TEMP=str(root / 'local'),
+                           ANSIBLE_REMOTE_TEMP=str(root / 'remote'), CAC_GIT_TOKEN='synthetic-writer-canary')
+                run = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(path)],
+                                     env=env, text=True, capture_output=True, timeout=60)
+                self.assertNotIn('synthetic-hactar-reader-canary', run.stdout + run.stderr)
+                self.assertNotIn('synthetic-writer-canary', run.stdout + run.stderr)
+                if not token or '\n' in token:
+                    self.assertNotEqual(run.returncode, 0)
+                    self.assertFalse(trace.exists(), 'Invalid auth must stop before any Git command')
+                    continue
+                self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+                observed = json.loads(trace.read_text())
+                self.assertEqual(observed['CAC_GIT_TOKEN'], 'synthetic-writer-canary')
+                self.assertEqual(observed['GIT_CONFIG_KEY_3'], 'http.https://github.com/kvegh/hactarconfig.git.extraheader')
+                self.assertEqual(observed['GIT_CONFIG_VALUE_3'],
+                                 'Authorization: Basic ' + base64.b64encode(('x-access-token:' + token).encode()).decode())
+                self.assertEqual(observed['GIT_CONFIG_VALUE_0'], '')
+                self.assertEqual(observed['GIT_CONFIG_VALUE_1'], 'false')
+                self.assertEqual(observed['GIT_CONFIG_VALUE_2'], 'true')
+
     def run_native(self, entries, missing_migration=False, wrong_key=False, wrong_uuid=False, strict=False):
         with tempfile.TemporaryDirectory(prefix='app-policy-fixture-') as temporary, \
              tempfile.TemporaryDirectory(prefix='aap-hactar-source-') as workspace:

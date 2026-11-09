@@ -200,6 +200,21 @@ class InstancePreparationTests(unittest.TestCase):
         repeated = settings.prepare_documents(after, protected, context, "Base guest Machine", subscription=subscription)
         self.assertEqual(repeated, (after, protected))
 
+    def test_source_reader_seeds_selected_runtime_preserves_others_and_refuses_rotation(self):
+        context, capture, runtime, _, _ = fixture()
+        runtime['instances']['aap27-test-6'] = {'hactar_source_git_token': wrap_var('existing-other-reader')}
+        before = deepcopy((capture, runtime))
+        token = 'synthetic-source-reader-{{ literal }}'
+        after, protected = settings.prepare_documents(capture, runtime, context, 'Base guest Machine', source_git_token=token)
+        self.assertEqual(protected['instances']['aap27-test-6'], runtime['instances']['aap27-test-6'])
+        self.assertIsInstance(protected['instances'][context['instance_name']]['hactar_source_git_token'], AnsibleUnsafeText)
+        self.assertEqual(settings.prepare_documents(after, protected, context, 'Base guest Machine', source_git_token=token), (after, protected))
+        for replacement in ['different-reader', '', 'invalid\nheader']:
+            with self.subTest(valid=bool(replacement)), self.assertRaises(Exception) as raised:
+                settings.prepare_documents(after, protected, context, 'Base guest Machine', source_git_token=replacement)
+            self.assertNotIn(token, str(raised.exception))
+        self.assertEqual((capture, runtime), before)
+
     def test_subscription_mismatch_or_invalid_input_refuses_without_secret_output(self):
         context, capture, runtime, _, _ = fixture()
         subscription = {"organization": "synthetic-org", "activation_keys": ["synthetic-sensitive-activation-key"]}
@@ -403,6 +418,7 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.context, capture, runtime, self.instance, self.hypervisor = fixture()
         self.subscription = {"organization": wrap_var("synthetic-rhsm-org"),
                              "activation_keys": [wrap_var("synthetic-rhsm-key-{{ protected_rhsm_literal }}")]}
+        self.source_git_token = wrap_var('synthetic-source-reader-{{ protected_literal }}')
         capture.update(aiops_website_dns_zone="example.invalid", aiops_guest_machine_credential_name="Base guest Machine",
                        aiops_configuration_ready=True)
         capture["cac_import_metadata"] = {"schema_version": 1, "project_id": "aiops-selfhealing-demo",
@@ -471,6 +487,7 @@ class EncryptedPublicationTests(unittest.TestCase):
             "hostname": self.context["aap_origin"], "token": "synthetic-api-token", "username": "", "password": ""}})
         if operation == "pre":
             action._task.args["subscription"] = self.subscription if subscription is None else subscription
+            action._task.args['source_git_token'] = self.source_git_token
         action._loader = DataLoader()
         action._loader.set_vault_secrets((vault or self.vault).secrets)
         action._templar = SimpleNamespace(available_variables={}, template=deepcopy)
@@ -498,6 +515,8 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.assertEqual(capture["aiops_runtime_settings_vault"], runtime_cipher.decode())
         self.assertNotIn(selected["event_stream_password"].encode(), cipher + runtime_cipher)
         self.assertNotIn(self.subscription["activation_keys"][0].encode(), cipher + runtime_cipher)
+        self.assertEqual(runtime['instances'][self.context['instance_name']]['hactar_source_git_token'], self.source_git_token)
+        self.assertNotIn(self.source_git_token.encode(), cipher + runtime_cipher)
         accepted = self.git("--git-dir", str(self.bare), "rev-parse", "main")
         self.assertFalse(self.action()["changed"])
         self.assertEqual(self.git("--git-dir", str(self.bare), "rev-parse", "main"), accepted)
@@ -666,6 +685,7 @@ class EncryptedPublicationTests(unittest.TestCase):
         variables["cac_api_auth"] = {"hostname": self.context["aap_origin"], "token": "synthetic-api-token", "username": "", "password": ""}
         variables["vault_rhsm_org_id"] = self.subscription["organization"]
         variables["vault_rhsm_activation_key"] = self.subscription["activation_keys"][0]
+        variables['hactar_source_git_token'] = self.source_git_token
         playbook = self.root / "fixture.yml"
         playbook.write_text(yaml.dump([{"hosts": "localhost", "connection": "local", "gather_facts": False,
             "vars": variables, "tasks": [
@@ -692,6 +712,8 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.assertNotIn(selected["demo_zabbix_event_stream"]["password"], result.stdout + result.stderr)
         self.assertEqual(selected["demo_mcp_subscription"]["activation_keys"], self.subscription["activation_keys"])
         self.assertNotIn(self.subscription["activation_keys"][0], result.stdout + result.stderr)
+        self.assertEqual(selected['hactar_source_git_token'], self.source_git_token)
+        self.assertNotIn(self.source_git_token, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

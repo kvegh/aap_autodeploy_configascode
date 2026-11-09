@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.49.10
+
+Authenticate the pinned private Hactar source through the existing encrypted
+project setting and Vault credential. Git uses a process-local header scoped
+to that fixed repository, preserving TLS, redirect refusal, exact revision and
+the independent allocation writer token. Missing or multiline authentication
+stops before checkout. Normal AIOps preparation seeds the same reader into
+only the selected encrypted runtime namespace and refuses conflicting material.
+
+Validation: forty focused source/policy/factory tests, including real local Git,
+native Ansible actions in both modes, two-Vault publication and secret-output
+checks; strict production lint of both changed task files and five normal
+playbook syntax checks pass. Encrypted input values, literal tags, key and
+header are preserved except for the intended reader leaf. Live AAP source
+authentication and downstream runtime acceptance remain unverified.
+
 ## 0.49.9
 
 Document task-mirror implementation
