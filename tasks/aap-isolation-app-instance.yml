@@ -68,21 +68,31 @@
   check_mode: false
   no_log: true
 
+# Report only these booleans; native readback and recorded identities stay hidden.
 - name: Require the actual UUID, bridge and static guest address
   ansible.builtin.assert:
     that:
-      - aap_isolation_app_uuid.stdout | trim == aap_isolation_app_owner.guest.uuid
-      - >-
-        aap_isolation_app_network.stdout is search('(?m)^Bridge:\s+' ~
-          (aap_isolation_app_owner.guest.bridge | regex_escape) ~ '\s*$')
-      - aap_isolation_app_addresses.stdout is search(__aap_app_reservation_pattern)
+      - __aap_app_identity_checks.uuid_matches | bool
+      - __aap_app_identity_checks.bridge_matches | bool
+      - __aap_app_identity_checks.static_reservation_matches | bool
+    fail_msg: >-
+      Guest identity checks failed:
+      uuid_matches={{ __aap_app_identity_checks.uuid_matches | bool }},
+      bridge_matches={{ __aap_app_identity_checks.bridge_matches | bool }},
+      static_reservation_matches={{ __aap_app_identity_checks.static_reservation_matches | bool }}.
     quiet: true
   vars:
+    __aap_app_identity_checks:
+      uuid_matches: '{{ aap_isolation_app_uuid.stdout | trim == aap_isolation_app_owner.guest.uuid }}'
+      bridge_matches: >-
+        {{ aap_isolation_app_network.stdout is search('(?m)^Bridge:\s+' ~
+           (aap_isolation_app_owner.guest.bridge | regex_escape) ~ '\s*$') }}
+      static_reservation_matches: '{{ aap_isolation_app_addresses.stdout is search(__aap_app_reservation_pattern) }}'
     __aap_app_reservation_pattern: >-
       (?x)<host(?=\s)
       (?=[^>]*\smac=['"]{{ aap_isolation_app_owner.guest.mac | regex_escape }}['"])
       (?=[^>]*\sip=['"]{{ aap_isolation_app_owner.guest.address | regex_escape }}['"])[^>]*>
-  no_log: true
+  no_log: false
 
 - name: Require only the exact recorded disk in current and persistent configurations
   ansible.builtin.assert:

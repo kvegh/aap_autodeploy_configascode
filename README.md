@@ -222,6 +222,13 @@ bootstrap key only through protected stdin; its 0600 temporary variables file is
 outside the Git checkout and removed by normal `always` cleanup. Source or key
 failure stops the operation rather than becoming an empty permission list.
 
+The native application identity assertion reports only `uuid_matches`,
+`bridge_matches` and `static_reservation_matches` booleans when it fails. All
+three original checks must still pass. Recorded identities, native command
+readback and credential material remain hidden; other tasks retain protected
+logging. These messages identify a failed check and do not authorize accepting
+drift or changing a reservation.
+
 Each declared Zabbix record must have explicit
 `aiops_instances[instance].zabbix.configuration.firewall.guest_host_clients`, including an empty list
 when access is removed. A never-created/retired instance without Zabbix has no

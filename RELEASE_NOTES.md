@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.50.6
+
+Expose only safe UUID/bridge/static-reservation match booleans from the existing
+native application identity assertion. All three original checks remain required;
+raw command reads, recorded identities and all other protected tasks remain
+hidden. No ownership acceptance, reservation repair or cleanup behavior changes.
+
+All seven directly affected native-policy tests pass. The verbose native
+regression covers each mismatch and success with unsafe stdout and confirms
+UUID/IP/MAC/key/token canaries are absent. Scoped strict production lint,
+whitespace and independent security review pass. Live mismatch diagnosis and
+cleanup acceptance remain pending; no external job was changed for this patch.
+
 ## 0.50.5
 
 Document implementation `859b6ccd7835a0ef3e69da0fab668d139c9ff689` (0.50.4),

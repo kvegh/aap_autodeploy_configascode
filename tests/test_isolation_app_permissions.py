@@ -200,6 +200,47 @@ class ApplicationPolicyTests(unittest.TestCase):
                 else:
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_identity_failure_reports_only_booleans_even_with_verbose_native_output(self):
+        tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-instance.yml').read_text())
+        task = next(task for task in tasks if task['name'] == 'Require the actual UUID, bridge and static guest address')
+        for failure in (None, 'uuid_matches', 'bridge_matches', 'static_reservation_matches'):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory(prefix='app-identity-output-') as temporary:
+                root = Path(temporary)
+                guest = {'uuid': 'recorded-uuid-canary', 'bridge': 'recorded-bridge-canary',
+                         'mac': '52:54:00:98:76:54', 'address': '192.0.2.199'}
+                uuid = guest['uuid'] if failure != 'uuid_matches' else 'different-uuid-canary'
+                bridge = guest['bridge'] if failure != 'bridge_matches' else 'different-bridge-canary'
+                address = guest['address'] if failure != 'static_reservation_matches' else '192.0.2.200'
+                xml = '<network><!--xml-readback-canary--><ip><dhcp><host mac="%s" ip="%s"/></dhcp></ip></network>' % (guest['mac'], address)
+                variables = {'aap_isolation_app_owner': {'guest': guest},
+                    'aap_isolation_app_uuid': {'stdout': uuid},
+                    'aap_isolation_app_network': {'stdout': 'Bridge: ' + bridge + '\nnetwork-readback-canary'},
+                    'aap_isolation_app_addresses': {'stdout': xml},
+                    'unused_private_key': 'private-key-canary', 'unused_auth_token': 'credential-token-canary'}
+                play = root / 'play.yml'
+                text = yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local',
+                    'gather_facts': False, 'vars': variables, 'tasks': [task]}], sort_keys=False)
+                # Registered command stdout is unsafe; preserve that native shape.
+                for name in ('aap_isolation_app_uuid', 'aap_isolation_app_network', 'aap_isolation_app_addresses'):
+                    text = text.replace(name + ':\n      stdout:', name + ':\n      stdout: !unsafe')
+                play.write_text(text)
+                config = root / 'ansible.cfg'
+                config.write_text('[defaults]\n')
+                env = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_LOCAL_TEMP=str(root / 'local'),
+                           ANSIBLE_REMOTE_TEMP=str(root / 'remote'))
+                result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,',
+                    '-vvvv', str(play)], env=env, text=True, capture_output=True, timeout=45)
+                output = result.stdout + result.stderr
+                for value in (*guest.values(), uuid, bridge, address, 'xml-readback-canary',
+                              'network-readback-canary', 'private-key-canary', 'credential-token-canary'):
+                    self.assertNotIn(value, output)
+                if failure is None:
+                    self.assertEqual(result.returncode, 0, output)
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    for name in ('uuid_matches', 'bridge_matches', 'static_reservation_matches'):
+                        self.assertIn(name + '=' + str(name != failure), output)
+
     def run_native(self, entries, missing_migration=False, wrong_key=False, wrong_uuid=False, strict=False):
         with tempfile.TemporaryDirectory(prefix='app-policy-fixture-') as temporary, \
              tempfile.TemporaryDirectory(prefix='aap-hactar-source-') as workspace:
