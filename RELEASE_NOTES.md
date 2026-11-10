@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.50.12
+
+Document the final access-retirement task accurately: completed selected
+reservations are removed after verified source/API cleanup. Only the task's
+display name changes; parameters, conditions, ordering and runtime behavior
+remain unchanged. README and the decommission guide already describe this
+behavior correctly. Syntax and exact label-only comparison pass; the successful
+normal retirement remains attributed to source 73418ca (0.50.11).
+
 ## 0.50.11
 
 Document implementation `7d2114279cc4dcb8f4b638a05b8c36e815454a59` (0.50.10), its final

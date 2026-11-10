@@ -224,7 +224,7 @@
       loop_control:
         loop_var: aap_dns_retire_record
       no_log: true
-    - name: Retire encrypted and source AAP access while retaining allocation history
+    - name: Retire encrypted and source AAP access then remove the completed reservation
       aap_publish_instance_keys:
         instance_name: '{{ aap_instance_route.vm_name }}'
         record:
