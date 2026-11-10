@@ -93,6 +93,15 @@ identify the exact ordinary rich rules to remove; no host-wide rule scan or
 ownership inference is used. The record must match the selected version/domain,
 disk and preflight UUID, and changed tuples after shutdown stop the operation.
 
+Native address verification accepts a unique exact static DHCP reservation, or
+an exact unique unexpired DHCP lease when no static record claims that MAC or
+address. It checks the entire network lease table for crossed ownership; it does
+not adopt a different address. Stopped static guests need no lease query. A
+stopped dynamic guest still needs its current lease, so expiration during a
+partial cleanup stops the job rather than weakening identity checks. Native
+finite expiry timestamps are read in UTC; malformed or ambiguous data fail
+closed. Saved CaC ownership remains available for the normal retry procedure.
+
 All selected existing VMs are stopped and checked before permissions change.
 The certified firewall role disables only those exact base/application rich
 rules in both runtime and permanent libvirt-zone configuration. Native Hactar

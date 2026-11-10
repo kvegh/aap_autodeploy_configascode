@@ -202,20 +202,21 @@ class ApplicationPolicyTests(unittest.TestCase):
 
     def test_identity_failure_reports_only_booleans_even_with_verbose_native_output(self):
         tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-instance.yml').read_text())
-        task = next(task for task in tasks if task['name'] == 'Require the actual UUID, bridge and static guest address')
-        for failure in (None, 'uuid_matches', 'bridge_matches', 'static_reservation_matches'):
+        task = next(task for task in tasks if task['name'] == 'Require the actual UUID, bridge and recorded guest address')
+        for failure in (None, 'uuid_matches', 'bridge_matches', 'address_matches'):
             with self.subTest(failure=failure), tempfile.TemporaryDirectory(prefix='app-identity-output-') as temporary:
                 root = Path(temporary)
                 guest = {'uuid': 'recorded-uuid-canary', 'bridge': 'recorded-bridge-canary',
                          'mac': '52:54:00:98:76:54', 'address': '192.0.2.199'}
                 uuid = guest['uuid'] if failure != 'uuid_matches' else 'different-uuid-canary'
                 bridge = guest['bridge'] if failure != 'bridge_matches' else 'different-bridge-canary'
-                address = guest['address'] if failure != 'static_reservation_matches' else '192.0.2.200'
+                address = guest['address'] if failure != 'address_matches' else '192.0.2.200'
                 xml = '<network><!--xml-readback-canary--><ip><dhcp><host mac="%s" ip="%s"/></dhcp></ip></network>' % (guest['mac'], address)
                 variables = {'aap_isolation_app_owner': {'guest': guest},
                     'aap_isolation_app_uuid': {'stdout': uuid},
                     'aap_isolation_app_network': {'stdout': 'Bridge: ' + bridge + '\nnetwork-readback-canary'},
                     'aap_isolation_app_addresses': {'stdout': xml},
+                    'aap_isolation_app_address_matches': failure != 'address_matches',
                     'unused_private_key': 'private-key-canary', 'unused_auth_token': 'credential-token-canary'}
                 play = root / 'play.yml'
                 text = yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local',
@@ -238,10 +239,74 @@ class ApplicationPolicyTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, output)
                 else:
                     self.assertNotEqual(result.returncode, 0)
-                    for name in ('uuid_matches', 'bridge_matches', 'static_reservation_matches'):
+                    for name in ('uuid_matches', 'bridge_matches', 'address_matches'):
                         self.assertIn(name + '=' + str(name != failure), output)
 
-    def run_native(self, entries, missing_migration=False, wrong_key=False, wrong_uuid=False, strict=False):
+    def test_native_static_and_current_dhcp_address_proofs_refuse_drift(self):
+        tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-instance.yml').read_text())
+        start = next(i for i, task in enumerate(tasks) if task['name'].startswith('Count only DHCP reservations'))
+        end = next(i for i, task in enumerate(tasks) if task['name'].startswith('Require only the exact recorded disk'))
+        guest = owner(17)['zabbix']
+        header = ' Expiry Time           MAC address         Protocol   IP address             Hostname   Client ID or DUID\n' + '-' * 100 + '\n'
+        def lease(mac=guest['mac'], address=guest['address'], expiry='2200-01-01 00:00:00'):
+            return expiry + ' ' + mac + ' ipv4 ' + address + '/24 fixture-host fixture-client\n'
+        exact_static = '<host mac="%s" ip="%s"/>' % (guest['mac'], guest['address'])
+        cases = [
+            ('stopped_static', exact_static, '', True, False),
+            ('dynamic', '', lease(), True, True),
+            ('expired', '', lease(expiry='2000-01-01 00:00:00'), False, True),
+            ('absent', '', '', False, True),
+            ('wrong_mac', '', lease(mac='52:54:00:00:00:99'), False, True),
+            ('wrong_ip', '', lease(address='192.168.70.99'), False, True),
+            ('duplicate', '', lease() + lease(), False, True),
+            ('crossed_ip', '', lease() + lease(mac='52:54:00:00:00:99'), False, True),
+            ('crossed_mac', '', lease() + lease(address='192.168.70.99'), False, True),
+            ('malformed', '', 'malformed-lease-canary\n', False, True),
+            ('invalid_date', '', lease(expiry='2200-99-99 00:00:00'), False, True),
+            ('failed_read', '', lease(), False, True),
+            ('static_wrong_ip', '<host mac="%s" ip="192.168.70.99"/>' % guest['mac'], lease(), False, False),
+            ('static_wrong_mac', '<host mac="52:54:00:00:00:99" ip="%s"/>' % guest['address'], lease(), False, False),
+            ('duplicate_static', exact_static + exact_static, '', False, False),
+            ('unrelated_dns_host', '', lease(), True, True)]
+        for name, static, leases, success, query in cases:
+            with self.subTest(case=name), tempfile.TemporaryDirectory(prefix='app-address-native-') as temporary:
+                root = Path(temporary)
+                trace = root / 'lease-read'
+                executable = root / 'virsh'
+                executable.write_text('#!' + sys.executable + '\nimport os,pathlib,sys\n'
+                    'assert sys.argv[1:4]==["-c","qemu:///system","net-dhcp-leases"]\n'
+                    'assert sys.argv[4:]==[' + repr(guest['network']) + ']\n'
+                    'assert os.environ["LC_ALL"]=="C" and os.environ["TZ"]=="UTC"\n'
+                    'pathlib.Path(' + repr(str(trace)) + ').write_text("readonly lease query")\n'
+                    'print(' + repr(header + leases) + ')\n'
+                    'raise SystemExit(' + ('7' if name in ('failed_read', 'stopped_static') else '0') + ')\n')
+                executable.chmod(0o700)
+                selected = deepcopy(tasks[start:end])
+                selected[1]['block'][0]['ansible.builtin.command']['argv'][0] = str(executable)
+                dns = '<dns><host ip="%s"><hostname>fixture-dns</hostname></host></dns>' % guest['address'] if name == 'unrelated_dns_host' else ''
+                xml = '<network>' + dns + '<ip><dhcp>' + static + '</dhcp></ip></network>'
+                variables = {'aap_isolation_app_owner': {'guest': guest},
+                    'aap_isolation_app_uuid': {'stdout': guest['uuid']},
+                    'aap_isolation_app_network': {'stdout': 'Bridge: ' + guest['bridge']},
+                    'aap_isolation_app_addresses': {'stdout': xml},
+                    'unused_private_key': 'private-key-canary', 'unused_auth_token': 'credential-token-canary'}
+                play = root / 'play.yml'
+                play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local',
+                    'gather_facts': False, 'vars': variables, 'tasks': selected}], sort_keys=False))
+                config = root / 'ansible.cfg'
+                config.write_text('[defaults]\n')
+                env = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_LOCAL_TEMP=str(root / 'local'),
+                           ANSIBLE_REMOTE_TEMP=str(root / 'remote'))
+                result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,',
+                    '-vvvv', str(play)], env=env, text=True, capture_output=True, timeout=45)
+                output = result.stdout + result.stderr
+                self.assertEqual(result.returncode == 0, success, output)
+                self.assertEqual(trace.exists(), query, output)
+                for canary in (guest['uuid'], guest['mac'], guest['address'], 'malformed-lease-canary',
+                               'private-key-canary', 'credential-token-canary', '192.168.70.99'):
+                    self.assertNotIn(canary, output)
+
+    def run_native(self, entries, missing_migration=False, wrong_key=False, wrong_uuid=False, strict=False, dynamic=False):
         with tempfile.TemporaryDirectory(prefix='app-policy-fixture-') as temporary, \
              tempfile.TemporaryDirectory(prefix='aap-hactar-source-') as workspace:
             root = Path(temporary)
@@ -300,6 +365,15 @@ class ApplicationPolicyTests(unittest.TestCase):
                 'elif operation=="net-info":print("Bridge: virbr0")\n'
                 'elif operation=="net-dumpxml":print("<network><ip><dhcp>"+"".join("<host mac=\\\""+row["mac"]+"\\\" ip=\\\""+row["address"]+"\\\"/>" for row in records.values())+"</dhcp></ip></network>")\n'
                 'else:raise SystemExit(1)\n')
+            if dynamic:
+                script = virsh.read_text()
+                xml_line = next(line for line in script.splitlines() if line.startswith('elif operation=="net-dumpxml"'))
+                script = script.replace(xml_line, 'elif operation=="net-dumpxml":print("<network><ip><dhcp/></ip></network>")')
+                leases = ' Expiry Time           MAC address         Protocol   IP address             Hostname   Client ID or DUID\n' + '-' * 100 + '\n'
+                leases += ''.join('2200-01-01 00:00:00 ' + row['mac'] + ' ipv4 ' + row['address'] + '/24 fixture-host fixture-client\n'
+                                  for row in records.values())
+                script = script.replace('else:raise SystemExit(1)', 'elif operation=="net-dhcp-leases":print(' + repr(leases) + ')\nelse:raise SystemExit(1)')
+                virsh.write_text(script)
             virsh.chmod(0o700)
             instance_tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-instance.yml').read_text())
             for task in instance_tasks:
@@ -309,6 +383,8 @@ class ApplicationPolicyTests(unittest.TestCase):
                         argv[0] = str(virsh)
                     else:
                         task['ansible.builtin.command']['argv'] = argv.replace("['virsh',", '[' + repr(str(virsh)) + ',')
+            dhcp = next(task for task in instance_tasks if task['name'] == 'Verify the existing native DHCP assignment without static ownership')
+            dhcp['block'][0]['ansible.builtin.command']['argv'][0] = str(virsh)
             (project / 'tasks/aap-isolation-app-instance.yml').write_text(yaml.safe_dump(instance_tasks, sort_keys=False))
             tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-permissions.yml').read_text())
             git_tasks = [task for task in tasks if 'ansible.builtin.git' in task]
@@ -387,6 +463,12 @@ class ApplicationPolicyTests(unittest.TestCase):
         second = self.run_native(entries)
         self.assertEqual(len(first['guest_host_clients']), 2)
         self.assertEqual(second['guest_host_clients'], entries['fixture-18']['zabbix']['configuration']['firewall']['guest_host_clients'])
+
+    def test_dynamic_native_owners_still_compose_only_declared_application_grants(self):
+        entries = {'fixture-17': owner(17), 'fixture-18': owner(18)}
+        policy = self.run_native(entries, dynamic=True)
+        expected = [value['zabbix']['configuration']['firewall']['guest_host_clients'][0] for value in entries.values()]
+        self.assertEqual(policy['guest_host_clients'], expected)
 
     def test_missing_migration_and_failed_decryption_never_become_empty_permissions(self):
         entries = {'fixture-17': owner(17)}

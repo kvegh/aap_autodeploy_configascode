@@ -68,18 +68,100 @@
   check_mode: false
   no_log: true
 
+# The producer records native DHCP lease addresses, not static reservations.
+# Keep stopped-static support; conflicting static ownership never uses DHCP proof.
+- name: Count only DHCP reservations for the recorded guest identity
+  ansible.builtin.set_fact:
+    aap_isolation_app_static_counts:
+      mac: '{{ __aap_app_dhcp_xml | regex_findall(__aap_app_static_mac_pattern) | length }}'
+      address: '{{ __aap_app_dhcp_xml | regex_findall(__aap_app_static_ip_pattern) | length }}'
+      pair: '{{ __aap_app_dhcp_xml | regex_findall(__aap_app_reservation_pattern) | length }}'
+    aap_isolation_app_address_matches: >-
+      {{ (__aap_app_dhcp_xml | regex_findall(__aap_app_static_mac_pattern) | length == 1) and
+         (__aap_app_dhcp_xml | regex_findall(__aap_app_static_ip_pattern) | length == 1) and
+         (__aap_app_dhcp_xml | regex_findall(__aap_app_reservation_pattern) | length == 1) }}
+  vars:
+    __aap_app_dhcp_xml: '{{ aap_isolation_app_addresses.stdout | regex_findall("(?s)<dhcp(?:\s[^>]*)?>.*?</dhcp>") | join }}'
+    __aap_app_static_mac_pattern: >-
+      <host(?=\s)(?=[^>]*\smac=['"]{{ aap_isolation_app_owner.guest.mac | regex_escape }}['"])[^>]*>
+    __aap_app_static_ip_pattern: >-
+      <host(?=\s)(?=[^>]*\sip=['"]{{ aap_isolation_app_owner.guest.address | regex_escape }}['"])[^>]*>
+    __aap_app_reservation_pattern: >-
+      (?x)<host(?=\s)
+      (?=[^>]*\smac=['"]{{ aap_isolation_app_owner.guest.mac | regex_escape }}['"])
+      (?=[^>]*\sip=['"]{{ aap_isolation_app_owner.guest.address | regex_escape }}['"])[^>]*>
+  no_log: true
+
+- name: Verify the existing native DHCP assignment without static ownership
+  when:
+    - aap_isolation_app_static_counts.mac | int == 0
+    - aap_isolation_app_static_counts.address | int == 0
+  block:
+    - name: Read all leases on the exact recorded network to detect crossed ownership
+      ansible.builtin.command:
+        argv: [virsh, -c, 'qemu:///system', net-dhcp-leases, '{{ aap_isolation_app_owner.guest.network }}']
+      environment:
+        LC_ALL: C
+        TZ: UTC
+      register: aap_isolation_app_leases
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Require the native lease table before interpreting its rows
+      ansible.builtin.assert:
+        that:
+          - aap_isolation_app_leases.stdout_lines | length >= 2
+          - aap_isolation_app_leases.stdout_lines[0] is match('^\s*Expiry Time\s+MAC address\s+Protocol\s+IP address\s+')
+          - aap_isolation_app_leases.stdout_lines[1] is match('^\s*-+\s*$')
+        quiet: true
+      no_log: true
+
+    - name: Read the native table columns without logging lease data
+      ansible.builtin.set_fact:
+        aap_isolation_app_lease_rows: '{{ aap_isolation_app_leases.stdout_lines[2:] | map("trim") | reject("equalto", "") | map("split") | list }}'
+      no_log: true
+
+    - name: Require complete native lease rows before matching ownership
+      ansible.builtin.assert:
+        that:
+          - item | length >= 7
+          - item[0] is match('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          - item[1] is match('^[0-9]{2}:[0-9]{2}:[0-9]{2}$')
+          - item[2] is match('^(?:(?:[0-9a-f]{2}:){5}[0-9a-f]{2}|-)$')
+          - item[3] in ['ipv4', 'ipv6']
+        quiet: true
+      loop: '{{ aap_isolation_app_lease_rows }}'
+      no_log: true
+
+    - name: Require one unique unexpired native IPv4 lease for the saved MAC and address
+      ansible.builtin.set_fact:
+        aap_isolation_app_address_matches: >-
+          {{ (__aap_app_mac_leases | length == 1) and (__aap_app_ip_leases | length == 1) and
+             (__aap_app_mac_leases[0] == __aap_app_ip_leases[0]) and
+             (((__aap_app_mac_leases[0][0] ~ ' ' ~ __aap_app_mac_leases[0][1]) | to_datetime) >
+              (now(utc=true, fmt='%Y-%m-%d %H:%M:%S') | to_datetime)) }}
+      vars:
+        __aap_app_mac_leases: >-
+          {{ aap_isolation_app_lease_rows | selectattr('3', 'equalto', 'ipv4') |
+             selectattr('2', 'equalto', aap_isolation_app_owner.guest.mac) | list }}
+        __aap_app_ip_leases: >-
+          {{ aap_isolation_app_lease_rows | selectattr('3', 'equalto', 'ipv4') |
+             selectattr('4', 'match', (aap_isolation_app_owner.guest.address | regex_escape) ~ '/(?:[0-9]|[12][0-9]|3[0-2])$') | list }}
+      no_log: true
+
 # Report only these booleans; native readback and recorded identities stay hidden.
-- name: Require the actual UUID, bridge and static guest address
+- name: Require the actual UUID, bridge and recorded guest address
   ansible.builtin.assert:
     that:
       - __aap_app_identity_checks.uuid_matches | bool
       - __aap_app_identity_checks.bridge_matches | bool
-      - __aap_app_identity_checks.static_reservation_matches | bool
+      - __aap_app_identity_checks.address_matches | bool
     fail_msg: >-
       Guest identity checks failed:
       uuid_matches={{ __aap_app_identity_checks.uuid_matches | bool }},
       bridge_matches={{ __aap_app_identity_checks.bridge_matches | bool }},
-      static_reservation_matches={{ __aap_app_identity_checks.static_reservation_matches | bool }}.
+      address_matches={{ __aap_app_identity_checks.address_matches | bool }}.
     quiet: true
   vars:
     __aap_app_identity_checks:
@@ -87,11 +169,7 @@
       bridge_matches: >-
         {{ aap_isolation_app_network.stdout is search('(?m)^Bridge:\s+' ~
            (aap_isolation_app_owner.guest.bridge | regex_escape) ~ '\s*$') }}
-      static_reservation_matches: '{{ aap_isolation_app_addresses.stdout is search(__aap_app_reservation_pattern) }}'
-    __aap_app_reservation_pattern: >-
-      (?x)<host(?=\s)
-      (?=[^>]*\smac=['"]{{ aap_isolation_app_owner.guest.mac | regex_escape }}['"])
-      (?=[^>]*\sip=['"]{{ aap_isolation_app_owner.guest.address | regex_escape }}['"])[^>]*>
+      address_matches: '{{ aap_isolation_app_address_matches | bool }}'
   no_log: false
 
 - name: Require only the exact recorded disk in current and persistent configurations

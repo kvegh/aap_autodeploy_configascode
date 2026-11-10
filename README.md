@@ -223,11 +223,20 @@ outside the Git checkout and removed by normal `always` cleanup. Source or key
 failure stops the operation rather than becoming an empty permission list.
 
 The native application identity assertion reports only `uuid_matches`,
-`bridge_matches` and `static_reservation_matches` booleans when it fails. All
+`bridge_matches` and `address_matches` booleans when it fails. All
 three original checks must still pass. Recorded identities, native command
 readback and credential material remain hidden; other tasks retain protected
 logging. These messages identify a failed check and do not authorize accepting
 drift or changing a reservation.
+
+Address proof matches the clone producer's native DHCP allocation. A unique exact
+static DHCP reservation remains sufficient for a stopped guest. Without any
+static record for its saved MAC or address, the job requires one unexpired native
+IPv4 lease for that exact pair and refuses duplicates or crossed ownership. The
+read uses `LC_ALL=C` and `TZ=UTC`; source and hypervisor clocks must be correct.
+Finite native expiry timestamps are supported; malformed, absent or expired
+leases stop the job. No saved address is adopted or rewritten. DNS host records
+are separate from DHCP ownership and are not counted as reservations.
 
 Each declared Zabbix record must have explicit
 `aiops_instances[instance].zabbix.configuration.firewall.guest_host_clients`, including an empty list

@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.50.8
+
+Validate monitoring VM addresses against their existing native allocation source.
+A unique exact static DHCP reservation remains sufficient, including for stopped
+guests. If neither the saved MAC nor address has a static DHCP record, require
+one unique unexpired native IPv4 lease for their exact pair. Crossed or duplicate
+ownership, missing/expired/malformed leases and failed reads stop validation.
+DNS host entries are not treated as DHCP reservations. No identity or address is
+adopted, rewritten or repaired; UUID, disk, interface, MAC, network, bridge,
+hypervisor and production guards remain unchanged.
+
+Nine affected native-policy tests pass, including sixteen address-proof cases,
+verbose privacy and complete two-owner dynamic policy composition. Scoped strict
+production lint, syntax, whitespace and independent source review pass. Finite
+native lease timestamps use UTC and require correct clocks. Live check-mode
+preview and final cleanup acceptance remain pending.
+
 ## 0.50.7
 
 Document implementation `03e09d72505468181e2bf0fb228774cdcfd545a1` (0.50.6),
