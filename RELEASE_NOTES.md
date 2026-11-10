@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.50.13
+
+Document task-label implementation `63b39be7d2ab85a049ee5e1a7e85fd83a407f6e6` (0.50.12)
+and the unchanged source 73418ca runtime attribution. No additional behavior
+change or live rerun; syntax, label-only comparison and whitespace checks pass.
+
 ## 0.50.12
 
 Document the final access-retirement task accurately: completed selected

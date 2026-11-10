@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Clarify the final access-retirement task name — 2026-11-10
+
+Implementation `63b39be7d2ab85a049ee5e1a7e85fd83a407f6e6` (0.50.12) corrects an obsolete display name
+that said allocation history was retained in current state. The task now states
+that completed selected reservations are removed after source and encrypted
+access retirement. The playbook differs only in that name: arguments,
+conditions, ordering and behavior are unchanged. README and the decommission
+guide already describe final reservation removal and were retained.
+
+The existing normal selected-instance teardown and final publisher succeeded on
+`73418cae722657805565fc465c7c9730bd60f0e6` (0.50.11). That runtime result
+belongs to that revision; this wording update was not rerun live. The existing
+teardown syntax check, exact label-only byte comparison and whitespace check
+passed. No new tests, source-policy changes, live operations or repeated
+retirement were needed for the display correction.
+
 ## Remove completed instance reservations from current CaC — 2026-11-10
 
 Implementation `7d2114279cc4dcb8f4b638a05b8c36e815454a59` (0.50.10) follows the owner's requirement to
