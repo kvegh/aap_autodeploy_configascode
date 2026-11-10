@@ -1,5 +1,39 @@
 # Design decisions history
 
+## Remove completed instance reservations from current CaC — 2026-11-10
+
+Implementation `7d2114279cc4dcb8f4b638a05b8c36e815454a59` (0.50.10) follows the owner's requirement to
+remove retired namespaces from current allocation/CaC records while preserving
+the monotonic next-number counter, shared configuration and surviving instances.
+The previous final publisher deliberately retained a decommissioned reservation
+because intermediate source ownership checks still needed it. Deleting that row
+earlier would break safe cleanup and retry, so the existing transaction ordering
+is retained through successful source/API synchronization.
+
+At the existing stable-success endpoint, the same action now reads fresh remote
+allocation state, requires the exact selected decommissioned row and a valid
+non-regressed counter, and removes only that row. It preserves all other data,
+Vault identity and literal tags, commits from the current remote head, pushes
+without force and independently rereads the published result. Early Git retries
+also preserve the highest observed counter floor. Contention uses the existing
+bounded synchronization retry; changed ownership or a regressed counter stops.
+An advance immediately after final removal stops success reporting for review.
+The completed namespace is then absent and no longer selectable; Git history
+retains past records without a current tombstone or new recovery mechanism.
+
+All 68 affected instance-access, allocation, supplemental-interface and guest
+retirement checks passed. Real encrypted local-Git fixtures verify interrupted
+source cleanup retains ownership, selected URL/record mismatch refuses pruning,
+early and final counter regressions stop, exhausted nonforce push contention
+retains the row, and a concurrent surviving row/counter advance is preserved.
+The existing teardown syntax check, Python compilation, whitespace and offline
+strict production lint across thirteen encountered files passed. Independent
+focused review found the early-retry counter-floor gap; it was fixed and the
+new conflict regression and follow-up review passed. No other substantive finding
+was reported. This is scoped source verification, not a formal full review or
+live retirement acceptance. No live job, private CaC or source API was changed
+by this publication.
+
 ## Validate the monitoring clone's existing native DHCP allocation — 2026-11-10
 
 Implementation `c084ce90dd4959e2e4d5f655404f8ccd935ff899` (0.50.8) fixes an

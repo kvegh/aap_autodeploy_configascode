@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.50.11
+
+Document implementation `7d2114279cc4dcb8f4b638a05b8c36e815454a59` (0.50.10), its final
+selected-reservation pruning order, unchanged source/identity guards, preserved
+counter/other instances and focused verification. No additional functional
+change. Source publication remains separate from live retirement acceptance.
+
 ## 0.50.10
 
 Remove the selected instance's consumed reservation only after infrastructure
