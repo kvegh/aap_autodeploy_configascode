@@ -136,16 +136,25 @@ safely identify an already orphaned ordinary rich rule. If the source record was
 removed too early, stop for manual reconciliation; never purge unrelated rules
 or claim that omission alone physically removed that rule.
 
-After infrastructure retirement, the existing Git writer marks the consumed
-reservation decommissioned, removes the active token and inventory entry from
-encrypted CaC, updates the source token-store credential and removes the matching
-source inventory/manual API credential. A source credential still referenced by
-a template is refused rather than silently detached. Check mode performs the
-ownership review without destruction. Failed partial cleanup can be rerun with
-the same exact confirmation; normal deployment stages refuse retired entries.
+After infrastructure retirement, the existing Git writer temporarily marks the
+selected reservation decommissioned and removes its active token and inventory
+entry from encrypted CaC. It retains that ownership row while updating the source
+token store and removing the matching source inventory/manual API credential.
+A referenced source credential stops cleanup without silently detaching it.
+Only after source retirement and the fresh canonical comparison succeed does
+the writer remove the selected reservation in a separate encrypted Git commit.
+It rereads the remote result and verifies removal, the unchanged monotonic
+counter and preserved other allocation rows. Nonforce push contention uses the
+existing bounded synchronization retry; altered selected ownership or a regressed
+counter stops cleanup. A later concurrent update after the final removal stops
+success reporting for review instead of overwriting the newer commit.
 
-The shared counter and consumed reservation history are never rolled back.
-The next fresh deployment consumes a new number.
+Check mode remains read-only. Failed partial source cleanup retains the selected
+row for the existing exact-confirmation retry; active deployment refuses its
+intermediate decommissioned state. After successful final removal, the retired
+instance is no longer selectable and no tombstone remains in current CaC.
+Git history retains the prior records. The shared counter is never decreased;
+the next fresh deployment consumes a new number, even when no older rows remain.
 
 The final action accepts the protected `isolation_retirement` mapping only for
 its existing `retire` operation. Inside each compare-and-swap Git attempt it

@@ -589,6 +589,10 @@ class InstanceKeyTests(unittest.TestCase):
                 with mock.patch.object(client, "request", side_effect=failed_source_save):
                     with self.assertRaises(AnsibleActionFail): run()
                 self.assertEqual(git(remote, "rev-list", "--count", "main").stdout.strip(), "2")
+                retained_allocation = AnsibleLoader(vault.decrypt(git(remote, "show",
+                    "main:state/aap_vm_allocations_vault.yml").stdout)).get_single_data()["aap_vm_allocation"]
+                self.assertTrue(retained_allocation["reservations"]["selected-request"]["decommissioned"])
+                self.assertEqual(retained_allocation["next_number"], allocation["aap_vm_allocation"]["next_number"])
                 from test_decommission_guest_access import RETIRE
                 canonical = transition["desired_policy"]
 
@@ -625,8 +629,11 @@ class InstanceKeyTests(unittest.TestCase):
                 self.assertFalse(any(call[0] == "PATCH" for call in client.calls[first_delete:]))
                 self.assertEqual(keys.inventory_variables(client.inventories[3])["hactar_isolation_policy"], canonical)
                 self.assertTrue(run(fresh_transition())["changed"])
-                self.assertFalse(run(fresh_transition())["changed"])
-                self.assertEqual(git(remote, "rev-list", "--count", "main").stdout.strip(), "2")
+                # Completed reservations are no longer selectable; no compatibility tombstone remains.
+                completed_calls = deepcopy(client.calls)
+                with self.assertRaises(AnsibleFilterError): fresh_transition()
+                self.assertEqual(client.calls, completed_calls)
+                self.assertEqual(git(remote, "rev-list", "--count", "main").stdout.strip(), "3")
             restored = {}
             for relative in documents:
                 ciphertext = git(remote, "show", "main:" + relative).stdout.encode()
@@ -634,10 +641,7 @@ class InstanceKeyTests(unittest.TestCase):
                 restored[relative] = AnsibleLoader(vault.decrypt(ciphertext)).get_single_data()
             state = restored["state/aap_vm_allocations_vault.yml"]["aap_vm_allocation"]
             self.assertEqual(state["next_number"], allocation["aap_vm_allocation"]["next_number"])
-            expected_record = deepcopy(allocation["aap_vm_allocation"]["reservations"]["selected-request"])
-            expected_record["decommissioned"] = True
-            self.assertEqual(state["reservations"]["selected-request"], expected_record)
-            self.assertEqual(set(state["reservations"]["selected-request"]["instance_resources"]), {"aap"})
+            self.assertNotIn("selected-request", state["reservations"])
             self.assertNotIn("vm_resource", json.dumps(restored["cac/host_inventory.yml"]))
             self.assertEqual(state["reservations"]["other-request"], allocation["aap_vm_allocation"]["reservations"]["other-request"])
             retired_main = restored["vaults/cac/aap_autodeploy_configascode-cac-vault.yml"]
@@ -794,8 +798,46 @@ class InstanceKeyTests(unittest.TestCase):
             loader = DataLoader()
             loader.set_vault_secrets([("cac", secret), ("default", environment_secret)])
 
+            retirement_race = None
+
+            def allocation_state():
+                return AnsibleLoader(vault.decrypt(git(remote, "show",
+                    "main:state/aap_vm_allocations_vault.yml").stdout)).get_single_data()
+
+            def change_allocation(change):
+                git(seed, "fetch", "origin", "main")
+                git(seed, "checkout", "--detach", "FETCH_HEAD")
+                value = allocation_state()
+                change(value["aap_vm_allocation"])
+                output = seed / "state/aap_vm_allocations_vault.yml"
+                output.write_bytes(vault.encrypt(yaml.dump(value, Dumper=vault_yaml.VaultDumper), vault_id="cac"))
+                git(seed, "add", "state/aap_vm_allocations_vault.yml")
+                git(seed, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                    "commit", "-m", "Concurrent allocation fixture")
+                git(seed, "push", "origin", "HEAD:main")
+
             def redirected(command, *args, **kwargs):
+                nonlocal retirement_race
                 self.assertNotIn(saved()["token"], " ".join(command))
+                if retirement_race and "push" in command:
+                    title = real_run(command[:3] + ["log", "-1", "--format=%s"],
+                                     text=True, capture_output=True, check=True).stdout.strip()
+                    if title == "Retire encrypted instance access" and retirement_race == "initial-counter":
+                        retirement_race = None
+                        change_allocation(lambda state: state.update(next_number=4))
+                    if title == "Remove completed instance reservation":
+                        if retirement_race == "reject":
+                            return subprocess.CompletedProcess(command, 1, "", "synthetic push contention")
+                        race, retirement_race = retirement_race, None
+                        if race == "selected":
+                            change_allocation(lambda state: state["reservations"]["one"].update(ownership_nonce="changed"))
+                        elif race == "counter":
+                            change_allocation(lambda state: state.update(next_number=4))
+                        elif race == "other":
+                            def add_other(state):
+                                state["next_number"] = 6
+                                state["reservations"]["three"] = {"vm_name": "three", "number": 3}
+                            change_allocation(add_other)
                 replaced = [str(remote) if item == "https://git.example.invalid/fixture-owner/aap_autodeploy_configascode-secrets.git"
                             else item for item in command]
                 self.assertFalse(any(item.startswith(("https://", "http://", "git@")) for item in replaced))
@@ -831,7 +873,7 @@ class InstanceKeyTests(unittest.TestCase):
                 self.assertTrue(run("two", saved("two", "synthetic-second-token", 2))["changed"])
                 git(seed, "fetch", "origin", "main")
                 git(seed, "checkout", "--detach", "FETCH_HEAD")
-                allocation = {"aap_vm_allocation": {"schema_version": 1, "next_number": 3,
+                allocation = {"aap_vm_allocation": {"schema_version": 1, "next_number": 5,
                     "reservations": {name: {"vm_name": name, "number": number,
                         "instance_route": {"aap_hostname": "https://" + name + ".example.invalid"}}
                         for name, number in (("one", 1), ("two", 2))}}}
@@ -849,12 +891,45 @@ class InstanceKeyTests(unittest.TestCase):
                 git(seed, "push", "origin", "HEAD:main")
                 client.host = {"id": 25, "variables": json.dumps({"ansible_fqdn": "one.example.invalid"})}
                 client.native_credential = {"id": 45, "inputs": {"host": "https://one.example.invalid"}}
+                before_retire = git(remote, "rev-parse", "main").stdout
+                with self.assertRaises(AnsibleActionFail):
+                    run("one", {"target": "https://wrong.example.invalid"}, "retire")
+                self.assertEqual(git(remote, "rev-parse", "main").stdout, before_retire)
+                retirement_race = "initial-counter"
+                with self.assertRaisesRegex(AnsibleActionFail, "valid monotonic allocation counter"):
+                    run("one", {"target": "https://one.example.invalid"}, "retire")
+                self.assertNotIn("decommissioned", allocation_state()["aap_vm_allocation"]["reservations"]["one"])
+                change_allocation(lambda state: state.update(next_number=5))
+                with mock.patch.object(client, "request", side_effect=failed_save):
+                    with self.assertRaises(AnsibleActionFail):
+                        run("one", {"target": "https://one.example.invalid"}, "retire")
+                self.assertTrue(allocation_state()["aap_vm_allocation"]["reservations"]["one"]["decommissioned"])
+                self.assertIsNotNone(client.host)
+                self.assertIsNotNone(client.native_credential)
+                for race, message in (("selected", "selected retired reservation changed"),
+                                      ("counter", "regressed allocation counter"),
+                                      ("reject", "Concurrent instance updates")):
+                    retirement_race = race
+                    with self.subTest(race=race), self.assertRaisesRegex(AnsibleActionFail, message):
+                        run("one", {"target": "https://one.example.invalid"}, "retire")
+                    self.assertIn("one", allocation_state()["aap_vm_allocation"]["reservations"])
+                    retirement_race = None
+                    if race == "selected":
+                        change_allocation(lambda state: state["reservations"]["one"].pop("ownership_nonce"))
+                    elif race == "counter":
+                        change_allocation(lambda state: state.update(next_number=5))
+                retirement_race = "other"
                 self.assertTrue(run("one", {"target": "https://one.example.invalid"}, "retire")["changed"])
-                self.assertFalse(run("one", {"target": "https://one.example.invalid"}, "retire")["changed"])
+                calls_after_completion = deepcopy(client.calls)
+                with self.assertRaises(AnsibleActionFail):
+                    run("one", {"target": "https://one.example.invalid"}, "retire")
+                self.assertEqual(client.calls, calls_after_completion)
                 retired = AnsibleLoader(vault.decrypt(git(remote, "show",
                     "main:state/aap_vm_allocations_vault.yml").stdout)).get_single_data()["aap_vm_allocation"]
-                self.assertEqual(retired["next_number"], 3)
-                self.assertTrue(retired["reservations"]["one"]["decommissioned"])
+                self.assertEqual(retired["next_number"], 6)
+                self.assertNotIn("one", retired["reservations"])
+                self.assertEqual(retired["reservations"]["three"], {"vm_name": "three", "number": 3})
+                self.assertEqual(retired["reservations"]["two"], allocation["aap_vm_allocation"]["reservations"]["two"])
                 self.assertNotIn("decommissioned", retired["reservations"]["two"])
                 retained = AnsibleLoader(vault.decrypt(git(remote, "show",
                     "main:cac/host_inventory.yml").stdout)).get_single_data()["host_inventory_configuration"]

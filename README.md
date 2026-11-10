@@ -383,9 +383,11 @@ Job Template selects the common importer and fixes its project ID in extra varia
 explicit instance confirmation, pinned hypervisor identity and verified ownership
 before removing the selected VM, related same-version guests, disks, DNS,
 certificates, nginx and isolation permissions. Source images, other guests,
-shared credentials and consumed allocation numbers are preserved. The existing
-writer saves the resulting policy and inventory state; it does not store
-application ownership in the AAP-only allocation record. See
+shared credentials and the monotonic allocation counter are preserved. The
+existing writer retains the selected reservation while policy and source API
+cleanup run, then removes that reservation after verified completion. Other
+instances and shared settings remain unchanged; consumed numbers are never
+reused. Application ownership stays outside the AAP-only allocation record. See
 [decommission details](docs/decommission.md) for the exact scope and retry rules.
 Code validation and a successful live decommission remain distinct results in
 the task records.

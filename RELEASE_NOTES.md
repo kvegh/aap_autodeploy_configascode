@@ -1,5 +1,26 @@
 # Release notes
 
+## 0.50.10
+
+Remove the selected instance's consumed reservation only after infrastructure
+retirement, source policy/host/token cleanup and the final canonical comparison
+succeed. Keep the intermediate decommissioned row until those checks complete,
+then prune only that row from a fresh encrypted checkout using nonforce Git.
+Preserve the monotonic next-number counter, all other rows and literal values.
+Reject changed selected ownership or counter regression, including across early
+Git conflicts. Bounded push contention retains the row for the normal retry.
+Completed instances leave no current allocation tombstone and cannot be selected
+again; Git history remains available.
+
+All 68 affected instance-access, allocation, supplemental-interface and guest
+retirement tests pass. Real local encrypted-Git/API fixtures exercise interrupted
+source cleanup, selected mismatch, initial/final counter regressions, exhausted
+push contention and preservation of a concurrent surviving allocation. Python
+compilation, whitespace, the existing teardown syntax check and offline strict
+production lint across thirteen encountered files pass. Independent focused
+review found and verified correction of the initial retry counter floor.
+Live retirement remains unverified by this source-only change.
+
 ## 0.50.9
 
 Document implementation `c084ce90dd4959e2e4d5f655404f8ccd935ff899` (0.50.8),

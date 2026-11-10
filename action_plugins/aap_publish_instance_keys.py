@@ -107,6 +107,7 @@ class ActionModule(ActionBase):
                     GIT_CONFIG_KEY_2="http.sslVerify", GIT_CONFIG_VALUE_2="true", LC_ALL="C")
                 published = False
                 source_ownership_snapshot = None
+                retirement_counter = None
                 for attempt in range(8):
                     checkout = workspace / str(attempt)
                     checkout.mkdir(mode=0o700)
@@ -206,6 +207,14 @@ class ActionModule(ActionBase):
                             old = AnsibleLoader(raw).get_single_data()
                             updated = deepcopy(old)
                             if extra.startswith("state/"):
+                                state = updated["aap_vm_allocation"]
+                                current_counter = state.get("next_number")
+                                keys.require(type(current_counter) is int and 0 < current_counter < 2**31
+                                    and (retirement_counter is None or current_counter >= retirement_counter)
+                                    and all(type(row.get("number")) is int and 0 < row["number"] < current_counter
+                                            for row in state["reservations"].values()),
+                                    "Keep a valid monotonic allocation counter during retirement.")
+                                retirement_counter = current_counter
                                 matches = [row for row in updated["aap_vm_allocation"]["reservations"].values()
                                            if row.get("vm_name") == args["instance_name"]]
                                 keys.require(len(matches) == 1 and
@@ -213,6 +222,7 @@ class ActionModule(ActionBase):
                                     keys.origin(args["record"].get("target")),
                                     "Retirement must match exactly one consumed allocation and public URL.")
                                 matches[0]["decommissioned"] = True
+                                retirement_record = deepcopy(matches[0])
                             else:
                                 if retirement_context is not None:
                                     updated = keys.retire_inventory_capture(updated, retirement_context, "shared")
@@ -399,6 +409,47 @@ class ActionModule(ActionBase):
                         inventory_stable = (observed == latest and observed_inventory == retirement_shared
                                             and observed_hactar == retirement_hactar and observed_records == latest_records)
                     if observed.get("aap_instance_api_credentials") == records and inventory_stable:
+                        if retiring:
+                            # Keep ownership until API cleanup succeeds; see docs/decommission.md.
+                            allocation_relative = "state/aap_vm_allocations_vault.yml"
+                            allocation_raw = git("show", "FETCH_HEAD:" + allocation_relative).stdout.encode()
+                            plain, allocation_label, allocation_secret = self._loader._vault.decrypt_and_get_vault_id(
+                                allocation_raw, filename=allocation_relative)
+                            final_allocation = AnsibleLoader(plain).get_single_data()
+                            state = final_allocation["aap_vm_allocation"]
+                            matches = [(key, row) for key, row in state["reservations"].items()
+                                       if row.get("vm_name") == args["instance_name"]]
+                            keys.require(len(matches) == 1 and matches[0][1] == retirement_record,
+                                "The selected retired reservation changed before final removal.")
+                            keys.require(type(state.get("next_number")) is int
+                                and retirement_counter <= state["next_number"] < 2**31
+                                and all(type(row.get("number")) is int and 0 < row["number"] < state["next_number"]
+                                        for row in state["reservations"].values()),
+                                "Refuse a regressed allocation counter before final reservation removal.")
+                            desired_allocation = deepcopy(final_allocation)
+                            del desired_allocation["aap_vm_allocation"]["reservations"][matches[0][0]]
+                            sealed = self._loader._vault.encrypt(
+                                yaml.dump(desired_allocation, Dumper=vault_yaml.VaultDumper, sort_keys=False, width=110),
+                                secret=allocation_secret, vault_id=allocation_label)
+                            restored = AnsibleLoader(self._loader._vault.decrypt(sealed)).get_single_data()
+                            keys.require(restored == desired_allocation
+                                and vault_yaml.literal_paths(restored) == vault_yaml.literal_paths(desired_allocation),
+                                "Final reservation removal must preserve other allocations and literal data.")
+                            git("checkout", "--quiet", "--detach", "FETCH_HEAD")
+                            (checkout / allocation_relative).write_bytes(sealed)
+                            git("add", "--", allocation_relative)
+                            git("-c", "user.name=AAP AutoDeploy", "-c", "user.email=automation@example.invalid",
+                                "commit", "--quiet", "-m", "Remove completed instance reservation")
+                            if git("push", "origin", "HEAD:refs/heads/main", optional=True).returncode:
+                                continue
+                            published = True
+                            git("fetch", "--quiet", "--depth=1", "origin", "main")
+                            keys.require(git("rev-parse", "HEAD").stdout == git("rev-parse", "FETCH_HEAD").stdout,
+                                "Concurrent changes followed final reservation removal; review current CaC.")
+                            verified_allocation = AnsibleLoader(self._loader._vault.decrypt(
+                                git("show", "FETCH_HEAD:" + allocation_relative).stdout.encode())).get_single_data()
+                            keys.require(verified_allocation == desired_allocation,
+                                "Verify selected reservation absence and unchanged counter after publication.")
                         result.update(changed=published or api_changed, published=True,
                             source_credential_id=synchronized["credential_id"])
                         return result
