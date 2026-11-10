@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.50.9
+
+Document implementation `c084ce90dd4959e2e4d5f655404f8ccd935ff899` (0.50.8),
+verification of the producer's existing DHCP allocation, unchanged identity guards
+and focused native checks. No additional functional changes. Publication does
+not establish live preview or cleanup acceptance; those remain pending.
+
 ## 0.50.8
 
 Validate monitoring VM addresses against their existing native allocation source.

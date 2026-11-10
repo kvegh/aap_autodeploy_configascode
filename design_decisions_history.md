@@ -1,5 +1,34 @@
 # Design decisions history
 
+## Validate the monitoring clone's existing native DHCP allocation — 2026-11-10
+
+Implementation `c084ce90dd4959e2e4d5f655404f8ccd935ff899` (0.50.8) fixes an
+address-proof mismatch. The maintained clone producer obtains its address from
+native libvirt DHCP leases for the verified VM MAC; it does not create a static
+reservation. The previous validator required a static reservation regardless of
+that allocation method. This is a correction to verification of existing
+ownership, not an address adoption or network configuration change.
+
+Keep exact unique static DHCP ownership as sufficient proof, including for a
+stopped guest. Only when neither the saved MAC nor address has a static owner,
+read the full native network lease table and require one unique same-row MAC/IP
+pair with future expiry. Duplicate or crossed ownership and failed/malformed,
+missing or expired lease data fail closed. DNS host entries are excluded from
+DHCP counts. Native reads use the existing protected Ansible command path with
+`LC_ALL=C` and `TZ=UTC`; no helper, mode, store, credential or recovery path was
+added. All existing UUID, disk, interface, MAC, network, bridge, hypervisor and
+production guards remain required. Safe failure context uses `address_matches`
+because address proof can be static or DHCP.
+
+Nine affected native-policy tests pass, including sixteen concrete address-proof
+cases, verbose privacy and full composition for two dynamic monitoring owners.
+Scoped strict production lint across fourteen encountered files, syntax and
+whitespace checks pass; independent source review found no significant defect.
+Finite native expiry timestamps and correct clocks are the supported demo
+assumptions. A stopped dynamic guest still requires its current lease; expiration
+stops cleanup without rewriting saved ownership. Live preview and final cleanup
+acceptance remain the parent task's responsibility and are not claimed here.
+
 ## Report only safe native identity check outcomes — 2026-11-09
 
 Implementation `03e09d72505468181e2bf0fb228774cdcfd545a1` (0.50.6) makes
