@@ -1,5 +1,17 @@
 # Design decisions history
 
+## Refresh the physical recovery checkpoint — 2026-11-11
+
+Documentation checkpoint `4838766446b12621792b4639fa0231a5dda68111` refreshes the generated task overview and
+README after verified retirement, reinstall and firmware preflight. Detailed
+records and comments remain in the separate encrypted Hactar recovery export.
+The original timed-out conversion job and workflow retain their failed states,
+while the later remote conversion success is recorded separately. Remaining
+host setup requires the explicit host-settings decision that the workflow never
+reached; fresh AAP allocation remains 18 and has not started. The owner deferred
+Vault-key rotation. No guest, provider, credential or runtime change is made by
+this documentation checkpoint. Both task-mirror checks and whitespace checks pass.
+
 ## Clarify the final access-retirement task name — 2026-11-10
 
 Implementation `63b39be7d2ab85a049ee5e1a7e85fd83a407f6e6` (0.50.12) corrects an obsolete display name
