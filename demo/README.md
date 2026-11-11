@@ -15,10 +15,12 @@ selected project CaC and the reviewed capture path. Both the selector and the
 importer support verified self/remote targets in this source. Physical-host
 deployment remains outside the page.
 
-The provisioning diagram shows the existing source AAP running jobs against one
-pinned test hypervisor and its new guest. It includes encrypted allocation, the
-preserved golden image, fresh guest identity, DNS/TLS/nginx and AAP installed
-inside that guest. The API diagram shows Base AAP and project configuration on
+The provisioning diagram begins with only the existing source AAP and prepared
+test hypervisor, including its preserved golden image. Stage 01 reveals the
+allocated RHEL guest without AAP. Stage 02 adds DNS/TLS/nginx; Stage 03 reveals
+the installed AAP inside that same guest. Future objects and their routes are
+hidden rather than dimmed, including before JavaScript initializes. The API
+diagram begins at Stage 04 and shows Base AAP and project configuration on
 the selected receiving AAP. The four prominent stage buttons select the actual
 phase and diagram. Application deployment jobs remain separate actions; no
 future AIOps-triggered workload installation is depicted as current behavior.
@@ -48,8 +50,9 @@ requests reduced motion. A step can be linked directly, for example `#import`.
 
 The Node fixtures execute the real scripts against a small disposable DOM.
 They check reversible navigation, configured-resource state, deep links,
-self-target explanation, deployment/configuration views, stage-specific routes
-and results, the blue palette, reduced motion and pinned source links. They do not
+self-target explanation, deployment/configuration views, actual object visibility,
+stage-specific routes and results, the blue palette, reduced motion and pinned
+source links. They do not
 establish browser layout or actual AAP behavior. Browser checks and screenshots
 are separate validation when an existing browser is available.
 

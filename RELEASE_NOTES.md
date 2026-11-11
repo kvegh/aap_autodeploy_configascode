@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.52.8
+
+Correct the walkthrough's deployment sequence: the initial view shows no new
+VM or receiving AAP. Stage 01 reveals the empty RHEL VM, Stage 02 its frontend,
+Stage 03 the installed AAP, and Stage 04 the configured API. Future objects,
+routes and labels are hidden rather than dimmed, including initial HTML and
+accessibility state. Back, restart and direct links follow the same sequence.
+Nine Node interaction/source/palette checks and JavaScript/SVG structure checks
+pass. No browser installation or layout/screenshot claim is added.
+
 ## 0.52.7
 
 Document implementation 4348af4, the read-only delegated fact-ownership

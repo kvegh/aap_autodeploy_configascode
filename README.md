@@ -292,6 +292,9 @@ Controller capture fit together. The twelve-step story follows implementation
 the same AAP or another verified AAP. Examples are synthetic; the page makes no
 AAP connections. Dedicated deployment views explain VM creation, DNS/TLS/nginx,
 AAP installation and Base AAP configuration before the project CaC flow. The
+initial view shows only the existing source AAP and prepared host. The empty VM
+appears in Stage 01, AAP in Stage 03, and its configured API view in Stage 04;
+backwards navigation and restart remove objects that do not exist yet. The
 palette uses blue, slate and neutral shades. Source and local checks are
 in [demo/README.md](demo/README.md). The public Pages artifact contains only the
 allowlisted presentation assets. Interaction and structural checks pass; browser

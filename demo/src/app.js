@@ -35,6 +35,13 @@
     byId('motion').textContent = motion ? 'Motion on' : 'Motion off';
   }
 
+  function setVisible(id, visible) {
+    const element = byId(id);
+    if (visible) element.removeAttribute('hidden');
+    else element.setAttribute('hidden', '');
+    element.setAttribute('aria-hidden', String(!visible));
+  }
+
   function setDestination(value) {
     destination = value;
     const self = destination === 'self';
@@ -44,7 +51,11 @@
     byId('target-remote').classList.toggle('selected', !self);
     byId('target-role').textContent = self ? 'The same verified AAP instance' : 'Another verified AAP instance';
     byId('target-explanation').textContent = app.dataset.view === 'deployment'
-      ? 'The source AAP executes the job; the selected guest on the pinned test host receives the installation.'
+      ? Number(app.dataset.deploymentStage) === 0
+        ? 'The source AAP and prepared test host exist already. The new VM and its AAP appear during deployment.'
+        : Number(app.dataset.deploymentStage) < 3
+          ? 'The new RHEL VM exists. AAP is not installed until Stage 03.'
+          : 'AAP is now installed inside that same VM. Stage 04 applies its base configuration next.'
       : self
       ? 'These are two roles in the flow: the job configures the AAP on which it runs.'
       : 'The job runs on an existing source AAP and configures another selected AAP.';
@@ -54,12 +65,16 @@
     index = Math.max(0, Math.min(scenario.steps.length - 1, position));
     const step = scenario.stepAt(index);
     const deployment = step.view === 'deployment';
+    const deploymentStage = step.stage || 0;
     app.dataset.view = deployment ? 'deployment' : 'configuration';
-    byId('configuration-view').hidden = deployment;
-    byId('deployment-view').hidden = !deployment;
-    byId('target-controls').hidden = deployment;
-    byId('deployment-context').hidden = !deployment;
-    byId('architecture-title').textContent = deployment ? 'Create the guest. Install the platform.'
+    app.dataset.deploymentStage = String(deploymentStage);
+    setVisible('configuration-view', !deployment);
+    setVisible('deployment-view', deployment);
+    setVisible('node-target', !deployment);
+    setVisible('target-controls', !deployment);
+    setVisible('deployment-context', deployment);
+    byId('architecture-title').textContent = deployment
+      ? deploymentStage === 0 ? 'Start with the source AAP and prepared host.' : 'Create the guest. Install the platform.'
       : step.id === 'base' ? 'Stage 04: configure the installed AAP.' : 'Saved intent. Explicit destination.';
     byId('ready-legend').textContent = deployment ? 'Stage result present' : 'Configuration present';
     setDestination(destination);
@@ -106,6 +121,21 @@
       byId(`deploy-${id}`).classList.toggle('active', (step.deploymentFocus || []).includes(id));
       byId(`deploy-${id}`).classList.toggle('ready', (step.deploymentReady || []).includes(id));
     });
+    const appearsAtStage = {
+      'deploy-state': 1, 'deploy-guest': 1, 'deploy-edge': 2, 'deploy-platform': 3,
+      'deploy-golden-copy-label': 1, 'deploy-public-label': 2, 'deploy-dns-label': 2,
+      'deploy-frontend-label': 3, 'deploy-note': 3,
+      'deploy-route-reserve': 1, 'deploy-route-ssh': 1, 'deploy-route-copy': 1,
+      'deploy-route-dns': 2, 'deploy-route-install': 3, 'deploy-route-frontend': 3,
+    };
+    Object.entries(appearsAtStage).forEach(([id, stage]) => setVisible(id, deploymentStage >= stage));
+    setVisible('guest-empty-status', deploymentStage >= 1 && deploymentStage < 3);
+    setVisible('deploy-ssh-label', deploymentStage >= 1);
+    byId('deployment-description').textContent = deploymentStage === 0
+      ? 'An existing source AAP and prepared pinned test hypervisor are ready. No new VM or receiving AAP exists yet.'
+      : deploymentStage < 3
+        ? `Stage ${String(deploymentStage).padStart(2, '0')} has created a verified RHEL guest${deploymentStage === 2 ? ' and its DNS, TLS and nginx frontend' : ''}. AAP is not installed yet.`
+        : 'Stage 03 has installed and verified AAP inside the same RHEL guest. Stage 04 will apply the shared base configuration.';
     ['reserve', 'ssh', 'copy', 'dns', 'install', 'frontend'].forEach(id => {
       byId(`deploy-route-${id}`).classList.toggle('active', (step.deploymentRoutes || []).includes(id));
     });

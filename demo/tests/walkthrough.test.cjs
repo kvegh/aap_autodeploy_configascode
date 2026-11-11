@@ -19,12 +19,13 @@ class Element {
     this.style = {};
     this.dataset = {};
     this.disabled = false;
+    this.hidden = false;
     this.textContent = '';
     this.classes = new Set();
     this.classList = { toggle: (name, enabled) => enabled ? this.classes.add(name) : this.classes.delete(name) };
   }
-  setAttribute(key, value) { this.attributes[key] = value; }
-  removeAttribute(key) { delete this.attributes[key]; }
+  setAttribute(key, value) { this.attributes[key] = value; if (key === 'hidden') this.hidden = true; }
+  removeAttribute(key) { delete this.attributes[key]; if (key === 'hidden') this.hidden = false; }
   append(...items) { this.children.push(...items); }
   replaceChildren(...items) { this.children = items; }
   addEventListener(name, callback) { this.handlers[name] = callback; }
@@ -98,12 +99,13 @@ test('next and previous reveal and remove the correct configuration groups', () 
 });
 
 test('the same-instance choice changes roles without pretending to create another platform', () => {
-  const { nodes, context } = browser({ hash: '#destination' });
+  const { nodes, context } = browser({ hash: '#base' });
+  assert.equal(nodes['target-controls'].hidden, false);
   nodes['target-self'].click();
   assert.equal(nodes['target-self'].attributes['aria-pressed'], 'true');
   assert.match(nodes['target-role'].textContent, /same verified AAP/);
   assert.match(nodes['target-explanation'].textContent, /two roles in the flow/);
-  assert.equal(context.location.hash, '#destination');
+  assert.equal(context.location.hash, '#base');
   nodes.restart.click();
   assert.equal(nodes.progress.attributes['aria-valuenow'], '1');
   assert.equal(nodes['target-remote'].attributes['aria-pressed'], 'true');
@@ -142,6 +144,21 @@ test('reduced-motion preference and its changes are honored', () => {
 
 test('the four actual stages select the correct diagram, route, result and phase', () => {
   const { nodes, app } = browser();
+  const visible = (id, value) => {
+    assert.equal(Object.hasOwn(nodes[id].attributes, 'hidden'), !value, `${id} hidden attribute`);
+    assert.equal(nodes[id].attributes['aria-hidden'], String(!value), `${id} accessibility`);
+  };
+  assert.equal(app.dataset.view, 'deployment');
+  visible('configuration-view', false);
+  visible('node-target', false);
+  for (const id of ['deploy-guest', 'deploy-platform', 'deploy-state', 'deploy-edge', 'deploy-route-install', 'deploy-route-frontend']) visible(id, false);
+  for (const id of ['destination', 'inputs']) {
+    const view = browser({ hash: `#${id}` });
+    assert.equal(view.app.dataset.view, 'deployment');
+    assert.equal(view.nodes['node-target'].hidden, true);
+    assert.equal(view.nodes['deploy-guest'].hidden, true);
+    assert.match(view.nodes['deployment-description'].textContent, /No new VM or receiving AAP exists yet/);
+  }
   nodes['stage-vm'].click();
   assert.equal(app.dataset.view, 'deployment');
   assert.equal(nodes['deployment-view'].hidden, false);
@@ -154,17 +171,31 @@ test('the four actual stages select the correct diagram, route, result and phase
   assert.equal(nodes['deploy-route-reserve'].classes.has('active'), true);
   assert.equal(nodes['deploy-route-copy'].classes.has('active'), true);
   assert.equal(nodes['deploy-platform'].classes.has('ready'), false);
+  visible('deploy-guest', true);
+  visible('guest-empty-status', true);
+  visible('deploy-platform', false);
+  visible('deploy-edge', false);
+  visible('deploy-route-install', false);
+  visible('deploy-route-frontend', false);
+  assert.match(nodes['target-explanation'].textContent, /AAP is not installed/);
   nodes['stage-infrastructure'].click();
   assert.match(nodes.phase.textContent, /Stage 02/);
   assert.equal(nodes['deploy-edge'].classes.has('active'), true);
   assert.equal(nodes['deploy-route-dns'].classes.has('active'), true);
   assert.equal(nodes['deploy-route-copy'].classes.has('active'), false);
   assert.match(nodes['edge-status'].textContent, /upstream pending/);
+  visible('deploy-edge', true);
+  visible('deploy-platform', false);
+  visible('deploy-route-frontend', false);
   nodes.next.click();
   assert.match(nodes.phase.textContent, /Stage 03/);
   assert.equal(nodes['deploy-platform'].classes.has('ready'), true);
   assert.equal(nodes['deploy-route-install'].classes.has('active'), true);
   assert.match(nodes['platform-status'].textContent, /verified/);
+  visible('deploy-platform', true);
+  visible('deploy-route-install', true);
+  visible('deploy-route-frontend', true);
+  visible('guest-empty-status', false);
   nodes.next.click();
   assert.match(nodes.phase.textContent, /Stage 04/);
   assert.equal(app.dataset.view, 'configuration');
@@ -175,16 +206,41 @@ test('the four actual stages select the correct diagram, route, result and phase
   assert.equal(nodes['resource-templates'].classes.has('configured'), false);
   assert.equal(nodes['stage-base'].attributes['aria-current'], 'step');
   assert.equal(nodes['stage-installation'].dataset.state, 'complete');
+  visible('node-target', true);
   nodes.previous.click();
   nodes.previous.click();
   assert.equal(nodes['deploy-platform'].classes.has('ready'), false);
   assert.equal(nodes['deploy-route-install'].classes.has('active'), false);
   assert.match(nodes['edge-status'].textContent, /upstream pending/);
+  visible('deploy-platform', false);
+  visible('node-target', false);
   nodes.restart.click();
-  assert.equal(app.dataset.view, 'configuration');
+  assert.equal(app.dataset.view, 'deployment');
+  visible('deploy-guest', false);
+  visible('deploy-platform', false);
+  visible('node-target', false);
   assert.equal(nodes['deploy-route-dns'].classes.has('active'), false);
   assert.equal(nodes['stage-vm'].dataset.state, 'pending');
   assert.equal(nodes.progress.attributes['aria-valuemax'], '12');
+});
+
+test('future deployment objects are hidden in the initial HTML as well as direct links', () => {
+  const css = readFileSync(path.join(demo, 'src/styles.css'), 'utf8');
+  assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
+  for (const id of ['configuration-view', 'node-target', 'target-controls', 'deploy-guest', 'deploy-platform',
+    'deploy-state', 'deploy-edge', 'deploy-route-reserve', 'deploy-route-copy', 'deploy-route-dns',
+    'deploy-route-install', 'deploy-route-frontend', 'deploy-dns-label', 'deploy-note']) {
+    const tag = html.match(new RegExp(`<[^>]+\\bid="${id}"[^>]*>`));
+    assert.ok(tag, `Missing initial element ${id}`);
+    assert.match(tag[0], /\shidden(?:=""|\s|>)/, `${id} must not flash before initialization`);
+    assert.match(tag[0], /aria-hidden="true"/, `${id} must not be announced before its stage`);
+  }
+  for (const [hash, guest, platform, target] of [['#vm', true, false, false], ['#infrastructure', true, false, false], ['#installation', true, true, false], ['#base', true, true, true]]) {
+    const { nodes } = browser({ hash });
+    assert.equal(nodes['deploy-guest'].hidden, !guest);
+    assert.equal(nodes['deploy-platform'].hidden, !platform);
+    assert.equal(nodes['node-target'].hidden, !target);
+  }
 });
 
 test('deployment direct links work and the complete palette uses blue or neutral hues', () => {
