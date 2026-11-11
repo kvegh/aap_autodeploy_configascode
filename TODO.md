@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-123 tasks: 29 outstanding; 94 closed.
+132 tasks: 27 outstanding; 105 closed.
 
 ## Outstanding tasks
 
@@ -19,24 +19,22 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 |---|---|---|---|---|---|
 | bead-wd-1rl.40 | Deploy Command Center from AAP to the selected workstation | in_progress | P1 | task | bead-wd-1rl |
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
-| bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix |
+| bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6 |
+| bead-wd-3ix.1.5 | Finish host bootstrap after conversion outlived AAP timeout | blocked | P1 | bug | bead-wd-3ix.1 |
+| bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
-| bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | in_progress | P1 | feature | bead-wd-72f.31.2 |
+| bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | open | P1 | feature | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | in_progress | P1 | task | bead-wd-72f.31.2 |
-| bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | in_progress | P1 | task | bead-wd-72f.31, bead-wd-72f.31.6.4 |
-| bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | in_progress | P1 | task | bead-wd-72f.31 |
-| bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | in_progress | P1 | bug | bead-wd-72f.31.6 |
-| bead-wd-72f.31.6.4.4 | Wire native firewall inputs into use-case CaC jobs | in_progress | P1 | task | bead-wd-72f.31.6.4 |
-| bead-wd-72f.31.6.4.6 | Save verified new Zabbix VM details into existing CaC definitions | in_progress | P1 | task | bead-wd-72f.31.6.4 |
-| bead-wd-72f.31.6.5 | Build MCP containers on the target during deployment | in_progress | P1 | feature | bead-wd-72f.31.6 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
+| bead-wd-1rl.40.6 | Add separate CCNG infrastructure playbook and CaC job | in_progress | P2 | task | bead-wd-1rl.40 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
 | bead-wd-72f.24 | Review legacy project settings in shared AutoDeploy inventory | open | P2 | task | bead-wd-72f |
+| bead-wd-72f.31.12 | Track Command Center and MCP DNS and nginx configuration in CaC | in_progress | P2 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.5 | Verify Automation Orchestrator against a disposable OpenShift cluster | deferred | P2 | task | bead-wd-72f.31 |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
@@ -56,6 +54,9 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-1rl.40.3 | Integrate Command Center through the shared AAP CaC importer | closed | P1 | task | bead-wd-1rl.40 |
 | bead-wd-1rl.40.4 | Choose the project for the fresh test Command Center | closed | P1 | decision | bead-wd-1rl.40 |
 | bead-wd-2i1 | Separate AIOps CaC into its private companion repository | closed | P1 | task | — |
+| bead-wd-3ix.1.2 | Fix existing external-controller teardown for successor ownership records | closed | P1 | bug | bead-wd-3ix.1 |
+| bead-wd-3ix.1.3 | Fix final access retirement after normal decommission | closed | P1 | bug | bead-wd-3ix.1 |
+| bead-wd-3ix.1.4 | Verify reinstalled Ng hardware against encrypted CaC | closed | P1 | feature | bead-wd-3ix.1 |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
 | bead-wd-72f.1 | Split per-repository CaC Vault credentials and rename all CaC Git readers | closed | P1 | feature | bead-wd-72f |
@@ -88,6 +89,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2.2 | Publish verified Linux SSH fields required by AIOps guest import | closed | P1 | bug | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.3 | Allow MCP installer to use the existing hypervisor SSH key | closed | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.31.3 | Prepare and verify Assistant Team on the selected test environment | closed | P1 | task | bead-wd-72f.31 |
+| bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.2 | Complete Windows lab teardown using the existing jobs | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.3 | Restore test AAP API responsiveness after Windows region configuration | closed | P1 | bug | bead-wd-72f.31.4 |
@@ -95,12 +97,17 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.4.5.1 | Pin the production Windows project to its tested revision | closed | P1 | task | bead-wd-72f.31.4.5 |
 | bead-wd-72f.31.4.6 | Approve temporary source AAP outage for successor Windows testing | closed | P1 | task | bead-wd-72f.31.4 |
 | bead-wd-72f.31.4.7 | Diagnose and fix Windows VM creation release failure | closed | P1 | bug | bead-wd-72f.31.4 |
+| bead-wd-72f.31.6 | Prepare and apply fresh successor use-case configuration | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.6.2 | Allow reviewed EE-based use cases without PAH repository prerequisites | closed | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.6.3 | Include the selected AAP issuer in Windows CaC trust | closed | P1 | bug | bead-wd-72f.31.6 |
+| bead-wd-72f.31.6.4 | Fix the successor monitoring guest website connection | closed | P1 | bug | bead-wd-72f.31.6 |
 | bead-wd-72f.31.6.4.1 | Choose how Hactar retains applied application firewall permissions | closed | P1 | decision | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6.4.2 | Choose the Ansible firewall transaction lock | closed | P1 | decision | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6.4.3 | Move application firewall grants into per-instance CaC | closed | P1 | task | bead-wd-72f.31.6.4 |
+| bead-wd-72f.31.6.4.4 | Wire native firewall inputs into use-case CaC jobs | closed | P1 | task | bead-wd-72f.31.6.4 |
 | bead-wd-72f.31.6.4.5 | Choose when fresh Zabbix VM details enter AIOps CaC | closed | P1 | decision | bead-wd-72f.31.6.4 |
+| bead-wd-72f.31.6.4.6 | Save verified new Zabbix VM details into existing CaC definitions | closed | P1 | task | bead-wd-72f.31.6.4 |
+| bead-wd-72f.31.6.5 | Build MCP containers on the target during deployment | closed | P1 | feature | bead-wd-72f.31.6 |
 | bead-wd-72f.31.8 | Prepare successor Assistant test settings without replacing predecessor data | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.9 | Run successor Assistant software test and owned retirement | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.32 | Synchronize recovery tasks and decisions into Git | closed | P1 | task | bead-wd-72f |
@@ -108,6 +115,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.34.1 | Inventory JSON and custom state deployed on managed servers | closed | P1 | task | bead-wd-72f.34 |
 | bead-wd-72f.35 | Map the last 24 hours of project decisions, actions and delays | closed | P1 | task | bead-wd-72f |
 | bead-wd-72f.36 | Map seven days of project decisions, actions and delays | closed | P1 | task | bead-wd-72f |
+| bead-wd-72f.37 | Diagnose stalled subagent tool calls and restore reliable worker status | closed | P1 | bug | bead-wd-72f |
 | bead-wd-72f.4 | Verify and correct disabled EDA activation semantics before importer migration | closed | P1 | bug | bead-wd-72f |
 | bead-wd-72f.5 | Implement project-ID-based generic CaC deployment | closed | P1 | feature | bead-wd-72f |
 | bead-wd-72f.5.1 | Rename all five CaC captures and migrate repository references | closed | P1 | task | bead-wd-72f.5 |
@@ -128,6 +136,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-x7k | Preserve running EDA activations during repeat CaC import | closed | P1 | bug | — |
 | bead-wd-xzi | Confirm public AAP access policy and future-only TLS scope | closed | P1 | task | — |
 | bead-wd-xzi.1 | Verify upstream TLS for future AAP deployments only | closed | P1 | bug | bead-wd-xzi |
+| bead-wd-1rl.40.5 | Choose backend certificate prerequisite order for fresh CCNG deployment | closed | P2 | decision | bead-wd-1rl.40 |
 | bead-wd-2uk | Compare production and test website launch settings | closed | P2 | task | — |
 | bead-wd-3ix.1.1 | Declare jq for rebuilt hypervisor cleanup | closed | P2 | task | bead-wd-3ix.1 |
 | bead-wd-72f.10 | Use existing Git credential type for the dedicated allocation writer | closed | P2 | task | bead-wd-72f |

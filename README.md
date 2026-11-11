@@ -1095,6 +1095,14 @@ reviewed activation step. Package removal, production migration and complete
 successor deployment are outside that service-outage proof. Full results remain
 in the existing encrypted Hactar recovery checkpoint.
 
+The later physical test-host rebuild is tracked separately in Beads. Its retired
+instance data is removed while the next AAP allocation remains 18. RHEL
+conversion completed remotely after Controller timed out; the original failed
+workflow has not been relabeled successful. Hardware preflight now passes with
+the expected firmware identifiers stored in encrypted CaC. The remaining host
+setup awaits the explicit host-settings confirmation that the failed workflow
+never reached. These recovery steps do not establish a fresh AAP 18 deployment.
+
 ### Disconnected Windows configuration deployment
 
 Choose the Windows configuration Job Template, which fixes
