@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.52.5
+
+Document the protected failure-classification change and its four template
+privacy checks plus scoped syntax/production lint. Package failure cause and
+live repair remain unverified until the existing job is observed.
+
 ## 0.52.4
 
 Expose only fixed Boolean failure categories before the existing access rollback.

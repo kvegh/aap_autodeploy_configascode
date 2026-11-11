@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Classify hidden access failures before rollback — 2026-11-11
+
+Implementation `9d18ed6c59c1778597fab52a822d27feeaf3d5ee` adds fixed Boolean failure categories at the start of
+the existing rescue. A live repair passed the first-empty policy planning and
+resource checks, then failed inside the certified firewall role's package task.
+Its rollback package task also failed. Protected logging intentionally withheld
+the raw module error. Independent host checks verified installed firewalld and
+Python support, unchanged native policy, absent selected rich rule and released
+lock; they did not establish the package failure's cause.
+
+The diagnostic reads the original failure privately before rollback can replace
+it. It reports only fixed backend, Python, repository, privilege and transport
+flags, keeping unknown results unknown. Four actual-template canary checks
+confirmed Boolean-only output without raw error content; scoped syntax and
+production lint passed. No backend override, new package or security workaround
+is introduced. Actual repair success requires its separately observed outcome.
+
 ## Finish first-guest installation access without reallocating — 2026-11-11
 
 Implementation `75b191d` fixes a fresh-host policy mismatch after VM creation
