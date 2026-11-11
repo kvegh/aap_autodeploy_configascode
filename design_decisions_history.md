@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Retrieve the original package error privately — 2026-11-11
+
+Implementation `73e9327` permits the existing tagged access repair to save only
+its original package error message in a root-owned temporary 0600 log. The job
+prints only the generated path, and the operator retrieves it through the same
+pinned SSH route before removing that exact file. It is a temporary diagnostic,
+not desired configuration, ownership metadata or a new state store. No new
+plugin, credential, service or Job Template is introduced.
+
+The previous live flags showed DNF and Ansible 2.16.19 but matched none of the
+three expected error branches, so another backend change would be a guess.
+The original failure is retained privately before diagnostic/rollback tasks can
+replace it. Actual Ansible fixture runs verify ordinary runs create no log,
+tagged repair preserves the message with private mode, and the raw canary stays
+out of job output; the test file is removed. Scoped syntax, production lint and
+whitespace checks pass. Actual error retrieval and repair remain live work.
+
 ## Distinguish exact package auto-detection branches — 2026-11-11
 
 Implementation `5677bec` narrows the fixed Boolean diagnostic to three distinct

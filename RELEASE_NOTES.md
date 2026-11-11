@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.52.13
+
+Document implementation 73e9327 and its ordinary/tagged protected-log fixtures,
+private file mode, output-canary suppression and scoped syntax/production lint.
+The underlying package failure remains unresolved pending actual retrieval.
+
 ## 0.52.12
 
 Allow only the existing tagged access repair to capture its original package
