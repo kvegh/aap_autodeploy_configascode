@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.52.14
+
+Fix certified firewall role delegation when protected route data carries Ansible's
+unsafe marker. Select the existing trusted inventory name through a loop and
+separate matching condition for both apply and rollback. Preserve all protected
+data, strict target checks and normal package backend selection; do not unwrap
+Vault values. The actual error and a same-core reproduction show the internal
+package lookup was left literal. Remove the one-time protected-file diagnostic
+after retrieval and verified deletion of its temporary host file.
+
 ## 0.52.13
 
 Document implementation 73e9327 and its ordinary/tagged protected-log fixtures,

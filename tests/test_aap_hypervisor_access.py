@@ -254,6 +254,111 @@ class ManagementAccessTests(unittest.TestCase):
                 text=True, capture_output=True, env=environment, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_certified_package_action_uses_trusted_inventory_names_without_unwrapping_vault_candidates(self):
+        tasks = yaml.safe_load((ROOT / 'tasks/aap-hypervisor-access.yml').read_text())
+        transaction = next(task for task in tasks if 'block' in task)
+        primary = next(task for task in transaction['block'] if 'ansible.builtin.include_role' in task)
+        rollback = next(task for group in transaction['rescue'] for task in group.get('block', [])
+                        if 'ansible.builtin.include_role' in task)
+        with tempfile.TemporaryDirectory(prefix='package-unsafe-delegation-') as temporary:
+            directory = Path(temporary)
+            plugins = directory / 'action_plugins'; plugins.mkdir()
+            role = directory / 'roles/fixture_firewall/tasks'; role.mkdir(parents=True)
+            trace = directory / 'backend.jsonl'
+            # Keep the certified role's package action and omitted non-OSTree use.
+            (role / 'main.yml').write_text(yaml.safe_dump([{
+                'name': 'Install firewalld',
+                'package': {'name': ['firewalld'], 'state': 'present',
+                            'use': "{{ false | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"},
+                'register': 'firewall_package_result',
+            }], sort_keys=False))
+            (plugins / 'package.py').write_text('''import importlib.util
+import json
+from pathlib import Path
+import ansible
+spec = importlib.util.spec_from_file_location('fixture_real_package_action',
+    Path(ansible.__file__).parent / 'plugins/action/package.py')
+real = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(real)
+class ActionModule(real.ActionModule):
+    def _execute_module(self, module_name=None, module_args=None, task_vars=None, **kwargs):
+        if module_name == 'ansible.legacy.setup':
+            return {'ansible_facts': {'ansible_pkg_mgr': 'dnf'}}
+        assert module_name == 'ansible.legacy.dnf', module_name
+        candidates = task_vars['aap_management_hypervisor_hosts']
+        assert all(getattr(candidate, '__UNSAFE__', False) for candidate in candidates)
+        with Path(TRACEPATH).open('a') as output:
+            output.write(json.dumps({'backend': module_name, 'delegate': self._task.delegate_to,
+                'candidate_unsafe': [bool(getattr(candidate, '__UNSAFE__', False)) for candidate in candidates],
+                'loop_value_unsafe': bool(getattr(task_vars.get('aap_management_firewall_host'), '__UNSAFE__', False))}) + '\\n')
+        return {'changed': False, 'rc': 0, 'results': ['Already installed']}
+'''.replace('TRACEPATH', repr(str(trace))))
+            variables = {
+                'aap_management_hypervisor_hosts': [AnsibleUnsafeText('fixture-hypervisor')],
+                'aap_management_native_plan': {'rich_rule': 'synthetic exact guest rule'},
+                'aap_management_native_rule_previous': {'results': [{'rc': 1}, {'rc': 1}]},
+            }
+            inputs = directory / 'vars.yml'
+            inputs.write_text(yaml.dump(variables, Dumper=vault_yaml.VaultDumper, sort_keys=False))
+            self.assertIn('!unsafe', inputs.read_text())
+            inventory = directory / 'inventory.json'
+            inventory.write_text(json.dumps({'all': {'hosts': {
+                'localhost': {'ansible_connection': 'local'},
+                'fixture-hypervisor': {'ansible_connection': 'local', 'ansible_facts': {'pkg_mgr': 'dnf'}},
+                'unrelated-hypervisor': {'ansible_connection': 'local', 'ansible_facts': {'pkg_mgr': 'dnf'}},
+            }}}))
+            calls = []
+            for source in (primary, rollback):
+                call = deepcopy(source)
+                call['ansible.builtin.include_role']['name'] = 'fixture_firewall'
+                calls.append(call)
+            original_delegate = '{{ aap_management_hypervisor_hosts | first }}'
+            play = directory / 'play.yml'
+            play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local',
+                'gather_facts': False, 'vars_files': [str(inputs)], 'tasks': [{
+                    'name': 'Retain the original unsafe outer delegation', 'delegate_to': original_delegate,
+                    'become': False, 'block': calls,
+                }]}], sort_keys=False))
+            config = directory / 'ansible.cfg'; config.write_text('[defaults]\n')
+            environment = dict(os.environ, ANSIBLE_CONFIG=str(config),
+                ANSIBLE_ACTION_PLUGINS=str(plugins), ANSIBLE_ROLES_PATH=str(directory / 'roles'),
+                ANSIBLE_LOCAL_TEMP=str(directory / 'local'), ANSIBLE_REMOTE_TEMP=str(directory / 'remote'),
+                ANSIBLE_NOCOLOR='1')
+            command = [sys.executable, '-m', 'ansible.cli.playbook', '-i', str(inventory), str(play)]
+            result = subprocess.run(command, env=environment, cwd=ROOT, text=True,
+                                    capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            rows = [json.loads(line) for line in trace.read_text().splitlines()]
+            self.assertEqual(len(rows), 2, 'Primary and rollback each select the one verified host.')
+            self.assertTrue(all(row['backend'] == 'ansible.legacy.dnf'
+                                and row['delegate'] == 'fixture-hypervisor'
+                                and row['candidate_unsafe'] == [True]
+                                and row['loop_value_unsafe'] is False for row in rows))
+
+            # The prior unsafe override must reproduce the real package-action failure.
+            trace.unlink()
+            unsafe_call = deepcopy(calls[0])
+            unsafe_call['ansible.builtin.include_role']['apply']['delegate_to'] = original_delegate
+            for field in ('loop', 'loop_control', 'when'):
+                unsafe_call.pop(field, None)
+            failure = directory / 'expected-failure.json'
+            play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local',
+                'gather_facts': False, 'vars_files': [str(inputs)], 'tasks': [{
+                    'delegate_to': original_delegate, 'become': False, 'block': [unsafe_call],
+                    'rescue': [{'name': 'Retain only the synthetic failure',
+                        'ansible.builtin.copy': {'content': '{{ ansible_failed_result.msg | to_json }}',
+                                                'dest': str(failure), 'mode': '0600'},
+                        'delegate_to': 'localhost', 'become': False,
+                        'vars': {'ansible_connection': 'local'}, 'no_log': True}],
+                }]}], sort_keys=False))
+            result = subprocess.run(command, env=environment, cwd=ROOT, text=True,
+                                    capture_output=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue(failure.exists(), 'The unsafe old delegation must fail and enter rescue.')
+            self.assertRegex(json.loads(failure.read_text()),
+                r"^Could not find a module for \{\{hostvars\['fixture-hypervisor'\]\['ansible_facts'\]\['pkg_mgr'\]\}\}\.$")
+            self.assertFalse(trace.exists(), 'The broken expression must never select an executable backend.')
+
     def test_real_encrypted_git_publication_retries_source_interruption_without_rotating_token(self):
         module = load('test_management_publish_action', 'action_plugins/aap_publish_instance_keys.py')
         expected, _, main, shared, hactar, allocation = fixture()

@@ -525,14 +525,15 @@ remain protected; a category alone does not prove a root cause or successful
 rollback. Verify the actual native state before a bounded continuation.
 The categories distinguish general package detection, DNF version detection
 and a missing DNF module; the job also reports its actual Ansible version.
-Only a tagged installation-access repair may retain the original package error
-in a root-owned temporary 0600 log, without module arguments. The job reports its
-path; retrieve it through the already verified SSH route and remove it after
-inspection. Ordinary base runs retain the existing protected logging behavior.
 Access transactions gather the actual hypervisor's package-manager fact with
 delegated fact ownership on its existing inventory identity before invoking the
 certified firewall role. The route must match exactly one inventory host. The role
 keeps its normal backend selection; no package backend or interpreter is forced.
+The firewall role receives that inventory name through a separate inventory loop
+and matching condition. This avoids propagating a protected route's unsafe marker
+into Ansible's internal package lookup, while preserving all Vault/unsafe values.
+The one-time protected error capture used to diagnose this problem has been
+removed, and its temporary host log was deleted after retrieval.
 
 The Stage 01 readiness probe temporarily binds the new guest's SSH connection
 facts, checks its pinned route, then restores the hypervisor's original connection
