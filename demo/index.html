@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore the implemented AAP Configuration as Code flow: protected configuration, explicit targets, ordered imports and reviewed changes.">
+  <meta name="color-scheme" content="light">
+  <title>AAP Configuration as Code · From configuration to capability</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="src/styles.css">
+  <script src="src/scenario.js" defer></script>
+  <script src="src/app.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#walkthrough">Skip to the walkthrough</a>
+<div class="app" data-motion="on">
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><div><p class="eyebrow">Ansible Automation Platform</p><h1>Configuration <span>as Code.</span></h1></div></div>
+    <div class="header-actions"><span class="simulation-label"><i aria-hidden="true"></i> Interactive code walkthrough</span><button class="quiet-button" id="restart" type="button" aria-keyshortcuts="R">Start over <span aria-hidden="true">↺</span></button></div>
+  </header>
+
+  <section class="presenter" id="walkthrough" aria-labelledby="current-title" tabindex="-1">
+    <div class="narrative" aria-live="polite" aria-atomic="true"><p class="eyebrow"><span id="phase">The idea</span><span class="separator">/</span><span id="step-count">01 / 09</span></p><h2 id="current-title">Describe the platform. Keep the knowledge.</h2><p id="current-description">AAP configuration lives in reviewed code and encrypted configuration. Follow how an existing AAP turns those inputs into a usable automation catalog.</p></div>
+    <div class="navigation"><button id="previous" class="previous-button" type="button" disabled aria-keyshortcuts="ArrowLeft"><span aria-hidden="true">←</span> Previous</button><button id="next" class="next-button" type="button" aria-keyshortcuts="ArrowRight"><span><small>Next step</small><strong id="next-label">Choose the destination</strong></span><span aria-hidden="true">→</span></button></div>
+    <div class="progress-track" role="progressbar" aria-label="Walkthrough progress" aria-valuemin="1" aria-valuemax="9" aria-valuenow="1" id="progress"><div id="progress-fill"></div></div>
+  </section>
+
+  <main>
+    <div class="workspace">
+      <aside class="journey panel" aria-labelledby="journey-title"><div class="panel-heading"><p class="eyebrow">01 / Follow the flow</p><h2 id="journey-title">From intent to AAP</h2></div><nav aria-label="Configuration walkthrough steps"><ol id="step-list"></ol></nav><p class="journey-hint"><kbd>←</kbd> <kbd>→</kbd> to explore <span>·</span> <kbd>R</kbd> to restart<br>You set the pace.</p></aside>
+
+      <section class="architecture-panel panel" aria-labelledby="architecture-title">
+        <div class="panel-heading diagram-heading"><div><p class="eyebrow">02 / The configuration path</p><h2 id="architecture-title">Saved intent. Explicit destination.</h2></div><button id="motion" class="motion-button" type="button" aria-pressed="true">Motion on</button></div>
+        <div class="flow-caption"><i aria-hidden="true"></i><p id="flow-caption">An installed AAP is the starting point. This story follows its configuration.</p></div>
+        <div class="target-controls"><span>Show the destination:</span><div class="segmented" role="group" aria-label="Illustrative destination relationship"><button id="target-remote" class="selected" type="button" aria-pressed="true">Another AAP</button><button id="target-self" type="button" aria-pressed="false">The same AAP</button></div></div>
+        <p class="pan-hint" id="pan-hint">On a small screen, scroll the diagram sideways. The explanation stays below.</p>
+        <div class="diagram-scroll" tabindex="0" role="region" aria-label="Configuration architecture diagram" aria-describedby="pan-hint">
+          <svg class="architecture" viewBox="0 0 1080 555" role="img" aria-labelledby="diagram-title diagram-description">
+            <title id="diagram-title">AAP Configuration as Code</title><desc id="diagram-description">Public automation and private encrypted desired configuration are read by the AAP running the job. That job validates inputs and applies configuration through the selected AAP API. The existing scoped Controller capture previews later changes for review before an explicit encrypted Git update.</desc>
+            <defs>
+              <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="#c7d3d9"/></pattern>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1 1 8 5 1 9" fill="none" stroke="#657c86" stroke-width="1.6"/></marker>
+              <linearGradient id="engine-fill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#203440"/><stop offset="1" stop-color="#142730"/></linearGradient>
+            </defs>
+            <rect width="1080" height="555" fill="url(#dots)" opacity=".5"/>
+            <g class="diagram-labels" aria-hidden="true"><text x="30" y="38">THE REVIEWED INPUTS</text><text x="395" y="128">THE JOB EXECUTION</text><text x="770" y="38">THE CONFIGURED PLATFORM</text></g>
+            <g aria-hidden="true">
+              <path id="route-code" class="route" d="M270 145H332Q352 145 352 165V215Q352 235 372 235H395" marker-end="url(#arrow)"/>
+              <path id="route-desired" class="route" d="M270 340H332Q352 340 352 320V305Q352 285 372 285H395" marker-end="url(#arrow)"/>
+              <path id="route-apply" class="route apply-route" d="M655 270H770" marker-end="url(#arrow)"/>
+              <path id="route-review" class="route review-route" d="M910 410V470Q910 490 890 490H695" marker-end="url(#arrow)"/>
+              <path id="route-save" class="route review-route" d="M395 490H170Q150 490 150 470V410" marker-end="url(#arrow)"/>
+              <rect x="673" y="225" width="82" height="23" rx="5" fill="#f7fafb"/><text x="714" y="241" text-anchor="middle" class="route-label">HTTPS API</text>
+              <text x="767" y="465" class="review-route-label">Read + compare</text><text x="225" y="478" class="review-route-label">Accepted update</text>
+            </g>
+
+            <g id="node-code" class="component input-node">
+              <rect class="node-surface" x="30" y="80" width="240" height="130" rx="12"/>
+              <rect class="code-icon" x="50" y="101" width="34" height="30" rx="5"/><path d="m62 109-6 7 6 7m10-14 6 7-6 7" class="icon-lines"/>
+              <text x="97" y="116" class="node-title">Public automation</text><text x="97" y="137" class="node-detail">How configuration is applied</text><path d="M50 153H250" class="node-divider"/>
+              <text x="50" y="177" class="node-status">Playbooks + reviewed code</text><text x="50" y="196" class="node-small">Versioned in Git</text>
+            </g>
+            <g id="node-desired" class="component desired-node">
+              <rect class="node-surface" x="30" y="270" width="240" height="140" rx="12"/>
+              <rect x="51" y="302" width="28" height="23" rx="4" class="lock-body"/><path d="M56 302v-7a9 9 0 0 1 18 0v7" class="lock-loop"/><circle cx="65" cy="312" r="2" fill="#41726d"/>
+              <text x="94" y="302" class="node-title">Desired configuration</text><text x="94" y="323" class="node-detail">Private + Vault-encrypted</text><path d="M50 340H250" class="node-divider"/>
+              <text x="50" y="365" class="node-status">Shared base · project captures</text><text x="50" y="389" class="node-small">Protected settings + secret inputs</text>
+            </g>
+            <g id="node-source" class="component engine-node">
+              <rect class="engine-halo" x="385" y="155" width="280" height="250" rx="18"/><rect class="node-surface" x="395" y="165" width="260" height="230" rx="12" fill="url(#engine-fill)"/>
+              <rect x="415" y="185" width="33" height="33" rx="6" class="aap-symbol"/><path d="m423 209 9-18 9 18m-13-7h10" class="aap-symbol-line"/>
+              <text x="462" y="198" class="engine-title">AAP running the job</text><text x="462" y="219" class="engine-detail">Existing automation platform</text><path d="M415 237H635" class="engine-divider"/>
+              <g class="engine-checks"><circle cx="425" cy="264" r="4"/><text x="441" y="269">Select destination + access</text><circle cx="425" cy="297" r="4"/><text x="441" y="302">Read + validate inputs</text><circle cx="425" cy="330" r="4"/><text x="441" y="335">Apply reviewed definitions</text></g>
+              <rect x="415" y="354" width="220" height="23" rx="4" class="engine-tag"/><text x="525" y="370" text-anchor="middle" class="engine-tag-text">infra.aap_configuration</text>
+            </g>
+            <g id="node-target" class="component target-node">
+              <rect class="node-surface" x="770" y="80" width="280" height="330" rx="12"/>
+              <text x="791" y="114" class="node-title target-title">Selected AAP</text><rect x="791" y="129" width="238" height="25" rx="5" class="target-tag"/><text x="910" y="146" text-anchor="middle" class="target-tag-text" id="target-role">Another verified AAP instance</text>
+              <g id="resource-base" class="resource"><rect x="790" y="172" width="240" height="44" rx="6"/><path class="resource-check" d="m803 193 4 4 8-9"/><text x="825" y="190" class="resource-name">Platform foundation</text><text x="825" y="205" class="resource-detail">Organizations · access · Hub</text></g>
+              <g id="resource-inventory" class="resource"><rect x="790" y="224" width="240" height="44" rx="6"/><path class="resource-check" d="m803 245 4 4 8-9"/><text x="825" y="242" class="resource-name">Projects + inventories</text><text x="825" y="257" class="resource-detail">Code sources · managed targets</text></g>
+              <g id="resource-templates" class="resource"><rect x="790" y="276" width="240" height="44" rx="6"/><path class="resource-check" d="m803 297 4 4 8-9"/><text x="825" y="294" class="resource-name">Templates + workflows</text><text x="825" y="309" class="resource-detail">Saved automation definitions</text></g>
+              <g id="resource-eda" class="resource"><rect x="790" y="328" width="240" height="44" rx="6"/><path class="resource-check" d="m803 349 4 4 8-9"/><text x="825" y="346" class="resource-name">Declared EDA resources</text><text x="825" y="361" class="resource-detail">Streams · activation definitions</text></g>
+              <text x="910" y="393" text-anchor="middle" class="node-small">Resources vary with the selected capture</text>
+            </g>
+            <g id="node-review" class="component review-node">
+              <rect class="node-surface" x="395" y="445" width="300" height="90" rx="10"/><path d="M416 465h17v24h-17zm4 6h9m-9 5h9m-9 5h5" class="review-icon"/>
+              <text x="446" y="470" class="node-title">Preview + human review</text><text x="415" y="496" class="node-detail">Scoped Controller capture · encrypted report</text><text x="415" y="519" class="node-small">Explicit acceptance before Git publication</text>
+            </g>
+          </svg>
+        </div>
+        <div class="diagram-foot"><span class="legend"><i></i> Current step</span><span class="legend configured-legend"><i></i> Configuration present</span><p id="target-explanation">The job runs on an existing source AAP and configures another selected AAP.</p></div>
+      </section>
+    </div>
+
+    <section class="explanation panel" aria-labelledby="detail-title">
+      <div class="detail-copy"><p class="eyebrow">03 / What happens here</p><h2 id="detail-title">Two kinds of input. One repeatable approach.</h2><p id="detail-body"></p><ul id="detail-points"></ul></div>
+      <div class="source-card"><div class="source-card-heading"><span class="code-mark" aria-hidden="true">&lt;/&gt;</span><div><p class="eyebrow">Grounded in the implementation</p><h3 id="code-title">The configuration entry points</h3></div></div><pre><code id="code-example"></code></pre><div class="source-links"><span>Read the source</span><ul id="source-links"></ul></div></div>
+    </section>
+
+    <section class="context-strip" aria-labelledby="context-title"><div><p class="eyebrow">A little deployment context</p><h2 id="context-title">CaC starts with an installed platform.</h2></div><ol><li class="context-muted">VM + AAP installed</li><li class="context-current">Shared base CaC</li><li class="context-current">Selected project CaC</li><li class="context-muted">Run + verify workloads</li></ol><p>VM creation and the installer are earlier stages. The walkthrough focuses on the configuration that follows.</p></section>
+  </main>
+
+  <footer><p>Based on the implemented <strong>0.50.13 runtime</strong> · <a id="revision-link" href="https://github.com/kvegh/aap_autodeploy_configascode/tree/e371c76c4d8e102f152e3a41ccfb76184fa91580">source e371c76</a></p><p>Illustrative flow · no live connection · no real environment data</p></footer>
+</div>
+<noscript><div class="noscript">JavaScript enables the walkthrough. You can still <a href="https://github.com/kvegh/aap_autodeploy_configascode/blob/e371c76c4d8e102f152e3a41ccfb76184fa91580/docs/cac-project-import.md">read the configuration import guide</a>.</div></noscript>
+</body>
+</html>

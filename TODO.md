@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-133 tasks: 26 outstanding; 107 closed.
+135 tasks: 27 outstanding; 108 closed.
 
 ## Outstanding tasks
 
@@ -19,7 +19,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 |---|---|---|---|---|---|
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6 |
-| bead-wd-3ix.1.5 | Finish host bootstrap after conversion outlived AAP timeout | in_progress | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
@@ -35,6 +34,8 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.24 | Review legacy project settings in shared AutoDeploy inventory | open | P2 | task | bead-wd-72f |
 | bead-wd-72f.31.12 | Track Command Center and MCP DNS and nginx configuration in CaC | in_progress | P2 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.5 | Verify Automation Orchestrator against a disposable OpenShift cluster | deferred | P2 | task | bead-wd-72f.31 |
+| bead-wd-72f.38 | Create an AAP CaC GitHub Pages visualization | in_progress | P2 | task | bead-wd-72f |
+| bead-wd-72f.39 | Review long runs and redundant work from v16 onward | in_progress | P2 | task | bead-wd-72f |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
@@ -58,6 +59,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1.2 | Fix existing external-controller teardown for successor ownership records | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.3 | Fix final access retirement after normal decommission | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.4 | Verify reinstalled Ng hardware against encrypted CaC | closed | P1 | feature | bead-wd-3ix.1 |
+| bead-wd-3ix.1.5 | Finish host bootstrap after conversion outlived AAP timeout | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
 | bead-wd-72f.1 | Split per-repository CaC Vault credentials and rename all CaC Git readers | closed | P1 | feature | bead-wd-72f |

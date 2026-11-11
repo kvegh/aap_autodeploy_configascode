@@ -283,6 +283,18 @@ pins. Do not run old policy-writing revisions on that host concurrently with the
 new callers. Unrelated production deployments retain their existing tested pins. Local fixture tests
 do not establish live migration or complete end-to-end acceptance.
 
+## Interactive AAP Configuration as Code walkthrough
+
+[Open the guided visualization](https://kvegh.github.io/aap_autodeploy_configascode/)
+to explore how shared base configuration, selected project imports and reviewed
+Controller capture fit together. The nine-step story follows implementation
+`e371c76` (runtime 0.50.13), links to its source and illustrates configuration of
+the same AAP or another verified AAP. Examples are synthetic; the page makes no
+AAP connections. VM installation is brief context. Source and local checks are
+in [demo/README.md](demo/README.md). The public Pages artifact contains only the
+allowlisted presentation assets. Interaction and structural checks pass; browser
+layout and screenshots were not checked because the owner chose existing tools.
+
 ## Tasks and decisions
 
 The [Project Decision/Action Path Flowchart](docs/project-decision-action-path-flowchart.md)
@@ -299,6 +311,14 @@ The HTML uses compact phase diagrams and derives its node controls from the
 current graph/detail IDs. Its status distinguishes runtime import, rendering and
 controls; a control error keeps rendered diagrams visible. If scripts do not
 start, download/open locally rather than rely on a preview that blocks JavaScript.
+
+The [development speed recommendations](docs/development-speed-improvement-review.md)
+provide a short review from the actual v16 start through the fixed 11 November
+2026 checkpoint. The [detailed evidence](docs/development-speed-improvement-evidence.md)
+ranks 30 long episodes and separates repeated short operations from actual job
+runs. It identifies continuation gaps, timeout design, avoidable prerequisites
+and producer/consumer failures; owner-required checks are distinguished from
+waste. These reports propose improvements without changing runtime settings.
 
 Queued cleanup `bead-wd-72f.34` replaces unnecessary standalone helpers, custom
 plugins/modules, embedded scripts and custom server-side state files across the
@@ -1103,11 +1123,14 @@ The later physical test-host rebuild is tracked separately in Beads. Its retired
 instance data is removed while the next AAP allocation remains 18. RHEL
 conversion completed remotely after Controller timed out; the original failed
 workflow has not been relabeled successful. Hardware preflight now passes with
-the expected firmware identifiers stored in encrypted CaC. The remaining host
-setup proceeds through the existing stage templates after the owner's explicit
-continuation approval; the failed workflow remains historical evidence. Temporary
-conversion credentials were cleaned up and a fresh post-conversion boot was
-verified before continuing. These recovery steps do not establish a fresh AAP 18 deployment.
+the expected firmware identifiers stored in encrypted CaC. After the owner's explicit continuation approval, the remaining host stages
+completed through the existing templates: RHEL update, host setup, managed access
+verification, managed reboot and post-reboot verification. All 17 host checks and
+the firmware identity check passed after reboot. Temporary conversion credentials
+were cleaned up before continuing. Image staging now copies and verifies the
+selected existing images; creating the AAP VM remains the next separate stage.
+The failed workflow remains historical evidence; these host results do not
+establish a fresh AAP 18 deployment.
 
 ### Disconnected Windows configuration deployment
 

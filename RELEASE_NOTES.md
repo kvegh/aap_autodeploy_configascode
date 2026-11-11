@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.51.0
+
+Add a public, buildless nine-step AAP Configuration as Code walkthrough with
+explicit self/remote destination roles, shared base, common project imports and
+scoped reviewed Controller capture. Narrative and source links are pinned to
+0.50.13 implementation e371c76. Publish only allowlisted presentation assets
+through GitHub Pages. Six interaction/source checks, JavaScript syntax, local
+asset/link structure and privacy checks pass. The owner chose existing checks;
+no browser was installed and visual layout/screenshots remain unchecked.
+
+Document development-speed recommendations from actual v16 creation through
+11 November 2026 12:41:05 UTC in separate short and detailed reports. The appendix
+ranks 30 observed episodes and distinguishes repeated reads, real executions,
+necessary checks and unknowns. No performance settings or deployment automation
+changed. Host-stage completion is documented separately from pending AAP18.
+
 ## 0.50.13
 
 Document task-label implementation `63b39be7d2ab85a049ee5e1a7e85fd83a407f6e6` (0.50.12)
