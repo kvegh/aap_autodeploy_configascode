@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-132 tasks: 27 outstanding; 105 closed.
+133 tasks: 27 outstanding; 106 closed.
 
 ## Outstanding tasks
 
@@ -51,6 +51,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 |---|---|---|---|---|---|
 | bead-wd-1rl.40.1 | Install CCNG prerequisites on the selected test workstation | closed | P1 | task | bead-wd-1rl.40 |
 | bead-wd-1rl.40.2 | Configure HTTPS reverse proxy for the existing Command Center instance | closed | P1 | task | bead-wd-1rl.40 |
+| bead-wd-1rl.40.2.1 | Verify current CCNG public password gate | closed | P1 | task | bead-wd-1rl.40.2 |
 | bead-wd-1rl.40.3 | Integrate Command Center through the shared AAP CaC importer | closed | P1 | task | bead-wd-1rl.40 |
 | bead-wd-1rl.40.4 | Choose the project for the fresh test Command Center | closed | P1 | decision | bead-wd-1rl.40 |
 | bead-wd-2i1 | Separate AIOps CaC into its private companion repository | closed | P1 | task | — |
