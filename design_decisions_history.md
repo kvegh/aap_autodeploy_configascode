@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Show deployment stages in blue and make recommendations actionable — 2026-11-11
+
+Implementation `847f498382743e7d26d10ab485760f877a0ea2f1` follows the owner's
+visual revision: blue/slate colors replace green/teal, and the twelve-step story
+includes first-class VM creation, infrastructure, AAP installation and Base AAP
+configuration. A separate deployment diagram shows the receiving AAP inside its
+fresh guest on the already prepared pinned test host. Stage 04 returns to the
+API-configuration view. Existing project import/capture behavior remains grounded
+in the pinned code; the later AIOps trigger is still a separate unimplemented
+follow-up. Eight focused interaction/source/palette checks, syntax, SVG/assets
+and privacy checks passed. Pages run 43027938116 succeeded and the live page plus
+four assets match source bytes. The owner’s existing-tools choice still excludes
+a browser installation and layout/screenshot acceptance.
+
+The short speed report now names fourteen actions, each with a concrete step
+and completion criterion. The appendix maps all thirty ranked episodes and
+eighteen repeated/additional findings to those actions, and accounts for all
+sixty-four earlier blocks. Forty-nine eligible observed intervals were sorted;
+the pre-v16 extractor is outside the window, while the concrete firewall span
+is ranked instead of its broader overlapping acceptance envelope. Root checks
+verified complete mappings, row counts, links and public-safe content. This
+report revision implements no runtime optimization and claims no measured
+savings, new authority or universal adoption of the proposed practices.
+
 ## Schedule AIOps-owned runtime setup after v18 acceptance — 2026-11-11
 
 The owner explicitly assigned monitoring-server and demonstration-guest

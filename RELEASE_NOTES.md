@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.52.1
+
+Document implementation847f498, successful live publication of the blue twelve-step
+walkthrough, and complete named-action coverage in the revised reports. Refresh
+completed task records and the protected recovery copy. No additional runtime
+or browser validation changes; required source/document checks pass.
+
 ## 0.52.0
 
 Expand the walkthrough to twelve steps and a blue/slate palette. Give VM
