@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Distinguish exact package auto-detection branches — 2026-11-11
+
+Implementation `5677bec` narrows the fixed Boolean diagnostic to three distinct
+Ansible error branches: general package-manager detection, DNF major-version
+detection, and missing DNF module. It also reports safe DNF/DNF5 fact matches and
+the running Ansible version. The prior broad backend flag was insufficient to
+choose a fix; explicit delegated fact ownership alone did not resolve the live
+failure. Source execution-environment metadata identifies a cached supported
+image by a mutable tag, so local Ansible source cannot prove its runtime version.
+
+Three actual-template cases cover string and sequence error messages, Boolean
+output and secret-canary suppression. Sequence-safe matching avoids confusing
+list membership with substring matching. Scoped syntax, production lint and
+whitespace checks pass. This adds diagnosis only, without changing packages,
+backend selection, the execution environment, credentials or access controls.
+
 ## Reveal AAP only when its deployment creates it — 2026-11-11
 
 Implementation `321d9e4` follows the owner's correction: the selected receiving

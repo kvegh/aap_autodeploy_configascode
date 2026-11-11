@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.52.11
+
+Document implementation 5677bec and the three exact-branch/privacy cases,
+including sequence messages, plus scoped syntax/production lint. A live
+diagnostic is still required before claiming the package failure resolved.
+
 ## 0.52.10
 
 Distinguish exact fixed package-detection error branches, expose only Boolean
