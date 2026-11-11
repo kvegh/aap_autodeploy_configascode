@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Keep delegated package facts on the existing hypervisor identity — 2026-11-11
+
+Implementation `4348af4` resolves the pinned address to exactly one existing
+inventory host, then delegates the existing transaction and package-manager
+fact gathering to that identity. The certified firewall role keeps normal
+backend selection. There is no new inventory record, forced interpreter or
+package backend, credential change, or weakened target/security check.
+
+The live diagnostic identified the package auto-detection boundary; it did not
+prove a repository or credential problem. A read-only target reproduction
+confirmed DNF and an already installed package. Delegating facts to a raw address
+outside inventory failed the fact-ownership assertion; using the existing source
+inventory name passed it and the package check without installing anything.
+Both native Ansible connection fixtures pass with actual delegated fact caching,
+covering management and first-empty tagged repair under both Jinja modes.
+Scoped syntax, production lint and whitespace checks pass. Live repair acceptance
+remains a separately observed result.
+
 ## Classify hidden access failures before rollback — 2026-11-11
 
 Implementation `9d18ed6c59c1778597fab52a822d27feeaf3d5ee` adds fixed Boolean failure categories at the start of

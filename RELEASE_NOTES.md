@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.52.7
+
+Document implementation 4348af4, the read-only delegated fact-ownership
+reproduction, two focused native Ansible fixtures and scoped syntax/lint checks.
+Normal VM ownership and all failed historical jobs remain unchanged.
+
 ## 0.52.6
 
 Resolve the pinned address to one existing inventory host and gather its live
