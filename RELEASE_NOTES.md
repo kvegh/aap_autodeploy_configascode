@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.51.1
+
+Document implementation baa562d, verified public Pages deployment and the two
+published speed-review documents. Refresh completed task states and the protected
+recovery copy. Preserve the owner’s choice to use existing checks; no browser
+layout acceptance or performance changes are claimed. No runtime code changes.
+
 ## 0.51.0
 
 Add a public, buildless nine-step AAP Configuration as Code walkthrough with

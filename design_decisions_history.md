@@ -1,5 +1,41 @@
 # Design decisions history
 
+## Schedule AIOps-owned runtime setup after v18 acceptance — 2026-11-11
+
+The owner explicitly assigned monitoring-server and demonstration-guest
+installation/setup to the AIOps project, with setup triggered when that project’s
+CaC is deployed to the selected AAP. The main TRA toolkit remains in the base.
+Implementation is conditional on successful v18 acceptance and tracked by
+`bead-wd-72f.31.2.6`; no runtime changes follow from recording this decision.
+The existing visualization remains pinned to the currently implemented code.
+
+## Explain the implemented CaC flow and development delays — 2026-11-11
+
+Implementation `baa562d69f1c69d7f91af2c6df42b9df8b41ce4a` adds a guided,
+buildless visualization and the two requested development-speed reports.
+The visualization follows the code at e371c76 / runtime 0.50.13 rather than a
+proposed architecture: explicit destinations, shared base, common project
+imports and scoped reviewed Controller capture. Physical installation is outside
+the story; VM creation is brief context. Examples are generic and no AAP
+connection is made. GitHub Pages publishes only allowlisted presentation assets.
+Six interaction/source checks, syntax, links and privacy checks passed. Actions
+run 43025270437 succeeded; the live HTTPS page and four assets match committed
+bytes, with tests and README excluded. The owner chose existing checks, so no
+browser was installed and layout/screenshots were not verified.
+
+The short recommendations link to a separate detailed top-30 review, frozen at
+11 November 2026 12:41:05 UTC from the actual v16 VM start. Measurements separate
+calendar spans, job runtime and repeated reads; overlapping episodes are not
+summed. Continuation failures, unnecessary prerequisites, timeout budgeting and
+producer/consumer gaps are concrete findings. Required guards and recovery
+records remain necessary; counts alone do not prove waste or savings. No runtime
+performance settings or test policy were changed by this documentation work.
+
+Host recovery separately passed RHEL update, setup, managed access, reboot and
+all 17 post-reboot checks plus the firmware assertion. Original timed-out jobs
+remain failed; the actual successful continuation is retained in encrypted task
+records. Image staging and fresh AAP allocation remain separate operations.
+
 ## Keep Command Center outside the base installation — 2026-11-11
 
 Documentation checkpoint `8e742ddf39201365d53d07173fb0d86ea3ecf7e1` records the owner's explicit boundary:

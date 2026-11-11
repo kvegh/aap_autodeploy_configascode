@@ -1123,7 +1123,8 @@ The later physical test-host rebuild is tracked separately in Beads. Its retired
 instance data is removed while the next AAP allocation remains 18. RHEL
 conversion completed remotely after Controller timed out; the original failed
 workflow has not been relabeled successful. Hardware preflight now passes with
-the expected firmware identifiers stored in encrypted CaC. After the owner's explicit continuation approval, the remaining host stages
+the expected firmware identifiers stored in encrypted CaC. After the owner's
+explicit continuation approval, the remaining host stages
 completed through the existing templates: RHEL update, host setup, managed access
 verification, managed reboot and post-reboot verification. All 17 host checks and
 the firmware identity check passed after reboot. Temporary conversion credentials
@@ -1131,6 +1132,12 @@ were cleaned up before continuing. Image staging now copies and verifies the
 selected existing images; creating the AAP VM remains the next separate stage.
 The failed workflow remains historical evidence; these host results do not
 establish a fresh AAP 18 deployment.
+
+The owner’s follow-up `bead-wd-72f.31.2.6` starts only after v18 acceptance:
+the AIOps project will own monitoring-server and demonstration-guest installation
+and setup, triggered by its project configuration deployment. The main TRA
+toolkit remains in the base. This is a planned ownership/trigger change; the
+current run and the pinned visualization retain their existing behavior.
 
 ### Disconnected Windows configuration deployment
 
