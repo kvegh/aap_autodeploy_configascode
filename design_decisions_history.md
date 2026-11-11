@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Keep Command Center outside the base installation — 2026-11-11
+
+Documentation checkpoint `8e742ddf39201365d53d07173fb0d86ea3ecf7e1` records the owner's explicit boundary:
+CCNG remains a separate AAP project with its own installer Job Template, and its
+installation and tests are deferred. Base stages01–04 and physical-host recovery
+do not depend on CCNG acceptance. The optional CaC import declares its separate
+objects without launching application installation. Prepared infrastructure and
+application drafts, existing settings and unresolved inputs remain preserved.
+
+Beads deployment, infrastructure and fresh-tracker acceptance records are now
+deferred. The combined DNS/nginx task retains its separate unfinished MCP scope.
+No application, DNS, proxy, credential or production change follows from this
+decision. The existing task overview and encrypted recovery export were refreshed
+and verified against Beads; whitespace checks pass.
+
 ## Refresh the physical recovery checkpoint — 2026-11-11
 
 Documentation checkpoint `4838766446b12621792b4639fa0231a5dda68111` refreshes the generated task overview and
