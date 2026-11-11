@@ -46,7 +46,11 @@ execution allowance; other resources and secure failure reporting are unchanged.
 Native variable-routing checks cover the pinned role/collector. A normal
 successor self-CaC import subsequently passed in 174.539 seconds on that fix.
 
-Fresh Command Center deployment uses the application's maintained default
+Command Center is a separate AAP project with its own explicitly launched
+installer Job Template. It is outside the base stages01–04 and is not a base
+installation or acceptance requirement. The owner has deferred its installation
+and testing; prepared infrastructure and application work remains preserved.
+When resumed, fresh Command Center deployment uses the application's maintained default
 installation directory and a separate `~/ccng-wd` agent workspace. The owner
 selected the newest application source at deployment and a fresh Beads tracker
 on first setup; updates must preserve existing trackers and authentication.

@@ -34,6 +34,10 @@ Command Center uses optional bootstrap key `command_center_ng`, its dedicated
 private repository and the same importer. Its application job is a separate
 explicit action after existing target account, native authentication and tracker
 prerequisites are ready; selecting CaC does not run that job.
+CCNG installation and its acceptance tests are currently deferred by the owner.
+Its separate project and installer Job Template are not dependencies of the
+base host rebuild, stages01–04 or creation of the next AAP instance. Keep prepared
+infrastructure/application drafts and unanswered inputs intact until resumed.
 
 Other declared modules have explicit unavailable reasons; empty, duplicate and
 unknown selections fail before setup. Assistant Team has its standalone importer
