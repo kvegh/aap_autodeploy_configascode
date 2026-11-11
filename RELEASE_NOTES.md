@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.52.10
+
+Distinguish exact fixed package-detection error branches, expose only Boolean
+DNF/DNF5 fact matches and report the running Ansible version. The broader
+backend category did not identify which branch failed, and delegated fact
+ownership alone did not resolve live repair. Raw errors and credentials remain
+protected. No package/backend, interpreter or execution-environment change.
+
 ## 0.52.9
 
 Document implementation 321d9e4, the corrected staged visibility and its nine

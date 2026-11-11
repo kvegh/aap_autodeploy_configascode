@@ -179,6 +179,11 @@
         msg:
           package_install_task: "{{ ansible_failed_task.name == 'Install firewalld' }}"
           package_backend_detection: "{{ __aap_access_failure_text is search('detect.*(dnf|package manager)|pkg_mgr|backend') }}"
+          package_manager_detection: "{{ __aap_access_failure_text is search('could not detect which package manager') }}"
+          dnf_major_version_detection: "{{ __aap_access_failure_text is search('could not detect which major revision of dnf') }}"
+          dnf_backend_module_missing: "{{ __aap_access_failure_text is search('could not find a dnf module backend') }}"
+          delegated_manager_is_dnf: "{{ hostvars[aap_management_hypervisor_hosts | first].ansible_facts.pkg_mgr | default('unknown') == 'dnf' }}"
+          delegated_manager_is_dnf5: "{{ hostvars[aap_management_hypervisor_hosts | first].ansible_facts.pkg_mgr | default('unknown') == 'dnf5' }}"
           python_package_support: "{{ __aap_access_failure_text is search('python.*dnf|import.*dnf|python.*firewall') }}"
           repository_or_metadata: "{{ __aap_access_failure_text is search('repo|metadata|mirror|subscription') }}"
           privilege_or_permissions: "{{ __aap_access_failure_text is search('permission denied|not permitted|sudo|become|privilege') }}"
@@ -188,6 +193,11 @@
           {{ ((ansible_failed_result.msg | default('')) ~ ' ' ~
               (ansible_failed_result.module_stderr | default('')) ~ ' ' ~
               (ansible_failed_result.exception | default(''))) | lower }}
+      no_log: false
+
+    - name: Report the running Ansible version without environment identifiers
+      ansible.builtin.debug:
+        msg: '{{ ansible_version.full }}'
       no_log: false
 
     - name: Restore only this invocation's unpublished firewall transition

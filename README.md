@@ -523,6 +523,8 @@ If a protected access task fails, the rescue reports only fixed Boolean error
 categories before rollback. Module arguments, raw error text and credentials
 remain protected; a category alone does not prove a root cause or successful
 rollback. Verify the actual native state before a bounded continuation.
+The categories distinguish general package detection, DNF version detection
+and a missing DNF module; the job also reports its actual Ansible version.
 Access transactions gather the actual hypervisor's package-manager fact with
 delegated fact ownership on its existing inventory identity before invoking the
 certified firewall role. The route must match exactly one inventory host. The role
