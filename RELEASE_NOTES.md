@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.52.15
+
+Document implementation d98c8f2, the exact unsafe-delegation reproduction,
+three focused native Ansible regressions and protected diagnostic cleanup.
+Live installation-access acceptance remains separately observed.
+
 ## 0.52.14
 
 Fix certified firewall role delegation when protected route data carries Ansible's

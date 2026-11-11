@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Preserve protected values while selecting a trusted delegation name — 2026-11-11
+
+Implementation `d98c8f2` addresses the actual package failure. The privately
+retrieved message showed Ansible trying to load a literal internal hostvars
+lookup as a module name. On the same Ansible 2.16.19, interpolating an unsafe
+delegation value marks that internal expression unsafe, so it remains unrendered.
+Adding facts or changing package backends would not address that mechanism.
+
+Both certified firewall role calls now select the trusted name from the existing
+inventory loop and apply the pinned-host match as a separate condition. A custom
+loop variable avoids conflicts with the role's own item loops. Vault/unsafe
+values, native target checks, package selection and access permissions are
+preserved. A real Ansible/PackageAction regression covers apply and rollback,
+asserts unsafe candidates stay protected and selects only the verified host.
+Its negative control reproduces the exact old literal-expression failure.
+The two existing connection/tagged-repair fixtures also pass, plus scoped syntax,
+production lint and whitespace checks.
+
+The one-time protected capture code is removed. Its root-private temporary host
+file was retrieved through pinned SSH and deleted after an exact hash check.
+The private local proof remains outside Git. Live access acceptance remains a
+separate outcome; earlier failed jobs retain their failed status.
+
 ## Retrieve the original package error privately — 2026-11-11
 
 Implementation `73e9327` permits the existing tagged access repair to save only
