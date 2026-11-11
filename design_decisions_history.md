@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Finish first-guest installation access without reallocating — 2026-11-11
+
+Implementation `75b191d` fixes a fresh-host policy mismatch after VM creation
+had already succeeded and published verified primary ownership. The empty
+base policy omitted explicit production exclusions, while the native Hactar
+template already enforced the independently configured source address. The
+installation planner now materializes that existing protection for its desired
+grant. It keeps the exact original publication baseline and permits lagging
+source aliases only through the same independently validated transition.
+Native resource verification receives the equivalent explicit baseline; its
+production, guest ownership and management guards remain strict.
+
+The existing tagged Stage 04 repair finishes only installation access and exits
+before base configuration. The operator then continues ordinary infrastructure,
+installer and full base stages on the consumed VM. No new template, wrapper,
+store or allocation is needed. Fourteen installation and ten management tests
+pass, including real encrypted Git/API publication with interrupted source
+registration, retry and idempotence, plus tagged execution under both Jinja
+modes. Scoped syntax, production lint and whitespace checks pass. Protected
+offline checks of the actual reservation and three captures pass; the empty
+and materialized baselines render identical native firewall bytes. These checks
+do not establish successful live access repair or completed AAP installation.
+
 ## Show deployment stages in blue and make recommendations actionable — 2026-11-11
 
 Implementation `847f498382743e7d26d10ab485760f877a0ea2f1` follows the owner's

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.52.3
+
+Document implementation 75b191d and its focused validation: fourteen installation
+tests, ten management tests, scoped syntax/production lint, and actual encrypted
+capture checks. The two baseline representations render identical native rules.
+Live repair and normal deployment acceptance remain separately verified steps.
+
 ## 0.52.2
 
 Repair installation-access planning for the first guest on a rebuilt host with
