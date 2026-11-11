@@ -506,6 +506,17 @@ that guest and consumed reservation: rerunning Stage 01 allocates another name.
 Inspect the failure before a bounded manual continuation of its remaining tasks;
 a repaired partial run does not prove fresh unattended provisioning.
 
+If VM creation completed but its final installation-access plan failed, use the
+existing Stage 04 template with only the `aap_installation_access` tag and the
+same registered instance. This repair exits before ordinary base configuration;
+then continue Stages 02, 03 and full Stage 04. On a freshly rebuilt host with no
+guest grants, the planner derives explicit production protection from the
+existing canonical source address. Publication preserves the exact previous
+policy for comparison, while native verification materializes that same
+protection already enforced by the host's base firewall. Other clients and
+production exclusions remain unchanged; missing or conflicting identity stops
+the operation. Never repeat VM creation to repair this final access step.
+
 The Stage 01 readiness probe temporarily binds the new guest's SSH connection
 facts, checks its pinned route, then restores the hypervisor's original connection
 facts even on failure. This prevents the earlier hypervisor port and user facts

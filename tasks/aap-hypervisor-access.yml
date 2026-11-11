@@ -19,8 +19,11 @@
     aap_management_request:
       route: '{{ aap_instance_route }}'
       primary: "{{ aap_installation_primary if aap_management_mode | default('management') == 'installation' else aap_instance_resources.aap }}"
+      # The first empty base already protects this independently validated source
+      # in Hactar's native template; retain the original publication transition.
       declared_policy: >-
-        {{ aap_installation_access_plan.transition.previous_policy
+        {{ aap_installation_access_plan.transition.previous_policy | combine({
+             'protected_ipv4': aap_installation_access_plan.transition.desired_policy.protected_ipv4})
            if aap_management_mode | default('management') == 'installation' else
            aap_instance_route.hypervisor | aap_hypervisor_isolation_policy(
              aap_hypervisor_isolation_https_clients | default([]),

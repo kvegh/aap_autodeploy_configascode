@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.52.2
+
+Repair installation-access planning for the first guest on a rebuilt host with
+no earlier guest grants. Derive explicit production protection from the existing
+canonical source identity, retain the exact old publication policy, and verify
+the equivalent native baseline without relaxing resource or management guards.
+Existing source aliases must match that same transition. Continue the consumed
+VM through the existing tagged Stage 04 repair rather than allocating another.
+Focused tests cover fresh and protected policies, source publication/retry,
+native tagged execution and management isolation. Live deployment acceptance
+remains separate from these source checks.
+
 ## 0.52.1
 
 Document implementation847f498, successful live publication of the blue twelve-step

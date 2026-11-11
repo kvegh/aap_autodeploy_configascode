@@ -867,6 +867,26 @@ def source_retirement_operations(client, shared, autodeploy, hactar, context):
     return source_inventory_operations(client, shared, autodeploy, hactar, context, source_retirement_variables)
 
 
+def _installation_policy_with_source_protection(configuration, route, policy):
+    """Materialize canonical production protection only for the first installation grant."""
+    if policy.get("protected_ipv4"):
+        return policy
+    source = configuration.get("aap_autodeploy_source_public_ip")
+    try:
+        address = IPv4Address(source) if isinstance(source, str) else None
+    except ValueError:
+        address = None
+    pin = route["hypervisor"]
+    require(address is not None and str(address) == source
+            and not (address.is_unspecified or address.is_multicast or address.is_loopback
+                     or address.is_link_local or address.is_reserved)
+            and source not in (pin["address"], pin["public_ip"], route["vm_ip"]),
+            "First installation access requires a distinct canonical source public IPv4 address.")
+    declared = deepcopy(policy)
+    declared["protected_ipv4"] = [source]
+    return declared
+
+
 def management_access_context(configuration, record, selected, route, requested, mode="management"):
     """Authorize one base-stage addition using existing canonical AAP ownership."""
     require(_routing.instance_route(record.get("instance_route")) == route
@@ -889,8 +909,10 @@ def management_access_context(configuration, record, selected, route, requested,
     values = inventory_variables(inventories[0])
     previous = _routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
         values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []), values.get("aap_hypervisor_isolation_released_clients", []), values.get("aap_hypervisor_isolation_http_clients", []))
+    declared = (_installation_policy_with_source_protection(configuration, route, previous)
+                if mode == "installation" else previous)
     try:
-        desired = _management.desired_policy(route, primary, previous, mode)
+        desired = _management.desired_policy(route, primary, declared, mode)
     except (ValueError, KeyError):
         raise StoreError("Management publication differs from the existing selected AAP permission.") from None
     require(_routing.isolation_policy(pin, desired.get("https_clients", []), desired.get("protected_ipv4"),
@@ -1091,8 +1113,14 @@ def source_management_variables(values, context, pinned=False):
         require(isinstance(policy, dict) and _routing.isolation_policy(pin, policy.get("https_clients", []),
             policy.get("protected_ipv4"), policy.get("guest_host_clients", []), policy.get("released_clients", []), policy.get("http_clients", [])) == policy,
             "A source management policy must use the normalized registered schema.")
+        declared = policy
+        if context.get("access_mode") == "installation" and not policy.get("protected_ipv4"):
+            require(policy in (context["previous_policy"], desired) and desired.get("protected_ipv4"),
+                    "First installation source aliases must match the exact validated transition.")
+            declared = deepcopy(policy)
+            declared["protected_ipv4"] = deepcopy(desired["protected_ipv4"])
         try:
-            expected = _management.desired_policy(context["route"], context["primary"], policy,
+            expected = _management.desired_policy(context["route"], context["primary"], declared,
                 context.get("access_mode", "management"))
         except (ValueError, KeyError):
             raise StoreError("A source management alias changed beyond the exact selected grant.") from None
@@ -1190,7 +1218,9 @@ def installation_access_context(configuration, shared, allocation, route, primar
         pin = route["hypervisor"]
         require(_routing.isolation_policy(pin, old.get("https_clients", []), old.get("protected_ipv4"),
                 old.get("guest_host_clients", []), old.get("released_clients", []), old.get("http_clients", [])) == old
-                and _management.desired_policy(route, primary, old, "installation") == context["desired_policy"]
+                and _management.desired_policy(route, primary,
+                    _installation_policy_with_source_protection(configuration, route, old),
+                    "installation") == context["desired_policy"]
                 and context["previous_policy"] in (old, context["desired_policy"]),
                 "Installation access cannot replace another guest permission or production exclusion.")
         context["previous_policy"] = deepcopy(old)
