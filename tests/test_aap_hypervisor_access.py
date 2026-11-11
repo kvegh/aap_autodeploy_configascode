@@ -197,7 +197,11 @@ class ManagementAccessTests(unittest.TestCase):
                 '        route=task_vars["hostvars"][task_vars["inventory_hostname"]]["aap_instance_route"]\n'
                 '        original=task_vars["hostvars"][task_vars["inventory_hostname"]]\n'
                 '        p=self._play_context\n'
+                '        if self._task.args.get("filter") == "ansible_pkg_mgr":\n'
+                '            assert self._task.delegate_facts\n'
+                '            return {"changed":False,"ansible_facts":{"ansible_pkg_mgr":"dnf"}}\n'
                 '        if "stdin" in self._task.args:\n'
+                '            assert task_vars["hostvars"][self._task.delegate_to]["ansible_facts"]["pkg_mgr"] == "dnf"\n'
                 '            request=json.loads(self._task.args["stdin"])\n'
                 '            assert request["route"] == route and request["primary"] == original["aap_instance_resources"]["aap"]\n'
                 '            assert p.remote_addr == route["hypervisor"]["address"] and p.port == route["hypervisor"]["port"]\n'
@@ -216,7 +220,10 @@ class ManagementAccessTests(unittest.TestCase):
             verifier['vars'] = transaction['vars']
             verifier['delegate_to'] = transaction['delegate_to']
             verifier['become'] = False
-            tasks = [tasks[1], verifier, next(row for row in tasks if 'ansible.builtin.wait_for' in row)]
+            gatherer = deepcopy(next(row for row in transaction['block'] if 'ansible.builtin.setup' in row))
+            gatherer.update(vars=transaction['vars'], delegate_to=transaction['delegate_to'], become=False)
+            gatherer['connection_proof'] = gatherer.pop('ansible.builtin.setup')
+            tasks = [tasks[1], tasks[2], gatherer, verifier, next(row for row in tasks if 'ansible.builtin.wait_for' in row)]
             for row in tasks:
                 row['no_log'] = False  # Synthetic fixture only.
                 for module in ('ansible.builtin.command', 'ansible.builtin.wait_for'):
@@ -237,10 +244,13 @@ class ManagementAccessTests(unittest.TestCase):
                     if key in ('aap_instance_route', 'aap_instance_resources', 'aap_instance_trust', 'aap_instance_ssh_args', 'fixture_policy')},
                     'no_log': True}] + tasks}], sort_keys=False))
             config = directory / 'ansible.cfg'; config.write_text('[defaults]\n')
+            inventory = directory / 'inventory.json'
+            inventory.write_text(json.dumps({'all': {'hosts': {'localhost': {'ansible_connection': 'local'},
+                'fixture-hypervisor': {'ansible_host': expected['route']['hypervisor']['address']}}}}))
             environment = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_ACTION_PLUGINS=str(plugins),
                 ANSIBLE_FILTER_PLUGINS=str(ROOT / 'filter_plugins'), ANSIBLE_LOCAL_TEMP=str(directory / 'local'),
                 ANSIBLE_REMOTE_TEMP=str(directory / 'remote'))
-            result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,', str(play)],
+            result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', str(inventory), str(play)],
                 text=True, capture_output=True, env=environment, timeout=30)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

@@ -309,6 +309,10 @@ class ActionModule(ActionBase):
   original=task_vars['hostvars'][task_vars['inventory_hostname']]
   pin=original['aap_instance_route']['hypervisor'];connection=self._play_context
   assert connection.remote_addr==pin['address'] and connection.remote_user==pin['user'] and connection.port==pin['port']
+  if self._task.args.get('filter')=='ansible_pkg_mgr':
+   assert self._task.delegate_facts
+   return {'changed':False,'ansible_facts':{'ansible_pkg_mgr':'dnf'}}
+  assert task_vars['hostvars'][self._task.delegate_to]['ansible_facts']['pkg_mgr']=='dnf'
   assert 'StrictHostKeyChecking=yes' in self._connection.get_option('ssh_common_args')
   assert 'ProxyCommand' not in self._connection.get_option('ssh_common_args')
   request=json.loads(self._task.args['stdin']);assert request['mode']=='installation' and not request['check_mode']
@@ -329,11 +333,13 @@ class ActionModule(ActionBase):
             verifier['installation_transport_proof'] = verifier.pop('ansible.builtin.command')
             verifier['installation_transport_proof']['argv'] = ['synthetic-resource-code-not-executed']
             publisher = next(task for task in transaction['block'] if 'aap_publish_instance_keys' in task)
-            transaction['block'] = [verifier, publisher]
+            gatherer = next(task for task in transaction['block'] if 'ansible.builtin.setup' in task)
+            gatherer['installation_transport_proof'] = gatherer.pop('ansible.builtin.setup')
+            transaction['block'] = [gatherer, verifier, publisher]
             transaction.pop('rescue', None)
             transaction.pop('always', None)
             native_child = directory/'aap-hypervisor-access.yml'
-            native_child.write_text(yaml.safe_dump(management[:2]+[transaction], sort_keys=False))
+            native_child.write_text(yaml.safe_dump(management[:3]+[transaction], sort_keys=False))
             child[1]['ansible.builtin.include_tasks'] = str(native_child)
             child_path=directory/'installation.yml';child_path.write_text(yaml.safe_dump(child,sort_keys=False))
             play=yaml.safe_load((root/'04-aap-config.yml').read_text())[0]
@@ -350,6 +356,9 @@ class ActionModule(ActionBase):
                        'fixture_first_empty':False,
                        'vault_ansible_user':'fixture_operator','vault_ansible_password':'fixture_password'}
             fixture_play=directory/'play.yml'
+            inventory=directory/'inventory.json'
+            inventory.write_text(json.dumps({'all':{'hosts':{'localhost':{'ansible_connection':'local'},
+                'fixture-hypervisor':{'ansible_host':expected['route']['hypervisor']['address']}}}}))
             fixture_play.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,
                 'vars':variables,'pre_tasks':pre,'tasks':[{'name':'Forbidden ordinary base stage',
                 'ansible.builtin.fail':{'msg':'Ordinary base configuration must not execute'}}],
@@ -372,7 +381,7 @@ class ActionModule(ActionBase):
                 fixture_play.write_text(yaml.safe_dump(fixture_data,sort_keys=False))
                 env['ANSIBLE_JINJA2_NATIVE']=str(native).lower()
                 trace.unlink(missing_ok=True)
-                result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(fixture_play),
+                result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i',str(inventory),str(fixture_play),
                     '--tags','aap_installation_access'],env=env,cwd=root,text=True,capture_output=True,timeout=45)
                 self.assertEqual(result.returncode,0,result.stdout+result.stderr)
                 self.assertNotIn('TASK [Forbidden ordinary base stage]',result.stdout)

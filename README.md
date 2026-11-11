@@ -520,6 +520,10 @@ If a protected access task fails, the rescue reports only fixed Boolean error
 categories before rollback. Module arguments, raw error text and credentials
 remain protected; a category alone does not prove a root cause or successful
 rollback. Verify the actual native state before a bounded continuation.
+Access transactions gather the actual hypervisor's package-manager fact with
+delegated fact ownership on its existing inventory identity before invoking the
+certified firewall role. The route must match exactly one inventory host. The role
+keeps its normal backend selection; no package backend or interpreter is forced.
 
 The Stage 01 readiness probe temporarily binds the new guest's SSH connection
 facts, checks its pinned route, then restores the hypervisor's original connection

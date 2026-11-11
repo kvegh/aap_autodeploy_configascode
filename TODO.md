@@ -21,7 +21,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1 | Verify final test-host cleanup and fresh AAP rebuild readiness | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.8 | Derive first AAP installation protection from canonical base CaC | in_progress | P1 | bug | bead-wd-3ix.1 |
-| bead-wd-3ix.1.9 | Resolve Let’s Encrypt registration consent for rebuilt test host | blocked | P1 | task | bead-wd-3ix.1 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
@@ -37,6 +36,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.12 | Track Command Center and MCP DNS and nginx configuration in CaC | in_progress | P2 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.2.6 | Let AIOps project deployment install Zabbix and testserver1 | open | P2 | task | bead-wd-3ix.1, bead-wd-72f.31.2 |
 | bead-wd-72f.31.5 | Verify Automation Orchestrator against a disposable OpenShift cluster | deferred | P2 | task | bead-wd-72f.31 |
+| bead-wd-72f.38 | Create an AAP CaC GitHub Pages visualization | in_progress | P2 | task | bead-wd-72f |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
@@ -62,6 +62,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1.4 | Verify reinstalled Ng hardware against encrypted CaC | closed | P1 | feature | bead-wd-3ix.1 |
 | bead-wd-3ix.1.5 | Finish host bootstrap after conversion outlived AAP timeout | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.7 | Prepare VM isolation after host-only recovery before AAP creation | closed | P1 | bug | bead-wd-3ix.1 |
+| bead-wd-3ix.1.9 | Resolve Let’s Encrypt registration consent for rebuilt test host | closed | P1 | task | bead-wd-3ix.1 |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
 | bead-wd-72f.1 | Split per-repository CaC Vault credentials and rename all CaC Git readers | closed | P1 | feature | bead-wd-72f |
@@ -150,7 +151,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.6.1 | Apply the corrected prerequisite survey to both AAP instances | closed | P2 | task | bead-wd-72f.31.6 |
 | bead-wd-72f.31.7 | Assess Assistant Team deployment readiness on the fresh successor | closed | P2 | task | bead-wd-72f.31 |
 | bead-wd-72f.33 | Prepare the private Claude runtime and verify agent remediation | closed | P2 | task | bead-wd-72f |
-| bead-wd-72f.38 | Create an AAP CaC GitHub Pages visualization | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.39 | Review long runs and redundant work from v16 onward | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.6 | Review AutoDeploy allocator and registry credential design with owner | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.7 | Prefix project deployment Job Template names with Deploy | closed | P2 | task | bead-wd-72f |

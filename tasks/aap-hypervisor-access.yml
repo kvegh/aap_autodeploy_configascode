@@ -11,6 +11,10 @@
       {{ (aap_instance_trust | default({})).path | default((aap_hypervisor_trust | default({})).path) }}
     aap_management_native_runtime: {}
     aap_management_policy_attempted: false
+    aap_management_hypervisor_hosts: >-
+      {{ groups['all'] | map('extract', hostvars) | selectattr('ansible_host', 'defined')
+         | selectattr('ansible_host', 'equalto', aap_instance_route.hypervisor.address)
+         | map(attribute='inventory_hostname') | list }}
     aap_management_publish:
       durable_policy_published: false
     aap_hypervisor_management_login:
@@ -35,8 +39,14 @@
       check_mode: '{{ ansible_check_mode | bool }}'
   no_log: true
 
+- name: Resolve the pinned hypervisor to exactly one existing inventory host
+  ansible.builtin.assert:
+    that: aap_management_hypervisor_hosts | length == 1
+    fail_msg: The pinned hypervisor must have one existing inventory identity for delegated facts.
+    quiet: true
+
 - name: Verify and apply only the selected AAP guest access
-  delegate_to: '{{ aap_instance_route.hypervisor.address }}'
+  delegate_to: '{{ aap_management_hypervisor_hosts | first }}'
   become: true
   vars: &aap_management_connection
     ansible_connection: ssh
@@ -56,6 +66,14 @@
   block:
     - name: Prepare reviewed Hactar source and acquire the temporary native lock
       ansible.builtin.include_tasks: aap-isolation-prepare.yml
+
+    - name: Gather package-manager facts on the actual delegated hypervisor
+      ansible.builtin.setup:
+        gather_subset: ['!all']
+        filter: ansible_pkg_mgr
+      delegate_facts: true
+      check_mode: false
+      no_log: true
 
     - name: Allocate this invocation's existing resource verifier
       ansible.builtin.tempfile:

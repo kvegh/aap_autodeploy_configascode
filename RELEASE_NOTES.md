@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.52.6
+
+Resolve the pinned address to one existing inventory host and gather its live
+package-manager fact before the certified firewall role. Preserve delegated fact ownership so its normal package
+action reads the target's facts. This addresses the observed auto-detection
+boundary without overriding the backend, interpreter or security settings.
+A pinned read-only target check discovers DNF and confirms firewalld already
+present in check mode; live access acceptance remains separately verified.
+
 ## 0.52.5
 
 Document the protected failure-classification change and its four template
