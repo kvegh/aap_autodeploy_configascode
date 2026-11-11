@@ -174,10 +174,46 @@
       no_log: true
 
   rescue:
+    - name: Retain the original protected failure before diagnostic or rollback tasks
+      ansible.builtin.set_fact:
+        aap_access_original_failure: '{{ ansible_failed_result }}'
+        aap_access_original_task_name: '{{ ansible_failed_task.name }}'
+      no_log: true
+
+    - name: Capture only the failed package message for protected repair diagnostics
+      when:
+        - aap_access_original_task_name == 'Install firewalld'
+        - ansible_run_tags | sort == ['aap_installation_access']
+        - not ansible_check_mode
+      no_log: true
+      block:
+        - name: Allocate a private temporary package failure log
+          ansible.builtin.tempfile:
+            state: file
+            prefix: aap-access-failure-
+          register: aap_access_failure_log
+
+        - name: Write only the original package error without module inputs
+          ansible.builtin.copy:
+            content: '{{ {"message": aap_access_original_failure.msg | default("No package message returned")} | to_json }}'
+            dest: '{{ aap_access_failure_log.path }}'
+            owner: root
+            group: root
+            mode: '0600'
+
+        - name: Report only the protected temporary log path for operator retrieval
+          ansible.builtin.debug:
+            msg: '{{ aap_access_failure_log.path }}'
+          no_log: false
+      rescue:
+        - name: Continue rollback if protected diagnostic capture is unavailable
+          ansible.builtin.debug:
+            msg: Protected package diagnostic capture was unavailable.
+          no_log: false
     - name: Classify protected access failure without exposing module inputs
       ansible.builtin.debug:
         msg:
-          package_install_task: "{{ ansible_failed_task.name == 'Install firewalld' }}"
+          package_install_task: "{{ aap_access_original_task_name == 'Install firewalld' }}"
           package_backend_detection: "{{ __aap_access_failure_text is search('detect.*(dnf|package manager)|pkg_mgr|backend') }}"
           package_manager_detection: "{{ __aap_access_failure_text is search('could not detect which package manager') }}"
           dnf_major_version_detection: "{{ __aap_access_failure_text is search('could not detect which major revision of dnf') }}"
@@ -190,9 +226,9 @@
           module_or_transport: "{{ __aap_access_failure_text is search('module failure|resolve module|connection|timed out|timeout') }}"
       vars:
         __aap_access_failure_text: >-
-          {{ ((ansible_failed_result.msg | default('')) ~ ' ' ~
-              (ansible_failed_result.module_stderr | default('')) ~ ' ' ~
-              (ansible_failed_result.exception | default(''))) | lower }}
+          {{ ((aap_access_original_failure.msg | default('')) ~ ' ' ~
+              (aap_access_original_failure.module_stderr | default('')) ~ ' ' ~
+              (aap_access_original_failure.exception | default(''))) | lower }}
       no_log: false
 
     - name: Report the running Ansible version without environment identifiers

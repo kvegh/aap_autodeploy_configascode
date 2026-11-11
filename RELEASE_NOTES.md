@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.52.12
+
+Allow only the existing tagged access repair to capture its original package
+failure message in a root-owned temporary 0600 log. Only its path is logged;
+module inputs and credentials are excluded. Retrieval uses the existing pinned
+SSH route, followed by removal. Ordinary base logging and rollback remain
+unchanged. The safe flags alone did not identify the actual failure.
+
 ## 0.52.11
 
 Document implementation 5677bec and the three exact-branch/privacy cases,
