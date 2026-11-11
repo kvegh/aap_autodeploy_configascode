@@ -1,21 +1,31 @@
 # AAP Configuration as Code walkthrough
 
-A buildless, browser-local explanation of the implemented configuration flow.
+A buildless, browser-local explanation of the implemented deployment and
+configuration flow, using an azure, blue and slate palette.
 It follows the visual approach used by the Windows and AIOps GitHub Pages demos:
 a guided story, a highlighted architecture and an explanation for each step.
 It sends no API requests, reads no live configuration and contains only generic
 illustrative selections.
 
 The story is grounded in runtime 0.50.13, source
-`e371c76c4d8e102f152e3a41ccfb76184fa91580`. It covers shared base configuration,
-explicit destination access, the common project importer, the selected-use-case
-launcher and the scoped Controller capture/review path. Both the selector and
-the importer support verified self/remote targets in this source. Physical
-deployment is outside the page; VM deployment is a short supporting context.
+`e371c76c4d8e102f152e3a41ccfb76184fa91580`. The twelve-step story gives all four
+normal stages their own visual step: `01-linux-vm-setup.yml`,
+`02-infra-config.yml`, `03-aap-install.yml` and `04-aap-config.yml`. It then covers
+selected project CaC and the reviewed capture path. Both the selector and the
+importer support verified self/remote targets in this source. Physical-host
+deployment remains outside the page.
+
+The provisioning diagram shows the existing source AAP running jobs against one
+pinned test hypervisor and its new guest. It includes encrypted allocation, the
+preserved golden image, fresh guest identity, DNS/TLS/nginx and AAP installed
+inside that guest. The API diagram shows Base AAP and project configuration on
+the selected receiving AAP. The four prominent stage buttons select the actual
+phase and diagram. Application deployment jobs remain separate actions; no
+future AIOps-triggered workload installation is depicted as current behavior.
 
 ## Files and preview
 
-`index.html` owns the diagram and accessible page structure. `src/scenario.js`
+`index.html` owns both diagrams and accessible page structure. `src/scenario.js`
 owns the reviewed narrative and pinned public source links. `src/app.js` owns
 navigation, highlighting and the illustrative destination switch;
 `src/styles.css` owns presentation and responsive/reduced-motion behavior.
@@ -38,7 +48,8 @@ requests reduced motion. A step can be linked directly, for example `#import`.
 
 The Node fixtures execute the real scripts against a small disposable DOM.
 They check reversible navigation, configured-resource state, deep links,
-self-target explanation, reduced motion and pinned source links. They do not
+self-target explanation, deployment/configuration views, stage-specific routes
+and results, the blue palette, reduced motion and pinned source links. They do not
 establish browser layout or actual AAP behavior. Browser checks and screenshots
 are separate validation when an existing browser is available.
 

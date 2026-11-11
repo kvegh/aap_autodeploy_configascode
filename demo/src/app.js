@@ -8,7 +8,8 @@
   let motion = !media.matches;
   let destination = 'remote';
   let index = 0;
-  const stepNames = ['The idea', 'Choose a destination', 'Read protected inputs', 'Configure the base', 'Select use cases', 'Import definitions', 'Define, then run', 'Review changes', 'The complete picture'];
+  const stepNames = ['The idea', 'Choose destinations', 'Read protected inputs', '01 · Create the VM', '02 · DNS, TLS + nginx', '03 · Install AAP', '04 · Base AAP configuration', 'Select use cases', 'Import definitions', 'Define, then run', 'Review changes', 'The complete picture'];
+  const stages = ['vm', 'infrastructure', 'installation', 'base'];
 
   const buttons = scenario.steps.map((step, position) => {
     const item = document.createElement('li');
@@ -42,7 +43,9 @@
     byId('target-self').classList.toggle('selected', self);
     byId('target-remote').classList.toggle('selected', !self);
     byId('target-role').textContent = self ? 'The same verified AAP instance' : 'Another verified AAP instance';
-    byId('target-explanation').textContent = self
+    byId('target-explanation').textContent = app.dataset.view === 'deployment'
+      ? 'The source AAP executes the job; the selected guest on the pinned test host receives the installation.'
+      : self
       ? 'These are two roles in the flow: the job configures the AAP on which it runs.'
       : 'The job runs on an existing source AAP and configures another selected AAP.';
   }
@@ -50,6 +53,16 @@
   function render(position, updateUrl = true) {
     index = Math.max(0, Math.min(scenario.steps.length - 1, position));
     const step = scenario.stepAt(index);
+    const deployment = step.view === 'deployment';
+    app.dataset.view = deployment ? 'deployment' : 'configuration';
+    byId('configuration-view').hidden = deployment;
+    byId('deployment-view').hidden = !deployment;
+    byId('target-controls').hidden = deployment;
+    byId('deployment-context').hidden = !deployment;
+    byId('architecture-title').textContent = deployment ? 'Create the guest. Install the platform.'
+      : step.id === 'base' ? 'Stage 04: configure the installed AAP.' : 'Saved intent. Explicit destination.';
+    byId('ready-legend').textContent = deployment ? 'Stage result present' : 'Configuration present';
+    setDestination(destination);
     byId('phase').textContent = step.phase;
     byId('step-count').textContent = `${String(index + 1).padStart(2, '0')} / ${String(scenario.steps.length).padStart(2, '0')}`;
     byId('current-title').textContent = step.title;
@@ -58,6 +71,7 @@
     byId('next').querySelector('small').textContent = index === scenario.steps.length - 1 ? 'Walk through again' : 'Next step';
     byId('previous').disabled = index === 0;
     byId('progress').setAttribute('aria-valuenow', String(index + 1));
+    byId('progress').setAttribute('aria-valuemax', String(scenario.steps.length));
     byId('progress-fill').style.width = `${(index + 1) / scenario.steps.length * 100}%`;
     byId('flow-caption').textContent = step.caption;
     byId('detail-title').textContent = step.heading;
@@ -88,6 +102,26 @@
     ['base', 'inventory', 'templates', 'eda'].forEach(id => {
       byId(`resource-${id}`).classList.toggle('configured', step.configured.includes(id));
     });
+    ['runner', 'state', 'host', 'guest', 'edge', 'platform'].forEach(id => {
+      byId(`deploy-${id}`).classList.toggle('active', (step.deploymentFocus || []).includes(id));
+      byId(`deploy-${id}`).classList.toggle('ready', (step.deploymentReady || []).includes(id));
+    });
+    ['reserve', 'ssh', 'copy', 'dns', 'install', 'frontend'].forEach(id => {
+      byId(`deploy-route-${id}`).classList.toggle('active', (step.deploymentRoutes || []).includes(id));
+    });
+    byId('platform-status').textContent = (step.deploymentReady || []).includes('platform')
+      ? 'Gateway + public endpoint verified' : 'Installed here in Stage 03';
+    byId('edge-status').textContent = step.id === 'installation' ? 'TLS + verified AAP upstream'
+      : step.id === 'infrastructure' ? 'TLS ready · upstream pending' : 'Frontend prepared in Stage 02';
+    const baseIndex = scenario.steps.findIndex(item => item.id === 'base');
+    stages.forEach((id, position) => {
+      const button = byId(`stage-${id}`);
+      const current = step.stage === position + 1;
+      button.dataset.state = current ? 'active'
+        : index > baseIndex || (step.stage || 0) > position + 1 ? 'complete' : 'pending';
+      if (current) button.setAttribute('aria-current', 'step');
+      else button.removeAttribute('aria-current');
+    });
     buttons.forEach((button, position) => {
       if (position === index) button.setAttribute('aria-current', 'step');
       else button.removeAttribute('aria-current');
@@ -102,6 +136,9 @@
   byId('motion').addEventListener('click', () => setMotion(!motion));
   byId('target-self').addEventListener('click', () => setDestination('self'));
   byId('target-remote').addEventListener('click', () => setDestination('remote'));
+  stages.forEach(id => byId(`stage-${id}`).addEventListener('click', () => {
+    render(scenario.steps.findIndex(step => step.id === id));
+  }));
   document.addEventListener('keydown', event => {
     if (event.altKey || event.ctrlKey || event.metaKey || event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
     if (event.key === 'ArrowRight') { event.preventDefault(); render(scenario.move(index, 1)); }

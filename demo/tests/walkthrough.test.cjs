@@ -72,6 +72,7 @@ test('the page and source citations resolve to actual assets and reviewed reposi
   assert.match(scenario.sourceRevision, /^[0-9a-f]{40}$/);
   assert.equal(scenario.runtimeVersion, '0.50.13');
   assert.equal(new Set(scenario.steps.map(step => step.id)).size, scenario.steps.length);
+  assert.equal(scenario.steps.length, 12);
   assert.throws(() => scenario.stepAt('1'), TypeError);
   assert.throws(() => scenario.move(0, 8), TypeError);
 });
@@ -82,8 +83,8 @@ test('next and previous reveal and remove the correct configuration groups', () 
   assert.equal(nodes.progress.attributes['aria-valuenow'], '1');
   for (let i = 0; i < scenario.steps.length; i++) {
     assert.equal(nodes['current-title'].textContent, scenario.steps[i].title);
-    assert.equal(nodes['resource-base'].classes.has('configured'), i >= 3);
-    assert.equal(nodes['resource-templates'].classes.has('configured'), i >= 5);
+    assert.equal(nodes['resource-base'].classes.has('configured'), i >= scenario.steps.findIndex(step => step.id === 'base'));
+    assert.equal(nodes['resource-templates'].classes.has('configured'), i >= scenario.steps.findIndex(step => step.id === 'import'));
     const active = nodes['step-list'].children.filter(item => item.children[0].attributes['aria-current'] === 'step');
     assert.equal(active.length, 1);
     if (i < scenario.steps.length - 1) nodes.next.click();
@@ -114,7 +115,7 @@ test('direct links, keyboard navigation, restart and the final next button stay 
   assert.equal(view.nodes['route-review'].classes.has('active'), true);
   view.context.location.hash = '#walkthrough';
   view.context.hashchange();
-  assert.equal(view.nodes['current-title'].textContent, scenario.steps[7].title);
+  assert.equal(view.nodes['current-title'].textContent, scenario.steps.find(step => step.id === 'capture').title);
   assert.equal(view.key('ArrowRight').prevented, true);
   assert.equal(view.context.location.hash, '#complete');
   view.key('ArrowLeft', { ctrlKey: true });
@@ -137,6 +138,69 @@ test('reduced-motion preference and its changes are honored', () => {
   assert.equal(view.app.dataset.motion, 'on');
   view.nodes.motion.click();
   assert.equal(view.app.dataset.motion, 'off');
+});
+
+test('the four actual stages select the correct diagram, route, result and phase', () => {
+  const { nodes, app } = browser();
+  nodes['stage-vm'].click();
+  assert.equal(app.dataset.view, 'deployment');
+  assert.equal(nodes['deployment-view'].hidden, false);
+  assert.equal(nodes['configuration-view'].hidden, true);
+  assert.equal(nodes['target-controls'].hidden, true);
+  assert.equal(nodes['deployment-context'].hidden, false);
+  assert.match(nodes.phase.textContent, /Stage 01/);
+  assert.equal(nodes['deploy-state'].classes.has('ready'), true);
+  assert.equal(nodes['deploy-guest'].classes.has('ready'), true);
+  assert.equal(nodes['deploy-route-reserve'].classes.has('active'), true);
+  assert.equal(nodes['deploy-route-copy'].classes.has('active'), true);
+  assert.equal(nodes['deploy-platform'].classes.has('ready'), false);
+  nodes['stage-infrastructure'].click();
+  assert.match(nodes.phase.textContent, /Stage 02/);
+  assert.equal(nodes['deploy-edge'].classes.has('active'), true);
+  assert.equal(nodes['deploy-route-dns'].classes.has('active'), true);
+  assert.equal(nodes['deploy-route-copy'].classes.has('active'), false);
+  assert.match(nodes['edge-status'].textContent, /upstream pending/);
+  nodes.next.click();
+  assert.match(nodes.phase.textContent, /Stage 03/);
+  assert.equal(nodes['deploy-platform'].classes.has('ready'), true);
+  assert.equal(nodes['deploy-route-install'].classes.has('active'), true);
+  assert.match(nodes['platform-status'].textContent, /verified/);
+  nodes.next.click();
+  assert.match(nodes.phase.textContent, /Stage 04/);
+  assert.equal(app.dataset.view, 'configuration');
+  assert.equal(nodes['deployment-view'].hidden, true);
+  assert.equal(nodes['configuration-view'].hidden, false);
+  assert.equal(nodes['target-controls'].hidden, false);
+  assert.equal(nodes['resource-base'].classes.has('configured'), true);
+  assert.equal(nodes['resource-templates'].classes.has('configured'), false);
+  assert.equal(nodes['stage-base'].attributes['aria-current'], 'step');
+  assert.equal(nodes['stage-installation'].dataset.state, 'complete');
+  nodes.previous.click();
+  nodes.previous.click();
+  assert.equal(nodes['deploy-platform'].classes.has('ready'), false);
+  assert.equal(nodes['deploy-route-install'].classes.has('active'), false);
+  assert.match(nodes['edge-status'].textContent, /upstream pending/);
+  nodes.restart.click();
+  assert.equal(app.dataset.view, 'configuration');
+  assert.equal(nodes['deploy-route-dns'].classes.has('active'), false);
+  assert.equal(nodes['stage-vm'].dataset.state, 'pending');
+  assert.equal(nodes.progress.attributes['aria-valuemax'], '12');
+});
+
+test('deployment direct links work and the complete palette uses blue or neutral hues', () => {
+  const view = browser({ hash: '#installation' });
+  assert.equal(view.app.dataset.view, 'deployment');
+  assert.equal(view.nodes['stage-installation'].attributes['aria-current'], 'step');
+  const css = readFileSync(path.join(demo, 'src/styles.css'), 'utf8');
+  const icon = readFileSync(path.join(demo, 'icon.svg'), 'utf8');
+  assert.doesNotMatch(css, /--teal|--red/);
+  assert.match(css, /--blue: #1767bd/);
+  for (const match of (css + html + icon).matchAll(/#([0-9a-f]{6})(?:[0-9a-f]{2})?\b/gi)) {
+    const red = parseInt(match[1].slice(0, 2), 16);
+    const green = parseInt(match[1].slice(2, 4), 16);
+    const blue = parseInt(match[1].slice(4, 6), 16);
+    assert.ok(blue >= green && blue >= red, `Non-blue color remains: ${match[0]}`);
+  }
 });
 
 test('all code examples are inserted as text and source links stay on the pinned public checkout', () => {

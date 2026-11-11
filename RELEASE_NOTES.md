@@ -1,5 +1,23 @@
 # Release notes
 
+## 0.52.0
+
+Expand the walkthrough to twelve steps and a blue/slate palette. Give VM
+creation, DNS/TLS/nginx, AAP installation and Base AAP configuration first-class
+stage controls, with separate provisioning and API-configuration diagrams.
+Each phase links to its actual playbook and maintains the existing source/target
+and installation/configuration boundaries. Eight focused interaction/source/
+palette checks, JavaScript syntax, asset/SVG structure and privacy checks pass.
+Browser layout remains unchecked under the owner’s existing-tools choice.
+
+Document fourteen named speed-improvement actions with concrete completion
+criteria. Audit all 64 previous episodes, sort 49 eligible observed candidates,
+and map every ranked row plus 18 additional findings to actions. The pre-v16
+extractor is explicitly excluded; the concrete firewall episode replaces the
+broader overlapping acceptance envelope in the ranking. Unknown causes and
+unmeasured savings remain unknown. No runtime deployment or performance settings
+change in this revision.
+
 ## 0.51.1
 
 Document implementation baa562d, verified public Pages deployment and the two

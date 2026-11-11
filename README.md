@@ -287,10 +287,12 @@ do not establish live migration or complete end-to-end acceptance.
 
 [Open the guided visualization](https://kvegh.github.io/aap_autodeploy_configascode/)
 to explore how shared base configuration, selected project imports and reviewed
-Controller capture fit together. The nine-step story follows implementation
+Controller capture fit together. The twelve-step story follows implementation
 `e371c76` (runtime 0.50.13), links to its source and illustrates configuration of
 the same AAP or another verified AAP. Examples are synthetic; the page makes no
-AAP connections. VM installation is brief context. Source and local checks are
+AAP connections. Dedicated deployment views explain VM creation, DNS/TLS/nginx,
+AAP installation and Base AAP configuration before the project CaC flow. The
+palette uses blue, slate and neutral shades. Source and local checks are
 in [demo/README.md](demo/README.md). The public Pages artifact contains only the
 allowlisted presentation assets. Interaction and structural checks pass; browser
 layout and screenshots were not checked because the owner chose existing tools.
@@ -316,7 +318,9 @@ The [development speed recommendations](docs/development-speed-improvement-revie
 provide a short review from the actual v16 start through the fixed 11 November
 2026 checkpoint. The [detailed evidence](docs/development-speed-improvement-evidence.md)
 ranks 30 long episodes and separates repeated short operations from actual job
-runs. It identifies continuation gaps, timeout design, avoidable prerequisites
+runs. Fourteen named actions each specify a concrete change and completion
+criterion; coverage tables map all 30 ranked episodes, 18 additional findings
+and the 64 earlier report blocks to those actions. It identifies continuation gaps, timeout design, avoidable prerequisites
 and producer/consumer failures; owner-required checks are distinguished from
 waste. These reports propose improvements without changing runtime settings.
 
