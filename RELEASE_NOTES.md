@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.52.9
+
+Document implementation 321d9e4, the corrected staged visibility and its nine
+focused interaction/source checks. Browser validation remains outside the
+owner's selected existing-tool checks.
+
 ## 0.52.8
 
 Correct the walkthrough's deployment sequence: the initial view shows no new

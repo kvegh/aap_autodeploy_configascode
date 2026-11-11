@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Reveal AAP only when its deployment creates it — 2026-11-11
+
+Implementation `321d9e4` follows the owner's correction: the selected receiving
+AAP must not appear before deployment. Overview, destination and input steps
+now show the existing source AAP and prepared host. The RHEL VM appears during
+Stage 01, DNS/TLS during Stage 02, installed AAP inside that VM during Stage 03,
+and the configured API diagram in Stage 04. Existing future objects and routes
+use real hidden/accessibility states, including initial HTML; changing only
+their tint would still suggest they already existed.
+
+Backwards navigation, restart and direct links reverse those states consistently.
+Nine Node checks, both script syntax checks, SVG structure and whitespace checks
+pass. The existing blue palette, twelve-step code-grounded story and pinned
+citations remain. The owner selected existing checks only, so no browser was
+installed and no browser layout or screenshot acceptance is claimed. Pages
+publication and live asset verification are separate from source validation.
+
 ## Keep delegated package facts on the existing hypervisor identity — 2026-11-11
 
 Implementation `4348af4` resolves the pinned address to exactly one existing
