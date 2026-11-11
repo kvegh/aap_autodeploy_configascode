@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.52.4
+
+Expose only fixed Boolean failure categories before the existing access rollback.
+Protected module errors previously hid which package, repository, Python or
+transport boundary failed. Raw messages and inputs remain private; rollback
+and all access behavior are unchanged. This diagnostic does not resolve the
+underlying live package-check failure or establish successful access repair.
+
 ## 0.52.3
 
 Document implementation 75b191d and its focused validation: fourteen installation

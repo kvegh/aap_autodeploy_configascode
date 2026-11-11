@@ -516,6 +516,10 @@ policy for comparison, while native verification materializes that same
 protection already enforced by the host's base firewall. Other clients and
 production exclusions remain unchanged; missing or conflicting identity stops
 the operation. Never repeat VM creation to repair this final access step.
+If a protected access task fails, the rescue reports only fixed Boolean error
+categories before rollback. Module arguments, raw error text and credentials
+remain protected; a category alone does not prove a root cause or successful
+rollback. Verify the actual native state before a bounded continuation.
 
 The Stage 01 readiness probe temporarily binds the new guest's SSH connection
 facts, checks its pinned route, then restores the hypervisor's original connection
