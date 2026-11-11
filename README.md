@@ -1104,8 +1104,10 @@ instance data is removed while the next AAP allocation remains 18. RHEL
 conversion completed remotely after Controller timed out; the original failed
 workflow has not been relabeled successful. Hardware preflight now passes with
 the expected firmware identifiers stored in encrypted CaC. The remaining host
-setup awaits the explicit host-settings confirmation that the failed workflow
-never reached. These recovery steps do not establish a fresh AAP 18 deployment.
+setup proceeds through the existing stage templates after the owner's explicit
+continuation approval; the failed workflow remains historical evidence. Temporary
+conversion credentials were cleaned up and a fresh post-conversion boot was
+verified before continuing. These recovery steps do not establish a fresh AAP 18 deployment.
 
 ### Disconnected Windows configuration deployment
 
