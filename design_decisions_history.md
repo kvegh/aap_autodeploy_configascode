@@ -4253,3 +4253,12 @@ Fresh receiving AAP and full use-case acceptance remain separate. Version
 0.57.2 corrects an accidentally committed documentation/version merge conflict,
 preserves concurrent visualization history and records this checkpoint without
 changing runtime automation.
+
+## 2026-11-12 — Describe native policy verification before allocation
+
+Implementation `9763121ebd248754f1995064f24d2b440a09e8c4` (0.57.3) corrects the allocation guide's stale reference
+to a retired isolation helper. Stage 01 compares the complete native firewall
+policy with protected CaC and checks the persistent service before reserving a
+new name. The README and guide now describe the existing implementation. No
+firewall permission, identity check, runtime path or allocation behavior changed.
+Version 0.57.4 records the documentation correction.

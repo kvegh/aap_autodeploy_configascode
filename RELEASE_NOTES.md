@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.57.4
+
+Record implementation `9763121` and its documentation-only scope.
+
 ## 0.57.3
 
 Clarify that allocation compares native firewall policy with protected CaC and
