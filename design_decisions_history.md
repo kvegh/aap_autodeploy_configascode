@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Use the available height and one continuous AAP body — 2026-11-12
+
+Implementation `6c33f0f4f16529920327077ba23b3353408f0af6` follows the owner's
+browser feedback that a fixed configuration strip left only the lower object
+list scrolling. The owner chose to try height first, retain two internal columns
+and defer the proposed three-column interior.
+
+The desktop code/receiving rows now use the full available viewport height,
+removing the 860px maximum. Each AAP has one focusable content area containing
+plain configuration and object groups; toolbar bands, boxed configuration
+strips and independent lower-list scrolling are removed. Compact bars preserve
+13px names. Short viewports may still scroll the complete content area without
+truncating definitions. Source-centred connector offsets preserve routing as
+height changes; early VM/install stages hide the empty content wrapper.
+
+The existing seventeen story/navigation checks passed locally and against the
+live assets. Pages run `43259012043` completed successfully at 16:28:51 UTC; all
+five HTTPS assets matched source. Static structure, 62 retained IDs, sole content
+scroll ownership, two-column receiving flow, staged hiding, declared height/route
+fit and whitespace checks passed. No state-model, runtime or host change was
+made. Actual rendered-browser acceptance remains unverified here; the height-first
+choice does not authorize adopting the deferred three-column interior.
+
 ## Align receiving AAPs with code and replay the saved configuration — 2026-11-12
 
 Implementation `a56c0c57dd93a9c4e603268e7dbe0f1844e38c85` follows the owner's

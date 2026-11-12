@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.59.5
+
+Document height-first correction6c33f0f and its verified Pages/live assets and
+seventeen interaction checks. Preserve the user-deferred three-column proposal
+and distinguish source/static checks from rendered-browser acceptance. Refresh
+completed task recovery records without changing the configuration story.
+
 ## 0.59.4
 
 Record timeout implementation `8b91b22`, successful EE-v1 publication and

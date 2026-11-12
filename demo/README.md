@@ -24,7 +24,7 @@ space; the original AAP is centred between rows. Every installed AAP has the sam
 prominent platform identity; card dimensions are illustrative. Receiving object
 definitions share one continuous content area inside each AAP. Receiving cards
 use two columns of compact groups, with plain headings instead of boxed horizontal
-configuration bands. The receiving/code rows use the full available page height,
+configuration bands. On desktop, the receiving/code rows use the full available page height,
 rather than a fixed 860px maximum. If a short viewport still requires scrolling,
 the entire content area owns it; there is no independently scrolling lower half.
 The narrow source uses one column to keep names readable. Three internal columns
