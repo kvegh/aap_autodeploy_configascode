@@ -122,8 +122,19 @@ uncompressed layer. Native Skopeo gzip level 1 compression gives fresh layer
 digests, allowing a normal upload without changing Hub access policy or storage
 internals. Download the immutable manifest to a new directory transport with no
 local image cache and check every layer's size and SHA-256 before testing normal
-AAP execution. Keep TLS and digest verification enabled. Default activation and
-fresh-receiver acceptance remain pending until those checks pass.
+AAP execution. Keep TLS and digest verification enabled.
+
+Replacement manifest
+`sha256:07b695ce8df1dc31403aac805ad00ab4767c46a8c67a70484fecb231cccca217`
+passed a fresh directory-transport download: all three compressed layer sizes
+and SHA-256 hashes, every decompressed layer digest, and the original image
+configuration were verified. Normal AAP job `3729` then passed in 99.483 seconds
+with an actual Core 2.20.10 runtime header. Source AAP's global default, all
+62 managed templates and the Hactar project default now select EE-v1; the
+original official EE and upstream registry credential remain available. The
+candidate used `always` for its initial native pull proof and then returned to
+`missing` with the immutable image pin. Fresh-receiver acceptance remains
+separate because its network policy must permit the selected registry.
 
 ## Persist upload timeouts in deployment and CaC
 

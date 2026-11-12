@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.59.8
+
+Record the passing native Core 2.20.10 job for verified EE-v1 publication 1.0.1
+and its Source activation: global default, 62 managed templates and Hactar project
+default. Preserve official EE/history and distinguish receiver network access.
+
 ## 0.59.7
 
 Record corrected publication evidence and implementation `5c8f46a`. Distinguish

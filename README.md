@@ -393,8 +393,13 @@ the default/CaC change must pass separately before this replaces the current EE.
 The first publication failed native AAP integrity verification because Hub stored
 a truncated layer; its cached local pull did not verify all remote bytes. A
 content-preserving `1.0.1` replacement passed an uncached download of every blob
-and decompressed layer. Normal AAP execution must pass before default activation. The deployment now persists the approved 200-second Hub worker and 600-second registry route
-timeouts through the existing installer and native Platform CaC module.
+and decompressed layer. A normal read-only AAP job subsequently passed with an
+actual Core 2.20.10 runtime header. Source AAP now uses EE-v1 as its global
+default; all 62 managed templates and the Hactar project default select it.
+The deployment persists the approved 200-second Hub worker and 600-second
+registry route timeouts through the existing installer and native Platform CaC
+module. Fresh-receiver registry reachability remains a separate network-policy
+decision.
 
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
 conversation association and original parent so the existing export includes
