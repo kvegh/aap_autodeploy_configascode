@@ -1,5 +1,14 @@
 # Design decisions history
 
+## Omit completed handoffs from the overview — 2026-11-12
+
+Implementation `e9d19a4` excludes the transferred visualization and performance
+workstreams from the public overview at the owner request. Their completed Beads
+records and full encrypted recovery history remain available; subsequent work
+belongs to the receiving chats. Nine existing task-mirror checks passed, and the
+generated overview omits both transferred task families without narrowing the
+protected export. Concurrent visualization removal commits remain preserved.
+
 ## Withdraw the visualization and retain its publishing workflow — 2026-11-12
 
 Implementation `30e35f8554581b4e9ba367432046aec421d60910` removes the previous

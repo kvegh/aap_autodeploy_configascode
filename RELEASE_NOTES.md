@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.53.6
+
+Document implementation e9d19a4 and preserve complete transferred-task history
+while omitting completed handoffs and their workstreams from the public overview.
+
 ## 0.53.5
 
 Omit completed visualization and performance handoffs and their transferred
