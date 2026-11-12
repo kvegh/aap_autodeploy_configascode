@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.53.3
+
+Document visualization withdrawal implementation30e35f8 and its successful
+source-presence workflow run: checks passed and publication was skipped. Record
+verified Pages unpublication and refresh the Beads overview and protected task
+recovery export. The replacement remains a proposal for discussion.
+
 ## 0.53.2
 
 Remove the withdrawn AAP CaC visualization assets, scripts, styles and tests so

@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Withdraw the visualization and retain its publishing workflow — 2026-11-12
+
+Implementation `30e35f8554581b4e9ba367432046aec421d60910` removes the previous
+visualization application, its tests and its current README links at the owner's
+request. The owner wants a new design from scratch and explicitly retained the
+GitHub Pages workflow. A checkout-time source-presence check skips JavaScript
+checks and publication while the visualization source is absent. Existing
+publishing triggers, permissions and asset allowlist are preserved.
+
+The old Pages site was separately unpublished because deleting repository files
+does not withdraw the previously deployed artifact. The authenticated Pages API
+and the public URL both returned 404. The removal commit's GitHub Actions run
+completed successfully: the source-presence check passed and publication was
+skipped. Local checks exercised both guard branches, existing version-policy
+tests and whitespace; an independent scoped review found no blocking issue.
+AAP runtime source and deployment were outside this change. Earlier release and
+decision records remain historical evidence. AIOps source informs a proposed
+replacement outline; no replacement design or application has been implemented.
+
 ## Accept the normal firewall access repair before continuing installation — 2026-11-12
 
 Implementations `ae03bb3` and `8e400c0`, documented at `35021e9`, passed the normal
