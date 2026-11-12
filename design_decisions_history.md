@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Put the operational story beside a three-column diagram — 2026-11-12
+
+Implementation `e0a6d034b1104cd34373028db0ac82208f9f7234` follows the owner's
+explicit layout choice after the previous width-only correction was rejected.
+Navigation, deployment stages, progress and status live in a left sidebar, as in
+the Windows/AIOps references. Compact private/public repositories sit beside the
+original AAP and new AAP, with matching instance cards and no large hero or
+explanatory scene header. A visual mockup was shown before implementation.
+Stage 02 now reads Prepare OS for AAP installation. Active routes have strong
+blue direction, brief travelling markers, ordinary HTML labels and a persistent
+static cue; reduced-motion preferences remove animation without hiding activity.
+
+The two-instance story, true VM/AAP/base visibility, labelled object origins and
+manual definitions returning to encrypted CaC remain intact. A dependency-free
+Node command checks the actual five HTTPS assets, requires checkout byte parity
+before executing downloaded JavaScript, runs the same interactions and cleans
+only its own temporary directory. It performs no live AAP operation.
+
+All twelve integrated checks passed. Pages run `43234094803` completed successfully
+at 14:08:50 UTC; the live runner then verified five exact assets and all twelve
+interactions. Syntax, static structure and whitespace checks passed. Rendered
+browser/phone layout remains unverified under the owner's existing-tools-only
+choice; the generated design mockup is not rendered application evidence.
+
 ## Use desktop space and distinguish object origins — 2026-11-12
 
 Implementation `18b5b2c044228aebf3d7e963c19adb74f1de2b3e` follows the owner's

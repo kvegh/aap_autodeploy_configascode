@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.56.1
+
+Record the implemented three-column/left-sidebar design and active-arrow treatment
+in e0a6d03. Document successful Pages publication, exact live asset parity and all
+twelve deployed-source interaction checks, while keeping browser rendering
+unverified. Refresh Beads recovery records without changing runtime automation.
+
 ## 0.56.0
 
 Recompose the AAP CaC walkthrough around the owner-selected three-column diagram:
