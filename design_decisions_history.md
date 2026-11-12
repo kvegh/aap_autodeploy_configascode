@@ -1,5 +1,17 @@
 # Design decisions history
 
+## Accept the normal firewall access repair before continuing installation — 2026-11-12
+
+Implementations `ae03bb3` and `8e400c0`, documented at `35021e9`, passed the normal
+tagged repair through the complete certified role and existing publisher. An
+independent machine-pinned read confirmed the exact runtime and permanent rule,
+the complete desired native policy and removal of the temporary lock. All three
+encrypted capture transformations matched the expected addition; the allocation
+ciphertext and saved primary VM remained unchanged. Source policy and placement
+needed no remaining synchronization operations. Failed earlier runs remain
+historical failures. Continue the existing guest through normal infrastructure,
+installation and full base configuration; do not repeat VM creation.
+
 ## Preserve the target interpreter after clearing role delegation — 2026-11-12
 
 Implementation `8e400c0` completes the connection context for the firewall role.

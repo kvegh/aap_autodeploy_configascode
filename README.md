@@ -551,6 +551,11 @@ protected route, rule and connection variables, including a controller-only
 Python path that must not reach the remote connection.
 The one-time protected error capture used to diagnose this problem has been
 removed, and its temporary host log was deleted after retrieval.
+The normal tagged access repair has now passed live: the selected HTTPS rule is
+present in both runtime and permanent firewalld state, native isolation matches
+the published desired policy, and all three encrypted captures and source
+inventory placement match. The allocation record and existing VM are unchanged.
+Infrastructure, AAP installation and full base configuration remain separate stages.
 
 The Stage 01 readiness probe temporarily binds the new guest's SSH connection
 facts, checks its pinned route, then restores the hypervisor's original connection

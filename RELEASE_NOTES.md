@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.52.20
+
+Document live acceptance of the existing tagged access repair after implementations
+ae03bb3 and 8e400c0: the full firewall role passes, runtime/permanent permission
+and native policy match, encrypted captures/source placement agree, and the
+allocation remains unchanged. Remaining platform stages are still independent.
+Refresh the task overview and protected recovery export from authoritative Beads.
+
 ## 0.52.19
 
 Document implementation 8e400c0, the implicit-localhost interpreter regression
