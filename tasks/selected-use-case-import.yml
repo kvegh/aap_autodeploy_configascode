@@ -19,14 +19,17 @@
   when: aap_selected_importer.item.playbook == '05-prepare-use-cases.yml'
   no_log: true
 
-- name: Keep generic import credentials limited to saved repository access and the shared token store
+- name: Retain saved import access and only the reviewed Orchestrator build route
   ansible.builtin.set_fact:
     aap_selected_launch_credential_ids: >-
       {{ aap_selected_saved_credentials | aap_api_launch_credentials(
            cac_use_case_selector.importer_credentials[aap_selected_importer.item.name],
            aap_selected_api_credentials, aap_selected_setup_plan.organization,
            aap_selected_target_auth.hostname,
-           cac_use_case_selector.shared_seed_credentials | default({})) }}
+           cac_use_case_selector.shared_seed_credentials | default({}),
+           aap_selected_importer.item.project_id | default(''),
+           aap_selected_route_credentials.results | map(attribute='json.results') | flatten | list,
+           aap_instance_route.hypervisor.machine_credential_name) }}
   when: aap_selected_importer.item.playbook == 'deploy-cac-project.yml'
   no_log: true
 

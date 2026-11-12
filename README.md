@@ -446,6 +446,12 @@ project image references resolve that receiver's native shared EE; unrelated
 custom images are preserved. Encrypted target credentials and normal pinned SSH
 access remain prerequisites. No Source-Hub firewall exception is required. Delegated builds resolve the job-local pinned SSH options from the original orchestration host.
 
+The normal use-case selector preserves Orchestrator's already saved Machine
+credential only when its ID, name, type and organization match the independently
+resolved registered hypervisor. This permits the approved receiver-local image
+build while retaining the reviewed repository and shared token-store bindings.
+Other generic project imports remain API-only and refuse Machine credentials.
+
 The v2 artifact passed a real build, publication, uncached download and a repeat
 run that skipped rebuilding and publishing. Native Source AAP job 3744, Verify Registered AAP Guest Access, passed with
 Core 2.20.10; its default and 62 managed templates select the shared project EE,

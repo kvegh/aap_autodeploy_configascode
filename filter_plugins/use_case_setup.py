@@ -178,15 +178,44 @@ def instance_store_credentials(credentials):
 
 
 def api_launch_credentials(original, expected_names, destination_credentials,
-                           organization, destination, shared_seed_credentials=None):
-    """Keep the saved repository credentials and the same shared instance store."""
+                           organization, destination, shared_seed_credentials=None,
+                           project_id=None, route_credentials=None, machine_name=None):
+    """Keep reviewed repository access; bind only Orchestrator to its exact route."""
     require(isinstance(original, list) and isinstance(expected_names, list)
-            and all(entry.get("kind") != "ssh" for entry in original)
-            and sorted(entry.get("name", "") for entry in original) == sorted(expected_names),
+            and all(isinstance(entry, Mapping) for entry in original),
+            "The generic importer's saved repository credentials differ from the reviewed capture.")
+    machines = [entry for entry in original if entry.get("kind") == "ssh"]
+    repositories = [entry for entry in original if entry.get("kind") != "ssh"]
+    if project_id == "automation-orchestrator":
+        # The receiver-owned image build is the single reviewed generic import
+        # that uses SSH. Its Machine must already be saved on the importer and
+        # independently resolved from the selected registered hypervisor route.
+        require(len(machines) == 1 and isinstance(route_credentials, list)
+                and len(route_credentials) == 1 and isinstance(route_credentials[0], Mapping)
+                and isinstance(machine_name, str) and bool(machine_name),
+                "Orchestrator requires exactly its saved and independently resolved route Machine credential.")
+        saved, route = machines[0], route_credentials[0]
+        require(route.get("kind") == "ssh"
+                and saved.get("name") == route.get("name") == machine_name
+                and isinstance(route.get("id"), int) and not isinstance(route.get("id"), bool)
+                and route["id"] > 0 and saved.get("id") == route["id"]
+                and isinstance(saved.get("id"), int) and not isinstance(saved.get("id"), bool)
+                and isinstance(route.get("credential_type"), int) and not isinstance(route.get("credential_type"), bool)
+                and route["credential_type"] > 0 and saved.get("credential_type") == route["credential_type"]
+                and isinstance(saved.get("credential_type"), int) and not isinstance(saved.get("credential_type"), bool)
+                and isinstance(route.get("organization"), int) and not isinstance(route.get("organization"), bool)
+                and route["organization"] > 0
+                and saved.get("organization") == route.get("organization")
+                and all((entry.get("summary_fields", {}).get("organization") or {}).get("name") == organization
+                        for entry in (saved, route)),
+                "Orchestrator's saved Machine credential must exactly match the registered route and organization.")
+    else:
+        require(not machines, "Only the reviewed Orchestrator importer may retain its registered route Machine credential.")
+    require(sorted(entry.get("name", "") for entry in repositories) == sorted(expected_names),
             "The generic importer's saved repository credentials differ from the reviewed capture.")
     pins = shared_seed_credentials or {}
     require(isinstance(pins, Mapping), "Declare shared source credential pins as a mapping.")
-    for entry in original:
+    for entry in repositories:
         owner = entry.get("summary_fields", {}).get("organization") or {}
         pin = pins.get(entry.get("name"), {})
         pinned = (isinstance(pin, Mapping) and (isinstance(pin.get("id"), int) and not isinstance(pin.get("id"), bool))

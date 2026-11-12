@@ -148,7 +148,8 @@ class UseCaseSetupTests(unittest.TestCase):
         organization = "Fixture organization"
 
         def credential(identity, name, kind="cloud", vault_id=None, type_name=None):
-            return {"id": identity, "name": name, "kind": kind,
+            return {"id": identity, "name": name, "kind": kind, "organization": 100,
+                    "credential_type": 67,
                     "inputs": {} if vault_id is None else {"vault_id": vault_id},
                     "summary_fields": {"organization": {"name": organization},
                                        "credential_type": {"name": type_name or name}}}
@@ -160,16 +161,26 @@ class UseCaseSetupTests(unittest.TestCase):
         native.update(credential_type=46, inputs={})
         original.append(native)
         for native_mode in ("false", "true"):
-            for preparation in (False, True):
-                with self.subTest(native=native_mode, preparation=preparation), tempfile.TemporaryDirectory(
+            for preparation, orchestrator, invalid in (
+                (False, False, ''), (True, False, ''), (False, True, ''),
+                (False, True, 'wrong-machine-id'), (False, True, 'wrong-machine-type'),
+                (False, True, 'multiple-machines'), (False, False, 'other-project-ssh'),
+            ):
+                with self.subTest(native=native_mode, preparation=preparation, orchestrator=orchestrator,
+                                  invalid=invalid), tempfile.TemporaryDirectory(
                     prefix="aap-selector-forwarding-"
                 ) as temporary:
                     directory = Path(temporary)
+                    saved = copy.deepcopy(original + route if orchestrator or invalid == 'other-project-ssh' else original)
+                    if invalid == 'wrong-machine-id': saved[-1]['id'] = 99
+                    if invalid == 'wrong-machine-type': saved[-1]['credential_type'] = 99
+                    if invalid == 'multiple-machines': saved.append(credential(99, 'Different Machine', 'ssh'))
                     variables = {
                         "aap_selected_importer": {"json": {"results": [{"id": 88}]}, "item": {
                             "name": "Fixture importer", "repository": "https://git.example.invalid/config/base.git",
-                            "playbook": "05-prepare-use-cases.yml" if preparation else "deploy-cac-project.yml"}},
-                        "aap_selected_saved_credentials": original,
+                            "playbook": "05-prepare-use-cases.yml" if preparation else "deploy-cac-project.yml",
+                            "project_id": 'automation-orchestrator' if orchestrator else 'assistant-team'}},
+                        "aap_selected_saved_credentials": saved,
                         "cac_use_case_selector": {"importer_credentials": {"Fixture importer": [x["name"] for x in original]}},
                         "aap_selected_route_credentials": {"results": [{"json": {"results": [entry]}} for entry in route]},
                         "aap_selected_api_credentials": [native],
@@ -178,7 +189,7 @@ class UseCaseSetupTests(unittest.TestCase):
                         "aap_instance_route": {"hypervisor": {"machine_credential_name": "Registered Machine"}},
                         "aap_instance_key": "fixture-target", "aap_selected_importer_extra": {},
                     }
-                    expected = [1, 2, 3, 7, 6] if preparation else [1, 2, 3, 7]
+                    expected = [1, 2, 3, 7, 6] if preparation or orchestrator else [1, 2, 3, 7]
                     fixture = [{"hosts": "localhost", "connection": "local", "gather_facts": False,
                                 "vars": variables, "tasks": tasks[:3] + [
                                     {"ansible.builtin.set_fact": {"rendered_extra": launch["extra_vars"],
@@ -198,7 +209,56 @@ class UseCaseSetupTests(unittest.TestCase):
                                ANSIBLE_LOCAL_TEMP=str(directory / "local"), ANSIBLE_REMOTE_TEMP=str(directory / "remote"))
                     process = subprocess.run([sys.executable, "-m", "ansible.cli.playbook", "-i", "localhost,", str(path)],
                                              env=env, text=True, capture_output=True, timeout=30)
-                    self.assertEqual(process.returncode, 0, process.stdout + process.stderr)
+                    self.assertEqual(process.returncode == 0, not invalid, process.stdout + process.stderr)
+
+    def test_orchestrator_machine_binding_preserves_repository_store_and_ownership_guards(self):
+        organization = 'Fixture organization'
+        def credential(identity, name, kind='cloud', credential_type=67):
+            return {'id': identity, 'name': name, 'kind': kind, 'credential_type': credential_type,
+                    'organization': 100, 'inputs': {},
+                    'summary_fields': {'organization': {'name': organization},
+                                       'credential_type': {'name': name}}}
+        git = credential(1, 'Case Git')
+        vault = credential(2, 'Case Vault', 'vault')
+        vault['inputs'] = {'vault_id': 'cac'}
+        store = credential(3, 'AAP API/MCP Auth Token Store', credential_type=46)
+        store['summary_fields']['credential_type']['name'] = 'Pseudo Instance Key Store'
+        machine = credential(4, 'Registered Machine', 'ssh')
+        original = [git, vault, store, machine]
+        before = copy.deepcopy(original)
+        expected = [entry['name'] for entry in original[:-1]]
+
+        def resolve(saved=None, route=None, project='automation-orchestrator', names=None, destination=None):
+            return setup.api_launch_credentials(
+                original if saved is None else saved, expected if names is None else names,
+                [store] if destination is None else destination, organization,
+                'https://fresh.example.invalid', {}, project,
+                [machine] if route is None else route, 'Registered Machine')
+
+        self.assertEqual(resolve(), [1, 2, 3, 4])
+        self.assertEqual(original, before)
+        for saved, route, project, names, destination in (
+            (original[:-1], None, 'automation-orchestrator', None, None),
+            (original, [], 'automation-orchestrator', None, None),
+            (original, [machine, machine], 'automation-orchestrator', None, None),
+            (original, [dict(machine, kind='cloud')], 'automation-orchestrator', None, None),
+            (original, [dict(machine, id=99)], 'automation-orchestrator', None, None),
+            (original, [dict(machine, credential_type=99)], 'automation-orchestrator', None, None),
+            (original, [dict(machine, organization=101)], 'automation-orchestrator', None, None),
+            (original, [dict(machine, name='Foreign Machine')], 'automation-orchestrator', None, None),
+            (original, None, 'assistant-team', None, None),
+            (original, None, None, None, None),
+            (original, None, 'automation-orchestrator', expected + ['Unexpected Git'], None),
+            (original, None, 'automation-orchestrator', None, [dict(store, id=99)]),
+            (original[:-1] + [dict(machine, id=True)], [dict(machine, id=True)], 'automation-orchestrator', None, None),
+            (original[:-1] + [dict(machine, id=3)], [dict(machine, id=3)], 'automation-orchestrator', None, None),
+        ):
+            with self.subTest(project=project, names=names), self.assertRaises(AnsibleFilterError):
+                resolve(saved, route, project, names, destination)
+        foreign = copy.deepcopy(machine)
+        foreign['summary_fields']['organization']['name'] = 'Foreign organization'
+        with self.assertRaises(AnsibleFilterError):
+            resolve(original[:-1] + [foreign], [foreign])
 
     def test_empty_duplicate_unknown_and_unsupported_choices_fail(self):
         for selected in (

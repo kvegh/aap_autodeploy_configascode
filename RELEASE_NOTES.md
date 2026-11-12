@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.61.10
+
+Allow the normal selector to retain only Orchestrator's reviewed saved Machine
+credential for its receiver-owned EE build. Match the independently registered
+route identity and keep repository ownership, shared token-store and duplicate
+credential guards. Other generic importers continue to refuse SSH credentials.
+Seventeen actual Core 2.20 tests and focused production lint pass.
+
 ## 0.61.9
 
 Integrate the tested private async-directory fix and completed Rebuild labels with the current visualization. Preserve both implementation histories and task records.
