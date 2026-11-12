@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.61.8
+
+Document implementation `6db4be5`: one private async result directory for base
+configuration and project imports, actual Core 2.20 regressions, and completion
+of the approved human-facing Rebuild naming. Preserve the distinction between
+passing local validation and the pending live base-configuration rerun.
+
 ## 0.61.7
 
 Keep base configuration and project-import async results in an absolute

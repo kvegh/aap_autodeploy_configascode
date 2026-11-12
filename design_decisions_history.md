@@ -1,5 +1,30 @@
 # Design decisions history
 
+## Keep configuration results in one private job directory — 2026-11-12
+
+Implementation `6db4be5ce0ec01085aef343b2b79526a8a8a8797` fixes the
+organization failure revealed by the encrypted diagnostic. Native async launch
+and later polling expanded the default home directory differently, so the poll
+could not find a job that had actually started. Base configuration and the
+existing project importer now set the CoP async directory to an absolute path
+inside their existing private workspace and create it with mode 0700. The
+existing cleanup removes it. Standard CoP roles, image user, home settings,
+credentials and remote installer result directories remain unchanged.
+
+Three tests in the actual Core 2.20 image reproduce the old missing-result
+failure, follow its original completed job, and verify launch, real CoP polling
+and cleanup for both corrected production entrypoints. The importer test also
+checks that a later capture's null default cannot override this runtime fact.
+Focused production lint passes. These checks do not establish a successful
+live base deployment; that requires the normal configuration job to pass.
+
+The same implementation completes human-facing Rebuild labels in current
+task output, inventory diagnostics and documentation. The owner chose Rebuild
+because this procedure supports preparation for a new version, a test
+environment and recovery after loss. Technical identifiers, file paths,
+stored schema values, unrelated recovery safeguards and historical evidence
+are preserved. Live object and encrypted CaC naming were published separately.
+
 ## Retain protected organization failure evidence — 2026-11-12
 
 Implementation `f19b9dc2a63860d1e6c425cf94fa6901ed2d2a86` captures a failed initial organization role into
