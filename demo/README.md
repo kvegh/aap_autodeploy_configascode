@@ -15,13 +15,19 @@ The interface uses a light canvas and labelled origin colours: blue for base
 objects, violet for Git-defined additions and amber for manually created objects.
 A left sidebar holds chapter navigation, the four deployment stages, job status,
 progress and presenter controls. The main diagram has three columns: compact
-repositories, original AAP and new AAP. The two AAP cards share the same visual
-language; longer object lists scroll within the card. There is no marketing hero
+repositories, original AAP and new AAP. Repository windows are approximately
+50 percent wider on a wide desktop, while the original AAP is narrower and
+shorter. The two AAP cards share the same visual language; longer receiving
+object lists scroll within the card. There is no marketing hero
 or explanatory scene header above the diagram. Stage 02 is labelled **Prepare OS
 for AAP installation**. Strong fills, borders and labelled badges distinguish the
 origins. Active connectors use a bold directional line, brief travelling markers
-and normal HTML action labels, avoiding stretched SVG text. Reduced motion keeps
-the strong static activity cue.
+and normal HTML action labels, avoiding stretched SVG text. Arrow strokes,
+markers and labels share the highlighted code/object-origin colour: deployment
+and base configuration remain blue, Git-defined additions use violet, and
+captured manual definitions use amber. The highlighted YAML identifies the
+definitions in focus; execution-code highlighting means code being read, not a
+change to the public playbook. Reduced motion keeps the strong static activity cue.
 Captured manual objects keep their origin and gain an **In Git** badge. The
 private repository carries a lock; its YAML is an illustrative decrypted view,
 not ciphertext rendered as readable text. All examples are synthetic.

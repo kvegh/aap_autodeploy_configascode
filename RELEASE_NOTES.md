@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.56.2
+
+Give the repository code windows approximately 50 percent more desktop width and
+make the original middle AAP substantially narrower and shorter. Match active
+arrow strokes, markers and labels to the relevant highlighted configuration and
+playbook origin: blue deployment/base, violet Git additions, amber manual capture.
+Preserve readable source objects, receiving-AAP space and existing story controls.
+Add one regression for origin matching and navigation reset.
+
 ## 0.56.1
 
 Record the implemented three-column/left-sidebar design and active-arrow treatment

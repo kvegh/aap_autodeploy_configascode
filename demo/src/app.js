@@ -29,11 +29,12 @@
     });
     container.replaceChildren(...groups);
   }
-  function drawCode(container, lines) {
+  function drawCode(container, lines, activeOrigin) {
     container.replaceChildren(...lines.map((value, position) => {
       const entry = typeof value === 'string' ? { text: value } : value;
-      const line = element('span', `yaml-line${entry.added ? ' line-added' : ''}`);
-      if (entry.origin) line.dataset.origin = entry.origin;
+      const active = entry.active || (activeOrigin && entry.text.trim() && !entry.text.trimStart().startsWith('#'));
+      const line = element('span', `yaml-line${entry.added ? ' line-added' : ''}${active ? ' line-active' : ''}`);
+      if (entry.origin || activeOrigin) line.dataset.origin = entry.origin || activeOrigin;
       const number = element('span', 'line-number', String(position + 1).padStart(2, '0'));
       number.setAttribute('aria-hidden', 'true');
       line.append(number);
@@ -96,6 +97,7 @@
       const sourceFeed = id === 'flow-config' || id === 'flow-code';
       route.hidden = !active && !sourceFeed;
       route.setAttribute('aria-hidden', String(route.hidden));
+      route.dataset.origin = state.flowOrigin;
       route.classList.toggle('active', active);
       // Restart brief directional motion when entering another active story step.
       // Reduced-motion styles remove the animation while keeping the active line.
@@ -109,7 +111,7 @@
     drawObjects(byId('source-objects'), state.sourceObjects);
     drawObjects(byId('target-objects'), state.targetObjects);
     drawCode(byId('config-lines'), story.configurationLines(state));
-    drawCode(byId('code-lines'), story.executionLines(state));
+    drawCode(byId('code-lines'), story.executionLines(state), step.routes.includes('flow-code') ? state.flowOrigin : undefined);
     const executionFile = index >= 7 ? 'capture-aap-cac.yml' : index === 0 || index >= 5 ? 'cac-resource-definitions.yml' : step.sources[0];
     byId('execution-file-name').textContent = executionFile;
     byId('job-label').textContent = step.job;

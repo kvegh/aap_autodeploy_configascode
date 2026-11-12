@@ -364,3 +364,33 @@ test('the sidebar owns controls and status while three content columns own the d
   }
   assert.ok(html.indexOf('id="target-card"') > regions[4], 'The new AAP belongs in the receiving column');
 });
+
+
+test('active arrows match the highlighted configuration origin and reset on navigation', () => {
+  const page = browser();
+  for (const [id, origin, names] of [
+    ['base', 'base', ['Platform', 'Platform automation']],
+    ['project', 'git', ['Operations', 'Application automation']],
+    ['git-change', 'git', ['Regional servers', 'Regional automation']],
+    ['capture', 'manual', ['Emergency servers', 'Quick-fix automation']],
+    ['vm', 'base', ['Platform']],
+  ]) {
+    page.hash(`#${id}`);
+    const activeRoutes = ['flow-config', 'flow-code', ...futureRoutes].map(route => page.nodes[route]).filter(route => route.classList.contains('active'));
+    assert.ok(activeRoutes.length > 0, id);
+    for (const route of activeRoutes) assert.equal(route.dataset.origin, origin, `${id}: route origin`);
+    const highlighted = withClass(page.nodes['config-lines'], 'line-active');
+    assert.ok(highlighted.length > 0, `${id}: highlighted configuration`);
+    for (const line of highlighted) assert.equal(line.dataset.origin, origin, `${id}: configuration origin`);
+    for (const name of names) assert.ok(highlighted.some(line => line.textContent.includes(name)), `${id}: ${name}`);
+    const execution = withClass(page.nodes['code-lines'], 'line-active');
+    if (id === 'capture') assert.equal(execution.length, 0, 'Capture writes CaC without claiming to read code');
+    else {
+      assert.ok(execution.length > 0, `${id}: highlighted playbook`);
+      for (const line of execution) assert.equal(line.dataset.origin, origin, `${id}: playbook origin`);
+    }
+  }
+  page.hash('#manual');
+  assert.equal(withClass(page.nodes['config-lines'], 'line-active').length, 0);
+  assert.equal(withClass(page.nodes['code-lines'], 'line-active').length, 0);
+});

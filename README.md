@@ -290,8 +290,10 @@ to follow two AAP instances and the separation between private encrypted YAML
 configuration and public execution playbooks. The new light presentation shows
 four deployment stages, base objects, project imports, Git-authored changes and
 manual additions returning to CaC. A left sidebar holds navigation, deployment
-stages and status. The three-column diagram places compact repositories beside
-the original and new AAP; active arrows show the operation and its direction.
+stages and status. The three-column diagram gives the repository code previews
+more room beside a compact original AAP and the larger receiving AAP. Active
+arrows match the highlighted YAML/playbook origin: blue for deployment/base,
+violet for Git-defined additions and amber for captured manual definitions.
 Object origins stay visible through stronger blue, violet and amber fills,
 borders and text labels. Examples are synthetic and no live
 AAP or Git connection is made.

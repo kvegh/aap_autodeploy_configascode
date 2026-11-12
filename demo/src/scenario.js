@@ -49,7 +49,8 @@
       ...(position >= 6 ? editedObjects : []), ...(position >= 7 ? manualObjects : []),
     ].map(object => ({ ...object, inGit: object.origin !== 'manual' || position >= 8 }));
     const configObjects = [...baseObjects, ...projectObjects, ...(position >= 6 ? editedObjects : []), ...(position >= 8 ? manualObjects : [])];
-    return { index: position, step, targetObjects, configObjects, sourceObjects: baseObjects.map(object => ({ ...object, inGit: true })), targetVisible: step.stage > 0, captured: position >= 8 };
+    const flowOrigin = position >= 7 ? 'manual' : position >= 5 ? 'git' : 'base';
+    return { index: position, step, flowOrigin, targetObjects, configObjects, sourceObjects: baseObjects.map(object => ({ ...object, inGit: true })), targetVisible: step.stage > 0, captured: position >= 8 };
   }
   function configurationLines(state) {
     const fields = [['Inventories', 'controller_inventories'], ['Projects', 'controller_projects'], ['Credentials', 'controller_credentials'], ['Job Templates', 'controller_templates']];
@@ -58,8 +59,11 @@
       lines.push({ text: `${key}:`, origin: 'base' });
       for (const object of state.configObjects.filter(item => item.type === type)) {
         const added = object.origin === 'manual' || (state.index === 6 && editedObjects.some(item => item.id === object.id));
-        lines.push({ text: `  - name: ${object.name}`, origin: object.origin, added });
-        if (type === 'Projects') lines.push({ text: '    scm_url: <automation-repository>', origin: object.origin, added });
+        const readingConfiguration = state.step.routes.includes('flow-config') || state.step.routes.includes('flow-return');
+        const focusedObject = state.index === 6 ? editedObjects.some(item => item.id === object.id) : object.origin === state.flowOrigin;
+        const active = readingConfiguration && focusedObject;
+        lines.push({ text: `  - name: ${object.name}`, origin: object.origin, added, active });
+        if (type === 'Projects') lines.push({ text: '    scm_url: <automation-repository>', origin: object.origin, added, active });
       }
       if (type === 'Inventories') lines.push(
         { text: 'controller_inventory_sources:', origin: 'base' },
