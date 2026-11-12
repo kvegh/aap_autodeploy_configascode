@@ -4235,3 +4235,19 @@ Base CaC resolves the default EE by name on the rebuilt controller. Hactar
 reinstall and configuration jobs use that same runtime; platform control-plane
 and preserved legacy job images remain independent. Fresh bare-metal recovery
 and complete versioned deployment still require their own observed outcomes.
+
+## 2026-11-12 — Record verified Core 2.20 host progress
+
+Implementation `eac9e93408a2d57fed6c89e37b958cc26bd2f84d` (0.56.2) updates current recovery documentation after
+conversion, host setup and all seventeen post-reboot host checks passed on the
+unmodified official Core 2.20 EE. It preserves the failed parent workflow result:
+removing an approval definition during the active run left a runtime node without
+its template, which Controller treats as a failure despite successful children.
+Current maintained workflow definitions contain no manual approval nodes, as
+requested by the owner.
+
+Current Orchestrator documentation names the base-owned Core 2.20 EE. Its
+OpenShift runtime remains deferred because the stock image lacks its Python
+client; documentation is not runtime acceptance or image-build authorization.
+Fresh receiving AAP and full use-case acceptance remain separate. Version
+0.56.3 records this checkpoint without changing runtime automation.

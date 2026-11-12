@@ -237,7 +237,7 @@ scope decisions and incomplete use cases are tracked only in [PLAN.md](PLAN.md#t
 ### AutoDeploy project capture
 - 01 VM Setup, 02 Infra Config, 03 AAP Install, 04 AAP Config, Destroy VM v2
 - Various inventories and credentials per step
-- Most use Orchestrator EE
+- Modern AutoDeploy jobs use the named AAP AutoDeploy EE with official Core 2.20.
 
 ### Historical skeletons
 - servicenow.yml — ServiceNow ITSM bootstrap playbooks
@@ -291,7 +291,7 @@ and execution-environment dependencies:
   variables appropriate for that environment.
 - `hypervisor cred`, including its SSH key and any required privilege-escalation
   secrets. Secret values cannot be recovered from the controller API.
-- `Orchestrator EE` and its registry pull credentials if required.
+- `AAP AutoDeploy EE`, using the official Core 2.20 image and its native registry credential.
 
 The target hypervisor must already have both images and the `internal` and
 `windows-isolated` networks. Change the node variables if target network names
