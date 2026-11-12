@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.60.1
+
+Document RHEL-foundation implementation `a6fa859`, its successful Pages publication,
+five exact deployed assets and nineteen passing interaction checks. Preserve the
+rendered-browser verification limit and refresh the completed task recovery record.
+
 ## 0.60.0
 
 Add a persistent RHEL foundation to both receiving AAPs, with reversible VM/OS
