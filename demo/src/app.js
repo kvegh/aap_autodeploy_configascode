@@ -11,7 +11,7 @@
   };
   const objectTypes = ['Inventories', 'Projects', 'Credentials', 'Job Templates'];
   let index = Math.max(0, story.steps.findIndex(step => `#${step.id}` === window.location.hash));
-  function drawObjects(container, objects) {
+  function drawObjects(container, objects, replayedFromGit = false) {
     const groups = objectTypes.map(type => {
       const items = objects.filter(object => object.type === type);
       const group = element('section', 'object-group');
@@ -20,7 +20,7 @@
         const item = element('div', 'object-item');
         item.dataset.origin = object.origin;
         item.append(element('span', 'object-name', object.name));
-        const label = object.origin === 'base' ? 'Base' : object.origin === 'git' ? 'From Git' : 'Manual';
+        const label = object.origin === 'base' ? 'Base' : object.origin === 'git' ? 'From Git' : replayedFromGit ? 'Captured' : 'Manual';
         item.append(element('span', 'origin-label', label));
         if (object.origin === 'manual' && object.inGit) item.append(element('span', 'git-badge', 'In Git'));
         group.append(item);
@@ -80,10 +80,14 @@
     byId('next').disabled = index === story.steps.length - 1;
     byId('next-label').textContent = index === story.steps.length - 1 ? 'Complete' : 'Next';
     byId('next').setAttribute('aria-label', index === story.steps.length - 1 ? 'Story complete' : 'Next step');
+    const currentChapter = story.chapters.findIndex(chapter => chapter.id === step.chapter);
     chapterButtons.forEach((button, position) => {
-      const active = story.chapters[position].id === step.chapter;
+      const active = position === currentChapter;
+      const wasActive = button.classList.contains('active');
       button.classList.toggle('active', active);
+      button.classList.toggle('complete', position < currentChapter);
       if (active) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current');
+      if (active && !wasActive) button.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
     });
     stages.forEach(button => {
       const stage = Number(button.dataset.stage);
@@ -94,25 +98,31 @@
     byId('target-placeholder').hidden = state.targetVisible;
     byId('target-card').hidden = !state.targetVisible;
     byId('target-card').setAttribute('aria-hidden', String(!state.targetVisible));
+    byId('successor-placeholder').hidden = state.successorVisible;
+    byId('successor-card').hidden = !state.successorVisible;
+    byId('successor-card').setAttribute('aria-hidden', String(!state.successorVisible));
+    byId('successor-card').dataset.stage = '4';
+    byId('successor-card').classList.toggle('captured', state.successorVisible);
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
     const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
-    byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : index === 4 ? 'Apply base' : index === 6 ? 'Apply changes' : 'Apply objects';
+    byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : step.id === 'base' ? 'Apply base' : step.id === 'git-change' ? 'Apply changes' : step.id === 'infra-change' ? 'Apply infra' : 'Apply objects';
     byId('apply-detail').textContent = step.stage < 3 ? 'New VM' : 'New AAP';
     byId('target-objects').hidden = step.stage < 4;
     byId('target-configuration-panel').hidden = step.stage < 4;
+    byId('target-infrastructure-panel').hidden = step.stage < 4;
     byId('target-card').dataset.stage = String(step.stage);
     byId('target-card').classList.toggle('captured', state.captured);
     byId('source-card').classList.toggle('phase-job', step.routes.length > 0);
     byId('config-card').classList.toggle('active', step.routes.includes('flow-config') || step.routes.includes('flow-return'));
     byId('code-card').classList.toggle('active', step.routes.includes('flow-code'));
-    for (const id of ['flow-config', 'flow-code', 'flow-apply', 'flow-scan', 'flow-return']) {
+    for (const id of ['flow-config', 'flow-code', 'flow-apply', 'flow-scan', 'flow-return', 'flow-rebuild']) {
       const active = step.routes.includes(id);
       const route = byId(id);
       const sourceFeed = id === 'flow-config' || id === 'flow-code';
       route.hidden = !active && !sourceFeed;
       route.setAttribute('aria-hidden', String(route.hidden));
-      route.dataset.origin = state.flowOrigin;
+      route.dataset.origin = state.rebuilding && id === 'flow-code' ? 'git' : state.flowOrigin;
       route.classList.toggle('active', active);
       // Restart brief directional motion when entering another active story step.
       // Reduced-motion styles remove the animation while keeping the active line.
@@ -125,20 +135,28 @@
     }
     drawConfiguration(byId('source-configuration'), state.sourceConfiguration);
     drawConfiguration(byId('target-configuration'), state.targetConfiguration);
+    drawConfiguration(byId('successor-configuration'), state.successorConfiguration);
+    drawConfiguration(byId('source-infrastructure'), state.sourceInfrastructure);
+    drawConfiguration(byId('target-infrastructure'), state.targetInfrastructure);
+    drawConfiguration(byId('successor-infrastructure'), state.successorInfrastructure);
+    drawObjects(byId('successor-objects'), state.successorObjects, true);
     drawObjects(byId('source-objects'), state.sourceObjects);
     drawObjects(byId('target-objects'), state.targetObjects);
     drawCode(byId('config-lines'), story.configurationLines(state));
-    drawCode(byId('code-lines'), story.executionLines(state), step.routes.includes('flow-code') ? state.flowOrigin : undefined);
-    const executionFile = index === 6 ? '04-aap-config.yml + imports' : index >= 7 ? 'capture-aap-cac.yml' : index === 0 || index >= 5 ? 'cac-resource-definitions.yml' : step.sources[0];
+    drawCode(byId('code-lines'), story.executionLines(state), step.routes.includes('flow-code') ? (state.rebuilding ? 'git' : state.flowOrigin) : undefined);
+    let executionFile = step.sources[0];
+    if (step.id === 'git-change' || state.rebuilding) executionFile = '04-aap-config.yml + imports';
+    else if (step.id === 'manual' || step.id === 'capture') executionFile = 'capture-aap-cac.yml';
+    else if (['separation', 'project', 'infra-change'].includes(step.id)) executionFile = 'cac-resource-definitions.yml';
     byId('execution-file-name').textContent = executionFile;
     byId('job-label').textContent = step.job;
-    byId('job-status').textContent = step.routes.length ? 'Job in focus' : 'Job Template';
+    byId('job-status').textContent = step.job;
     byId('actor').hidden = !step.actor;
     if (step.actor) {
       byId('actor-title').textContent = step.actor[0];
       byId('actor-description').textContent = step.actor[1];
     }
-    byId('feedback').textContent = index === 0 ? 'Two repositories. One repeatable configuration.' : index === 7 ? '3 manual additions · not recorded in Git yet' : index === 8 ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} automation objects · ${state.targetConfiguration.length} AAP configurations`;
+    byId('feedback').textContent = state.rebuilding ? `${state.successorObjects.length} automation objects and ${state.successorConfiguration.length + state.successorInfrastructure.length} configuration profiles restored from Git` : index === 0 ? 'Two repositories. One repeatable configuration.' : step.id === 'manual' ? '3 manual additions · not recorded in Git yet' : step.id === 'capture' ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} automation objects · ${state.targetConfiguration.length} AAP configurations · ${state.targetInfrastructure.length} infrastructure job definitions`;
     byId('source-links').replaceChildren(...step.sources.map(path => {
       const link = element('a', 'source-link', path.split('/').at(-1));
       link.href = story.sourceRoot + path;

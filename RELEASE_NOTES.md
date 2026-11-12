@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.59.0
+
+Align the first receiving AAP with the upper repository window and use matching
+code/receiving column widths and row sizes. Centre the original AAP, strengthen
+shared platform identity and reserve a lower destination. Add Deploy again to
+replay the complete blue/violet/amber Git snapshot into that fresh AAP, retaining
+Logging v2 and EDA v1. Improve sidebar text, current/completed chapter states and
+active-step following. Add a separate infrastructure-configuration job category:
+Monitoring Agent v1 becomes v2 while Firewall v1 remains unchanged, including on
+the final replay. These are imported Job Template inputs, not host execution.
+Preserve staged visibility and reversible navigation.
+
 ## 0.58.1
 
 Record EE-v1 implementation `cd10989`, verified local build and the separate

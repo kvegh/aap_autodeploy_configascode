@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Explore how private encrypted configuration and public automation code configure two AAP instances and bring manual changes back into Git.">
+  <meta name="description" content="Explore how private encrypted configuration and public automation code configure AAP, bring manual changes back into Git and recreate the full configuration on another AAP.">
   <meta name="color-scheme" content="light">
   <title>AAP, kept in Git</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -19,8 +19,9 @@
         <a class="wordmark" href="#" aria-label="AAP configuration as code, start"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="m16 3 12 7v12l-12 7L4 22V10Z" stroke="currentColor" stroke-width="2"/><path d="m10 20 6-11 6 11M12 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>AAP<span class="wordmark-secondary">Configuration as code</span></span></a>
         <h1 id="page-title" class="sr-only">AAP configuration as code</h1>
       </header>
+      <section class="current-step" aria-labelledby="scene-title"><p class="section-label">CURRENT STEP</p><h2 id="scene-title">Configuration data and execution code</h2></section>
       <div class="sidebar-scroll">
-        <div class="chapter-header"><span class="section-label">THE STORY</span><span id="step-count" class="scene-counter">1 / 9</span></div>
+        <div class="chapter-header"><span class="section-label">THE STORY</span><span id="step-count" class="scene-counter">1 / 11</span></div>
         <nav id="chapter-list" class="chapter-list" aria-label="Story chapters"></nav>
         <div class="progress-track" aria-hidden="true"><span id="progress-fill"></span></div>
         <section id="stage-list" class="stage-list" aria-label="Four AAP deployment stages">
@@ -43,8 +44,8 @@
     </aside>
 
     <main id="story" class="canvas-shell" aria-labelledby="page-title">
-      <div class="sr-only"><h2 id="scene-title">Configuration data and execution code</h2><p id="scene-description">AAP configuration walkthrough.</p></div>
-      <div class="diagram-grid" aria-label="Two repositories, the original AAP and its new destination">
+      <p id="scene-description" class="sr-only">AAP configuration walkthrough.</p>
+      <div class="diagram-grid" aria-label="Two repositories, the original AAP and two receiving platforms">
         <div class="repository-column">
           <section id="config-card" class="repository-card config-repository" aria-labelledby="config-title">
             <header class="repository-header"><div class="repository-identity"><span class="repository-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 14v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><p class="repository-kind">Private Git Repository</p><h3 id="config-title">Configuration data</h3></div></div><span class="privacy-badge"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 7V5a3 3 0 0 1 6 0v2M3.5 7h9v7h-9z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/></svg>Encrypted</span></header>
@@ -67,9 +68,9 @@
         </div>
 
         <section id="source-card" class="aap-card source-aap" aria-labelledby="source-title">
-          <header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">A</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="source-title">Original AAP</h3></div></div><span class="instance-badge">Source</span></header>
+          <header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">AAP</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="source-title">Original AAP</h3></div></div><span class="instance-badge">Source</span></header>
           <div class="aap-toolbar"><span class="toolbar-label"><span class="status-dot"></span>Automation content</span></div>
-          <section class="configuration-panel" aria-labelledby="source-configuration-title"><h4 id="source-configuration-title" class="configuration-heading">AAP configuration</h4><div id="source-configuration" class="configuration-list" aria-label="Original AAP platform configuration"></div></section>
+          <div class="configuration-panels"><section class="configuration-panel" aria-labelledby="source-configuration-title"><h4 id="source-configuration-title" class="configuration-heading">AAP configuration</h4><div id="source-configuration" class="configuration-list" aria-label="Original AAP platform configuration"></div></section><section class="configuration-panel" aria-labelledby="source-infrastructure-title"><h4 id="source-infrastructure-title" class="configuration-heading">Infrastructure configuration</h4><div id="source-infrastructure" class="configuration-list" aria-label="Original AAP infrastructure configuration"></div></section></div>
           <div id="source-objects" class="object-list" tabindex="0" role="region" aria-label="Original AAP objects"></div>
           <div class="job-panel"><svg class="job-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="m8 7 5 3-5 3z" fill="currentColor"/></svg><div><span class="job-kicker">JOB TEMPLATE</span><span id="job-label">Configuration jobs</span></div></div>
         </section>
@@ -77,11 +78,24 @@
         <div class="instance-connections" aria-label="Operations between AAP instances">
           <div id="flow-apply" class="route connector-route inter-instance-flow" hidden><span id="apply-caption" class="connection-caption">Configure</span><div class="connector-track" aria-hidden="true"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><span id="apply-detail" class="connection-detail">New AAP</span><span class="active-cue">ACTIVE</span></div>
           <div id="flow-scan" class="route connector-route inter-instance-flow reverse route-scan" hidden><span class="connection-caption">Read objects</span><div class="connector-track" aria-hidden="true"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><span class="connection-detail">Scan job</span><span class="active-cue">ACTIVE</span></div>
+          <div id="flow-rebuild" class="route connector-route rebuild-flow" hidden><span class="connection-caption">Restore all</span><div class="bundle-tracks" aria-hidden="true"><div class="bundle-lane" data-origin="base"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><div class="bundle-lane" data-origin="git"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><div class="bundle-lane" data-origin="manual"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div></div><span class="connection-detail">Another AAP</span><span class="active-cue">ACTIVE</span></div>
         </div>
 
-        <div class="receiving-slot">
+        <div class="receiving-column">
+          <div class="receiving-slot">
           <div id="target-placeholder" class="target-placeholder"><span class="prepared-host-icon"><svg viewBox="0 0 44 44" fill="none" aria-hidden="true"><rect x="7" y="5" width="30" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><rect x="7" y="20" width="30" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M13 11h1m-1 15h1M22 33v6m-9 0h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><p class="placeholder-eyebrow">PREPARED HOST</p><h3>The next AAP<br>starts here.</h3><p>The new VM appears during deployment.</p></div>
-          <section id="target-card" class="aap-card target-aap" aria-labelledby="target-title" aria-hidden="true" hidden><header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">A</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="target-title">New AAP</h3></div></div><span class="instance-badge target-badge">Destination</span></header><div class="aap-toolbar"><span class="toolbar-label">Automation content</span></div><section id="target-configuration-panel" class="configuration-panel" aria-labelledby="target-configuration-title" hidden><h4 id="target-configuration-title" class="configuration-heading">AAP configuration</h4><div id="target-configuration" class="configuration-list" aria-label="Receiving AAP platform configuration"></div></section><div id="target-objects" class="object-list" tabindex="0" role="region" aria-label="Receiving AAP objects"></div><div class="target-footer"><span class="instance-footnote">Same platform. A new home.</span><span class="capture-indicator"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3.5 8 3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Definitions in Git</span></div></section>
+          <section id="target-card" class="aap-card target-aap" aria-labelledby="target-title" aria-hidden="true" hidden><header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">AAP</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="target-title">New AAP</h3></div></div><span class="instance-badge target-badge">Destination</span></header><div class="aap-toolbar"><span class="toolbar-label">Automation content</span></div><div class="configuration-panels"><section id="target-configuration-panel" class="configuration-panel" aria-labelledby="target-configuration-title" hidden><h4 id="target-configuration-title" class="configuration-heading">AAP configuration</h4><div id="target-configuration" class="configuration-list" aria-label="Receiving AAP platform configuration"></div></section><section id="target-infrastructure-panel" class="configuration-panel" aria-labelledby="target-infrastructure-title" hidden><h4 id="target-infrastructure-title" class="configuration-heading">Infrastructure configuration</h4><div id="target-infrastructure" class="configuration-list" aria-label="Receiving AAP infrastructure configuration"></div></section></div><div id="target-objects" class="object-list" tabindex="0" role="region" aria-label="Receiving AAP objects"></div><div class="target-footer"><span class="instance-footnote">Same platform. A new home.</span><span class="capture-indicator"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3.5 8 3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Definitions in Git</span></div></section>
+          </div>
+          <div class="receiving-slot">
+            <div id="successor-placeholder" class="target-placeholder"><p class="placeholder-eyebrow">NEXT DESTINATION</p><h3>Room for another AAP.</h3><p>The complete Git configuration can be used again.</p></div>
+            <section id="successor-card" class="aap-card successor-aap" aria-labelledby="successor-title" aria-hidden="true" hidden>
+              <header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">AAP</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="successor-title">Another AAP</h3></div></div><span class="instance-badge target-badge">Destination</span></header>
+              <div class="aap-toolbar"><span class="toolbar-label">Automation content</span></div>
+              <div class="configuration-panels"><section class="configuration-panel" aria-labelledby="successor-configuration-title"><h4 id="successor-configuration-title" class="configuration-heading">AAP configuration</h4><div id="successor-configuration" class="configuration-list" aria-label="Another AAP platform configuration"></div></section><section class="configuration-panel" aria-labelledby="successor-infrastructure-title"><h4 id="successor-infrastructure-title" class="configuration-heading">Infrastructure configuration</h4><div id="successor-infrastructure" class="configuration-list" aria-label="Another AAP infrastructure configuration"></div></section></div>
+              <div id="successor-objects" class="object-list" tabindex="0" role="region" aria-label="Another AAP objects"></div>
+              <div class="target-footer"><span class="instance-footnote">Recreated from Git.</span><span class="stored-definitions">All stored definitions</span></div>
+            </section>
+          </div>
         </div>
       </div>
     </main>

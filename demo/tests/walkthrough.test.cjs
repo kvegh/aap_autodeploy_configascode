@@ -11,7 +11,7 @@ const repository = path.resolve(checkoutDemo, '..');
 const demo = process.env.AAP_CAC_DEMO_DIR ? path.resolve(process.env.AAP_CAC_DEMO_DIR) : checkoutDemo;
 const story = require(path.join(demo, 'src/scenario.js'));
 const source = name => readFileSync(path.join(demo, name), 'utf8');
-const futureRoutes = ['flow-apply', 'flow-scan', 'flow-return'];
+const futureRoutes = ['flow-apply', 'flow-scan', 'flow-return', 'flow-rebuild'];
 
 class Element {
   constructor(tagName = 'div') {
@@ -21,6 +21,7 @@ class Element {
     this.dataset = {};
     this.style = {};
     this.handlers = {};
+    this.scrollRequests = [];
     this.hidden = false;
     this.disabled = false;
     this.classes = new Set();
@@ -48,6 +49,7 @@ class Element {
   append(...nodes) { nodes.forEach(node => { node.parentElement = this; this.children.push(node); }); }
   replaceChildren(...nodes) { this.children = []; this.ownText = ''; this.append(...nodes); }
   addEventListener(name, callback) { (this.handlers[name] ||= []).push(callback); }
+  scrollIntoView(options) { this.scrollRequests.push(options); }
   click() { if (!this.disabled) (this.handlers.click || []).forEach(callback => callback({ target: this })); }
   querySelectorAll(selector) {
     assert.equal(selector, '[data-stage]');
@@ -100,11 +102,13 @@ function browser(hash = '') {
 const objectNames = node => withClass(node, 'object-name').map(item => item.textContent);
 const manualItems = node => withClass(node, 'object-item').filter(item => item.dataset.origin === 'manual');
 
-test('the six chapters cover the four deployment stages and link to existing source', () => {
-  assert.equal(story.chapters.length, 6);
-  assert.equal(story.steps.length, 9);
+test('the seven chapters cover deployment, capture and replay with existing source links', () => {
+  assert.equal(story.chapters.length, 7);
+  assert.equal(story.steps.length, 11);
   assert.deepEqual(story.steps.slice(1, 5).map(step => step.stage), [1, 2, 3, 4]);
-  assert.equal(new Set(story.steps.map(step => step.id)).size, 9);
+  assert.equal(new Set(story.steps.map(step => step.id)).size, 11);
+  assert.equal(story.steps.find(step => step.id === 'infra-change').chapter, 'git-change');
+  assert.equal(story.steps.at(-1).id, 'rebuild');
   assert.match(story.sourceRevision, /^[a-f0-9]{40}$/);
   for (const step of story.steps) {
     for (const reference of step.sources) assert.ok(existsSync(path.resolve(repository, reference)), reference);
@@ -134,6 +138,9 @@ test('the actual HTML hides future objects before scripts run and uses local ass
   const opening = id => { const match = html.match(new RegExp(`<[^>]*\\bid="${id}"[^>]*>`)); assert.ok(match, id); return match[0]; };
   assert.match(opening('target-card'), /\bhidden\b/);
   assert.match(opening('target-card'), /aria-hidden="true"/);
+  assert.match(opening('successor-card'), /\bhidden\b/);
+  assert.match(opening('successor-card'), /aria-hidden="true"/);
+  assert.match(opening('target-infrastructure-panel'), /\bhidden\b/);
   assert.doesNotMatch(opening('source-card'), /\bhidden\b/);
   for (const route of futureRoutes) assert.match(opening(route), /\bhidden\b/);
   for (const route of ['flow-config', 'flow-code']) assert.doesNotMatch(opening(route), /\bhidden\b/);
@@ -229,10 +236,12 @@ test('backwards navigation and restart reverse capture, manual and Git additions
   assert.equal(manualItems(nodes['target-objects']).length, 0);
   assert.ok(nodes['config-lines'].textContent.includes('Regional servers'));
   nodes.previous.click();
+  assert.ok(objectNames(nodes['target-objects']).includes('Regional servers'), 'Git object changes precede the infrastructure substep');
+  nodes.previous.click();
   assert.ok(!objectNames(nodes['target-objects']).includes('Regional servers'));
   assert.ok(!nodes['config-lines'].textContent.includes('Regional servers'));
   nodes.restart.click();
-  assert.equal(nodes['step-count'].textContent, '1 / 9');
+  assert.equal(nodes['step-count'].textContent, `1 / ${story.steps.length}`);
   assert.equal(nodes['target-card'].hidden, true);
   assert.equal(nodes['target-placeholder'].hidden, false);
   assert.equal(nodes.actor.hidden, true);
@@ -246,36 +255,36 @@ test('backwards navigation and restart reverse capture, manual and Git additions
 test('next, previous and keyboard navigation remain bounded and respect text editing', () => {
   const page = browser();
   const { nodes } = page;
-  for (let index = 0; index < 9; index++) {
-    assert.equal(nodes['step-count'].textContent, `${index + 1} / 9`);
+  for (let index = 0; index < story.steps.length; index++) {
+    assert.equal(nodes['step-count'].textContent, `${index + 1} / ${story.steps.length}`);
     assert.equal(nodes['chapter-list'].children.filter(item => item.attributes['aria-current'] === 'step').length, 1);
     nodes.next.click();
   }
   assert.equal(nodes.next.disabled, true);
   page.key('ArrowRight');
-  assert.equal(nodes['step-count'].textContent, '9 / 9');
+  assert.equal(nodes['step-count'].textContent, `${story.steps.length} / ${story.steps.length}`);
   page.key('ArrowLeft');
-  assert.equal(nodes['step-count'].textContent, '8 / 9');
+  assert.equal(nodes['step-count'].textContent, `${story.steps.length - 1} / ${story.steps.length}`);
   page.key('r');
-  assert.equal(nodes['step-count'].textContent, '1 / 9');
+  assert.equal(nodes['step-count'].textContent, `1 / ${story.steps.length}`);
   page.key('ArrowLeft');
-  assert.equal(nodes['step-count'].textContent, '1 / 9');
+  assert.equal(nodes['step-count'].textContent, `1 / ${story.steps.length}`);
   page.key('ArrowRight', { target: new Element('input') });
   page.key('ArrowRight', { ctrlKey: true });
-  assert.equal(nodes['step-count'].textContent, '1 / 9');
+  assert.equal(nodes['step-count'].textContent, `1 / ${story.steps.length}`);
   assert.equal(page.key('ArrowRight').prevented, true);
-  assert.equal(nodes['step-count'].textContent, '2 / 9');
+  assert.equal(nodes['step-count'].textContent, `2 / ${story.steps.length}`);
 });
 
 test('direct links and later hash changes restore the complete scene state', () => {
   for (const [index, step] of story.steps.entries()) {
     const page = browser(`#${step.id}`);
-    assert.equal(page.nodes['step-count'].textContent, `${index + 1} / 9`);
+    assert.equal(page.nodes['step-count'].textContent, `${index + 1} / ${story.steps.length}`);
     assert.equal(page.nodes['scene-title'].textContent, step.title);
     assert.equal(objectNames(page.nodes['target-objects']).length, story.stateAt(index).targetObjects.length);
   }
   const page = browser('#unrecognized');
-  assert.equal(page.nodes['step-count'].textContent, '1 / 9');
+  assert.equal(page.nodes['step-count'].textContent, `1 / ${story.steps.length}`);
   page.hash('#capture');
   assert.equal(withClass(page.nodes['target-objects'], 'git-badge').length, 3);
   page.hash('#manual');
@@ -295,8 +304,8 @@ test('source links stay pinned and the presentation performs no network operatio
     assert.doesNotMatch(source(file), /\b(?:fetch|XMLHttpRequest|WebSocket|EventSource)\s*\(/);
     assert.doesNotMatch(source(file), /\b(?:setInterval|setTimeout)\s*\(/);
   }
-  assert.equal(story.stateAt(8).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 3);
-  assert.equal(story.stateAt(7).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 0);
+  assert.equal(story.stateAt(story.steps.findIndex(step => step.id === 'capture')).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 3);
+  assert.equal(story.stateAt(story.steps.findIndex(step => step.id === 'manual')).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 0);
   assert.throws(() => story.stateAt('capture'), TypeError);
 });
 
@@ -310,8 +319,10 @@ test('active routes remain visible and deployment actions name the current stage
     ['base', 'Apply base', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['git-change', 'Apply changes', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['infra-change', 'Apply infra', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['manual', null, null, []],
     ['capture', null, null, ['flow-scan', 'flow-return']],
+    ['rebuild', null, null, ['flow-config', 'flow-code', 'flow-rebuild']],
   ];
   for (const [id, caption, detail, activeRoutes] of expected) {
     page.hash(`#${id}`);
@@ -372,6 +383,7 @@ test('active arrows match the highlighted configuration origin and reset on navi
     ['base', 'base', ['Platform', 'Platform automation']],
     ['project', 'git', ['Operations', 'Application automation']],
     ['git-change', 'git', ['Regional servers', 'Regional automation']],
+    ['infra-change', 'git', ['Monitoring Agent Config v2']],
     ['capture', 'manual', ['Emergency servers', 'Quick-fix automation']],
     ['vm', 'base', ['Platform']],
   ]) {
@@ -413,7 +425,7 @@ test('base AAP configuration is deployed and Git updates replace logging without
     assert.deepEqual(names('target-configuration'), ['Logging Config v1', 'EDA Config v1']);
     for (const item of withClass(nodes['target-configuration'], 'configuration-item')) assert.equal(item.dataset.origin, 'base');
   }
-  for (const id of ['git-change', 'manual', 'capture']) {
+  for (const id of ['git-change', 'infra-change', 'manual', 'capture', 'rebuild']) {
     page.hash(`#${id}`);
     assert.deepEqual(names('target-configuration'), ['Logging Config v2', 'EDA Config v1']);
     const configs = withClass(nodes['target-configuration'], 'configuration-item');
@@ -437,4 +449,157 @@ test('base AAP configuration is deployed and Git updates replace logging without
   nodes.restart.click();
   assert.equal(nodes['target-configuration-panel'].hidden, true);
   assert.deepEqual(names('target-configuration'), []);
+});
+
+
+test('another AAP receives the complete Git snapshot only after capture and reverses cleanly', () => {
+  const page = browser();
+  const { nodes } = page;
+  const originalObjects = objectNames(nodes['source-objects']);
+  const originalConfiguration = objectNames(nodes['source-configuration']);
+  const originalInfrastructure = objectNames(nodes['source-infrastructure']);
+  for (const step of story.steps.slice(0, -1)) {
+    page.hash(`#${step.id}`);
+    assert.equal(nodes['successor-card'].hidden, true, step.id);
+    assert.equal(nodes['successor-card'].attributes['aria-hidden'], 'true', step.id);
+    assert.equal(nodes['successor-placeholder'].hidden, false, step.id);
+    assert.deepEqual(objectNames(nodes['successor-objects']), [], step.id);
+    assert.deepEqual(objectNames(nodes['successor-configuration']), [], step.id);
+    assert.deepEqual(objectNames(nodes['successor-infrastructure']), [], step.id);
+    assert.equal(story.stateAt(story.steps.indexOf(step)).successorVisible, false, step.id);
+  }
+  const captured = story.stateAt(story.steps.findIndex(step => step.id === 'capture'));
+  page.chapter('rebuild');
+  assert.equal(nodes['successor-card'].hidden, false);
+  assert.equal(nodes['successor-card'].attributes['aria-hidden'], 'false');
+  assert.equal(nodes['successor-placeholder'].hidden, true);
+  assert.deepEqual(objectNames(nodes['successor-objects']).sort(), captured.configObjects.map(object => object.name).sort());
+  assert.deepEqual(objectNames(nodes['successor-configuration']), ['Logging Config v2', 'EDA Config v1']);
+  assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Monitoring Agent Config v2', 'Firewall Config v1']);
+  const successorItems = withClass(nodes['successor-objects'], 'object-item');
+  assert.equal(successorItems.length, 13);
+  assert.equal(successorItems.filter(item => item.dataset.origin === 'base').length, 4);
+  assert.equal(successorItems.filter(item => item.dataset.origin === 'git').length, 6);
+  assert.equal(successorItems.filter(item => item.dataset.origin === 'manual').length, 3);
+  assert.equal(withClass(nodes['successor-objects'], 'git-badge').length, 3);
+  for (const item of manualItems(nodes['successor-objects'])) {
+    assert.equal(withClass(item, 'origin-label')[0].textContent, 'Captured');
+    assert.equal(withClass(item, 'git-badge')[0].textContent, 'In Git');
+  }
+  assert.deepEqual(objectNames(nodes['target-objects']).sort(), captured.targetObjects.map(object => object.name).sort());
+  assert.deepEqual(objectNames(nodes['target-configuration']), ['Logging Config v2', 'EDA Config v1']);
+  assert.deepEqual(objectNames(nodes['source-objects']), originalObjects);
+  assert.deepEqual(objectNames(nodes['source-configuration']), originalConfiguration);
+  assert.deepEqual(objectNames(nodes['source-infrastructure']), originalInfrastructure);
+  assert.equal(nodes['flow-rebuild'].hidden, false);
+  assert.equal(nodes['flow-rebuild'].classList.contains('active'), true);
+  assert.equal(nodes['flow-config'].classList.contains('active'), true);
+  assert.equal(nodes['flow-code'].classList.contains('active'), true);
+  for (const id of ['flow-apply', 'flow-scan', 'flow-return']) assert.equal(nodes[id].hidden, true, id);
+  const replay = story.stateAt(story.steps.length - 1);
+  assert.equal(replay.successorVisible, true);
+  assert.equal(new Set(replay.successorObjects.map(object => object.id)).size, 13);
+  assert.ok(replay.successorObjects.every(object => object.inGit));
+  const expectedObjectName = replay.targetObjects[0].name;
+  replay.successorObjects[0].name = 'Changed replay fixture';
+  assert.equal(replay.targetObjects[0].name, expectedObjectName, 'Replay does not alias the first target');
+  assert.notEqual(replay.configObjects[0].name, 'Changed replay fixture', 'Replay does not mutate Git definitions');
+  replay.successorConfiguration[0].name = 'Changed configuration fixture';
+  assert.equal(replay.targetConfiguration[0].name, 'Logging Config v2');
+  assert.equal(story.stateAt(story.steps.length - 1).successorConfiguration[0].name, 'Logging Config v2');
+  replay.successorInfrastructure[0].name = 'Changed infrastructure fixture';
+  assert.equal(replay.targetInfrastructure[0].name, 'Monitoring Agent Config v2');
+  assert.equal(story.stateAt(story.steps.length - 1).successorInfrastructure[0].name, 'Monitoring Agent Config v2');
+  nodes.previous.click();
+  assert.equal(nodes['successor-card'].hidden, true);
+  assert.deepEqual(objectNames(nodes['successor-objects']), []);
+  assert.deepEqual(objectNames(nodes['successor-configuration']), []);
+  assert.deepEqual(objectNames(nodes['successor-infrastructure']), []);
+  assert.equal(withClass(nodes['target-objects'], 'git-badge').length, 3, 'Captured first target is retained');
+  page.chapter('rebuild');
+  nodes.restart.click();
+  assert.equal(nodes['successor-card'].hidden, true);
+  assert.equal(nodes['successor-placeholder'].hidden, false);
+  assert.deepEqual(objectNames(nodes['successor-objects']), []);
+  assert.deepEqual(objectNames(nodes['successor-configuration']), []);
+  assert.deepEqual(objectNames(nodes['successor-infrastructure']), []);
+});
+
+test('the sidebar marks completed chapters and follows only a changed current chapter', () => {
+  const page = browser();
+  const buttons = page.nodes['chapter-list'].children;
+  assert.equal(buttons.length, 7);
+  const last = buttons.at(-1);
+  assert.equal(last.scrollRequests.length, 0);
+  for (const [current, chapter] of story.chapters.entries()) {
+    page.chapter(chapter.id);
+    assert.equal(page.nodes['step-count'].textContent, `${chapter.index + 1} / ${story.steps.length}`);
+    for (const [position, button] of buttons.entries()) {
+      assert.equal(button.classList.contains('complete'), position < current, `${chapter.id}: completed chapter`);
+      assert.equal(button.attributes['aria-current'] === 'step', position === current, `${chapter.id}: current chapter`);
+    }
+  }
+  assert.equal(last.scrollRequests.length, 1, 'The newly current chapter is brought into view');
+  assert.equal(last.scrollRequests[0].block, 'nearest');
+  page.hash('#rebuild');
+  assert.equal(last.scrollRequests.length, 1, 'Rendering the same chapter preserves its scroll position');
+  page.chapter('deployment');
+  const deployment = buttons.find(button => button.dataset.chapter === 'deployment');
+  const requests = deployment.scrollRequests.length;
+  page.nodes.next.click();
+  assert.equal(deployment.scrollRequests.length, requests, 'Advancing inside a chapter does not scroll it again');
+  assert.equal(deployment.attributes['aria-current'], 'step');
+  page.chapter('git-change');
+  const gitChapter = buttons.find(button => button.dataset.chapter === 'git-change');
+  const gitRequests = gitChapter.scrollRequests.length;
+  page.nodes.next.click();
+  assert.equal(page.nodes['job-label'].textContent, 'Apply infrastructure configuration');
+  assert.equal(gitChapter.scrollRequests.length, gitRequests, 'The infrastructure substep retains the current Git chapter');
+  assert.equal(gitChapter.attributes['aria-current'], 'step');
+});
+
+
+test('infrastructure job configuration updates monitoring while retaining firewall and source revisions', () => {
+  const page = browser();
+  const { nodes } = page;
+  const names = id => objectNames(nodes[id]);
+  const original = ['Monitoring Agent Config v1', 'Firewall Config v1'];
+  assert.deepEqual(names('source-infrastructure'), original);
+  for (const id of ['separation', 'vm', 'infrastructure', 'installation']) {
+    page.hash(`#${id}`);
+    assert.equal(nodes['target-infrastructure-panel'].hidden, true, id);
+    assert.deepEqual(names('target-infrastructure'), [], id);
+  }
+  for (const id of ['base', 'project', 'git-change']) {
+    page.hash(`#${id}`);
+    assert.equal(nodes['target-infrastructure-panel'].hidden, false, id);
+    assert.deepEqual(names('target-infrastructure'), original, id);
+    for (const item of withClass(nodes['target-infrastructure'], 'configuration-item')) assert.equal(item.dataset.origin, 'base');
+  }
+  for (const id of ['infra-change', 'manual', 'capture', 'rebuild']) {
+    page.hash(`#${id}`);
+    assert.deepEqual(names('target-infrastructure'), ['Monitoring Agent Config v2', 'Firewall Config v1'], id);
+    assert.deepEqual(names('source-infrastructure'), original, id);
+    const configurations = withClass(nodes['target-infrastructure'], 'configuration-item');
+    assert.equal(configurations.filter(item => item.dataset.configId === 'monitoring').length, 1, 'Monitoring is replaced, not duplicated');
+    assert.equal(configurations.find(item => item.dataset.configId === 'monitoring').dataset.origin, 'git');
+    assert.equal(configurations.find(item => item.dataset.configId === 'firewall').dataset.origin, 'base');
+    assert.match(nodes['config-lines'].textContent, /Monitoring Agent Config v2/);
+    assert.doesNotMatch(nodes['config-lines'].textContent, /Monitoring Agent Config v1/);
+  }
+  page.hash('#infra-change');
+  assert.equal(nodes['job-label'].textContent, 'Apply infrastructure configuration');
+  assert.equal(nodes['apply-caption'].textContent, 'Apply infra');
+  const highlighted = withClass(nodes['config-lines'], 'line-active');
+  assert.ok(highlighted.some(line => /config_revision:\s*v2/.test(line.textContent)), 'Updated monitoring inputs are highlighted');
+  for (const line of highlighted) assert.equal(line.dataset.origin, 'git');
+  nodes.previous.click();
+  assert.deepEqual(names('target-infrastructure'), original, 'Backing up restores the previous infrastructure revision');
+  assert.deepEqual(names('target-configuration'), ['Logging Config v2', 'EDA Config v1'], 'The earlier logging update is retained');
+  page.chapter('rebuild');
+  assert.deepEqual(names('successor-infrastructure'), ['Monitoring Agent Config v2', 'Firewall Config v1']);
+  nodes.restart.click();
+  assert.equal(nodes['target-infrastructure-panel'].hidden, true);
+  assert.deepEqual(names('target-infrastructure'), []);
+  assert.deepEqual(names('successor-infrastructure'), []);
 });

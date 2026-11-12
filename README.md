@@ -286,26 +286,30 @@ do not establish live migration or complete end-to-end acceptance.
 ## AAP Configuration as Code visualization
 
 [Open the interactive story](https://kvegh.github.io/aap_autodeploy_configascode/)
-to follow two AAP instances and the separation between private encrypted YAML
-configuration and public execution playbooks. The new light presentation shows
-four deployment stages, base objects and platform configuration, project imports,
-Git-authored changes and manual additions returning to CaC. Separate AAP
-configuration panels show blue Logging Config v1 and EDA Config v1; a later
-purple Git update replaces Logging with v2 while EDA v1 stays unchanged. A left sidebar holds navigation, deployment
-stages and status. The three-column diagram gives the repository code previews
-more room beside a compact original AAP and the larger receiving AAP. Active
-arrows match the highlighted YAML/playbook origin: blue for deployment/base,
-violet for Git-defined additions and amber for captured manual definitions.
-Object origins stay visible through stronger blue, violet and amber fills,
-borders and text labels. Examples are synthetic and no live
-AAP or Git connection is made.
+to follow an original AAP, its first destination and another AAP rebuilt from
+Git, keeping private encrypted YAML separate from public execution playbooks.
+Seven chapters contain eleven stops: four deployment stages, project imports,
+platform/infrastructure configuration updates, manual additions, capture and a
+complete replay from Git.
 
-Six chapters contain nine stops. The new VM appears in Stage 01, receiving AAP
-in Stage 03 and base objects in Stage 04. Trigger choices and detailed scan/review
-mechanics are abstracted as requested. Actual implementation links and limits,
-repeatable interaction checks and local preview instructions are in
-[demo/README.md](demo/README.md). Existing-tool checks cover story behaviour and
-source mapping; rendered browser and phone layout remain separately unverified.
+Blue base configuration includes Logging v1, EDA v1, Monitoring Agent v1 and
+Firewall v1. Git updates Logging and Monitoring Agent to violet v2 while EDA and
+Firewall stay at v1. Infrastructure configuration represents imported Job
+Template inputs; the page performs no host configuration or live AAP operation.
+Captured manual-origin definitions remain amber when replayed to the next AAP.
+
+The three-column diagram uses matching code/receiving rows with the original AAP
+centred between them. The first destination aligns with the upper code window;
+the lower destination receives the complete saved configuration at the final
+stop. All installed cards share prominent AAP branding. Larger sidebar text,
+a fixed current-step heading and completed/current chapter states make progress
+easier to follow. Examples are synthetic.
+
+The new VM appears in Stage 01, receiving AAP in Stage 03 and base definitions
+in Stage 04. Trigger choices and detailed scan/review mechanics are abstracted.
+Implementation links, repeatable interaction checks and local preview instructions
+are in [demo/README.md](demo/README.md). Existing-tool checks cover story behaviour
+and source mapping; rendered browser and phone layout remain separately unverified.
 
 The retained [GitHub Pages workflow](.github/workflows/deploy-demo.yml) checks
 source after checkout, runs syntax and interaction tests and deploys the five
