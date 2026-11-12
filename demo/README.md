@@ -26,7 +26,7 @@ definitions share one continuous content area inside each AAP. Receiving cards
 use two columns of compact groups, with plain headings instead of boxed horizontal
 configuration bands. On desktop, the receiving/code rows use 95 percent of the
 available canvas height, centred with balanced top/bottom spacing rather than a
-fixed 860px maximum. Major card borders are 2px and Git previews use 14px text;
+fixed 860px maximum. Major card borders are dark 3px and Git previews use 14px text;
 the repository-type headings use 17px text. If a short viewport still requires scrolling,
 the entire content area owns it; there is no independently scrolling lower half.
 The narrow source uses one column to keep names readable. Three internal columns
@@ -56,7 +56,13 @@ hypervisor. Stage 03 prepares the guest filesystem, subscription/repositories an
 Ansible prerequisite before installation. The strip qualifies those host services
 and does not claim that the playbooks perform a full guest OS update/upgrade.
 The third AAP receives the completed foundation at the existing final replay stop;
-no new deployment stop or runtime operation is added.
+no new deployment stop or runtime operation is added. Blue **Firewall config** and
+**nginx / TLS config** bars land inside that rectangle from Stage 02 onward.
+The Stage 02 connector points into the RHEL foundation, which briefly highlights
+on receipt; reduced motion keeps the static configurations and strong boundary.
+Both bars persist through AAP changes and replay to the third instance. Their
+host-networking qualification remains visible, separate from saved infrastructure
+Job Template definitions inside AAP.
 
 AAP configuration remains a distinct category alongside inventories, projects,
 credentials and Job Templates in the same content flow. Stage 04 creates blue **Logging Config v1** and **EDA Config

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.60.2
+
+Make major card borders visibly stronger with dark 3px outlines. Place blue
+firewall and nginx/TLS configuration bars inside the RHEL foundation from Stage
+02, direct that step's connector there, and retain the bars through later AAP
+changes and final replay. Host-networking scope and reduced-motion support remain.
+
 ## 0.60.1
 
 Document RHEL-foundation implementation `a6fa859`, its successful Pages publication,

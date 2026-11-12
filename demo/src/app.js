@@ -39,10 +39,11 @@
       return item;
     }));
   }
-  function drawRhel(prefix, stage, visible) {
+  function drawRhel(prefix, stage, visible, receivingConfiguration = false) {
     const foundation = byId(`${prefix}-rhel`);
     foundation.hidden = !visible;
     foundation.dataset.stage = String(stage);
+    foundation.classList.toggle('landing', visible && receivingConfiguration);
     byId(`${prefix}-rhel-status`).textContent = !visible ? '' : stage === 1
       ? 'VM created' : stage === 2 ? 'Host networking prepared' : 'RHEL ready · AAP installed';
     // OS prerequisites run in stage 03; stage 02 configures networking on the host.
@@ -58,6 +59,14 @@
       item.setAttribute('aria-label', `${milestone.title}: ${milestone.complete ? 'complete' : current ? 'next preparation' : 'pending'}`);
       return item;
     }) : []));
+    // These are the host-side configurations that provide access to this RHEL guest.
+    const hostConfigurations = visible && stage >= 2 ? ['Firewall config', 'nginx / TLS config'] : [];
+    byId(`${prefix}-rhel-configs`).replaceChildren(...hostConfigurations.map(name => {
+      const item = element('div', 'rhel-config');
+      item.dataset.origin = 'base';
+      item.append(element('span', 'rhel-config-name', name), element('span', 'rhel-config-origin', 'Base'));
+      return item;
+    }));
     byId(`${prefix}-rhel-detail`).textContent = !visible ? '' : stage === 1
       ? 'RHEL golden image · guest OS prerequisites next'
       : 'Host networking: firewall · nginx · TLS';
@@ -125,13 +134,14 @@
     byId('successor-card').hidden = !state.successorVisible;
     byId('successor-card').setAttribute('aria-hidden', String(!state.successorVisible));
     byId('successor-card').dataset.stage = '4';
-    drawRhel('target', step.stage, state.targetVisible);
+    drawRhel('target', step.stage, state.targetVisible, step.id === 'infrastructure');
     drawRhel('successor', 4, state.successorVisible);
     byId('successor-card').classList.toggle('captured', state.successorVisible);
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
     const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
     byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : step.id === 'base' ? 'Apply base' : step.id === 'git-change' ? 'Apply changes' : step.id === 'infra-change' ? 'Apply infra' : 'Apply objects';
+    byId('flow-apply').dataset.destination = step.id === 'infrastructure' ? 'rhel' : 'aap';
     byId('apply-detail').textContent = step.stage < 3 ? 'New VM' : 'New AAP';
     byId('target-objects').hidden = step.stage < 4;
     byId('target-configuration-panel').hidden = step.stage < 4;

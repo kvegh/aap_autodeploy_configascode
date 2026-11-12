@@ -311,8 +311,10 @@ easier to follow. Examples are synthetic.
 A slim RHEL foundation stays at the bottom of both receiving cards. It shows
 VM creation, OS prerequisite preparation and AAP installation, plus the host
 firewall/nginx/TLS setup. These host services are not shown as guest services,
-and a general OS upgrade is not claimed. Thicker card borders and larger Git
-text make the diagram easier to read.
+and a general OS upgrade is not claimed. Stage 02 delivers blue firewall and
+nginx/TLS configuration bars into this RHEL rectangle; they remain through later
+AAP changes and appear on the final rebuilt instance. Dark 3px card borders and
+larger Git text make the diagram easier to read.
 
 The new VM appears in Stage 01, receiving AAP in Stage 03 and base definitions
 in Stage 04. Trigger choices and detailed scan/review mechanics are abstracted.

@@ -665,3 +665,39 @@ test('the RHEL foundation persists under AAP changes and replays into the third 
   assert.equal(nodes['target-rhel'].hidden, true);
   assert.equal(nodes['successor-rhel'].hidden, true);
 });
+
+
+test('OS configuration lands in RHEL and replays without changing AAP job definitions', () => {
+  const page = browser();
+  const { nodes } = page;
+  const configs = prefix => withClass(nodes[`${prefix}-rhel-configs`], 'rhel-config');
+  const names = prefix => configs(prefix).map(item => withClass(item, 'rhel-config-name')[0].textContent);
+  const expected = ['Firewall config', 'nginx / TLS config'];
+  for (const step of story.steps) {
+    page.hash(`#${step.id}`);
+    const prepared = step.stage >= 2;
+    assert.deepEqual(names('target'), prepared ? expected : [], step.id);
+    assert.ok(configs('target').every(item => item.dataset.origin === 'base'), `${step.id}: blue OS configuration`);
+    assert.equal(nodes['target-rhel'].classList.contains('landing'), step.id === 'infrastructure', `${step.id}: RHEL receives the current OS configuration`);
+    assert.equal(nodes['flow-apply'].dataset.destination, step.id === 'infrastructure' ? 'rhel' : 'aap', `${step.id}: flow destination`);
+    assert.deepEqual(names('successor'), step.id === 'rebuild' ? expected : [], `${step.id}: third AAP configuration`);
+    assert.ok(configs('successor').every(item => item.dataset.origin === 'base'), `${step.id}: replayed OS configuration remains blue`);
+    assert.equal(nodes['successor-rhel'].classList.contains('landing'), false, `${step.id}: the replay does not retain a first-target landing cue`);
+    if (prepared) assert.match(nodes['target-rhel-detail'].textContent, /Host networking: firewall · nginx · TLS/);
+  }
+  assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Monitoring Agent Config v2', 'Firewall Config v1'], 'OS networking tiles do not replace saved AAP infrastructure Job Templates');
+  nodes.previous.click();
+  assert.deepEqual(names('successor'), [], 'Backing up removes the third foundation configuration');
+  assert.deepEqual(names('target'), expected, 'The first AAP keeps its prepared OS configuration');
+  page.hash('#vm');
+  assert.deepEqual(names('target'), [], 'Backing up before OS preparation removes its configuration tiles');
+  assert.equal(nodes['target-rhel'].classList.contains('landing'), false);
+  page.hash('#infrastructure');
+  assert.deepEqual(names('target'), expected);
+  assert.equal(nodes['target-rhel'].classList.contains('landing'), true);
+  nodes.restart.click();
+  assert.deepEqual(names('target'), []);
+  assert.deepEqual(names('successor'), []);
+  assert.equal(nodes['target-rhel'].classList.contains('landing'), false);
+  assert.equal(nodes['flow-apply'].dataset.destination, 'aap');
+});
