@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.54.1
+
+Document native registry authentication implementation e58acc6, the job-startup
+dependency and preservation of PAH preparation. Keep fresh-target verification
+separate from source metadata and registry-access checks.
+
 ## 0.54.0
 
 Use Controller's built-in Container Registry credential on the declared EE so

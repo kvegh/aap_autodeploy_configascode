@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Let Controller authenticate image pulls before job startup — 2026-11-12
+
+Implementation `e58acc6` removes the manual Stage 05 image-copy operations.
+An EE must already exist before its playbook can execute, so an in-play download
+cannot bootstrap that job's runtime. Base CaC now declares a built-in Container
+Registry credential, created before the EE by the existing dispatcher, and links
+that credential by name. Controller/Runner performs the authenticated pull.
+
+The image remains the unmodified official Core 2.20 stream. Authenticated
+manifest access and native credential/EE readback passed. The five existing PAH
+admission cases still pass; collection preparation remains unchanged. Actual
+fresh-target pulling and runtime remain part of normal deployment acceptance.
+
 ## Omit completed handoffs from the overview — 2026-11-12
 
 Implementation `e9d19a4` excludes the transferred visualization and performance
