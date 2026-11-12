@@ -103,7 +103,7 @@ def hypervisor_pin(pin):
         isinstance(pin.get("user"), str)
         and re.fullmatch(r"[a-z_][a-z0-9_-]*[$]?", pin["user"])
         and pin["user"] != "root"
-        and type(pin.get("port")) is int
+        and (isinstance(pin.get("port"), int) and not isinstance(pin.get("port"), bool))
         and 1 <= pin["port"] <= 65535,
         "Pin the managed hypervisor account and SSH port.",
     )
@@ -194,7 +194,7 @@ def local_host_policy(result, pin, clients):
             local_address(address)
         require(len(set(destinations)) == len(destinations), "Local host destinations must be unique.")
         require(isinstance(ports, list) and 1 <= len(ports) <= 64
-                and all(type(port) is int and 1 <= port <= 65535 for port in ports)
+                and all((isinstance(port, int) and not isinstance(port, bool)) and 1 <= port <= 65535 for port in ports)
                 and len(set(ports)) == len(ports), "Declare unique bounded local TCP ports.")
         addresses.add(client["ipv4"])
         macs.add(mac)

@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.53.0
+
+Select the official unmodified Core 2.20 runtime for AutoDeploy and Hactar
+recovery. Keep collections in project requirements. Replace Python DNS lookups
+with managed RHEL dig and built-in EE DNS resolution, retaining exclusive
+address and TLS checks. Remove the old delegated firewall package-lookup
+workaround. Update protected YAML handling and Vault calls for Core 2.20,
+accept tagged integer values while rejecting Boolean IDs, and resolve the
+future base default EE by its portable name. Focused native engine checks
+cover protected values, allocation, DNS and primary/rollback package dispatch;
+fresh bare-metal and complete versioned deployment remain separate acceptance.
+
 ## 0.52.20
 
 Document live acceptance of the existing tagged access repair after implementations

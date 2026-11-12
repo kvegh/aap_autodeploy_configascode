@@ -35,7 +35,7 @@ require = lifecycle.require
 
 
 def positive_id(value):
-    return type(value) is int and value > 0
+    return (isinstance(value, int) and not isinstance(value, bool)) and value > 0
 
 
 def selected_context(instance, hypervisor, hostname, zone, known_instances, selected_alias):
@@ -103,7 +103,7 @@ def base_machine_credential(client, name):
 
 def runtime_document(value):
     require(isinstance(value, dict) and set(value) == {"schema_version", "instances"}
-            and type(value["schema_version"]) is int and value["schema_version"] == 1
+            and (isinstance(value["schema_version"], int) and not isinstance(value["schema_version"], bool)) and value["schema_version"] == 1
             and isinstance(value["instances"], dict), "Preserve the existing runtime Vault document schema.")
     require(all(re.fullmatch(r"aap27-test-[1-9][0-9]*", name or "") and isinstance(row, dict)
                 for name, row in value["instances"].items()), "Runtime namespaces must identify existing allocation keys.")
@@ -218,7 +218,7 @@ def prepare_zabbix_configuration(capture, context, binding=None, new_owners=()):
 def zabbix_resource(value, context, source_sha256):
     """Validate Zabbix's native clone provenance without imposing a Linux image schema."""
     require(isinstance(value, dict) and value.get("schema_version") == 1
-            and type(value["schema_version"]) is int
+            and (isinstance(value["schema_version"], int) and not isinstance(value["schema_version"], bool))
             and value.get("instance_name") == context["instance_name"]
             and identity.inventory_counter(value.get("instance_number")) == context["instance_number"]
             and value.get("vm_name") == "zabbix-" + context["version"]
@@ -248,7 +248,7 @@ def zabbix_resource(value, context, source_sha256):
         routing.host_keys(value.get("host_keys"))
         require(value.get("guest_host_keys") == value["host_keys"]
                 and isinstance(value.get("user"), str) and re.fullmatch(r"[a-z_][a-z0-9_-]*", value["user"])
-                and value["user"] != "root" and type(value.get("port")) is int and 1 <= value["port"] <= 65535,
+                and value["user"] != "root" and (isinstance(value.get("port"), int) and not isinstance(value.get("port"), bool)) and 1 <= value["port"] <= 65535,
                 "Keep Zabbix's generated SSH public keys and existing management account.")
         version = context["version"]
         require(value.get("public_hostname") == context["zabbix_fqdn"]

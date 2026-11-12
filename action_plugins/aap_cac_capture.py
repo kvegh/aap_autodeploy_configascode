@@ -16,7 +16,7 @@ import yaml
 from ansible.errors import AnsibleActionFail
 from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
-from ansible.template import Templar
+from ansible.template import Templar, trust_as_template
 from ansible.utils.unsafe_proxy import wrap_var
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -236,10 +236,10 @@ class ActionModule(ActionBase):
                         )
                     plaintext, vault_id, secret = (
                         self._loader._vault.decrypt_and_get_vault_id(
-                            path.read_bytes(), filename=str(path)
+                            path.read_bytes()
                         )
                     )
-                    return AnsibleLoader(plaintext).get_single_data(), vault_id, secret
+                    return vault_yaml.load_repository_yaml(plaintext), vault_id, secret
 
                 protected_stage = "capture manifest Vault load"
                 manifest, _, _ = read_vault("cac/capture_scopes_vault.yml")
@@ -386,7 +386,7 @@ class ActionModule(ActionBase):
                     graph = Templar(
                         loader=self._loader,
                         variables=dict(task_vars or {}, **configuration),
-                    ).template((ROOT / entry["template"]).read_text())
+                    ).template(trust_as_template((ROOT / entry["template"]).read_text()))
                     expected = AnsibleLoader(graph).get_single_data()
                     for node in expected:
                         node.setdefault("extra_data", {})
@@ -523,9 +523,9 @@ class ActionModule(ActionBase):
                     sealed = self._loader._vault.encrypt(
                         encoded, secret=secret, vault_id=vault_id
                     )
-                    loaded = AnsibleLoader(
+                    loaded = vault_yaml.load_repository_yaml(
                         self._loader._vault.decrypt(sealed)
-                    ).get_single_data()
+                    )
                     if loaded != data or vault_yaml.literal_paths(
                         loaded
                     ) != vault_yaml.literal_paths(protected):

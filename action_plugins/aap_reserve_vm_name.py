@@ -108,7 +108,7 @@ class ActionModule(ActionBase):
                 ciphertext = path.read_bytes()
                 plaintext, vault_id, secret = (
                     self._loader._vault.decrypt_and_get_vault_id(
-                        ciphertext, filename=str(path)
+                        ciphertext
                     )
                 )
                 configuration = AnsibleLoader(plaintext).get_single_data()

@@ -18,7 +18,7 @@ def inventory_counter(value):
     """Normalize only the canonical positive decimal scalar Controller may serialize."""
     if isinstance(value, str) and len(value) <= 63 and re.fullmatch(r'[1-9][0-9]*', value):
         value = int(value)
-    if type(value) is not int or value <= 0:
+    if (not isinstance(value, int) or isinstance(value, bool)) or value <= 0:
         raise AnsibleFilterError('Use a positive inventory counter or canonical ASCII decimal text.')
     return value
 

@@ -9,12 +9,23 @@
     fail_msg: Use the selected instance's verified public API hostname, never a bare private subnet address.
   no_log: true
 
+- name: Resolve the API hostname through DNS inside the execution environment
+  # DNS-only NSS avoids an /etc/hosts override. On RHEL, getent hosts queries
+  # IPv6 first; any AAAA result therefore reaches the IPv4-only guard below.
+  # Without AAAA, it returns all A addresses. Neither path needs dnspython.
+  ansible.builtin.getent:
+    database: hosts
+    key: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}."
+    service: dns
+  register: aap_instance_dns
+  no_log: true
+
 - name: Require public DNS to identify only the pinned hypervisor
   ansible.builtin.assert:
     that: >-
       aap_instance_route | aap_instance_api_dns(
-        query('community.general.dig', aap_hostname | urlsplit('hostname'), qtype='A', real_empty=true),
-        query('community.general.dig', aap_hostname | urlsplit('hostname'), qtype='AAAA', real_empty=true),
+        aap_instance_dns.ansible_facts.getent_hosts.keys() | list,
+        [],
         aap_validate_certs | default(true) | bool)
     fail_msg: The instance API hostname does not resolve exclusively to its pinned hypervisor.
   no_log: true

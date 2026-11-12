@@ -67,14 +67,6 @@
     - name: Prepare reviewed Hactar source and acquire the temporary native lock
       ansible.builtin.include_tasks: aap-isolation-prepare.yml
 
-    - name: Gather package-manager facts on the actual delegated hypervisor
-      ansible.builtin.setup:
-        gather_subset: ['!all']
-        filter: ansible_pkg_mgr
-      delegate_facts: true
-      check_mode: false
-      no_log: true
-
     - name: Allocate this invocation's existing resource verifier
       ansible.builtin.tempfile:
         state: directory
@@ -137,16 +129,10 @@
         name: redhat.rhel_system_roles.firewall
         apply:
           no_log: true
-          # ansible-core 2.16's package action fails when delegate_to is unsafe:
+          # Core 2.20 reads the delegated host's package facts directly, fixing
+          # the old unsafe-template lookup without changing protected values:
           # https://github.com/ansible/ansible/issues/82598
-          # Clear delegation only inside this role; the pinned SSH address, user,
-          # port and strict server-key checks above still target the hypervisor.
-          delegate_to: null
       vars:
-        # Clearing delegation must not inherit the execution container's Python.
-        # Retain the target inventory override, otherwise discover Python over SSH.
-        ansible_python_interpreter: >-
-          {{ hostvars[aap_management_hypervisor_hosts | first].ansible_python_interpreter | default('auto') }}
         firewall:
           - zone: libvirt
             rich_rule: '{{ aap_management_native_plan.rich_rule }}'
@@ -221,11 +207,7 @@
             name: redhat.rhel_system_roles.firewall
             apply:
               no_log: true
-              # Use the same direct, pinned SSH connection for rollback; see above.
-              delegate_to: null
           vars:
-            ansible_python_interpreter: >-
-              {{ hostvars[aap_management_hypervisor_hosts | first].ansible_python_interpreter | default('auto') }}
             firewall:
               - zone: libvirt
                 rich_rule: '{{ aap_management_native_plan.rich_rule }}'

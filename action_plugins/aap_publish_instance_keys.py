@@ -10,7 +10,6 @@ import tempfile
 
 import yaml
 from ansible.errors import AnsibleActionFail
-from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -129,14 +128,14 @@ class ActionModule(ActionBase):
                         allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
                         keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
                                      "Read the selected encrypted reservation before planning source retirement.")
-                        allocation = AnsibleLoader(self._loader._vault.decrypt(allocation_path.read_bytes())).get_single_data()
+                        allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(allocation_path.read_bytes()))
                         selected_records = [row for row in allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == args["instance_name"]]
                         keys.require(len(selected_records) == 1, "Resolve exactly one consumed selected reservation.")
                         ownership_path = checkout / "cac/host_inventory.yml"
                         keys.require(ownership_path.is_file() and not ownership_path.is_symlink(),
                                      "Use the fixed encrypted shared inventory for source ownership lookup.")
-                        ownership_capture = AnsibleLoader(self._loader._vault.decrypt(ownership_path.read_bytes())).get_single_data()
+                        ownership_capture = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(ownership_path.read_bytes()))
                         source_ownership_snapshot = keys.source_related_resources(source, ownership_capture,
                             allocation["aap_vm_allocation"], args["instance_name"],
                             variables.get("aap_isolation_app_capture", {}).get("ansible_facts"), source_ownership_snapshot)
@@ -153,8 +152,8 @@ class ActionModule(ActionBase):
                         keys.verify_remaining_guest_grants(retirement_context["desired_policy"], source_ownership_snapshot)
                     path = checkout / relative
                     keys.require(path.is_file() and not path.is_symlink(), "Require the existing encrypted AutoDeploy CaC file.")
-                    plain, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes(), filename=str(path))
-                    before = AnsibleLoader(plain).get_single_data()
+                    plain, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes())
+                    before = vault_yaml.load_repository_yaml(plain)
                     after = (keys.retire_record(before, args["instance_name"], args["record"].get("target"))
                              if retiring else keys.merge_record(before, args["instance_name"], args["record"]))
                     if retirement_context is not None:
@@ -165,7 +164,7 @@ class ActionModule(ActionBase):
                         allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
                         keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
                                      "Read existing primary ownership before publishing management access.")
-                        allocation = AnsibleLoader(self._loader._vault.decrypt(allocation_path.read_bytes())).get_single_data()
+                        allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(allocation_path.read_bytes()))
                         selected_records = [row for row in allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == args["instance_name"]]
                         keys.require(len(selected_records) == 1, "Resolve one active primary reservation for management access.")
@@ -178,8 +177,8 @@ class ActionModule(ActionBase):
                         keys.require(extra_path.is_file() and not extra_path.is_symlink(),
                                      "Require the maintained encrypted shared inventory capture.")
                         raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
-                            extra_path.read_bytes(), filename=str(extra_path))
-                        old = AnsibleLoader(raw).get_single_data()
+                            extra_path.read_bytes())
+                        old = vault_yaml.load_repository_yaml(raw)
                         updated = keys.management_inventory_capture(old, management_context, "shared")
                         updated = keys.merge_inventory(updated, args["instance_name"], registered_route, management_context["desired_policy"],
                             management_context["primary"])
@@ -192,8 +191,8 @@ class ActionModule(ActionBase):
                             keys.require(extra_path.is_file() and not extra_path.is_symlink(),
                                          "Use the existing encrypted Hactar recovery capture.")
                             raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
-                                extra_path.read_bytes(), filename=str(extra_path))
-                            old = AnsibleLoader(raw).get_single_data()
+                                extra_path.read_bytes())
+                            old = vault_yaml.load_repository_yaml(raw)
                             management_hactar = keys.management_inventory_capture(old, management_context, "hactar")
                             changes.append((extra, extra_path, old, management_hactar, extra_label, extra_secret))
                         keys.source_management_operations(source, management_shared, after, management_hactar, management_context)
@@ -203,15 +202,15 @@ class ActionModule(ActionBase):
                             keys.require(extra_path.is_file() and not extra_path.is_symlink(),
                                          "Require maintained encrypted allocation and inventory definitions for retirement.")
                             raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
-                                extra_path.read_bytes(), filename=str(extra_path))
-                            old = AnsibleLoader(raw).get_single_data()
+                                extra_path.read_bytes())
+                            old = vault_yaml.load_repository_yaml(raw)
                             updated = deepcopy(old)
                             if extra.startswith("state/"):
                                 state = updated["aap_vm_allocation"]
                                 current_counter = state.get("next_number")
-                                keys.require(type(current_counter) is int and 0 < current_counter < 2**31
+                                keys.require((isinstance(current_counter, int) and not isinstance(current_counter, bool)) and 0 < current_counter < 2**31
                                     and (retirement_counter is None or current_counter >= retirement_counter)
-                                    and all(type(row.get("number")) is int and 0 < row["number"] < current_counter
+                                    and all((isinstance(row.get("number"), int) and not isinstance(row.get("number"), bool)) and 0 < row["number"] < current_counter
                                             for row in state["reservations"].values()),
                                     "Keep a valid monotonic allocation counter during retirement.")
                                 retirement_counter = current_counter
@@ -242,8 +241,8 @@ class ActionModule(ActionBase):
                             keys.require(extra_path.is_file() and not extra_path.is_symlink(),
                                          "Use only the maintained encrypted Hactar recovery capture.")
                             raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
-                                extra_path.read_bytes(), filename=str(extra_path))
-                            old = AnsibleLoader(raw).get_single_data()
+                                extra_path.read_bytes())
+                            old = vault_yaml.load_repository_yaml(raw)
                             retirement_hactar = keys.retire_inventory_capture(old, retirement_context, "hactar")
                             changes.append((extra, extra_path, old, retirement_hactar, extra_label, extra_secret))
                         # Validate every current API target before any encrypted publication or source write.
@@ -254,7 +253,7 @@ class ActionModule(ActionBase):
                             continue
                         sealed = self._loader._vault.encrypt(yaml.dump(desired, Dumper=vault_yaml.VaultDumper,
                             sort_keys=False, width=110), secret=changed_secret, vault_id=changed_label)
-                        restored = AnsibleLoader(self._loader._vault.decrypt(sealed)).get_single_data()
+                        restored = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(sealed))
                         keys.require(restored == desired and
                             vault_yaml.literal_paths(restored) == vault_yaml.literal_paths(desired),
                             "Instance updates must preserve literal templates and unrelated definitions.")
@@ -278,8 +277,8 @@ class ActionModule(ActionBase):
                 # the shared credential missing a concurrently added instance.
                 for _ in range(8):
                     git("fetch", "--quiet", "--depth=1", "origin", "main")
-                    latest = AnsibleLoader(self._loader._vault.decrypt(
-                        git("show", "FETCH_HEAD:" + relative).stdout.encode())).get_single_data()
+                    latest = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                        git("show", "FETCH_HEAD:" + relative).stdout.encode()))
                     if retiring:
                         keys.require(args["instance_name"] not in latest.get("aap_instance_api_credentials", {}),
                                      "The retired access entry was concurrently restored; review before continuing.")
@@ -291,10 +290,10 @@ class ActionModule(ActionBase):
                     synchronized = keys.ensure_source_store(source, records, args["organization"])
                     api_changed = api_changed or synchronized["changed"]
                     if registration:
-                        inventory = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
-                        latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        inventory = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode()))
+                        latest_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
                         latest_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
                                           if row.get("vm_name") == args["instance_name"]]
                         keys.require(len(latest_records) == 1, "Keep the exact primary reservation during source synchronization.")
@@ -305,7 +304,7 @@ class ActionModule(ActionBase):
                         keys.require(keys.management_inventory_capture(inventory, management_context, "shared") == inventory,
                             "Canonical shared management declaration changed during source synchronization.")
                         hactar_file = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
-                        management_hactar = (AnsibleLoader(self._loader._vault.decrypt(hactar_file.stdout.encode())).get_single_data()
+                        management_hactar = (vault_yaml.load_repository_yaml(self._loader._vault.decrypt(hactar_file.stdout.encode()))
                                               if hactar_file.returncode == 0 else None)
                         if management_hactar is not None:
                             keys.require(keys.management_inventory_capture(management_hactar, management_context, "hactar") == management_hactar,
@@ -320,12 +319,12 @@ class ActionModule(ActionBase):
                             args["instance_name"], registered_route) or api_changed
                     if retiring:
                         if retirement_context is not None:
-                            latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
-                                git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                            latest_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                                git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
                             latest_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
                                               if row.get("vm_name") == args["instance_name"]]
-                            ownership_capture = AnsibleLoader(self._loader._vault.decrypt(
-                                git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                            ownership_capture = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                                git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode()))
                             source_ownership_snapshot = keys.source_related_resources(source, ownership_capture,
                                 latest_allocation["aap_vm_allocation"], args["instance_name"],
                                 variables.get("aap_isolation_app_capture", {}).get("ansible_facts"), source_ownership_snapshot)
@@ -337,14 +336,14 @@ class ActionModule(ActionBase):
                                 "Selected retirement ownership changed during source synchronization.")
                             keys.require(keys.retire_inventory_capture(latest, retirement_context, "autodeploy") == latest,
                                          "Canonical recovery inventory changed after retirement publication.")
-                            retirement_shared = AnsibleLoader(self._loader._vault.decrypt(
-                                git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                            retirement_shared = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                                git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode()))
                             keys.require(keys.retire_inventory_capture(retirement_shared, retirement_context, "shared") == retirement_shared,
                                          "Canonical shared inventory changed after retirement publication.")
                             retirement_hactar = None
                             hactar_file = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
                             if hactar_file.returncode == 0:
-                                retirement_hactar = AnsibleLoader(self._loader._vault.decrypt(hactar_file.stdout.encode())).get_single_data()
+                                retirement_hactar = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(hactar_file.stdout.encode()))
                                 keys.require(keys.retire_inventory_capture(retirement_hactar, retirement_context, "hactar") == retirement_hactar,
                                              "Canonical Hactar capture changed after retirement publication.")
                             source_operations = keys.source_retirement_operations(source, retirement_shared,
@@ -383,27 +382,27 @@ class ActionModule(ActionBase):
                             source.request("DELETE", "credentials/%s/" % credential["id"])
                             api_changed = True
                     git("fetch", "--quiet", "--depth=1", "origin", "main")
-                    observed = AnsibleLoader(self._loader._vault.decrypt(
-                        git("show", "FETCH_HEAD:" + relative).stdout.encode())).get_single_data()
+                    observed = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                        git("show", "FETCH_HEAD:" + relative).stdout.encode()))
                     inventory_stable = True
                     if registration:
-                        observed_inventory = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
-                        observed_allocation = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        observed_inventory = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode()))
+                        observed_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
                         observed_hactar = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
-                        observed_hactar = (AnsibleLoader(self._loader._vault.decrypt(observed_hactar.stdout.encode())).get_single_data()
+                        observed_hactar = (vault_yaml.load_repository_yaml(self._loader._vault.decrypt(observed_hactar.stdout.encode()))
                                            if observed_hactar.returncode == 0 else None)
                         inventory_stable = (observed == latest and observed_inventory == inventory
                             and observed_allocation == latest_allocation and observed_hactar == management_hactar)
                     if retirement_context is not None:
-                        observed_inventory = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode())).get_single_data()
+                        observed_inventory = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode()))
                         observed_hactar = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
-                        observed_hactar = (AnsibleLoader(self._loader._vault.decrypt(observed_hactar.stdout.encode())).get_single_data()
+                        observed_hactar = (vault_yaml.load_repository_yaml(self._loader._vault.decrypt(observed_hactar.stdout.encode()))
                                            if observed_hactar.returncode == 0 else None)
-                        observed_allocation = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        observed_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
                         observed_records = [row for row in observed_allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == args["instance_name"]]
                         inventory_stable = (observed == latest and observed_inventory == retirement_shared
@@ -414,16 +413,16 @@ class ActionModule(ActionBase):
                             allocation_relative = "state/aap_vm_allocations_vault.yml"
                             allocation_raw = git("show", "FETCH_HEAD:" + allocation_relative).stdout.encode()
                             plain, allocation_label, allocation_secret = self._loader._vault.decrypt_and_get_vault_id(
-                                allocation_raw, filename=allocation_relative)
-                            final_allocation = AnsibleLoader(plain).get_single_data()
+                                allocation_raw)
+                            final_allocation = vault_yaml.load_repository_yaml(plain)
                             state = final_allocation["aap_vm_allocation"]
                             matches = [(key, row) for key, row in state["reservations"].items()
                                        if row.get("vm_name") == args["instance_name"]]
                             keys.require(len(matches) == 1 and matches[0][1] == retirement_record,
                                 "The selected retired reservation changed before final removal.")
-                            keys.require(type(state.get("next_number")) is int
+                            keys.require((isinstance(state.get("next_number"), int) and not isinstance(state.get("next_number"), bool))
                                 and retirement_counter <= state["next_number"] < 2**31
-                                and all(type(row.get("number")) is int and 0 < row["number"] < state["next_number"]
+                                and all((isinstance(row.get("number"), int) and not isinstance(row.get("number"), bool)) and 0 < row["number"] < state["next_number"]
                                         for row in state["reservations"].values()),
                                 "Refuse a regressed allocation counter before final reservation removal.")
                             desired_allocation = deepcopy(final_allocation)
@@ -431,7 +430,7 @@ class ActionModule(ActionBase):
                             sealed = self._loader._vault.encrypt(
                                 yaml.dump(desired_allocation, Dumper=vault_yaml.VaultDumper, sort_keys=False, width=110),
                                 secret=allocation_secret, vault_id=allocation_label)
-                            restored = AnsibleLoader(self._loader._vault.decrypt(sealed)).get_single_data()
+                            restored = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(sealed))
                             keys.require(restored == desired_allocation
                                 and vault_yaml.literal_paths(restored) == vault_yaml.literal_paths(desired_allocation),
                                 "Final reservation removal must preserve other allocations and literal data.")
@@ -446,8 +445,8 @@ class ActionModule(ActionBase):
                             git("fetch", "--quiet", "--depth=1", "origin", "main")
                             keys.require(git("rev-parse", "HEAD").stdout == git("rev-parse", "FETCH_HEAD").stdout,
                                 "Concurrent changes followed final reservation removal; review current CaC.")
-                            verified_allocation = AnsibleLoader(self._loader._vault.decrypt(
-                                git("show", "FETCH_HEAD:" + allocation_relative).stdout.encode())).get_single_data()
+                            verified_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                                git("show", "FETCH_HEAD:" + allocation_relative).stdout.encode()))
                             keys.require(verified_allocation == desired_allocation,
                                 "Verify selected reservation absence and unchanged counter after publication.")
                         result.update(changed=published or api_changed, published=True,
@@ -520,8 +519,8 @@ class ActionModule(ActionBase):
                             documents[kind] = None
                             continue
                         keys.require(path.is_file() and not path.is_symlink(), "Use the existing fixed encrypted policy captures.")
-                        raw, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes(), filename=str(path))
-                        documents[kind] = AnsibleLoader(raw).get_single_data()
+                        raw, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes())
+                        documents[kind] = vault_yaml.load_repository_yaml(raw)
                         seals[kind] = (label, secret)
                     if supplemental:
                         context = keys.supplemental_interface_context(documents['autodeploy'], documents['shared'],
@@ -533,7 +532,7 @@ class ActionModule(ActionBase):
                         allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
                         keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
                                      "Read existing consumed AAP ownership before installation access.")
-                        allocation = AnsibleLoader(self._loader._vault.decrypt(allocation_path.read_bytes())).get_single_data()
+                        allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(allocation_path.read_bytes()))
                         if aap_release:
                             context = keys.aap_release_context(documents["autodeploy"], documents["shared"], allocation,
                                 args["guest"], args["hypervisor"], args.get("transition") if phase == "publish" else None)
@@ -579,8 +578,8 @@ class ActionModule(ActionBase):
                     keys.verify_source_job(source, None, variables)
                     if aap_release or supplemental:
                         git("fetch", "--quiet", "--depth=1", "origin", "main")
-                        latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        latest_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
                         selected_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == context["route"]["vm_name"]]
                         keys.require(selected_records == [context["reservation"]],
@@ -592,7 +591,7 @@ class ActionModule(ActionBase):
                         label, secret = seals[kind]
                         sealed = self._loader._vault.encrypt(yaml.dump(value, Dumper=vault_yaml.VaultDumper,
                             sort_keys=False, width=110), secret=secret, vault_id=label)
-                        restored = AnsibleLoader(self._loader._vault.decrypt(sealed)).get_single_data()
+                        restored = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(sealed))
                         keys.require(restored == value and vault_yaml.literal_paths(restored) == vault_yaml.literal_paths(value),
                             "Guest release must preserve literals, keys and unrelated configuration.")
                         (checkout / names[kind]).write_bytes(sealed)
@@ -609,8 +608,8 @@ class ActionModule(ActionBase):
                         durable = True
                     if installation or aap_release or supplemental:
                         git("fetch", "--quiet", "--depth=1", "origin", "main")
-                        latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        latest_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
                         observed_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == context["route"]["vm_name"]]
                         expected_reservation = (next(row for row in desired['allocation']['aap_vm_allocation']['reservations'].values()
@@ -633,14 +632,14 @@ class ActionModule(ActionBase):
                     observed = {}
                     for kind, relative in names.items():
                         raw = git("show", "FETCH_HEAD:" + relative, optional=kind == "hactar")
-                        observed[kind] = (AnsibleLoader(self._loader._vault.decrypt(raw.stdout.encode())).get_single_data()
+                        observed[kind] = (vault_yaml.load_repository_yaml(self._loader._vault.decrypt(raw.stdout.encode()))
                                           if raw.returncode == 0 else None)
                     if observed != desired:
                         # Restart from fresh state; exact transition checks reject unrelated changes.
                         continue
                     if installation or aap_release or supplemental:
-                        latest_allocation = AnsibleLoader(self._loader._vault.decrypt(
-                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode())).get_single_data()
+                        latest_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                            git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
                         observed_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()
                                             if row.get("vm_name") == context["route"]["vm_name"]]
                         keys.require(observed_records == [expected_reservation],

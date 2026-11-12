@@ -11,7 +11,8 @@ from pathlib import Path
 import re
 import ssl
 import yaml
-from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
+from ansible.template import is_trusted_as_template, trust_as_template
+from ansible.utils.unsafe_proxy import wrap_var
 from urllib.parse import quote, urlsplit, urljoin
 from urllib.request import HTTPRedirectHandler, Request, build_opener, HTTPSHandler
 
@@ -161,7 +162,7 @@ def validate_record(record):
             and not any(c.isspace() for c in record["token"])
             and record["token"] not in ("ASK", "$encrypted$", "CHANGEME"),
             "The selected instance has no usable stored API token.")
-    require(type(record["token_id"]) is int and record["token_id"] > 0,
+    require((isinstance(record["token_id"], int) and not isinstance(record["token_id"], bool)) and record["token_id"] > 0,
             "Retain the original instance token identity.")
     if record["expires"] is not None:
         try:
@@ -188,7 +189,7 @@ def document(records):
 def select_access(data, selected, inventory_host):
     instance_name(selected)
     require(isinstance(data, dict) and set(data) == {"schema_version", "instances"}
-            and type(data["schema_version"]) is int and data["schema_version"] == 1
+            and (isinstance(data["schema_version"], int) and not isinstance(data["schema_version"], bool)) and data["schema_version"] == 1
             and isinstance(data["instances"], dict), "The injected instance token file has an invalid format.")
     require(selected in data["instances"], "No API token is stored for the selected AAP instance.")
     record = validate_record(data["instances"][selected])
@@ -265,10 +266,12 @@ def inventory_variables(row):
 def set_inventory_variables(row, values):
     """Retain a captured literal JSON field instead of enabling its templates."""
     previous = row.get("variables")
-    if isinstance(previous, AnsibleUnsafeText):
+    if (isinstance(previous, str) and not is_trusted_as_template(previous)
+            and any(marker in previous for marker in ("{{", "{%", "{#"))):
         row["variables"] = wrap_var(json.dumps(values))
     elif isinstance(previous, str):
-        row["variables"] = json.dumps(values)
+        encoded = json.dumps(values)
+        row["variables"] = trust_as_template(encoded) if is_trusted_as_template(previous) else encoded
     else:
         row["variables"] = values
 
@@ -324,7 +327,7 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
         instance = aiops_capture["aiops_instances"].get(instance_name, {})
         require(isinstance(instance, dict), "Application CaC must contain instance mappings.")
         instance_number = entry["number"]
-        require(type(instance_number) is int and instance_number > 0
+        require((isinstance(instance_number, int) and not isinstance(instance_number, bool)) and instance_number > 0
                 and instance_name == entry["instance_route"]["vm_name"]
                 and re.fullmatch(r"aap[0-9]+-test-" + str(instance_number), instance_name)
                 and entry.get("hypervisor_id") == pin["machine_id"],
@@ -341,7 +344,7 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
             require(isinstance(resource, dict) and fields <= set(resource)
                     and "supplemental_interfaces" not in resource and resource.get("kind") != "windows"
                     and resource.get("instance_name", instance_name) == instance_name
-                    and type(resource.get("instance_number", instance_number)) is int
+                    and (isinstance(resource.get("instance_number", instance_number), int) and not isinstance(resource.get("instance_number", instance_number), bool))
                     and resource.get("instance_number", instance_number) == instance_number,
                     "Application CaC requires complete same-instance VM ownership.")
             # Never copy runtime configuration or credentials into ownership proof.
@@ -360,7 +363,7 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
                 and "supplemental_interfaces" not in resource and resource.get("kind") != "windows"
                 and all(resource.get(key) == value for key, value in cac_resources[row["name"]].items())
                 and values.get("hypervisor_host") == hypervisor["name"]
-                and type(values.get("aap_instance_number")) is int
+                and (isinstance(values.get("aap_instance_number"), int) and not isinstance(values.get("aap_instance_number"), bool))
                 and values["aap_instance_number"] == cac_numbers[row["name"]]
                 and values.get("ansible_host") == resource["address"]
                 and values.get("vm_uuid") == resource["uuid"]
@@ -413,7 +416,7 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
                     and not int(resource["mac"][:2], 16) & 1 and resource["mac"] != "00:00:00:00:00:00"
                     and values.get("ansible_host") == resource["address"]
                     and values.get("host_keys") == entry["instance_route"]["guest_host_keys"]
-                    and type(values.get("aap_instance_number")) is int
+                    and (isinstance(values.get("aap_instance_number"), int) and not isinstance(values.get("aap_instance_number"), bool))
                     and values["aap_instance_number"] == entry["number"],
                     "Remaining AAP permission ownership requires its verified source placement and resource.")
             if not entry.get("decommissioned"):
@@ -460,7 +463,7 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
                 and not int(resource["mac"][:2], 16) & 1 and resource["mac"] != "00:00:00:00:00:00"
                 and isinstance(resource["machine_id"], str) and re.fullmatch(r"[a-f0-9]{32}", resource["machine_id"])
                 and resource["machine_id"] != pin["machine_id"]
-                and type(values.get("aap_instance_number")) is int
+                and (isinstance(values.get("aap_instance_number"), int) and not isinstance(values.get("aap_instance_number"), bool))
                 and values["aap_instance_number"] == int(match[1])
                 and resource.get("aap_instance_number", int(match[1])) == int(match[1]),
                 "Source vm_resource conflicts with its VM name, number, storage or pinned hypervisor.")
@@ -777,7 +780,7 @@ def canonical_api_port(value):
     """Normalize only canonical Controller wire text, retaining the exact port."""
     if isinstance(value, str) and re.fullmatch(r"[1-9][0-9]{0,4}", value):
         value = int(value)
-    require(type(value) is int and 1 <= value <= 65535,
+    require((isinstance(value, int) and not isinstance(value, bool)) and 1 <= value <= 65535,
             "The live hypervisor SSH port must be an exact canonical port.")
     return value
 
@@ -1017,7 +1020,7 @@ def supplemental_host_variables(values, context):
     number = result.get('aap_instance_number')
     if isinstance(number, str) and re.fullmatch(r'[1-9][0-9]{0,9}', number):
         number = int(number)
-    require(type(number) is int and number == int(route['vm_name'].rsplit('-', 1)[1]),
+    require((isinstance(number, int) and not isinstance(number, bool)) and number == int(route['vm_name'].rsplit('-', 1)[1]),
             'Preserve the exact canonical selected AAP allocation number.')
     core = {key: resource[key] for key in _allocation.ownership.PRIMARY_FIELDS | {'supplemental_interfaces'} if key in resource}
     require(core in (context['previous_resource'], context['desired_resource'], guest['primary']),

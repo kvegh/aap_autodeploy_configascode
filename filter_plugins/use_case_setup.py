@@ -171,8 +171,8 @@ def instance_store_credentials(credentials):
     selected = [entry for entry in credentials if entry.get("summary_fields", {})
                 .get("credential_type", {}).get("name") == "Pseudo Instance Key Store"
                 and entry.get("name") == "AAP API/MCP Auth Token Store"]
-    require(len(selected) == 1 and type(selected[0].get("id")) is int
-            and type(selected[0].get("credential_type")) is int,
+    require(len(selected) == 1 and (isinstance(selected[0].get("id"), int) and not isinstance(selected[0].get("id"), bool))
+            and (isinstance(selected[0].get("credential_type"), int) and not isinstance(selected[0].get("credential_type"), bool)),
             "Attach exactly one AAP API/MCP Auth Token Store to this job.")
     return selected
 
@@ -189,15 +189,15 @@ def api_launch_credentials(original, expected_names, destination_credentials,
     for entry in original:
         owner = entry.get("summary_fields", {}).get("organization") or {}
         pin = pins.get(entry.get("name"), {})
-        pinned = (isinstance(pin, Mapping) and type(pin.get("id")) is int
-                  and type(pin.get("credential_type")) is int
+        pinned = (isinstance(pin, Mapping) and (isinstance(pin.get("id"), int) and not isinstance(pin.get("id"), bool))
+                  and (isinstance(pin.get("credential_type"), int) and not isinstance(pin.get("credential_type"), bool))
                   and "organization" in entry and entry["organization"] is None
                   and entry.get("summary_fields", {}).get("organization") is None
                   and entry.get("id") == pin.get("id")
                   and entry.get("credential_type") == pin.get("credential_type")
                   and entry.get("summary_fields", {}).get("credential_type", {}).get("name")
                   == pin.get("credential_type_name"))
-        require(type(entry.get("id")) is int and (owner.get("name") == organization or pinned),
+        require((isinstance(entry.get("id"), int) and not isinstance(entry.get("id"), bool)) and (owner.get("name") == organization or pinned),
                 "Repository credential ownership must match the organization or exact reviewed source pins.")
     store = instance_store_credentials(destination_credentials)[0]
     saved_store = instance_store_credentials(original)[0]
@@ -261,8 +261,8 @@ def scoped_launch_credentials(
         pin = pins.get(entry.get("name"))
         return (
             isinstance(pin, Mapping)
-            and type(pin.get("id")) is int
-            and type(pin.get("credential_type")) is int
+            and (isinstance(pin.get("id"), int) and not isinstance(pin.get("id"), bool))
+            and (isinstance(pin.get("credential_type"), int) and not isinstance(pin.get("credential_type"), bool))
             and isinstance(pin.get("credential_type_name"), str)
             and bool(pin["credential_type_name"])
             and "organization" in entry
@@ -276,10 +276,10 @@ def scoped_launch_credentials(
 
     require(
         all(
-            type(entry.get("id")) is int
+            (isinstance(entry.get("id"), int) and not isinstance(entry.get("id"), bool))
             and (in_organization(entry) or pinned_source_entry(entry))
             for entry in preserved
-        ) and all(type(entry.get("id")) is int and in_organization(entry)
+        ) and all((isinstance(entry.get("id"), int) and not isinstance(entry.get("id"), bool)) and in_organization(entry)
                   for entry in route_credentials),
         "Credential ownership must match the organization or exact reviewed source-only pins.",
     )

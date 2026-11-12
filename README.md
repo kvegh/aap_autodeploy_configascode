@@ -525,37 +525,15 @@ remain protected; a category alone does not prove a root cause or successful
 rollback. Verify the actual native state before a bounded continuation.
 The categories distinguish general package detection, DNF version detection
 and a missing DNF module; the job also reports its actual Ansible version.
-Access transactions gather the actual hypervisor's package-manager fact with
-delegated fact ownership on its existing inventory identity before invoking the
-certified firewall role. The route must match exactly one inventory host. The role
-keeps its normal backend selection; no package backend or interpreter is forced.
-The affected job's execution environment reports `ansible-core 2.16.19`.
-[Upstream issue #82598](https://github.com/ansible/ansible/issues/82598)
-describes the same failure: protected delegation text makes the package action's
-generated fact lookup remain literal instead of returning the package manager.
-Upstream 2.17.0 reads the facts directly; upgrading the engine is a separate
-execution-environment change and is not part of this correction.
-The firewall role explicitly clears inherited logical delegation with
-`apply.delegate_to: null`, while retaining the transaction's pinned SSH address,
-user, port and strict server-key checks. This prevents a protected inventory name
-from making Ansible's internal package lookup remain unrendered. Primary and
-rollback use the same connection; all Vault/unsafe values remain protected.
-Both role calls also take the Python interpreter from the selected hypervisor's
-inventory override, or use normal remote discovery when no override is present.
-This prevents implicit localhost's execution-container Python path from being
-sent to the hypervisor after delegation is cleared. The real vendor fact task
-passed a pinned, read-only SSH check with this setting; the old context failed.
-The earlier inventory-loop fix did not resolve the live failure. The regression
-now covers both plain JSON and unsafe YAML inventory names with the complete
-protected route, rule and connection variables, including a controller-only
-Python path that must not reach the remote connection.
-The one-time protected error capture used to diagnose this problem has been
-removed, and its temporary host log was deleted after retrieval.
-The normal tagged access repair has now passed live: the selected HTTPS rule is
-present in both runtime and permanent firewalld state, native isolation matches
-the published desired policy, and all three encrypted captures and source
-inventory placement match. The allocation record and existing VM are unchanged.
-Infrastructure, AAP installation and full base configuration remain separate stages.
+Access transactions use ordinary delegation to the hypervisor's unique existing
+inventory identity. Core 2.20 fixes the unsafe delegated package-fact lookup
+reported in [upstream issue #82598](https://github.com/ansible/ansible/issues/82598).
+The old delegation-clearing, role-specific Python override and manual package
+fact workaround are removed from both primary and rollback role calls. The
+certified firewall role selects its package manager normally; protected values,
+strict SSH trust, target Python selection and native transaction guards remain.
+The earlier Core 2.16 repair and its live result remain historical evidence in
+Git; they do not establish acceptance of this new engine or a rebuilt instance.
 
 The Stage 01 readiness probe temporarily binds the new guest's SSH connection
 facts, checks its pinned route, then restores the hypervisor's original connection
@@ -603,20 +581,46 @@ them is a separate explicit operation. Every importer requires its project label
 on every Job Template and matching-organization definitions for every label.
 Multiselect survey defaults must be strings, including `''` for no default;
 the API rejects a YAML/JSON empty list before creating a survey.
-The current source execution image reports Ansible Core 2.16.19 and includes
-`dnspython`. Selected Windows prerequisites now match the source's exact
-requirements, including its Chocolatey pin and Microsoft collections. Source PAH
-availability was checked without installation. Runtime compatibility and actual
-fresh-target setup remain separate validation; metadata import is not proof.
+The earlier source image used Core 2.16.19. The selected official job runtime
+now uses the Core 2.20 stream described below. Selected Windows prerequisites
+retain their exact requirements, including the Chocolatey pin and Microsoft
+collections. Runtime compatibility and fresh-target setup remain separate
+validation; metadata import is not proof.
 
 ### Execution environment and external prerequisites
 
-Use an execution environment with Ansible and the required collections, including
+Use the unmodified official AAP 2.7 image
+`registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.20`
+with pull policy `missing`. The actual Controller job runtime was inspected as
+Core 2.20.10. Collections come from project requirements, including
 `infra.aap_configuration`, `ansible.controller`, `redhat.rhel_system_roles`, and
-`community.general`. Verify the dispatch role's dependencies in that environment.
-Stage 02 uses `community.general.dig` to wait for the expected public A record.
-The execution environment must include its Python dependency, `dnspython`;
-project collection downloads do not install Python packages into the image.
+`community.general`; installing collections does not change the image.
+The platform's own control-plane/project-update EE remains independent.
+
+The owner chose to keep this image unmodified, with no added `dnspython`.
+Stage 02 runs RHEL's `dig` through `ansible.builtin.command` on the pinned
+hypervisor, retaining the explicit public resolver, exact-address comparison and
+bounded propagation retry. Hactar base owns its `bind-utils` prerequisite.
+Before API authentication, `ansible.builtin.getent` queries the EE's DNS service,
+without `/etc/hosts`; the IPv4-only route rejects alternate addresses and any
+returned IPv6 address before the existing trusted HTTPS check. GNU `getent hosts`
+tries IPv6 first, then IPv4; it does not expose individual DNS response codes.
+These tasks no longer use `community.general.dig` or require its Python library.
+
+Base CaC declares `controller_execution_environments_base` and
+`aap_default_execution_environment`. Stage 04 resolves that name to this
+controller's current EE ID before setting `DEFAULT_EXECUTION_ENVIRONMENT`;
+source-controller IDs are never copied into rebuilt environments. The AutoDeploy
+capture and Hactar controller/recovery capture use the same named runtime.
+The Hactar provider reinstall, conversion, setup, reboot and verification jobs
+all select that EE. Preserved legacy jobs retain their existing engine choices.
+
+Core 2.20 plugins preserve repository configuration trust through Ansible's
+public template API. Literal template-bearing data remains explicitly `!unsafe`
+when encrypted configuration is rewritten; ordinary repository references still
+evaluate. Native tagged YAML integers are accepted while booleans remain invalid
+for counters, IDs and ports. There is no fallback to the older engine.
+
 `collections/requirements.yml` pins `infra.aap_configuration` to `4.10.0` and
 `community.general` to `11.4.0`, which supports Ansible Core 2.16 or newer. Sync
 both collections into the appropriate PAH repositories before project sync.

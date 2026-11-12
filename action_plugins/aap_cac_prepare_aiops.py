@@ -8,7 +8,6 @@ import tempfile
 
 import yaml
 from ansible.errors import AnsibleActionFail
-from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
 
 
@@ -100,8 +99,8 @@ class ActionModule(ActionBase):
                         "Use only the maintained whole-file AIOps Vault files.")
                 ciphertext = path.read_bytes()
                 require(ciphertext.startswith(b"$ANSIBLE_VAULT;"), "AIOps files must remain whole-file Vault ciphertext.")
-                plain, label, secret = self._loader._vault.decrypt_and_get_vault_id(ciphertext, filename=str(path))
-                return AnsibleLoader(plain).get_single_data(), label, secret, ciphertext.splitlines()[0]
+                plain, label, secret = self._loader._vault.decrypt_and_get_vault_id(ciphertext)
+                return vault_yaml.load_repository_yaml(plain), label, secret, ciphertext.splitlines()[0]
 
             changed = False
             for attempt in range(5):
@@ -154,11 +153,11 @@ class ActionModule(ActionBase):
                     if value == old:
                         return (checkout / relative).read_bytes()
                     plain = yaml.dump(value, Dumper=vault_yaml.VaultDumper, sort_keys=False, width=110).encode()
-                    require(AnsibleLoader(plain).get_single_data() == value, "Protected AIOps YAML must roundtrip unchanged.")
+                    require(vault_yaml.load_repository_yaml(plain) == value, "Protected AIOps YAML must roundtrip unchanged.")
                     header_fields = original_header.decode().split(";")
                     original_id = header_fields[3] if len(header_fields) == 4 else None
                     encoded = self._loader._vault.encrypt(plain, secret=vault_secret, vault_id=original_id)
-                    restored = AnsibleLoader(self._loader._vault.decrypt(encoded)).get_single_data()
+                    restored = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(encoded))
                     require(encoded.splitlines()[0] == original_header and restored == value
                             and vault_yaml.literal_paths(restored) == vault_yaml.literal_paths(value),
                             "AIOps encryption must preserve the original Vault key, identity and literal strings.")

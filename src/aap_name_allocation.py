@@ -31,11 +31,11 @@ def reserve(state, prefix, request_id, hypervisor_id, observed_floor=1):
     next_number = state.get("next_number")
     records = state.get("reservations")
     if (
-        type(next_number) is not int
+        (not isinstance(next_number, int) or isinstance(next_number, bool))
         or next_number < 1
         or next_number >= 2**31
         or not isinstance(records, dict)
-        or type(observed_floor) is not int
+        or (not isinstance(observed_floor, int) or isinstance(observed_floor, bool))
         or observed_floor < 1
     ):
         raise ValueError("The shared allocation state is invalid.")
@@ -44,7 +44,7 @@ def reserve(state, prefix, request_id, hypervisor_id, observed_floor=1):
     if (
         len(set(numbers)) != len(numbers)
         or len(set(names)) != len(names)
-        or any(type(number) is not int or number >= next_number for number in numbers)
+        or any((not isinstance(number, int) or isinstance(number, bool)) or number >= next_number for number in numbers)
     ):
         raise ValueError("Refuse inconsistent or regressed global allocation history.")
     if request_id in records:

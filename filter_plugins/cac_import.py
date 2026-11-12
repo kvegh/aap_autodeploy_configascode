@@ -102,7 +102,7 @@ def import_metadata(metadata, project_id):
             "Load reviewed configuration import metadata for the selected project.")
     require(set(metadata) == {'schema_version', 'project_id', 'required_template_label',
                               'resource_variables', 'checks', 'capabilities'}
-            and type(metadata.get('schema_version')) is int and metadata['schema_version'] == 1
+            and (isinstance(metadata.get('schema_version'), int) and not isinstance(metadata.get('schema_version'), bool)) and metadata['schema_version'] == 1
             and metadata.get('project_id') == project_id,
             "The capture metadata does not match this project or supported schema.")
     require(isinstance(metadata['required_template_label'], str)
@@ -126,7 +126,7 @@ def import_metadata(metadata, project_id):
             variable_path(path)
     counts = checks.get('resource_counts', {})
     require(isinstance(counts, Mapping) and set(counts).issubset(resources)
-            and all(type(count) is int and count >= 0 for count in counts.values()),
+            and all((isinstance(count, int) and not isinstance(count, bool)) and count >= 0 for count in counts.values()),
             "Declare exact counts only for resources imported by this capture.")
     capabilities = metadata['capabilities']
     require(isinstance(capabilities, Mapping) and set(capabilities).issubset(CAPABILITIES),
@@ -243,7 +243,7 @@ def validate_resources(resources, metadata):
                     'Configuration imports cannot restart activations.')
             for mapping in mappings:
                 named = isinstance(mapping.get('source_name'), str) and bool(mapping['source_name'])
-                indexed = type(mapping.get('source_index')) is int and mapping['source_index'] >= 0
+                indexed = (isinstance(mapping.get('source_index'), int) and not isinstance(mapping.get('source_index'), bool)) and mapping['source_index'] >= 0
                 require(mapping.get('event_stream') in stream_names and named != indexed
                         and not ('source_name' in mapping and 'source_index' in mapping),
                         'Use a defined Event Stream with exactly one source name or index.')

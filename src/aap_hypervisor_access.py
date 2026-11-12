@@ -185,7 +185,7 @@ def desired_policy(route, primary, declared, mode='management'):
             'Require the selected verified primary resource.')
     require(declared.get('protected_ipv4') and pin['address'] not in declared['protected_ipv4']
             and pin['public_ip'] not in declared['protected_ipv4']
-            and type(pin['port']) is int and 1 <= pin['port'] <= 65535,
+            and isinstance(pin['port'], int) and not isinstance(pin['port'], bool) and 1 <= pin['port'] <= 65535,
             'Management access must remain on the nonproduction pinned hypervisor.')
     identity = {key: primary[field] for key, field in (('bridge', 'bridge'), ('ipv4', 'address'), ('mac', 'mac'))}
     require(mode in ('management', 'installation'), 'Choose one bounded AAP installation or management permission.')
@@ -228,7 +228,7 @@ def plan(expected, probe):
             'Require the exact verified primary guest and pinned hypervisor.')
     require(declared.get('protected_ipv4') and pin['address'] not in declared['protected_ipv4']
             and pin['public_ip'] not in declared['protected_ipv4'] and pin['address'] in probe['addresses']
-            and type(pin['port']) is int and 1 <= pin['port'] <= 65535,
+            and isinstance(pin['port'], int) and not isinstance(pin['port'], bool) and 1 <= pin['port'] <= 65535,
             'Management access is confined to the nonproduction hypervisor assigned address and managed port.')
     require(declared['bridges'] == pin['isolation_bridges'] and declared['dns_bridges'] == pin['isolation_dns_bridges']
             and not probe['autostart'], 'Preserve the complete enforced bridges and disabled guest autostart.')

@@ -19,6 +19,13 @@ aap_user_accounts_base: []
 # Platform content-source credentials may belong here; machine credentials do not.
 controller_credentials_base: []
 controller_settings_base: {}
+# Official, unmodified AAP 2.7 job runtime. Collections come from the project's
+# requirements.yml. This does not replace the platform control-plane image.
+controller_execution_environments_base:
+  - name: AAP AutoDeploy EE
+    image: registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.20
+    pull: missing
+aap_default_execution_environment: AAP AutoDeploy EE
 # Containerized installations using remote Podman need the generated platform CA
 # in project-update execution environments. Preserve existing isolation mounts
 # and use the installer service account's HOST trust path for the additional mount.

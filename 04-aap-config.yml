@@ -180,6 +180,23 @@
             file: "{{ cac_workspace.path }}/repository/cac/base_CaC_vault.yml"
           no_log: true
 
+        - name: Validate the named default runtime before changing the target
+          ansible.builtin.assert:
+            that:
+              - aap_default_execution_environment is string
+              - aap_default_execution_environment | trim | length > 0
+              - >-
+                controller_execution_environments_base | selectattr('name', 'equalto',
+                  aap_default_execution_environment) | list | length == 1
+              - >-
+                (controller_execution_environments_base | selectattr('name', 'equalto',
+                  aap_default_execution_environment) | first).image is string
+              - >-
+                (controller_execution_environments_base | selectattr('name', 'equalto',
+                  aap_default_execution_environment) | first).image | length > 0
+            fail_msg: Define one base execution environment matching the configured default name.
+          no_log: true
+
         - name: Validate the base PAH setup before changing the target
           ansible.builtin.include_tasks: tasks/pah-base-validate.yml
 
@@ -260,6 +277,27 @@
             name: infra.aap_configuration.dispatch
           vars:
             dispatch_include_wildcard_vars: false
+
+        # EE database IDs differ after reinstall. Resolve the CaC-owned name on
+        # this controller rather than copying an ID from the source controller.
+        - name: Resolve the configured default job execution environment
+          ansible.controller.execution_environment:
+            name: "{{ aap_default_execution_environment }}"
+            state: exists
+            controller_host: "{{ aap_hostname }}"
+            controller_oauthtoken: "{{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+          register: cac_default_execution_environment
+          no_log: true
+
+        - name: Set the rebuilt controller default for job execution
+          ansible.controller.settings:
+            settings:
+              DEFAULT_EXECUTION_ENVIRONMENT: "{{ cac_default_execution_environment.id }}"
+            controller_host: "{{ aap_hostname }}"
+            controller_oauthtoken: "{{ aap_token }}"
+            validate_certs: "{{ aap_validate_certs }}"
+          no_log: true
 
         - name: Configure the PAH collection selection and snapshot retention policy
           ansible.builtin.include_tasks: tasks/pah-retention-policy.yml
