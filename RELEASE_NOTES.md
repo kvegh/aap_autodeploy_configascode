@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.53.1
+
+Document implementation feab264, the owner-selected unchanged-image DNS approach,
+normal firewall delegation, native Core 2.20 compatibility checks and portable
+future EE defaults. Keep fresh deployment acceptance separate.
+
 ## 0.53.0
 
 Select the official unmodified Core 2.20 runtime for AutoDeploy and Hactar

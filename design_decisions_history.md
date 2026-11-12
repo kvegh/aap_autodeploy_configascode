@@ -4050,3 +4050,29 @@ keeps the separate writer token intact and rejects missing/multiline auth before
 Git runs. The encrypted input's other values, literal tags, Vault key and header
 were preserved. These checks do not establish live AAP source authentication or
 full downstream demo acceptance.
+
+## 2026-11-12 — Use official Core 2.20 without image customization
+
+Implementation `feab264` moves the deployment runtime to the official AAP 2.7
+minimal RHEL 9 Core 2.20 stream. The owner chose to keep the image unchanged,
+load collections through project requirements, and replace the optional Python
+DNS lookup dependency with managed RHEL dig and built-in EE DNS resolution.
+Exact endpoint-address checks and trusted TLS remain before authentication.
+
+Core 2.20 fixes upstream delegated package lookup issue 82598, so both firewall
+role calls use normal delegation again. The earlier null-delegation, interpreter
+and manual package-fact workaround is removed; inventory identity, protected
+values, SSH pins, rollback and native isolation checks remain.
+
+The existing Vault serializer/readers use the public template-trust API, preserve
+literal template-bearing values, and accept native tagged integer IDs without
+accepting booleans. Obsolete Vault filename arguments are removed. Eighteen
+focused fixtures passed on the actual Core 2.20.10 image across scoped runs,
+covering DNS refusal cases, allocation, protected YAML, normal package dispatch
+and encrypted Git publication. Failed intermediate test attempts remain evidence
+of the migration work rather than deployment acceptance.
+
+Base CaC resolves the default EE by name on the rebuilt controller. Hactar
+reinstall and configuration jobs use that same runtime; platform control-plane
+and preserved legacy job images remain independent. Fresh bare-metal recovery
+and complete versioned deployment still require their own observed outcomes.
