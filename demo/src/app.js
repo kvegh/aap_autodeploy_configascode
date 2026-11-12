@@ -11,7 +11,7 @@
   };
   const objectTypes = ['Inventories', 'Projects', 'Credentials', 'Job Templates'];
   let index = Math.max(0, story.steps.findIndex(step => `#${step.id}` === window.location.hash));
-  function drawObjects(container, objects, replayedFromGit = false, configurationPanel = null) {
+  function drawObjects(container, objects, replayedFromGit = false, independentColumns = false) {
     const groups = objectTypes.map(type => {
       const items = objects.filter(object => object.type === type);
       const group = element('section', 'object-group');
@@ -27,12 +27,12 @@
       }
       return group;
     });
-    if (configurationPanel) {
+    if (independentColumns) {
       // Independent columns pack the groups without reserving empty neighbouring rows.
       const primary = element('div', 'aap-object-column');
       const secondary = element('div', 'aap-object-column');
-      primary.append(...groups.slice(0, 2));
-      secondary.append(configurationPanel, ...groups.slice(2));
+      primary.append(groups[0], groups[2]);
+      secondary.append(groups[1], groups[3]);
       container.replaceChildren(primary, secondary);
     } else container.replaceChildren(...groups);
   }
@@ -185,9 +185,9 @@
     drawConfiguration(byId('source-infrastructure'), state.sourceInfrastructure);
     drawConfiguration(byId('target-infrastructure'), state.targetInfrastructure);
     drawConfiguration(byId('successor-infrastructure'), state.successorInfrastructure);
-    drawObjects(byId('successor-objects'), state.successorObjects, true, byId('successor-configuration-panel'));
+    drawObjects(byId('successor-objects'), state.successorObjects, true, true);
     drawObjects(byId('source-objects'), state.sourceObjects);
-    drawObjects(byId('target-objects'), state.targetObjects, false, byId('target-configuration-panel'));
+    drawObjects(byId('target-objects'), state.targetObjects, false, true);
     drawCode(byId('config-lines'), story.configurationLines(state));
     drawCode(byId('code-lines'), story.executionLines(state), step.routes.includes('flow-code') ? (state.rebuilding ? 'git' : state.flowOrigin) : undefined);
     let executionFile = step.sources[0];

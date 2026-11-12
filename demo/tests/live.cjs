@@ -5,11 +5,14 @@ const { tmpdir } = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const assets = ['index.html', 'icon.svg', 'src/app.js', 'src/scenario.js', 'src/styles.css'];
+const assets = ['index.html', 'icon.svg', 'sysadmin.png', 'src/app.js', 'src/scenario.js', 'src/styles.css'];
 const defaultUrl = 'https://kvegh.github.io/aap_autodeploy_configascode/';
 const maximumAssetBytes = 1024 * 1024;
+const maximumPngBytes = 8 * maximumAssetBytes;
+const pngSignature = Buffer.from('89504e470d0a1a0a', 'hex');
 
 async function download(base, asset, directory) {
+  const maximumBytes = asset.endsWith('.png') ? maximumPngBytes : maximumAssetBytes;
   const response = await fetch(new URL(asset, base), {
     redirect: 'error', signal: AbortSignal.timeout(15000),
   });
@@ -18,7 +21,7 @@ async function download(base, asset, directory) {
   let size = 0;
   for await (const chunk of response.body) {
     size += chunk.length;
-    if (size > maximumAssetBytes) throw new Error('Asset exceeds the 1 MiB check limit');
+    if (size > maximumBytes) throw new Error(`Asset exceeds the ${maximumBytes / maximumAssetBytes} MiB check limit`);
     chunks.push(chunk);
   }
   await writeFile(path.join(directory, asset), Buffer.concat(chunks));
@@ -41,9 +44,12 @@ async function main() {
     for (const asset of assets) {
       const published = await readFile(path.join(directory, asset));
       const checkedOut = await readFile(path.resolve(__dirname, '..', asset));
+      if (asset.endsWith('.png') && !published.subarray(0, pngSignature.length).equals(pngSignature)) {
+        throw new Error(`Published image is not PNG: ${asset}`);
+      }
       if (!published.equals(checkedOut)) throw new Error(`Published asset differs from this checkout: ${asset}`);
     }
-    console.log(`PASS: five published assets match this checkout at ${base.href}`);
+    console.log(`PASS: ${assets.length} published assets match this checkout at ${base.href}`);
     console.log('Checking real deployed HTML/JavaScript interactions; browser layout is outside this check.');
     const result = spawnSync(process.execPath, ['--test', path.join(__dirname, 'walkthrough.test.cjs')], {
       env: { ...process.env, AAP_CAC_DEMO_DIR: directory }, stdio: 'inherit', timeout: 30000,

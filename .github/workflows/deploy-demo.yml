@@ -63,7 +63,7 @@ jobs:
       - name: Prepare only the public walkthrough assets
         run: |
           mkdir -p "${RUNNER_TEMP}/aap-cac-demo/src"
-          cp demo/index.html demo/icon.svg "${RUNNER_TEMP}/aap-cac-demo/"
+          cp demo/index.html demo/icon.svg demo/sysadmin.png "${RUNNER_TEMP}/aap-cac-demo/"
           cp demo/src/scenario.js demo/src/app.js demo/src/styles.css "${RUNNER_TEMP}/aap-cac-demo/src/"
           touch "${RUNNER_TEMP}/aap-cac-demo/.nojekyll"
       - name: Upload the walkthrough

@@ -23,8 +23,12 @@ with the upper code window, with room for another below. Code previews have more
 space; the original AAP is centred between rows. Every installed AAP has the same
 prominent platform identity; card dimensions are illustrative. Receiving object
 definitions share one continuous content area inside each AAP. Receiving cards
-use two independently packed, unboxed columns. Inventories and Projects fill
-the left; AAP configuration, Credentials and Job Templates fill the right. Compact
+use two independently packed, unboxed object columns. Inventories and Credentials
+fill the left; Projects and Job Templates fill the right. AAP configuration follows
+as a full-width bottom category, separated by one light horizontal line inset from
+the card borders. Its two settings share a compact row, with RHEL beneath. The category is anchored
+at the bottom of the receiving AAP body from initial setup, reserving empty
+space for objects above so the divider does not follow their growing count. Compact
 22px bars retain 13px names without row-synchronised empty space or an internal
 receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
 available canvas height, centred with balanced top/bottom spacing rather than a
@@ -71,8 +75,8 @@ to the third instance, while the original retains its blue v1 baseline. The
 host-networking scope is explained in this guide; the strip represents the
 infrastructure associated with AAP, not a claim that host nginx runs inside its VM.
 
-AAP configuration remains a distinct category alongside inventories, projects,
-credentials and Job Templates in the same content flow. Stage 04 creates blue **AAP Logging Config v1** and **AAP EDA Config
+AAP configuration is a distinct full-width category below inventories, projects,
+credentials and Job Templates, separated by a light inset rule. Stage 04 creates blue **AAP Logging Config v1** and **AAP EDA Config
 v1**. Change in Git replaces the same logging entry with violet **AAP Logging Config
 v2**; EDA v1 and the original AAP's own configuration remain unchanged. Backwards
 navigation restores v1. These are illustrative configuration revisions, not AAP
@@ -99,13 +103,17 @@ Next deploys the third AAP. A direct `#rebuild` link still opens the completed
 replay. Backwards navigation and restart restore the corresponding visibility.
 This presentation-only preparation does not add a runtime job or host operation.
 
-During **Change in AAP**, an unframed stick-figure sysadmin appears above the
-small original AAP, seated at a desk with hands on a laptop while resolving an outage. An amber directional
+During **Change in AAP**, an unframed Linux sysadmin appears above the small
+original AAP. The owner-selected figure wears a plain hoodie with its hood down
+and glasses, seated in an office chair with a slight forward lean and hands on
+the laptop keyboard. One coffee mug and a small amber outage alert provide
+restrained role and incident cues. An amber directional
 flow carries manual configuration into the first receiving AAP. This actor
 appears only at the manual stop; the third-AAP placeholder remains hidden there.
 The existing amber inventory/project/credential additions are still absent from
-CaC until the subsequent scan. The figure is native SVG/HTML, uses no external
-asset or dependency, and honours reduced-motion preferences.
+CaC until the subsequent scan. The figure is a generated transparent PNG, stored locally with the page; the old
+SVG character is deleted. It adds no runtime service or dependency and preserves
+the existing reduced-motion behavior.
 
 The final **Deploy again** stop restores the whole Git-recorded snapshot into
 the lower destination: base definitions, Git changes and captured manual-origin
@@ -132,6 +140,23 @@ The object names used throughout the cards and private YAML are:
 | Base Job Template | AAP Config-as-Code jobs |
 
 Names are illustrative; changing these fixtures does not rename live AAP objects.
+
+## Sysadmin illustration
+
+The owner requested a simple, expressive image with familiar Linux-admin cues
+and restrained humour. `sysadmin.png` was generated with the built-in imagegen
+tool, inspected and copied unchanged into this project. It is a 1536 × 1024 RGBA
+PNG with genuine transparent pixels; the original alpha is preserved.
+The page displays it as a compact decorative illustration alongside an existing
+accessible caption, only during manual changes. It does not replace the flow,
+model or controls.
+
+<details>
+<summary>Generation prompt</summary>
+
+Use case: illustration-story. Asset type: one small transparent-background character illustration for a professional IT configuration-as-code demo. Primary request: a simple but expressive experienced Linux sysadmin working through an outage, seated at a laptop. Familiar restrained clichés: a plain charcoal hoodie with the hood down, rectangular glasses, short stubble, and exactly one coffee mug. Calm incident-responder posture: seated naturally in an office chair, leaning slightly forward with both hands plausibly on the laptop keyboard, focused eyebrows and an alert, thoughtful expression. A tiny clear amber warning triangle on the laptop screen conveys the outage. Style: polished contemporary editorial illustration with simple bold shapes, clear silhouette, natural adult proportions and minimal shading; friendly and authentic, expressive without caricature or slapstick. Composition: compact landscape 3:2, character facing right in a three-quarter view so the face and laptop are legible, seated figure/chair and small desk complete, tightly composed with a little transparent breathing room. Intended to read at approximately 160 by 110 pixels on a light web canvas: prioritize face, seated posture, hoodie, laptop and amber alert rather than fine detail. Colour: dark navy/charcoal clothing, warm natural skin, light neutral laptop, one amber accent, clear contrast. Background must be genuinely transparent with alpha, no room, no background panel, no scenery, no extra people, no floating UI, no server racks. No lettering, slogans, brand logos, watermark, superhero props, exaggerated funny features, or photorealism.
+
+</details>
 
 ## Code and data
 
@@ -195,7 +220,7 @@ links open the real implementation. Motion honours reduced-motion preferences.
 
 The Node tests exercise the real scripts against a disposable DOM and check
 visible object outcomes, source mapping, true hidden state and reversible
-navigation. The live runner downloads only the five allowlisted assets over HTTPS, refuses
+navigation. The live runner downloads only the six allowlisted assets over HTTPS, refuses
 redirects, checks size/time limits and requires exact checkout byte parity before
 executing the same interaction suite against the downloaded files. It removes
 only its own temporary directory and exits nonzero for a failure. Run it from the
@@ -208,7 +233,7 @@ The owner chose existing checks only; no browser installation is authorized.
 ## Publication
 
 The retained `.github/workflows/deploy-demo.yml` checks the source and publishes
-only `index.html`, `icon.svg`, `src/app.js`, `src/scenario.js`, `src/styles.css`
+only `index.html`, `icon.svg`, `sysadmin.png`, `src/app.js`, `src/scenario.js`, `src/styles.css`
 and a generated `.nojekyll`. Repository Pages must use GitHub Actions. A matching
 main push deploys after checks; pull requests only check. There is no build step.
 Source publication, GitHub Pages deployment and actual AAP execution are separate

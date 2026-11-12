@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-171 tasks: 32 outstanding; 139 closed.
+172 tasks: 33 outstanding; 139 closed.
 
 ## Outstanding tasks
 
@@ -19,9 +19,10 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 |---|---|---|---|---|---|
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Retire v18 and rebuild bare metal with v19 after the EE upgrade | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
-| bead-wd-3ix.1.12 | Verify the selected &#91;HOST&#93; runtime on fresh AAP | in_progress | P1 | task | bead-wd-3ix.1, bead-wd-3ix.1.15 |
+| bead-wd-3ix.1.12 | Verify the receiver-owned Core 2.20 default EE and fresh v19 acceptance | in_progress | P1 | task | bead-wd-3ix.1, bead-wd-3ix.1.15 |
 | bead-wd-3ix.1.12.2 | Build the receiver-owned ee-proj-aap-cac with automated trusted dependencies | in_progress | P1 | feature | bead-wd-3ix.1.12 |
 | bead-wd-3ix.1.18 | Diagnose the protected organization async failure on v19 | in_progress | P1 | bug | bead-wd-3ix.1 |
+| bead-wd-3ix.1.19 | Retire v19 and rebuild from bare metal for v20 after verified fixes | open | P1 | task | bead-wd-3ix.1, bead-wd-3ix.1.12, bead-wd-3ix.1.18 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |

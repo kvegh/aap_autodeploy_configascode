@@ -163,7 +163,7 @@ test('the actual HTML hides future objects before scripts run and uses local ass
   assert.doesNotMatch(opening('source-card'), /\bhidden\b/);
   for (const route of futureRoutes) assert.match(opening(route), /\bhidden\b/);
   for (const route of ['flow-config', 'flow-code']) assert.doesNotMatch(opening(route), /\bhidden\b/);
-  for (const match of html.matchAll(/(?:href|src)="([^"#]+\.(?:css|js|svg))"/g)) assert.ok(existsSync(path.join(demo, match[1])), match[1]);
+  for (const match of html.matchAll(/(?:href|src)="([^"#]+\.(?:css|js|svg|png))"/g)) assert.ok(existsSync(path.join(demo, match[1])), match[1]);
   assert.match(source('src/styles.css'), /\[hidden\][\s\S]{0,100}display\s*:\s*none/);
 });
 
@@ -182,7 +182,7 @@ test('the four real stage buttons reveal VM, installed AAP, then base objects', 
     assert.equal(nodes['target-card'].attributes['aria-hidden'], 'false');
     assert.equal(nodes['target-title'].textContent, index < 2 ? 'New RHEL VM' : 'New AAP');
     assert.equal(nodes['target-objects'].hidden, index < 3);
-    assert.deepEqual(objectNames(nodes['target-objects']), index < 3 ? [] : sourceNames);
+    assert.deepEqual(objectNames(nodes['target-objects']).sort(), index < 3 ? [] : [...sourceNames].sort());
     assert.equal(button.attributes['aria-current'], 'step');
     assert.equal(buttons.filter(item => item.attributes['aria-current'] === 'step').length, 1);
   });
@@ -498,13 +498,25 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Certificate config v2', 'Firewall Config v1']);
   const successorItems = automationItems(nodes['successor-objects']);
   assert.equal(successorItems.length, 13);
+  const html = source('index.html');
   for (const prefix of ['target', 'successor']) {
     const columns = withClass(nodes[`${prefix}-objects`], 'aap-object-column');
-    assert.equal(columns.length, 2, `${prefix}: exactly two receiving object columns`);
-    assert.deepEqual(withClass(columns[0], 'object-type').map(item => item.textContent.split(' · ')[0]), ['Inventories', 'Projects']);
-    assert.deepEqual(withClass(columns[1], 'object-type').map(item => item.textContent.split(' · ')[0]), ['Credentials', 'Job Templates']);
-    assert.ok(columns[1].children.includes(nodes[`${prefix}-configuration-panel`]), `${prefix}: real AAP configuration belongs in the right column`);
+    assert.equal(columns.length, 2, `${prefix}: exactly two independent receiving object columns`);
+    assert.deepEqual(withClass(columns[0], 'object-type').map(item => item.textContent.split(' · ')[0]), ['Inventories', 'Credentials']);
+    assert.deepEqual(withClass(columns[1], 'object-type').map(item => item.textContent.split(' · ')[0]), ['Projects', 'Job Templates']);
+    assert.ok(columns.every(column => !descendants(column).includes(nodes[`${prefix}-configuration-panel`])), `${prefix}: AAP settings are separate from both automation columns`);
+    const panel = html.match(new RegExp(`<section\\b[^>]*\\bid="${prefix}-configuration-panel"[^>]*>`));
+    assert.ok(panel);
+    assert.match(panel[0], /class="[^"]*\baap-settings-panel\b/, `${prefix}: the separate settings category uses its inset divider style`);
+    assert.match(html, new RegExp(`<div\\b[^>]*\\bid="${prefix}-objects"[^>]*>\\s*</div>`), `${prefix}: the settings panel is not nested inside the static catalogue`);
+    const ordered = [`id="${prefix}-objects"`, `id="${prefix}-configuration-panel"`, `id="${prefix}-rhel"`].map(id => html.indexOf(id));
+    assert.ok(ordered.every(position => position >= 0));
+    assert.deepEqual([...ordered].sort((left, right) => left - right), ordered, `${prefix}: automation is followed by AAP settings, then RHEL`);
   }
+  const styles = source('src/styles.css');
+  assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/, 'Receiving content declares independent vertical layout');
+  assert.match(styles, /\.receiving-column \.aap-settings-panel\s*\{[^}]*margin:\s*auto\s+[1-9]\d*px\s+0;/, 'Settings declare bottom anchoring while the divider stays inset');
+  assert.match(styles, /\.aap-settings-panel::before\s*\{[^}]*border-top:\s*1px solid/, 'The category has one thin separator');
   assert.equal(successorItems.filter(item => item.dataset.origin === 'base').length, 4);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'git').length, 6);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'manual').length, 3);
@@ -779,6 +791,18 @@ test('the incident-response sysadmin appears only for direct manual AAP changes'
   const html = source('index.html');
   const opening = html.match(/<[^>]*\bid="manual-operator"[^>]*>/);
   assert.ok(opening);
+  const figure = html.slice(opening.index, html.indexOf('</figure>', opening.index) + '</figure>'.length);
+  const image = figure.match(/<img\b([^>]*\bclass="[^"]*\bsysadmin-illustration\b[^"]*"[^>]*)>/);
+  assert.ok(image, 'The sysadmin uses its generated local image');
+  const imageAttributes = attributes(new Element('img'), image[1]).attributes;
+  assert.equal(imageAttributes.src, 'sysadmin.png');
+  assert.equal(imageAttributes.alt, '', 'The visible figure caption provides the description');
+  assert.equal(imageAttributes['aria-hidden'], 'true');
+  assert.doesNotMatch(figure, /<svg\b[^>]*\bclass="[^"]*\bsysadmin-illustration\b/, 'The old sysadmin SVG is removed');
+  const png = readFileSync(path.join(demo, imageAttributes.src));
+  assert.ok(png.length <= 8 * 1024 * 1024, 'The image stays within the live checker limit');
+  assert.ok(png.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex')), 'The local image is PNG');
+
   assert.match(opening[0], /\bhidden\b/);
   assert.match(opening[0], /aria-hidden="true"/);
   const page = browser();

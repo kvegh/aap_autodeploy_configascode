@@ -1,11 +1,25 @@
 # Release notes
 
+## 0.61.9
+
+Integrate the tested private async-directory fix and completed Rebuild labels with the current visualization. Preserve both implementation histories and task records.
+
 ## 0.61.8
 
 Document implementation `6db4be5`: one private async result directory for base
 configuration and project imports, actual Core 2.20 regressions, and completion
 of the approved human-facing Rebuild naming. Preserve the distinction between
 passing local validation and the pending live base-configuration rerun.
+
+Anchor receiving AAP settings at the bottom from initial setup so the divider
+does not shift as objects are added. Replace the SVG operator with a simple,
+expressive generated Linux sysadmin image, preserving the seated incident posture,
+hoodie/glasses/coffee cues, transparency and manual-only visibility. Publish and
+verify the PNG alongside the five existing assets. Preserve the existing flow.
+
+Document preceding implementation `89496f6` and its successful Pages run
+43308022666: five deployed assets matched and twenty-three checks passed.
+Browser geometry remains independently unverified.
 
 ## 0.61.7
 
@@ -16,6 +30,14 @@ the results. Preserve standard CoP roles and protected diagnostic logging.
 Three actual Core 2.20 native async regressions and focused production lint pass.
 Complete the remaining human-facing Rebuild labels and inventory diagnostics;
 preserve technical identifiers, stored schemas and historical recovery evidence.
+
+Separate AAP settings below the two compact automation-object columns in both
+receiving AAPs, using one light inset divider above the settings and keeping RHEL
+below. Replace the manual-change stick figure with the owner-selected seated
+Linux admin: hoodie, glasses, laptop, coffee and a restrained outage alert.
+Retain all object names, configuration revisions, origin colours and scene states.
+All twenty-three existing interaction checks, app/scenario syntax, SVG XML/security
+and whitespace checks pass locally. Rendered browser geometry remains unverified.
 
 ## 0.61.6
 
