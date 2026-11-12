@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.59.4
+
+Record timeout implementation `8b91b22`, successful EE-v1 publication and
+independent checks. Preserve fresh-receiver reachability as a separate decision.
+
 ## 0.59.3
 
 Persist the approved Hub worker200 and registry request/idle600 timeouts through

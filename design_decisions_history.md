@@ -4314,3 +4314,24 @@ unchanged. The complete vendor package inventory and native build/publish steps
 are documented. The first Hub push failed with HTTP 502 and Hub worker timeout
 evidence; publication, AAP default activation and fresh runtime acceptance are
 not claimed. Version 0.58.1 records this implementation and its current limits.
+
+## 2026-11-12 — Persist the approved Hub upload limits
+
+Implementation `8b91b22` (0.59.3) persists the supported Hub worker timeout of
+200 seconds before installation and the native registry request/idle limits of
+600 seconds during base configuration. An actual image push failed because Hub
+workers were killed after ten seconds while hashing its large layer; the
+registry route also had an effective fifteen-second ceiling. No OOM evidence
+was found. The owner approved the narrow live fix and durable configuration.
+
+Only the existing Hub API container was reconciled with its exact native module,
+image, mounts and secrets; other running containers retained their start times.
+The Source inventory and registry route readback verified the approved settings.
+The same image then published and independently pulled with verified TLS.
+
+Three focused tests passed on actual Core 2.20.10 with the native Platform
+collection, including installer and route rerun idempotency, preserved security
+fields and seven refusal cases. Both complete playbooks passed syntax checks.
+Source route IDs are not copied into new receivers. The firewall decision for
+new receivers reaching the protected Source Hub remains separate. Version
+0.59.4 records this implementation and its verification limits.
