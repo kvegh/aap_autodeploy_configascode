@@ -1,5 +1,15 @@
 # Design decisions history
 
+## Publish verified identity before normal recovery — 2026-11-12
+
+Hactar implementation `e629966` and private configuration implementation
+`c2f5348` publish the new provider-backed SSH trust and machine identity after
+strict authenticated Rocky 9 and unchanged physical-hardware checks. Existing
+deployment source pins select that Hactar implementation; unrelated configuration
+and advancing allocation history are preserved. Normal recovery preflight passed
+using the official Core 2.20 EE. This checkpoint records actual identity readiness
+and source consumption, not conversion or complete fresh AAP acceptance.
+
 ## Verify native EE authentication before physical recovery — 2026-11-12
 
 Implementation `e58acc6` passed the existing managed preflight with native

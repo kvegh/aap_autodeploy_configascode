@@ -356,9 +356,12 @@ their history remains in Beads and the encrypted recovery export. Their owning
 chats track subsequent implementation.
 
 The generated overview and protected export reflect the current Beads records.
-The source Core 2.20 runtime passed its normal preflight and zero-error CaC
-preview. Fresh-target image acquisition and the full physical rebuild remain
-separate verification; those source checks do not prove either outcome.
+The source Core 2.20 runtime passed an authenticated forced image pull, normal
+preflight and zero-error CaC preview. The approved physical reinstall then passed
+provider host-key matching and strict authenticated OS, machine-ID and hardware
+checks. Encrypted trust and existing deployment source pins contain that verified
+identity. Normal post-reinstall preflight also passed; conversion, host setup,
+fresh-target EE acquisition and complete versioned AAP acceptance remain separate.
 
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
 conversation association and original parent so the existing export includes

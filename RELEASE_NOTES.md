@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.55.3
+
+Record the authenticated physical-reinstall identity publication, preserved
+hardware and allocation history, and successful normal recovery preflight under
+the unmodified official EE. Refresh Beads recovery records while keeping later
+host setup, fresh AAP runtime acquisition and complete acceptance explicit.
+
 ## 0.55.2
 
 Use the available desktop width for the AAP CaC visualization, reduce stacked
