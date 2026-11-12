@@ -1,0 +1,8 @@
+---
+- name: Build and verify the project execution environment in its own Hub
+  hosts: "{{ aap_ee_build_hosts | default('aap_ee_build') }}"
+  gather_facts: false
+  serial: 1
+  tasks:
+    - name: Build through the existing host's native container tools
+      ansible.builtin.include_tasks: tasks/build-execution-environment.yml

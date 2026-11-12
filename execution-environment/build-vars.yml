@@ -1,0 +1,11 @@
+---
+# Public recipe defaults only. Registry location and credentials are caller inputs.
+defaults:
+  image_name: ee-proj-aap-cac-v2
+  image_tag: 2.0.0
+assets:
+  - Containerfile
+  - requirements.txt
+  - requirements.lock
+  - base-inventory.json
+fingerprint_label: io.aap.autodeploy.build-input-sha256

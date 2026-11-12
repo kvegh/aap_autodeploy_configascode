@@ -39,6 +39,9 @@
         - name: Use an explicit native API session for prerequisite preparation
           ansible.builtin.include_tasks: tasks/cac-api-session.yml
 
+        - name: Resolve this receiver shared image before evaluating prerequisite declarations
+          ansible.builtin.include_tasks: tasks/cac-shared-execution-image.yml
+
         - name: Prepare the declared collections and execution image
           ansible.builtin.include_tasks:
             file: tasks/use-case-prerequisites.yml

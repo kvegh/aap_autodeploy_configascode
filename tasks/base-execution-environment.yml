@@ -1,0 +1,160 @@
+---
+- name: Load the public receiver execution-environment name and version
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/execution-environment/build-vars.yml"
+    name: aap_ee_receiver_recipe
+
+- name: Require the reviewed default and the verified receiver login
+  ansible.builtin.assert:
+    that:
+      - aap_default_execution_environment == aap_ee_receiver_recipe.defaults.image_name
+      - controller_execution_environments_base | selectattr('name', 'equalto', aap_default_execution_environment) | list | length == 1
+      - cac_gateway_login_password is string
+      - cac_gateway_login_password | length > 0
+      - aap_username is string
+      - aap_username | length > 0
+      - cac_registry_route_readback.json.request_timeout_seconds == aap_registry_route_timeout
+      - cac_registry_route_readback.json.idle_timeout_seconds == aap_registry_route_timeout
+    fail_msg: Select the reviewed receiver-built default, verify its Gateway login and prepare its scoped registry route first.
+  no_log: true
+
+- name: Select only the reviewed default and the existing Red Hat registry login
+  ansible.builtin.set_fact:
+    aap_ee_receiver_definition: "{{ controller_execution_environments_base | selectattr('name', 'equalto', aap_default_execution_environment) | first }}"
+    aap_ee_receiver_redhat_credentials: >-
+      {{ controller_credentials_base | selectattr('credential_type', 'equalto', 'Container Registry') |
+         selectattr('inputs.host', 'defined') | selectattr('inputs.host', 'equalto', 'registry.redhat.io') | list }}
+    aap_ee_receiver_registry: "{{ aap_hostname | ansible.builtin.urlsplit('netloc') }}"
+    # The build uses the currently authenticated target password. The persisted
+    # pull credential must survive the desired password rotation during dispatch.
+    aap_ee_receiver_pull_password: "{{ aap_password | default(cac_gateway_login_password, true) }}"
+  no_log: true
+
+- name: Require a dedicated declared receiver registry credential
+  ansible.builtin.assert:
+    that:
+      - aap_ee_receiver_definition.credential is string
+      - aap_ee_receiver_definition.credential | length > 0
+      - controller_credentials_base | selectattr('name', 'equalto', aap_ee_receiver_definition.credential) | list | length == 1
+      - >-
+        (controller_credentials_base | selectattr('name', 'equalto', aap_ee_receiver_definition.credential) | first).credential_type ==
+        'Container Registry'
+      - (controller_credentials_base | selectattr('name', 'equalto', aap_ee_receiver_definition.credential) | first).inputs is mapping
+      - >-
+        controller_execution_environments_base | rejectattr('name', 'equalto', aap_default_execution_environment) |
+        selectattr('credential', 'defined') | selectattr('credential', 'equalto', aap_ee_receiver_definition.credential) | list | length == 0
+      - aap_ee_receiver_redhat_credentials | length == 1
+      - aap_ee_receiver_redhat_credentials[0].name != aap_ee_receiver_definition.credential
+      - aap_ee_receiver_redhat_credentials[0].inputs.verify_ssl is sameas true
+      - aap_ee_receiver_redhat_credentials[0].inputs.username is string
+      - aap_ee_receiver_redhat_credentials[0].inputs.username | length > 0
+      - aap_ee_receiver_redhat_credentials[0].inputs.password is string
+      - aap_ee_receiver_redhat_credentials[0].inputs.password | length > 0
+    fail_msg: Declare one dedicated native registry credential for this default and retain the existing verified Red Hat registry login.
+  no_log: true
+
+- name: Resolve the actual receiver install-user UID for native rootless storage
+  ansible.builtin.command:
+    argv: [id, -u]
+  delegate_to: "{{ aap_instance_route.aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+  become: true
+  become_user: "{{ vault_aap_install_user }}"
+  vars: &receiver_build_ssh
+    ansible_connection: ssh
+    ansible_user: "{{ vault_ansible_user }}"
+    ansible_password: "{{ vault_ansible_password }}"
+    ansible_port: 22
+    ansible_ssh_common_args: "{{ aap_instance_ssh_args }}"
+    ansible_host_key_checking: true
+    ansible_ssh_host_key_checking: true
+  register: aap_ee_receiver_uid
+  changed_when: false
+  no_log: true
+
+- name: Inspect the receiver's running Hub API as its existing installer user
+  ansible.builtin.command:
+    argv: [podman, container, inspect, automation-hub-api]
+  delegate_to: "{{ aap_instance_route.aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+  become: true
+  become_user: "{{ vault_aap_install_user }}"
+  vars: *receiver_build_ssh
+  environment: &receiver_build_environment
+    XDG_RUNTIME_DIR: "/run/user/{{ aap_ee_receiver_uid.stdout | int }}"
+  register: aap_ee_receiver_hub_api
+  changed_when: false
+  no_log: true
+
+- name: Require the supported Hub worker timeout before uploading an image
+  ansible.builtin.assert:
+    that:
+      - aap_ee_receiver_hub_api.stdout | from_json | length == 1
+      - (aap_ee_receiver_hub_api.stdout | from_json | first).State.Running is sameas true
+      - >-
+        ((aap_ee_receiver_hub_api.stdout | from_json | first).Config.Cmd | join(' ')) is
+        search('(?:^|\s)--timeout(?:=|\s+)' ~ (aap_hub_gunicorn_timeout | string) ~ '(?:\s|$)')
+    fail_msg: Reconcile the existing Hub API service to the reviewed worker timeout before publishing the receiver EE.
+  # The conditions and message are public; the protected container inspect result
+  # itself is never included in this failure output.
+  no_log: false
+
+- name: Build and verify the image on the selected receiver through its pinned SSH route
+  ansible.builtin.include_tasks:
+    file: build-execution-environment.yml
+    apply:
+      delegate_to: "{{ aap_instance_route.aap_hostname | ansible.builtin.urlsplit('hostname') }}"
+      become: true
+      become_user: "{{ vault_aap_install_user }}"
+      vars: *receiver_build_ssh
+      environment: *receiver_build_environment
+  vars:
+    aap_ee_registry: "{{ aap_ee_receiver_registry }}"
+    aap_ee_registry_username: "{{ aap_username }}"
+    aap_ee_registry_password: "{{ cac_gateway_login_password }}"
+    aap_ee_redhat_username: "{{ aap_ee_receiver_redhat_credentials[0].inputs.username }}"
+    aap_ee_redhat_password: "{{ aap_ee_receiver_redhat_credentials[0].inputs.password }}"
+    aap_ee_image_name: "{{ aap_ee_receiver_recipe.defaults.image_name }}"
+    aap_ee_image_tag: "{{ aap_ee_receiver_recipe.defaults.image_tag }}"
+  no_log: true
+
+- name: Require an immutable result owned by this receiving Hub
+  ansible.builtin.assert:
+    that:
+      - aap_ee_build_result.verified is sameas true
+      - >-
+        aap_ee_build_result.image is match('^' ~
+          ((aap_ee_receiver_registry ~ '/' ~ aap_ee_receiver_recipe.defaults.image_name) | regex_escape) ~
+          '@sha256:[a-f0-9]{64}$')
+    fail_msg: The build must verify an immutable image in this receiver's own Hub before base configuration.
+  no_log: true
+
+- name: Initialize the narrow receiver-owned desired-state updates
+  ansible.builtin.set_fact:
+    aap_ee_receiver_environments: []
+    aap_ee_receiver_credentials: []
+  no_log: true
+
+- name: Bind only the reviewed default to the verified receiver-local image
+  ansible.builtin.set_fact:
+    aap_ee_receiver_environments: >-
+      {{ aap_ee_receiver_environments +
+         [(item | combine({'image': aap_ee_build_result.image, 'pull': 'missing'}))
+          if item.name == aap_default_execution_environment else item] }}
+  loop: "{{ controller_execution_environments_base }}"
+  no_log: true
+
+- name: Bind only its dedicated pull credential to the final receiver login
+  ansible.builtin.set_fact:
+    aap_ee_receiver_credentials: >-
+      {{ aap_ee_receiver_credentials +
+         [(item | combine({'inputs': item.inputs | combine({
+           'host': aap_ee_receiver_registry, 'username': aap_username,
+           'password': aap_ee_receiver_pull_password, 'verify_ssl': true})}))
+          if item.name == aap_ee_receiver_definition.credential else item] }}
+  loop: "{{ controller_credentials_base }}"
+  no_log: true
+
+- name: Supply receiver-local values before the ordinary base dispatcher combines them
+  ansible.builtin.set_fact:
+    controller_execution_environments_base: "{{ aap_ee_receiver_environments }}"
+    controller_credentials_base: "{{ aap_ee_receiver_credentials }}"
+  no_log: true

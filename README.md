@@ -398,8 +398,23 @@ actual Core 2.20.10 runtime header. Source AAP now uses EE-v1 as its global
 default; all 62 managed templates and the Hactar project default select it.
 The deployment persists the approved 200-second Hub worker and 600-second
 registry route timeouts through the existing installer and native Platform CaC
-module. Fresh-receiver registry reachability remains a separate network-policy
-decision.
+module. The subsequent **ee-proj-aap-cac-v2** design replaces Source-Hub dependence:
+each receiver builds the exact official base plus the two direct Python
+requirements from Red Hat Trusted Libraries, then publishes to its own Hub.
+The [automated build playbook](docs/execution-environment-build.md) verifies
+all remote bytes and the offline runtime before returning an immutable image.
+Stage 04 runs it before creating the receiver default and its dedicated native
+registry credential. The existing [Orchestrator CaC deployment](docs/orchestrator-execution-environment.md)
+also invokes the builder before importing project definitions. Other reviewed
+project image references resolve that receiver's native shared EE; unrelated
+custom images are preserved. Encrypted target credentials and normal pinned SSH
+access remain prerequisites. No Source-Hub firewall exception is required.
+
+The v2 artifact passed a real build, publication, uncached download and a repeat
+run that skipped rebuilding and publishing. Native Source AAP job 3744, Verify Registered AAP Guest Access, passed with
+Core 2.20.10; its default and 62 managed templates now select EE-v2. Receiving
+AAP base setup and full application acceptance remain separate checks; an
+image build alone does not establish deployment completion.
 
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
 conversation association and original parent so the existing export includes

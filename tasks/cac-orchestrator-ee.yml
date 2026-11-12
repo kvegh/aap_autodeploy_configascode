@@ -1,0 +1,196 @@
+---
+# This is ordinary encrypted project input, not an API password fallback. A
+# receiver must be explicitly provisioned in its existing project Vault first.
+- name: Require the reviewed Orchestrator image mapping and target-bound build inputs
+  ansible.builtin.assert:
+    that:
+      - cac_project_contract.project_id == 'automation-orchestrator'
+      - cac_import_metadata.resource_variables.controller_execution_environments == 'controller_execution_environments_orchestrator'
+      - orchestrator_ee_build_targets is mapping
+      - (aap_instance_key | aap_inventory_instance_name(hostvars[aap_instance_key])) in orchestrator_ee_build_targets
+      - controller_execution_environments_orchestrator is sequence
+      - controller_execution_environments_orchestrator | selectattr('name', 'equalto', 'Orchestrator EE') | list | length == 1
+      - orchestrator_registry_username is string
+      - orchestrator_registry_username | length > 0
+      - orchestrator_registry_password is string
+      - orchestrator_registry_password | length > 0
+      - not ansible_check_mode
+    fail_msg: Prepare this receiver's protected Orchestrator build inputs and the reviewed EE mapping before importing it.
+  no_log: true
+
+- name: Bind only the selected receiver's protected build record
+  ansible.builtin.set_fact:
+    cac_orchestrator_ee_target: "{{ orchestrator_ee_build_targets[aap_instance_key | aap_inventory_instance_name(hostvars[aap_instance_key])] }}"
+    cac_orchestrator_ee_definitions: []
+  no_log: true
+
+- name: Require exact API origin, pinned SSH route and receiver identity before any build connection
+  ansible.builtin.assert:
+    that:
+      - cac_orchestrator_ee_target is mapping
+      - >-
+        cac_orchestrator_ee_target.keys() | list | sort == ['build_user', 'hostname', 'hub_password', 'hub_username', 'machine_id', 'route',
+        'ssh_password', 'ssh_username']
+      - cac_orchestrator_ee_target.hostname == cac_api_auth.hostname
+      - cac_orchestrator_ee_target.route | aap_instance_route is mapping
+      - cac_orchestrator_ee_target.route.aap_hostname == cac_api_auth.hostname
+      - cac_orchestrator_ee_target.route.vm_name == (aap_instance_key | aap_inventory_instance_name(hostvars[aap_instance_key]))
+      - cac_orchestrator_ee_target.route.vm_ip == hostvars[aap_instance_key].ansible_host
+      - cac_orchestrator_ee_target.route.guest_host_keys == hostvars[aap_instance_key].host_keys
+      - (cac_orchestrator_ee_target.hostname | urlsplit('hostname')) == hostvars[aap_instance_key].ansible_fqdn
+      - cac_orchestrator_ee_target.machine_id is match('^[0-9a-f]{32}$')
+      - cac_orchestrator_ee_target.machine_id != cac_orchestrator_ee_target.route.hypervisor.machine_id
+      - cac_orchestrator_ee_target.ssh_username is match('^[a-z_][a-z0-9_-]*[$]?$')
+      - cac_orchestrator_ee_target.ssh_password is string
+      - cac_orchestrator_ee_target.ssh_password | length > 0
+      - cac_orchestrator_ee_target.build_user is match('^[a-z_][a-z0-9_-]*[$]?$')
+      - cac_orchestrator_ee_target.build_user != 'root'
+      - cac_orchestrator_ee_target.hub_username is string
+      - cac_orchestrator_ee_target.hub_username | length > 0
+      - cac_orchestrator_ee_target.hub_password is string
+      - cac_orchestrator_ee_target.hub_password | length > 0
+      - (controller_execution_environments_orchestrator | selectattr('name', 'equalto', 'Orchestrator EE') | first).credential == 'Project AAP CaC EE registry'
+    fail_msg: The protected build record must match the selected receiver, its verified SSH keys and its own Hub login.
+  no_log: true
+
+- name: Require the receiver's existing native Hub registry credential without reading its masked password
+  ansible.controller.credential:
+    name: Project AAP CaC EE registry
+    credential_type: Container Registry
+    state: exists
+    controller_host: "{{ cac_api_auth.hostname }}"
+    controller_oauthtoken: "{{ cac_api_auth.token }}"
+    validate_certs: true
+  register: cac_orchestrator_ee_registry_credential
+  no_log: true
+
+- name: Read only the existing registry credential's public binding from the selected receiver
+  ansible.builtin.uri:
+    url: "{{ cac_api_auth.hostname }}/api/controller/v2/credentials/{{ cac_orchestrator_ee_registry_credential.id }}/"
+    headers:
+      Authorization: "Bearer {{ cac_api_auth.token }}"
+    validate_certs: true
+    follow_redirects: none
+    status_code: 200
+  register: cac_orchestrator_ee_registry_binding
+  no_log: true
+
+- name: Refuse a shared credential that still points at another Hub
+  ansible.builtin.assert:
+    that:
+      - cac_orchestrator_ee_registry_binding.json.inputs.host in [cac_orchestrator_ee_target.hostname, cac_orchestrator_ee_target.hostname | urlsplit('netloc')]
+      - cac_orchestrator_ee_registry_binding.json.inputs.verify_ssl is sameas true
+      - cac_orchestrator_ee_registry_binding.json.inputs.username == cac_orchestrator_ee_target.hub_username
+    fail_msg: Prepare the receiver's existing native registry credential for its own Hub with TLS verification before importing Orchestrator.
+  no_log: true
+
+- name: Prepare only this receiver's verified connection handoff
+  ansible.builtin.set_fact:
+    aap_instance_route: "{{ cac_orchestrator_ee_target.route }}"
+  no_log: true
+
+- name: Build through the existing pinned guest route and always remove temporary trust
+  block:
+    - name: Prepare the same strict guest and hypervisor SSH trust used by normal installation
+      ansible.builtin.include_tasks: aap-instance-ssh.yml
+
+    - name: Read the selected build host's authenticated machine identity
+      ansible.builtin.command:
+        argv: [cat, /etc/machine-id]
+      delegate_to: "{{ cac_orchestrator_ee_target.hostname | urlsplit('hostname') }}"
+      become: false
+      vars: &build_connection
+        ansible_connection: ssh
+        ansible_host: "{{ hostvars[inventory_hostname].cac_orchestrator_ee_target.route.vm_ip }}"
+        ansible_port: 22
+        ansible_user: "{{ hostvars[inventory_hostname].cac_orchestrator_ee_target.ssh_username }}"
+        ansible_password: "{{ hostvars[inventory_hostname].cac_orchestrator_ee_target.ssh_password }}"
+        ansible_ssh_common_args: "{{ hostvars[inventory_hostname].aap_instance_ssh_args }}"
+        ansible_host_key_checking: true
+        ansible_ssh_host_key_checking: true
+      register: cac_orchestrator_ee_machine_id
+      changed_when: false
+      no_log: true
+
+    - name: Refuse a build on any host other than the pinned receiver
+      ansible.builtin.assert:
+        that: cac_orchestrator_ee_machine_id.stdout | trim == cac_orchestrator_ee_target.machine_id
+        fail_msg: The authenticated build host differs from this receiver's protected machine identity.
+      no_log: true
+
+    - name: Resolve the receiver's actual existing installation account UID through approved sudo
+      ansible.builtin.command:
+        argv: [id, -u]
+      delegate_to: "{{ cac_orchestrator_ee_target.hostname | urlsplit('hostname') }}"
+      become: true
+      become_user: "{{ cac_orchestrator_ee_target.build_user }}"
+      vars: *build_connection
+      register: cac_orchestrator_ee_build_uid
+      changed_when: false
+      no_log: true
+
+    - name: Require a real nonroot installation account before choosing its runtime directory
+      ansible.builtin.assert:
+        that:
+          - cac_orchestrator_ee_build_uid.stdout | trim is match('^[1-9][0-9]{0,9}$')
+          - cac_orchestrator_ee_build_uid.stdout | trim | int <= 4294967294
+        fail_msg: Read the actual existing installation account UID before using native rootless container storage.
+      no_log: true
+
+    # Native Podman runs as the existing installation account. No package
+    # installation, alternative host or security-policy fallback is permitted.
+    - name: Build and independently verify the versioned image in the receiver's own Hub
+      ansible.builtin.include_tasks:
+        file: build-execution-environment.yml
+        apply:
+          delegate_to: "{{ cac_orchestrator_ee_target.hostname | urlsplit('hostname') }}"
+          become: true
+          become_user: "{{ cac_orchestrator_ee_target.build_user }}"
+          vars: *build_connection
+          environment:
+            XDG_RUNTIME_DIR: "/run/user/{{ cac_orchestrator_ee_build_uid.stdout | trim | int }}"
+          no_log: true
+      vars:
+        aap_ee_registry: "{{ cac_orchestrator_ee_target.hostname | urlsplit('netloc') }}"
+        aap_ee_registry_username: "{{ cac_orchestrator_ee_target.hub_username }}"
+        aap_ee_registry_password: "{{ cac_orchestrator_ee_target.hub_password }}"
+        aap_ee_redhat_username: "{{ orchestrator_registry_username }}"
+        aap_ee_redhat_password: "{{ orchestrator_registry_password }}"
+        aap_ee_image_name: ee-proj-aap-cac-v2
+        aap_ee_image_tag: 2.0.0
+
+    - name: Require independent verification and a digest bound to this receiver's Hub
+      ansible.builtin.assert:
+        that:
+          - aap_ee_build_result.verified is sameas true
+          - >-
+            aap_ee_build_result.image is match('^' ~ ((cac_orchestrator_ee_target.hostname | urlsplit('netloc')) | regex_escape) ~
+            '/ee-proj-aap-cac-v2@sha256:[a-f0-9]{64}$')
+        fail_msg: Only an independently verified receiver-local immutable image can be imported.
+      no_log: true
+
+    - name: Bind only the reviewed Orchestrator EE while preserving foreign image ownership
+      ansible.builtin.set_fact:
+        cac_orchestrator_ee_definitions: >-
+          {{ cac_orchestrator_ee_definitions +
+             [(item | combine({'image': aap_ee_build_result.image}))
+              if item.name == 'Orchestrator EE' else item] }}
+      loop: "{{ controller_execution_environments_orchestrator }}"
+      # Reviewed captures may already use the explicit shared-image template.
+      # Keep this provisional value task-local; the next importer step binds
+      # the public variable only after the native EE readback agrees.
+      vars:
+        aap_shared_execution_image: "{{ aap_ee_build_result.image }}"
+      no_log: true
+
+    - name: Supply the verified image before ordinary capture normalization
+      ansible.builtin.set_fact:
+        controller_execution_environments_orchestrator: "{{ cac_orchestrator_ee_definitions }}"
+      no_log: true
+  always:
+    - name: Remove only this job's temporary SSH trust on success or failure
+      ansible.builtin.file:
+        path: "{{ aap_instance_trust.path }}"
+        state: absent
+      when: aap_instance_trust.path | default('') is match('^/tmp/aap-instance-known-hosts-[A-Za-z0-9_]+$')
+      no_log: true

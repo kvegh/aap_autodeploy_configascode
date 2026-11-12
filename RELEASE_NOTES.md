@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.60.0
+
+Build ee-proj-aap-cac-v2 from the pinned official Core 2.20 image and nine
+hash-locked Red Hat Trusted Libraries wheels. Add a native Ansible builder with
+private registry authentication, tag reuse guards, offline runtime checks and
+uncached manifest/blob verification. Build in each receiver's own Hub before
+base dispatch and before Orchestrator CaC imports; resolve explicit shared-image
+references from that receiver's native EE for other reviewed imports.
+
+Real build/publication and repeat-without-rebuild passed. Thirteen new focused
+checks passed inside actual Core 2.20.10. Native Source job 3744, Verify Registered
+AAP Guest Access, passed using EE-v2; its 62 managed templates and default now
+select that EE. Receiving AAP v19 now has the approved RHEL Skopeo prerequisite and verified
+Hub API timeout 200; its normal base/application acceptance remains pending.
+
 ## 0.59.9
 
 Record native EE-v1 acceptance, verified Source default activation and maintained

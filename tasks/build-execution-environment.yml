@@ -1,0 +1,528 @@
+---
+# Keep all caller connection/become settings, including include_tasks apply delegation.
+- name: Clear a prior run's verification result before starting a new build
+  ansible.builtin.set_fact:
+    aap_ee_build_result:
+      verified: false
+  no_log: true
+
+- name: Load the public execution-environment recipe defaults
+  ansible.builtin.include_vars:
+    file: "{{ playbook_dir }}/execution-environment/build-vars.yml"
+    name: aap_ee_recipe
+
+- name: Validate the selected Hub, versioned image and existing authentication inputs
+  ansible.builtin.assert:
+    that:
+      - aap_ee_registry is string
+      - aap_ee_registry is match('^[A-Za-z0-9][A-Za-z0-9.-]*(?::[0-9]{1,5})?$')
+      - "':' not in aap_ee_registry or (aap_ee_registry.rsplit(':', 1)[1] | int > 0 and aap_ee_registry.rsplit(':', 1)[1] | int <= 65535)"
+      - aap_ee_registry_username is string
+      - aap_ee_registry_username | length > 0
+      - aap_ee_registry_password is string
+      - aap_ee_registry_password | length > 0
+      - aap_ee_image_name | default(aap_ee_recipe.defaults.image_name) is match('^[a-z0-9]+(?:[._/-][a-z0-9]+)*$')
+      - aap_ee_image_tag | default(aap_ee_recipe.defaults.image_tag) is match('^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$')
+      - aap_ee_redhat_username | default('') is string
+      - aap_ee_redhat_password | default('') is string
+      - (aap_ee_redhat_username | default('') | length > 0) == (aap_ee_redhat_password | default('') | length > 0)
+    fail_msg: Supply one Hub hostname with an optional valid port, a versioned repository, its protected login, and an optional complete Red Hat login pair.
+  no_log: true
+
+- name: Require the existing native container tools without installing anything
+  ansible.builtin.command:
+    argv: ["{{ item }}", --version]
+  loop: [podman, skopeo]
+  changed_when: false
+
+- name: Derive image references and the pinned base from public source
+  ansible.builtin.set_fact:
+    aap_ee_selected_name: "{{ aap_ee_image_name | default(aap_ee_recipe.defaults.image_name) }}"
+    aap_ee_selected_tag: "{{ aap_ee_image_tag | default(aap_ee_recipe.defaults.image_tag) }}"
+    aap_ee_base_candidates: >-
+      {{ lookup('ansible.builtin.file', playbook_dir ~ '/execution-environment/Containerfile', rstrip=false)
+         | regex_findall('(?m)^FROM\s+(\S+)\s*$') }}
+    aap_ee_base_inventory: "{{ lookup('ansible.builtin.file', playbook_dir ~ '/execution-environment/base-inventory.json') | from_json }}"
+    aap_ee_asset_hashes: []
+  no_log: true
+
+- name: Require the digest-pinned official base and the two approved direct requirements
+  ansible.builtin.assert:
+    that:
+      - aap_ee_base_candidates | length == 1
+      - aap_ee_base_candidates[0] is match('^registry\.redhat\.io/ansible-automation-platform-27/ee-minimal-rhel9@sha256:[a-f0-9]{64}$')
+      - >-
+        lookup('ansible.builtin.file', playbook_dir ~ '/execution-environment/requirements.txt').splitlines()
+        | reject('match', '^\s*(#|$)') | list == ['kubernetes==35.0.0', 'jsonpatch==1.33']
+    fail_msg: Keep the official digest pin and the approved Kubernetes/JSON-patch direct requirements.
+
+- name: Fingerprint each exact public build asset
+  ansible.builtin.set_fact:
+    aap_ee_asset_hashes: >-
+      {{ aap_ee_asset_hashes + [item ~ ':' ~
+         (lookup('ansible.builtin.file', playbook_dir ~ '/execution-environment/' ~ item, rstrip=false) | hash('sha256'))] }}
+  loop: "{{ aap_ee_recipe.assets }}"
+
+- name: Prepare this version's immutable build identity
+  ansible.builtin.set_fact:
+    aap_ee_base_reference: "{{ aap_ee_base_candidates[0] }}"
+    aap_ee_build_fingerprint: "{{ (['native-gzip1-v1'] + aap_ee_asset_hashes) | join('\n') | hash('sha256') }}"
+    aap_ee_registry_tag: "{{ aap_ee_registry }}/{{ aap_ee_selected_name }}:{{ aap_ee_selected_tag }}"
+    aap_ee_local_tag: "localhost/{{ aap_ee_selected_name }}:{{ aap_ee_selected_tag }}"
+    aap_ee_lock_versions: >-
+      {{ dict(lookup('ansible.builtin.file', playbook_dir ~ '/execution-environment/requirements.lock')
+         | regex_findall('(?m)^([A-Za-z0-9_.-]+)==([^\s]+)')) }}
+  no_log: true
+
+- name: Allocate an owned private build workspace on the actual build host
+  ansible.builtin.tempfile:
+    state: directory
+    path: /tmp
+    prefix: aap-ee-build-
+  register: aap_ee_workspace
+  no_log: true
+
+- name: Build, publish and independently verify this versioned artifact
+  no_log: true
+  block:
+    - name: Enforce private workspace permissions
+      ansible.builtin.file:
+        path: "{{ aap_ee_workspace.path }}"
+        state: directory
+        mode: '0700'
+
+    - name: Prepare only the public recipe context and independent image directories
+      ansible.builtin.file:
+        path: "{{ aap_ee_workspace.path }}/{{ item }}"
+        state: directory
+        mode: '0700'
+      loop: [context, publish, verify]
+
+    - name: Copy the exact public build assets from the project checkout
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/execution-environment/{{ item }}"
+        dest: "{{ aap_ee_workspace.path }}/context/{{ item }}"
+        mode: '0600'
+      loop: "{{ aap_ee_recipe.assets }}"
+
+    - name: Initialize a private native registry authentication file
+      ansible.builtin.copy:
+        content: '{"auths": {}}'
+        dest: "{{ aap_ee_workspace.path }}/auth.json"
+        mode: '0600'
+
+    - name: Authenticate to this AAP's Hub without putting the password in arguments
+      ansible.builtin.command:
+        argv:
+          - podman
+          - login
+          - --tls-verify=true
+          - --authfile
+          - "{{ aap_ee_workspace.path }}/auth.json"
+          - --username
+          - "{{ aap_ee_registry_username }}"
+          - --password-stdin
+          - "{{ aap_ee_registry }}"
+        stdin: "{{ aap_ee_registry_password }}"
+        stdin_add_newline: false
+      changed_when: false
+
+    - name: Authenticate to Red Hat only when the caller supplies the existing login pair
+      ansible.builtin.command:
+        argv:
+          - podman
+          - login
+          - --tls-verify=true
+          - --authfile
+          - "{{ aap_ee_workspace.path }}/auth.json"
+          - --username
+          - "{{ aap_ee_redhat_username }}"
+          - --password-stdin
+          - registry.redhat.io
+        stdin: "{{ aap_ee_redhat_password }}"
+        stdin_add_newline: false
+      when: aap_ee_redhat_username | default('') | length > 0
+      changed_when: false
+
+    - name: Inspect the versioned Hub tag without using a local image cache
+      ansible.builtin.command:
+        argv: [skopeo, inspect, --authfile, "{{ aap_ee_workspace.path }}/auth.json", --tls-verify=true, "docker://{{ aap_ee_registry_tag }}"]
+      register: aap_ee_remote_inspect
+      changed_when: false
+      failed_when: >-
+        aap_ee_remote_inspect.rc != 0 and
+        not (aap_ee_remote_inspect.stderr | lower is search('manifest unknown|name unknown|status code: 404|status: 404'))
+
+    - name: Refuse replacing an existing tag built from different inputs
+      ansible.builtin.assert:
+        that:
+          - (aap_ee_remote_inspect.stdout | from_json).Labels[aap_ee_recipe.fingerprint_label] | default('') == aap_ee_build_fingerprint
+        fail_msg: This versioned Hub tag already identifies different build inputs; select a new version.
+      when: aap_ee_remote_inspect.rc == 0
+
+    - name: Inspect whether the exact official base already exists in native storage
+      ansible.builtin.command:
+        argv: [podman, image, exists, "{{ aap_ee_base_reference }}"]
+      register: aap_ee_base_exists
+      changed_when: false
+      failed_when: aap_ee_base_exists.rc not in [0, 1]
+
+    - name: Obtain only the pinned official base through existing native registry authentication
+      changed_when: true
+      ansible.builtin.command:
+        argv: >-
+          {{ ['podman', 'pull'] +
+             (['--authfile', aap_ee_workspace.path ~ '/auth.json']
+              if aap_ee_redhat_username | default('') | length > 0 else []) +
+             ['--tls-verify=true', aap_ee_base_reference] }}
+      when: aap_ee_base_exists.rc == 1
+
+    - name: Inspect the verified official base configuration and layer prefix
+      ansible.builtin.command:
+        argv: [podman, image, inspect, "{{ aap_ee_base_reference }}"]
+      register: aap_ee_base_inspect
+      changed_when: false
+
+    - name: Require the actual base image ID from the public inventory receipt
+      ansible.builtin.assert:
+        that:
+          - >-
+            ((aap_ee_base_inspect.stdout | from_json | first).Id | regex_replace('^sha256:', '')) ==
+            (aap_ee_base_inventory.image_id | regex_replace('^sha256:', ''))
+        fail_msg: The local base does not match the recorded vendor image identity.
+
+    - name: Build only when this version is not already published with matching inputs
+      when: aap_ee_remote_inspect.rc != 0
+      block:
+        - name: Inspect an existing local recipe cache
+          ansible.builtin.command:
+            argv: [podman, image, inspect, "{{ aap_ee_local_tag }}"]
+          register: aap_ee_local_inspect
+          changed_when: false
+          failed_when: false
+
+        - name: Build the derived image using only the owned public context
+          changed_when: true
+          ansible.builtin.command:
+            argv:
+              - podman
+              - build
+              - --pull=never
+              - --authfile
+              - "{{ aap_ee_workspace.path }}/auth.json"
+              - --label
+              - "{{ aap_ee_recipe.fingerprint_label }}={{ aap_ee_build_fingerprint }}"
+              - --tag
+              - "{{ aap_ee_local_tag }}"
+              - --file
+              - "{{ aap_ee_workspace.path }}/context/Containerfile"
+              - "{{ aap_ee_workspace.path }}/context"
+          when: >-
+            aap_ee_local_inspect.rc != 0 or
+            ((aap_ee_local_inspect.stdout | from_json | first).Config.Labels[aap_ee_recipe.fingerprint_label]
+             | default('')) != aap_ee_build_fingerprint
+
+        - name: Inspect the candidate before publication
+          ansible.builtin.command:
+            argv: [podman, image, inspect, "{{ aap_ee_local_tag }}"]
+          register: aap_ee_candidate_inspect
+          changed_when: false
+
+        - name: Preserve vendor execution settings and layers before publication
+          ansible.builtin.assert:
+            that:
+              - candidate.Config.Labels[aap_ee_recipe.fingerprint_label] == aap_ee_build_fingerprint
+              - candidate.Config.User | default('') == vendor.Config.User | default('')
+              - candidate.Config.Entrypoint == vendor.Config.Entrypoint
+              - candidate.Config.Cmd == vendor.Config.Cmd
+              - candidate.Config.Env == vendor.Config.Env
+              - candidate.Config.WorkingDir | default('') == vendor.Config.WorkingDir | default('')
+              - candidate.RootFS.Layers[:vendor.RootFS.Layers | length] == vendor.RootFS.Layers
+            fail_msg: The candidate changed base execution behavior or its vendor layer prefix.
+          vars:
+            candidate: "{{ aap_ee_candidate_inspect.stdout | from_json | first }}"
+            vendor: "{{ aap_ee_base_inspect.stdout | from_json | first }}"
+
+        - name: Check candidate dependency consistency before publication
+          ansible.builtin.command:
+            argv: [podman, run, --rm, --pull=never, --network=none, --entrypoint, /usr/bin/python3, "{{ aap_ee_local_tag }}", -m, pip, check]
+          changed_when: false
+
+        - name: Verify candidate imports, versions and exact package closure before publication
+          ansible.builtin.command:
+            argv:
+              - podman
+              - run
+              - --rm
+              - --interactive
+              - --pull=never
+              - --network=none
+              - --entrypoint
+              - /usr/bin/python3
+              - "{{ aap_ee_local_tag }}"
+              - -c
+              - >-
+                import importlib.metadata as m,json,re,sys,ansible,kubernetes,jsonpatch,requests_oauthlib;
+                from kubernetes.dynamic import DynamicClient;
+                x=json.load(sys.stdin);norm=lambda s:re.sub(r'[-_.]+','-',s).lower();
+                actual={norm(d.metadata['Name']):d.version for d in m.distributions()};
+                base={norm(d['name']):d['version'] for d in x['base']['python_distributions']};
+                locked={norm(k):v for k,v in x['locked'].items()};
+                assert ansible.__version__=='2.20.10' and sys.version_info[:3]==(3,12,15);
+                assert actual['kubernetes']=='35.0.0' and actual['jsonpatch']=='1.33';
+                assert all(actual.get(k)==v for k,v in base.items());
+                assert actual==dict(base,**locked);
+                assert jsonpatch.apply_patch({},[{'op':'add','path':'/ready','value':True}])=={'ready':True};
+                c=kubernetes.client.ApiClient(configuration=kubernetes.client.Configuration());c.close();
+                print(json.dumps({'runtime_verified':True,'package_count':len(actual)}))
+            stdin: "{{ {'base': aap_ee_base_inventory, 'locked': aap_ee_lock_versions} | to_json }}"
+          changed_when: false
+
+        - name: Prepare gzip-level-one transport bytes before preserving their manifest
+          # Compression is done once here. Publication and readback then preserve
+          # this manifest, avoiding reuse of the earlier damaged gzip-six artifact.
+          changed_when: true
+          ansible.builtin.command:
+            argv:
+              - skopeo
+              - copy
+              - --format
+              - v2s2
+              - --dest-compress
+              - --dest-compress-format
+              - gzip
+              - --dest-compress-level
+              - '1'
+              - --dest-force-compress-format
+              - "containers-storage:{{ aap_ee_local_tag }}"
+              - "dir:{{ aap_ee_workspace.path }}/publish"
+
+        - name: Read the exact transport manifest checksum
+          ansible.builtin.stat:
+            path: "{{ aap_ee_workspace.path }}/publish/manifest.json"
+            checksum_algorithm: sha256
+          register: aap_ee_publish_manifest
+
+        - name: Recheck that another publisher has not claimed this version during the build
+          ansible.builtin.command:
+            argv: [skopeo, inspect, --authfile, "{{ aap_ee_workspace.path }}/auth.json", --tls-verify=true, "docker://{{ aap_ee_registry_tag }}"]
+          register: aap_ee_publish_recheck
+          changed_when: false
+          failed_when: >-
+            aap_ee_publish_recheck.rc == 0 or
+            not (aap_ee_publish_recheck.stderr | lower is search('manifest unknown|name unknown|status code: 404|status: 404'))
+
+        - name: Publish the prepared manifest without changing its digests
+          changed_when: true
+          ansible.builtin.command:
+            argv:
+              - skopeo
+              - copy
+              - --preserve-digests
+              - --dest-authfile
+              - "{{ aap_ee_workspace.path }}/auth.json"
+              - --dest-tls-verify=true
+              - "dir:{{ aap_ee_workspace.path }}/publish"
+              - "docker://{{ aap_ee_registry_tag }}"
+
+    - name: Select the expected immutable published manifest
+      ansible.builtin.set_fact:
+        aap_ee_expected_digest: >-
+          {{ (aap_ee_remote_inspect.stdout | from_json).Digest if aap_ee_remote_inspect.rc == 0
+             else 'sha256:' ~ aap_ee_publish_manifest.stat.checksum }}
+
+    - name: Require a native SHA256 manifest identity
+      ansible.builtin.assert:
+        that: aap_ee_expected_digest is match('^sha256:[a-f0-9]{64}$')
+
+    - name: Verify this Hub tag identifies the selected manifest and recipe
+      ansible.builtin.command:
+        argv: [skopeo, inspect, --authfile, "{{ aap_ee_workspace.path }}/auth.json", --tls-verify=true, "docker://{{ aap_ee_registry_tag }}"]
+      register: aap_ee_published_inspect
+      changed_when: false
+
+    - name: Require the tag's published native digest and fingerprint
+      ansible.builtin.assert:
+        that:
+          - (aap_ee_published_inspect.stdout | from_json).Digest == aap_ee_expected_digest
+          - (aap_ee_published_inspect.stdout | from_json).Labels[aap_ee_recipe.fingerprint_label] == aap_ee_build_fingerprint
+
+    - name: Download the immutable Hub image to a fresh directory without storage-cache reuse
+      ansible.builtin.command:
+        argv:
+          - skopeo
+          - copy
+          - --preserve-digests
+          - --src-authfile
+          - "{{ aap_ee_workspace.path }}/auth.json"
+          - --src-tls-verify=true
+          - "docker://{{ aap_ee_registry }}/{{ aap_ee_selected_name }}@{{ aap_ee_expected_digest }}"
+          - "dir:{{ aap_ee_workspace.path }}/verify"
+      changed_when: false
+
+    - name: Hash the uncached manifest and read its native descriptors
+      ansible.builtin.stat:
+        path: "{{ aap_ee_workspace.path }}/verify/manifest.json"
+        checksum_algorithm: sha256
+      register: aap_ee_verified_manifest_stat
+
+    - name: Read the uncached manifest JSON
+      ansible.builtin.slurp:
+        src: "{{ aap_ee_workspace.path }}/verify/manifest.json"
+      register: aap_ee_verified_manifest_bytes
+
+    - name: Require the published digest and a single-image descriptor layout
+      ansible.builtin.assert:
+        that:
+          - '"sha256:" ~ aap_ee_verified_manifest_stat.stat.checksum == aap_ee_expected_digest'
+          - (aap_ee_verified_manifest_bytes.content | b64decode | from_json).schemaVersion == 2
+          - (aap_ee_verified_manifest_bytes.content | b64decode | from_json).config is mapping
+          - (aap_ee_verified_manifest_bytes.content | b64decode | from_json).layers is sequence
+        fail_msg: The uncached Hub manifest did not match the selected immutable image.
+
+    - name: Select only native manifest config and layer descriptors
+      ansible.builtin.set_fact:
+        aap_ee_verified_manifest: "{{ aap_ee_verified_manifest_bytes.content | b64decode | from_json }}"
+
+    - name: Validate each descriptor before using it as a local filename
+      ansible.builtin.assert:
+        that:
+          - item.digest is match('^sha256:[a-f0-9]{64}$')
+          - item.size is integer
+          - item.size > 0
+      loop: "{{ [aap_ee_verified_manifest.config] + aap_ee_verified_manifest.layers }}"
+
+    - name: Independently hash and size every uncached config and compressed layer
+      ansible.builtin.stat:
+        path: "{{ aap_ee_workspace.path }}/verify/{{ item.digest.split(':')[1] }}"
+        checksum_algorithm: sha256
+      loop: "{{ [aap_ee_verified_manifest.config] + aap_ee_verified_manifest.layers }}"
+      register: aap_ee_verified_blobs
+
+    - name: Require every downloaded file to match its manifest descriptor
+      ansible.builtin.assert:
+        that:
+          - item.stat.isreg
+          - item.stat.size == item.item.size
+          - item.stat.checksum == item.item.digest.split(':')[1]
+        fail_msg: An uncached Hub blob failed its native manifest SHA256 or size check.
+      loop: "{{ aap_ee_verified_blobs.results }}"
+
+    - name: Read the verified image configuration
+      ansible.builtin.slurp:
+        src: "{{ aap_ee_workspace.path }}/verify/{{ aap_ee_verified_manifest.config.digest.split(':')[1] }}"
+      register: aap_ee_verified_config_bytes
+
+    - name: Require preserved base behavior and its original filesystem layer prefix
+      ansible.builtin.assert:
+        that:
+          - verified.config.Labels[aap_ee_recipe.fingerprint_label] == aap_ee_build_fingerprint
+          - verified.config.User | default('') == vendor.Config.User | default('')
+          - verified.config.Entrypoint == vendor.Config.Entrypoint
+          - verified.config.Cmd == vendor.Config.Cmd
+          - verified.config.Env == vendor.Config.Env
+          - verified.config.WorkingDir | default('') == vendor.Config.WorkingDir | default('')
+          - verified.rootfs.diff_ids[:vendor.RootFS.Layers | length] == vendor.RootFS.Layers
+        fail_msg: The verified derived image changed base execution behavior or lost its vendor layer prefix.
+      vars:
+        verified: "{{ aap_ee_verified_config_bytes.content | b64decode | from_json }}"
+        vendor: "{{ aap_ee_base_inspect.stdout | from_json | first }}"
+
+    - name: Load the verified directory into native storage without another network read
+      ansible.builtin.command:
+        argv: [skopeo, copy, "dir:{{ aap_ee_workspace.path }}/verify", "containers-storage:{{ aap_ee_local_tag }}"]
+      changed_when: false
+
+    - name: Check installed Python dependency consistency with networking disabled
+      ansible.builtin.command:
+        argv: [podman, run, --rm, --pull=never, --network=none, --entrypoint, /usr/bin/python3, "{{ aap_ee_local_tag }}", -m, pip, check]
+      changed_when: false
+
+    - name: Inspect the vendor Python inventory offline
+      ansible.builtin.command:
+        argv:
+          - podman
+          - run
+          - --rm
+          - --pull=never
+          - --network=none
+          - --entrypoint
+          - /usr/bin/python3
+          - "{{ aap_ee_base_reference }}"
+          - -c
+          - >-
+            import importlib.metadata as m,json,re;
+            print(json.dumps({re.sub(r'[-_.]+','-',d.metadata['Name']).lower():d.version for d in m.distributions()}))
+      register: aap_ee_vendor_packages
+      changed_when: false
+
+    - name: Verify the derived runtime and its approved libraries offline
+      ansible.builtin.command:
+        argv:
+          - podman
+          - run
+          - --rm
+          - --pull=never
+          - --network=none
+          - --entrypoint
+          - /usr/bin/python3
+          - "{{ aap_ee_local_tag }}"
+          - -c
+          - >-
+            import importlib.metadata as m,json,re,sys,ansible,kubernetes,jsonpatch,requests_oauthlib;
+            from kubernetes.dynamic import DynamicClient;
+            assert ansible.__version__=='2.20.10';
+            assert sys.version_info[:3]==(3,12,15);
+            assert m.version('kubernetes')=='35.0.0';
+            assert m.version('jsonpatch')=='1.33';
+            assert jsonpatch.apply_patch({},[{'op':'add','path':'/ready','value':True}])=={'ready':True};
+            c=kubernetes.client.ApiClient(configuration=kubernetes.client.Configuration());c.close();
+            print(json.dumps({re.sub(r'[-_.]+','-',d.metadata['Name']).lower():d.version for d in m.distributions()}))
+      register: aap_ee_runtime_packages
+      changed_when: false
+
+    - name: Preserve every vendor Python distribution
+      ansible.builtin.assert:
+        that: (aap_ee_runtime_packages.stdout | from_json)[item.key] == item.value
+        fail_msg: A base Python distribution changed during the derived build.
+      loop: "{{ aap_ee_vendor_packages.stdout | from_json | dict2items }}"
+
+    - name: Verify every locked direct or transitive dependency version
+      ansible.builtin.assert:
+        that: >-
+          (aap_ee_runtime_packages.stdout | from_json)[item.key | lower | regex_replace('[-_.]+', '-')] == item.value
+      loop: "{{ aap_ee_lock_versions | dict2items }}"
+
+    - name: Refuse additional unplanned Python distributions
+      ansible.builtin.assert:
+        that: >-
+          ((aap_ee_runtime_packages.stdout | from_json).keys() | list |
+           difference((aap_ee_vendor_packages.stdout | from_json).keys() | list) | sort) ==
+          (aap_ee_lock_versions.keys() | map('lower') | map('regex_replace', '[-_.]+', '-') | list |
+           difference((aap_ee_vendor_packages.stdout | from_json).keys() | list) | sort)
+
+    - name: Return the verified immutable image for ordinary AAP and CaC configuration
+      ansible.builtin.set_fact:
+        aap_ee_build_result:
+          image: "{{ aap_ee_registry }}/{{ aap_ee_selected_name }}@{{ aap_ee_expected_digest }}"
+          tag: "{{ aap_ee_registry_tag }}"
+          configid: "{{ aap_ee_verified_manifest.config.digest }}"
+          fingerprint: "{{ aap_ee_build_fingerprint }}"
+          verified: true
+  rescue:
+    - name: Report only the public build stage that failed
+      ansible.builtin.fail:
+        msg: >-
+          Execution-environment build failed during {{ failed_stage
+          if failed_stage is match("^[A-Za-z][A-Za-z0-9 ,'/-]{0,159}$")
+          else 'a protected build stage' }}. No credentials or raw command result are included.
+      vars:
+        failed_stage: "{{ ansible_failed_task.name | default('an unknown build stage') }}"
+      no_log: false
+  always:
+    - name: Remove only this run's private context, native credentials and verification copies
+      ansible.builtin.file:
+        path: "{{ aap_ee_workspace.path }}"
+        state: absent
+      when: aap_ee_workspace.path | default('') is match('^/tmp/aap-ee-build-[A-Za-z0-9_]+$')
+      no_log: true

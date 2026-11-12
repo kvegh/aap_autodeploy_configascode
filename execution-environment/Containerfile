@@ -3,8 +3,10 @@ FROM registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9@sha256:a
 
 # Collections remain native AAP project requirements. Add only the Kubernetes
 # client and the JSON patch dependency required by the intended k8s modules.
-COPY requirements.lock /tmp/aap-ee-v1-requirements.lock
-RUN /usr/bin/python3 -m pip install --no-cache-dir --require-hashes --requirement /tmp/aap-ee-v1-requirements.lock \
-    && rm /tmp/aap-ee-v1-requirements.lock
+COPY requirements.lock /tmp/ee-proj-aap-cac-requirements.lock
+# Resolve only Red Hat-provided wheels. Ignore ambient pip configuration and
+# disable dependency downloads outside this explicitly pinned vendor index.
+RUN /usr/bin/python3 -m pip --isolated install --index-url https://packages.redhat.com/trusted-libraries/python/ --only-binary=:all: --no-cache-dir --require-hashes --requirement /tmp/ee-proj-aap-cac-requirements.lock \
+    && rm /tmp/ee-proj-aap-cac-requirements.lock
 
 # Inherit the base image's user, entrypoint and command without overrides.

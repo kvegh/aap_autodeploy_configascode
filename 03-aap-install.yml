@@ -140,9 +140,11 @@
         line: "{{ vm_ip }}  {{ vm_name }}  {{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
         regexp: "{{ vm_name }}"
 
-    - name: Install ansible-core
+    - name: Install the native AAP installer and EE image-copy tools
+      # Skopeo is a receiving-VM OS prerequisite for its own Hub EE build.
+      # Use the existing subscribed RHEL repositories and normal DNF trust policy.
       ansible.builtin.dnf:
-        name: ansible-core
+        name: [ansible-core, skopeo]
         state: present
 
 

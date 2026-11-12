@@ -16,6 +16,9 @@
   vars:
     controller_credentials: "{{ autodeploy_configuration.credentials }}"
 
+- name: Resolve the receiver-owned shared image before rendering AutoDeploy EE definitions
+  ansible.builtin.include_tasks: cac-shared-execution-image.yml
+
 - name: Restore the AutoDeploy execution environment
   ansible.builtin.include_role:
     name: infra.aap_configuration.controller_execution_environments

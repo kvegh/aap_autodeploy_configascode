@@ -1,4 +1,4 @@
-# Explicit additions; retain resolved transitive pins/hashes before release.
+# Direct requirements; requirements.lock pins Red Hat Trusted Libraries wheels.
 # Client 35 supports Python 3.12 and the base's existing urllib3 2.8.0.
 kubernetes==35.0.0
 # Required by kubernetes.core; not a dependency of the Kubernetes Python package.

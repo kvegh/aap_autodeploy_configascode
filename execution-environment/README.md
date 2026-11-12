@@ -1,3 +1,15 @@
+# Project AAP CaC execution environment v2
+
+The current image is **ee-proj-aap-cac-v2:2.0.0**. Use the
+[automated build and verification playbook](../docs/execution-environment-build.md)
+and [Orchestrator CaC hook](../docs/orchestrator-execution-environment.md).
+The two direct requirements and every transitive wheel are pinned below this
+directory; all nine additions now come from Red Hat Trusted Libraries.
+
+The following describes the historical EE-v1 publication and its validation.
+Its manual command examples identify that older artifact; they are not the
+current v2 build procedure. The base inventory remains valid for both versions.
+
 # AAP AutoDeploy EE-v1
 
 This derived execution environment adds the Kubernetes Python client and the

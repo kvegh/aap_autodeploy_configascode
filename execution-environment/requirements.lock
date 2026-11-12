@@ -1,11 +1,11 @@
-# Resolved for the exact pinned Red Hat Core 2.20/Python 3.12 base.
-# Hashes cover every new wheel; existing base distributions stay unchanged.
-durationpy==0.11 --hash=sha256:a739fe2b8972c250ff72f8e2c488d18cf25f7b852f49ee76048775d5171df30c
-jsonpatch==1.33 --hash=sha256:0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade
-jsonpointer==3.12 --hash=sha256:89f391335ee2719ae72149e1bf30a4d4c7c5d92f15a3f53faa8d20cc7c6c7f19
-kubernetes==35.0.0 --hash=sha256:39e2b33b46e5834ef6c3985ebfe2047ab39135d41de51ce7641a7ca5b372a13d
-oauthlib==4.0.1 --hash=sha256:498a298876e996301950a5b053d12c31628bb7b895db03666430c69ce182eb61
-python-dateutil==4.0.0 --hash=sha256:a5e246f79eb80475e691bf93862cead98decd8a498cf53ba0516fcdc0f50dc1c
-requests-oauthlib==2.0.0 --hash=sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36
-tzdata==2026.6 --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec
-websocket-client==1.9.2 --hash=sha256:e1a673830a9c7bfa47b1cd3d5e4178f4c9651d80a4eab02c9c23a1c3ec6250ce
+# Red Hat Trusted Libraries wheels for the pinned Core 2.20/Python 3.12 base.
+# Pin every addition and verify the Red Hat artifact hash; retain base packages.
+durationpy==0.11 --hash=sha256:c0addb81ff6e513fd451e39406193d36d4ffa866a69f29d23dd52122be6af30a
+jsonpatch==1.33 --hash=sha256:c319c40a27f5b02e9f9c6d5fc3bd404a9ddc0b23087de244d1fe159cdd5e1b1a
+jsonpointer==3.12 --hash=sha256:38bd3f4036055923db8b87e10aefa8e7096f1d85f428cfda7919157daa824f08
+kubernetes==35.0.0 --hash=sha256:09d50f31e20617a7f0afc8cedec661cf5bd9d54b031d24dfcbf57b053d25cf5e
+oauthlib==4.0.1 --hash=sha256:10ac847dd1a5a2ecea2d983e09b0c190e68b15fdf4d8920fddaf78a5e54fbc30
+python-dateutil==4.0.0 --hash=sha256:99318630362f5b9dbfa1e47df78fc6f806aca170384442297fae779150a3ab58
+requests-oauthlib==2.0.0 --hash=sha256:0e652f0e38cf1feef11e8d13cd9b3fa501efcc606ef6a2c16d70cb3d154a50f8
+tzdata==2026.6 --hash=sha256:e8704bdb77752e00b2aa271c54e003771f4f06e2cc3e3878bb4e0b7cec747cf7
+websocket-client==1.9.2 --hash=sha256:04ad14dac1630edd2c46b87e260ed947b59d02105a16c66dbb312c06b0b4cbdc

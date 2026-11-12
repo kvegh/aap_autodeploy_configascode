@@ -246,38 +246,6 @@
             force: false
           no_log: true
 
-        - name: Create base organizations before their PAH credentials
-          ansible.builtin.include_role:
-            name: infra.aap_configuration.gateway_organizations
-          vars:
-            aap_organizations: "{{ aap_organizations_base }}"
-            assign_galaxy_credentials_to_org: false
-
-        - name: Prepare persistent local PAH download credentials
-          ansible.builtin.include_tasks:
-            file: tasks/pah-download-credential.yml
-            apply:
-              no_log: true
-          loop: "{{ pah_base.download_credentials }}"
-          loop_control:
-            loop_var: cac_pah_credential
-            label: "{{ cac_pah_credential.repository }}"
-          vars:
-            cac_pah_repository_url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/galaxy/content/{{ cac_pah_credential.repository }}/"
-
-        - name: Combine shared configuration without logging credential inputs
-          ansible.builtin.include_role:
-            name: infra.aap_configuration.dispatch
-            tasks_from: include_wildcard_vars
-            apply:
-              no_log: true
-
-        - name: Apply shared AAP configuration
-          ansible.builtin.include_role:
-            name: infra.aap_configuration.dispatch
-          vars:
-            dispatch_include_wildcard_vars: false
-
         - name: Persist upload timeouts only on the native Hub registry route
           no_log: true
           block:
@@ -442,6 +410,41 @@
                   - enable_mtls
                   - reject_failed_basic_auth
                   - node_tags
+
+        - name: Build the reviewed default in the receiving AAP before creating its EE definitions
+          ansible.builtin.include_tasks: tasks/base-execution-environment.yml
+
+        - name: Create base organizations before their PAH credentials
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.gateway_organizations
+          vars:
+            aap_organizations: "{{ aap_organizations_base }}"
+            assign_galaxy_credentials_to_org: false
+
+        - name: Prepare persistent local PAH download credentials
+          ansible.builtin.include_tasks:
+            file: tasks/pah-download-credential.yml
+            apply:
+              no_log: true
+          loop: "{{ pah_base.download_credentials }}"
+          loop_control:
+            loop_var: cac_pah_credential
+            label: "{{ cac_pah_credential.repository }}"
+          vars:
+            cac_pah_repository_url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/galaxy/content/{{ cac_pah_credential.repository }}/"
+
+        - name: Combine shared configuration without logging credential inputs
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.dispatch
+            tasks_from: include_wildcard_vars
+            apply:
+              no_log: true
+
+        - name: Apply shared AAP configuration
+          ansible.builtin.include_role:
+            name: infra.aap_configuration.dispatch
+          vars:
+            dispatch_include_wildcard_vars: false
 
         # EE database IDs differ after reinstall. Resolve the CaC-owned name on
         # this controller rather than copying an ID from the source controller.

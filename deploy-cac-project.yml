@@ -81,6 +81,15 @@
               - cac_import_metadata | aap_cac_validate_checks(vars)
           no_log: true
 
+        # Build against this receiver's Hub before templating its EE resources.
+        # API bearer authentication stays separate from protected registry login.
+        - name: Build and verify the Orchestrator execution environment on the selected receiver
+          ansible.builtin.include_tasks: tasks/cac-orchestrator-ee.yml
+          when: cac_project_contract.project_id == 'automation-orchestrator'
+
+        - name: Bind reviewed image references to the selected receiver's verified native EE
+          ansible.builtin.include_tasks: tasks/cac-shared-execution-image.yml
+
         - name: Normalize only this capture's explicitly mapped resource lists
           aap_cac_prepare_resources:
           no_log: true
