@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.52.18
+
+Preserve the selected hypervisor's Python interpreter override, or its normal
+remote discovery, inside both nondelegated firewall role calls. The first live
+retry failed earlier during role fact gathering because the remaining connection
+context could inherit implicit localhost's container Python. A controller-only
+Python regression reproduces that omission; the real vendor fact task fails
+without the setting and passes with it over pinned read-only SSH. No package
+backend, credentials, vendor code or execution environment changes.
+
 ## 0.52.17
 
 Document implementation ae03bb3, the upstream package-action bug, preservation of

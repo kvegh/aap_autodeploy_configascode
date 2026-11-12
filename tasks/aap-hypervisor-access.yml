@@ -143,6 +143,10 @@
           # port and strict server-key checks above still target the hypervisor.
           delegate_to: null
       vars:
+        # Clearing delegation must not inherit the execution container's Python.
+        # Retain the target inventory override, otherwise discover Python over SSH.
+        ansible_python_interpreter: >-
+          {{ hostvars[aap_management_hypervisor_hosts | first].ansible_python_interpreter | default('auto') }}
         firewall:
           - zone: libvirt
             rich_rule: '{{ aap_management_native_plan.rich_rule }}'
@@ -220,6 +224,8 @@
               # Use the same direct, pinned SSH connection for rollback; see above.
               delegate_to: null
           vars:
+            ansible_python_interpreter: >-
+              {{ hostvars[aap_management_hypervisor_hosts | first].ansible_python_interpreter | default('auto') }}
             firewall:
               - zone: libvirt
                 rich_rule: '{{ aap_management_native_plan.rich_rule }}'

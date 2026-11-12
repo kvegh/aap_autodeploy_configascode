@@ -276,6 +276,7 @@ class ManagementAccessTests(unittest.TestCase):
 import json
 from pathlib import Path
 import ansible
+from ansible import constants as C
 from ansible.utils.unsafe_proxy import AnsibleUnsafeText
 spec = importlib.util.spec_from_file_location('fixture_real_package_action',
     Path(ansible.__file__).parent / 'plugins/action/package.py')
@@ -288,6 +289,9 @@ class ActionModule(real.ActionModule):
         assert self._play_context.remote_addr == pin['address']
         assert self._play_context.remote_user == pin['user']
         assert self._play_context.port == pin['port']
+        # AAP's implicit localhost sets its own Python; never send that path to SSH.
+        interpreter = C.config.get_config_value('INTERPRETER_PYTHON', variables=task_vars)
+        assert self._templar.template(interpreter) == 'auto', interpreter
         if module_name == 'ansible.legacy.setup':
             return {'ansible_facts': {'ansible_pkg_mgr': AnsibleUnsafeText('dnf')}}
         assert module_name == 'ansible.legacy.dnf', module_name
@@ -335,7 +339,8 @@ class ActionModule(ActionBase):
             inputs.write_text(yaml.dump(variables, Dumper=vault_yaml.VaultDumper, sort_keys=False))
             self.assertIn('!unsafe', inputs.read_text())
             inventory_data = {'all': {'hosts': {
-                'localhost': {'ansible_connection': 'local'},
+                'localhost': {'ansible_connection': 'local',
+                              'ansible_python_interpreter': '/controller-only/python'},
                 'fixture-hypervisor': {'ansible_connection': 'local', 'ansible_facts': {'pkg_mgr': 'dnf'}},
                 'unrelated-hypervisor': {'ansible_connection': 'local', 'ansible_facts': {'pkg_mgr': 'dnf'}},
             }}}

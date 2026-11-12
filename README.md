@@ -540,9 +540,15 @@ The firewall role explicitly clears inherited logical delegation with
 user, port and strict server-key checks. This prevents a protected inventory name
 from making Ansible's internal package lookup remain unrendered. Primary and
 rollback use the same connection; all Vault/unsafe values remain protected.
+Both role calls also take the Python interpreter from the selected hypervisor's
+inventory override, or use normal remote discovery when no override is present.
+This prevents implicit localhost's execution-container Python path from being
+sent to the hypervisor after delegation is cleared. The real vendor fact task
+passed a pinned, read-only SSH check with this setting; the old context failed.
 The earlier inventory-loop fix did not resolve the live failure. The regression
 now covers both plain JSON and unsafe YAML inventory names with the complete
-protected route, rule and connection variables.
+protected route, rule and connection variables, including a controller-only
+Python path that must not reach the remote connection.
 The one-time protected error capture used to diagnose this problem has been
 removed, and its temporary host log was deleted after retrieval.
 
