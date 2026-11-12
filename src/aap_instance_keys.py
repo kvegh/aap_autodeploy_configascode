@@ -617,7 +617,7 @@ def retirement_policy_variables(values, context, pinned=False):
     old, new = context["previous_policy"], context["desired_policy"]
     if pinned:
         require(values.get("aap_hypervisor_pin") == context["route"]["hypervisor"],
-                "Recovery inventory must retain the exact registered hypervisor pin.")
+                "Rebuild inventory must retain the exact registered hypervisor pin.")
         current = _routing.isolation_policy(values["aap_hypervisor_pin"],
             values.get("aap_hypervisor_isolation_https_clients", []),
             values.get("aap_hypervisor_isolation_protected_ipv4", []),
@@ -738,7 +738,7 @@ def retire_inventory_capture(configuration, context, kind):
     if kind == "autodeploy":
         inventories = result["autodeploy_configuration"]["inventories"]
         matches = [row for row in inventories if inventory_variables(row).get("aap_hypervisor_pin") == pin]
-        require(len(matches) == 1, "Resolve the canonical recovery inventory for the exact registered pin.")
+        require(len(matches) == 1, "Resolve the canonical rebuild inventory for the exact registered pin.")
         set_inventory_variables(matches[0], retirement_policy_variables(inventory_variables(matches[0]), context, True))
         return result
     data = result["host_inventory_configuration"] if kind == "shared" else {
@@ -852,7 +852,7 @@ def source_inventory_operations(client, shared, autodeploy, hactar, context, pol
 
     recovery_rows = [row for row in autodeploy["autodeploy_configuration"]["inventories"]
                      if inventory_variables(row).get("aap_hypervisor_pin") == pin]
-    require(len(recovery_rows) == 1, "Resolve one exact pinned recovery inventory for source synchronization.")
+    require(len(recovery_rows) == 1, "Resolve one exact pinned rebuild inventory for source synchronization.")
     live = inventory(recovery_rows[0]["name"])
     current = inventory_variables(live)
     desired = policy_variables(current, context, True)
@@ -1883,7 +1883,7 @@ def generic_retirement_context(configuration, shared, client, name, pin, transit
     require(guest_kind != "windows" or len(name) <= 15, "Windows retirement requires its exact safe computer name.")
     recovery = [row for row in configuration["autodeploy_configuration"]["inventories"]
                 if inventory_variables(row).get("aap_hypervisor_pin") == pin]
-    require(len(recovery) == 1, "Resolve one canonical pinned recovery inventory before guest retirement.")
+    require(len(recovery) == 1, "Resolve one canonical pinned rebuild inventory before guest retirement.")
     values = inventory_variables(recovery[0])
     previous = _routing.isolation_policy(pin, values.get("aap_hypervisor_isolation_https_clients", []),
         values.get("aap_hypervisor_isolation_protected_ipv4", []), values.get("aap_hypervisor_isolation_host_clients", []),

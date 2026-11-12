@@ -189,7 +189,7 @@ class ActionModule(ActionBase):
                         extra_path = checkout / extra
                         if extra_path.exists():
                             keys.require(extra_path.is_file() and not extra_path.is_symlink(),
-                                         "Use the existing encrypted Hactar recovery capture.")
+                                         "Use the existing encrypted Hactar rebuild capture.")
                             raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
                                 extra_path.read_bytes())
                             old = vault_yaml.load_repository_yaml(raw)
@@ -239,7 +239,7 @@ class ActionModule(ActionBase):
                         extra_path = checkout / extra
                         if extra_path.exists():
                             keys.require(extra_path.is_file() and not extra_path.is_symlink(),
-                                         "Use only the maintained encrypted Hactar recovery capture.")
+                                         "Use only the maintained encrypted Hactar rebuild capture.")
                             raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
                                 extra_path.read_bytes())
                             old = vault_yaml.load_repository_yaml(raw)
@@ -300,7 +300,7 @@ class ActionModule(ActionBase):
                         management_context = keys.management_access_context(latest, latest_records[0],
                             args["instance_name"], registered_route, declared)
                         keys.require(keys.management_inventory_capture(latest, management_context, "autodeploy") == latest,
-                            "Canonical recovery management declaration changed during source synchronization.")
+                            "Canonical rebuild management declaration changed during source synchronization.")
                         keys.require(keys.management_inventory_capture(inventory, management_context, "shared") == inventory,
                             "Canonical shared management declaration changed during source synchronization.")
                         hactar_file = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
@@ -335,7 +335,7 @@ class ActionModule(ActionBase):
                                     source_ownership_snapshot["related_resources"]) == retirement_context,
                                 "Selected retirement ownership changed during source synchronization.")
                             keys.require(keys.retire_inventory_capture(latest, retirement_context, "autodeploy") == latest,
-                                         "Canonical recovery inventory changed after retirement publication.")
+                                         "Canonical rebuild inventory changed after retirement publication.")
                             retirement_shared = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
                                 git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode()))
                             keys.require(keys.retire_inventory_capture(retirement_shared, retirement_context, "shared") == retirement_shared,
@@ -600,7 +600,7 @@ class ActionModule(ActionBase):
                         git("add", "--", *changed)
                         git("-c", "user.name=AAP AutoDeploy", "-c", "user.email=automation@example.invalid",
                             "commit", "--quiet", "-m", ("Publish verified generic guest retirement" if retirement else
-                            "Publish verified guest recovery isolation release"))
+                            "Publish verified guest rebuild isolation release"))
                         if git("push", "origin", "HEAD:refs/heads/main", optional=True).returncode:
                             continue
                         durable = True

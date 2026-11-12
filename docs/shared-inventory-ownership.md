@@ -40,7 +40,7 @@ the token's HTTPS origin against the selected entry's `ansible_fqdn`. Registered
 selection checks the inventory address, UUID, keys, counter and physical
 ownership against the saved route before preserving a display alias.
 
-The dedicated recovery-stage inventory contains only its hypervisor. Those
+The dedicated rebuild-stage inventory contains only its hypervisor. Those
 stages continue to take the immutable registered VM name; they do not guess a
 physical name from a display alias. Lifecycle publication and retirement must
 match any renamed AAP inventory entry through its existing `vm_resource`, so a

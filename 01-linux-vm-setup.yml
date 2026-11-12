@@ -1,5 +1,5 @@
 ---
-- name: Create a test VM only after shared name reservation and pinned recovery preflight
+- name: Create a test VM only after shared name reservation and pinned rebuild preflight
   hosts: hypervisor
   become: true
   gather_facts: false
@@ -10,7 +10,7 @@
     vm_suffix: test
     vmcounter_file: /opt/vms/vmcounter
   pre_tasks:
-    - name: Prove the selected recovery hypervisor and persistent isolation
+    - name: Prove the selected rebuild hypervisor and persistent isolation
       ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
 
     - name: Require the managed disk directory and existing protected guest login

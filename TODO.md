@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-164 tasks: 31 outstanding; 133 closed.
+171 tasks: 32 outstanding; 139 closed.
 
 ## Outstanding tasks
 
@@ -41,10 +41,11 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.5 | Verify Automation Orchestrator against a disposable OpenShift cluster | deferred | P2 | task | bead-wd-72f.31 |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
+| bead-wd-j2wh | Unify receiving AAP component widths and spacing | in_progress | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | open | P2 | task | bead-wd-mcr |
+| bead-wd-qtbr | Import regional objects with project definitions | in_progress | P2 | task | — |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
-| bead-wd-yx4a | Rename the AAP visualization objects | in_progress | P2 | task | — |
 | bead-wd-72f.31.6.5.1 | Evaluate prebuilt container images and a separate build host | deferred | P3 | task | bead-wd-72f.31.6.5 |
 | bead-wd-9ezo | Add External CloudCLI as an independent CaC project | deferred | P3 | task | — |
 | bead-wd-x9a | Consider automating AAP updates | open | P3 | task | — |
@@ -162,6 +163,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-1rl.40.5 | Choose backend certificate prerequisite order for fresh CCNG deployment | closed | P2 | decision | bead-wd-1rl.40 |
 | bead-wd-2uk | Compare production and test website launch settings | closed | P2 | task | — |
 | bead-wd-3ix.1.1 | Declare jq for rebuilt hypervisor cleanup | closed | P2 | task | bead-wd-3ix.1 |
+| bead-wd-6tzb | Generate the seated sysadmin illustration | closed | P2 | task | — |
 | bead-wd-72f.10 | Use existing Git credential type for the dedicated allocation writer | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.25 | Rename the new AAP inventory host after AIOps import | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.31.2.6 | Let AIOps project deployment install Zabbix and testserver1 | closed | P2 | task | bead-wd-3ix.1, bead-wd-72f.31.2 |
@@ -181,8 +183,13 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-hz1a | Refine the visualization and show AAP configuration updates | closed | P2 | task | — |
 | bead-wd-j0g.8 | Register RHEL CaC deployment with the shared importer and JT | closed | P2 | feature | bead-wd-j0g |
 | bead-wd-jjzm | Build the new two-instance AAP CaC visualization | closed | P2 | feature | — |
+| bead-wd-msyw | Research professional sysadmin illustration ideas | closed | P2 | task | — |
+| bead-wd-nsjo | Illustrate a professional seated Linux sysadmin | closed | P2 | task | — |
+| bead-wd-q6ta | Keep receiving AAP settings anchored during object growth | closed | P2 | task | — |
 | bead-wd-rhrk | Outline the new code-grounded AAP CaC visualization | closed | P2 | task | — |
 | bead-wd-v5c8 | Align the AAP cards and replay full Git configuration to another AAP | closed | P2 | feature | — |
 | bead-wd-wgn | Verify AutoDeploy infrastructure prerequisites from Hactar base | closed | P2 | task | — |
+| bead-wd-y447 | Separate AAP settings below automation objects | closed | P2 | task | — |
 | bead-wd-ys3k | Rework the AAP visualization composition after browser feedback | closed | P2 | bug | — |
+| bead-wd-yx4a | Rename the AAP visualization objects | closed | P2 | task | — |
 | bead-wd-zau | Review copied testserver monitoring and agent remediation readiness | closed | P2 | task | — |

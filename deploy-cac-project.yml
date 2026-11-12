@@ -47,6 +47,16 @@
 
     - name: Authenticate, load and import only this project's reviewed definitions
       block:
+        - name: Keep configuration role async results inside this job's private workspace
+          ansible.builtin.set_fact:
+            aap_configuration_async_dir: "{{ cac_workspace.path }}/async"
+
+        - name: Prepare the same private result directory for configuration launch and polling
+          ansible.builtin.file:
+            path: "{{ aap_configuration_async_dir }}"
+            state: directory
+            mode: '0700'
+
         - name: Authenticate through the selected target's verified API from this execution environment
           ansible.builtin.include_tasks: tasks/cac-api-auth.yml
 

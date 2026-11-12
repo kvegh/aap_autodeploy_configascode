@@ -36,7 +36,7 @@
             apply:
               tags: [aap_installation_access]
 
-        - name: Prepare existing pinned SSH trust for the selected recovery route
+        - name: Prepare existing pinned SSH trust for the selected rebuild route
           ansible.builtin.include_tasks:
             file: tasks/aap-instance-ssh.yml
             apply:
@@ -413,6 +413,16 @@
 
         - name: Build the reviewed default in the receiving AAP before creating its EE definitions
           ansible.builtin.include_tasks: tasks/base-execution-environment.yml
+
+        - name: Keep configuration role async results inside this job's private workspace
+          ansible.builtin.set_fact:
+            aap_configuration_async_dir: "{{ cac_workspace.path }}/async"
+
+        - name: Prepare the same private result directory for configuration launch and polling
+          ansible.builtin.file:
+            path: "{{ aap_configuration_async_dir }}"
+            state: directory
+            mode: '0700'
 
         - name: Create base organizations before their PAH credentials
           block:

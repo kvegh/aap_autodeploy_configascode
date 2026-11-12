@@ -4,8 +4,14 @@ Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
 at that failure; credentials remain protected in its normal logs.
 
+Base configuration and project imports keep CoP asynchronous results in an
+absolute, private directory inside that job's temporary workspace. Launch,
+polling and cleanup therefore use the same location even when the execution environment's home
+directory differs between those operations. The existing workspace cleanup
+removes the directory after configuration finishes.
+
 Deploy a fresh AAP, import selected use cases, run their demonstrations, and clean
-up the disposable resources so the demonstration can be repeated. Recovery can
+up the disposable resources so the demonstration can be repeated. A rebuild can
 be driven by an external AAP; it must not depend on the hypervisor being rebuilt.
 Start with [RESTART_HERE.md](RESTART_HERE.md) when resuming existing work.
 
@@ -147,12 +153,12 @@ the existing non-AI website recovery route is a separate functional check.
   bundle. See the [ordinary backfill sequence](docs/instance-token-store.md).
 - An inventory entry selects the AAP API destination; a pinned hypervisor and
   verified VM identity select infrastructure targets. These are separate choices.
-- Recovery isolation prevents restored guests from contacting production using
+- Rebuild isolation prevents restored guests from contacting production using
   inherited settings. Successful guest configuration releases only the verified
   guest; production blocks and private MCP boundaries remain in place.
 - Preserve required-input, intended-resource and successful-operation checks.
   Use bounded waits for installation and other asynchronous operations. Add
-  focused checks for observed failures; avoid parallel recovery frameworks and
+  focused checks for observed failures; avoid parallel rebuild frameworks and
   repeated proof collection that do not help the demo run.
 
 See [project imports](docs/cac-project-import.md),
@@ -700,7 +706,7 @@ Base CaC declares `controller_execution_environments_base` and
 `aap_default_execution_environment`. Stage 04 resolves that name to this
 controller's current EE ID before setting `DEFAULT_EXECUTION_ENVIRONMENT`;
 source-controller IDs are never copied into rebuilt environments. The AutoDeploy
-capture and Hactar controller/recovery capture use the same named runtime.
+capture and Hactar controller rebuild capture use the same named runtime.
 The Hactar provider reinstall, conversion, setup, reboot and verification jobs
 all select that EE. Preserved legacy jobs retain their existing engine choices.
 
@@ -1274,7 +1280,7 @@ enabled alongside the website activation; configuration refresh preserves that
 runtime and its existing ciphertext. Fresh definitions still require their
 reviewed activation step. Package removal, production migration and complete
 successor deployment are outside that service-outage proof. Full results remain
-in the existing encrypted Hactar recovery checkpoint.
+in the existing encrypted Hactar rebuild checkpoint.
 
 The later physical test-host rebuild is tracked separately in Beads. Its retired
 instance data is removed while the next AAP allocation remains 18. RHEL

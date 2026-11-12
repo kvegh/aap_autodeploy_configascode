@@ -43,7 +43,7 @@ read-only TLS checks validate this behavior. Normal selector 84 on revision
 prerequisite job 86 and AutoDeploy importer 88 both completed successfully.
 This configuration-only run created no VM and proves no successor installation.
 
-The source's shared and recovery inventories remain mandatory. A Hactar project
+The source's shared and rebuild inventories remain mandatory. A Hactar project
 inventory alias is optional when that project is not installed on the receiving
 AAP: only a genuinely empty inventory read together with verified administrator
 visibility permits skipping that API alias. Every present alias retains its

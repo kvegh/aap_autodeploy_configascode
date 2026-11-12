@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.61.7
+
+Keep base configuration and project-import async results in an absolute
+directory inside the job's existing private workspace. Launch, status polling
+and cleanup use the same path when home expansion differs; final workspace removal cleans
+the results. Preserve standard CoP roles and protected diagnostic logging.
+Three actual Core 2.20 native async regressions and focused production lint pass.
+Complete the remaining human-facing Rebuild labels and inventory diagnostics;
+preserve technical identifiers, stored schemas and historical recovery evidence.
+
 ## 0.61.6
 
 Integrate encrypted organization diagnostics with the current compact visualization, preserving both histories. Diagnostic privacy tests pass in actual Core 2.20; the focused production lint passes.

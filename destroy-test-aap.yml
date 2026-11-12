@@ -13,14 +13,14 @@
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml
       vars:
         aap_read_related_resources: false
-    - name: Require confirmation and the independently pinned recovery hypervisor
+    - name: Require confirmation and the independently pinned rebuild hypervisor
       ansible.builtin.assert:
         that:
           - aap_decommission_confirmation | default('') == aap_instance_key
           - aap_instance_route.hypervisor == aap_hypervisor_pin
-        fail_msg: Confirm the instance name and select its pinned recovery-only inventory.
+        fail_msg: Confirm the instance name and select its pinned rebuild-only inventory.
       no_log: true
-    - name: Verify the actual recovery hypervisor before any deletion
+    - name: Verify the actual rebuild hypervisor before any deletion
       ansible.builtin.include_tasks: tasks/aap-hypervisor-identity.yml
     - name: Derive only the selected reservation's resource paths
       ansible.builtin.set_fact:

@@ -250,7 +250,7 @@ def plan(request, state):
             and set(request) <= {'operation', 'guest', 'hypervisor', 'transition', 'check_mode', 'mode'}
             and request['operation'] in {'apply', 'rollback'}
             and type(request['check_mode']) is bool,
-            'Choose one exact verified recovery guest transition.')
+            'Choose one exact verified rebuild guest transition.')
     mode = request.get('mode', 'release')
     require(mode in {'release', 'bootstrap_https', 'bootstrap_http'},
             'Choose full release or bounded guest bootstrap HTTP or HTTPS.')
@@ -260,7 +260,7 @@ def plan(request, state):
             and re.fullmatch(r'[a-f0-9]{32}', guest.get('machine_id', ''))
             and guest.get('machine_id') != pin['machine_id']
             and guest.get('hypervisor_machine_id') == pin['machine_id'] == state['machine_id'],
-            'Require authenticated guest facts and this exact recovery hypervisor.')
+            'Require authenticated guest facts and this exact rebuild hypervisor.')
     require(isinstance(transition, dict) and set(transition) == {'previous_policy', 'desired_policy'},
             'Use only the source-preflighted old and desired policy.')
     previous, desired = transition['previous_policy'], transition['desired_policy']

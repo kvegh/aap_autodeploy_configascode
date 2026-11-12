@@ -3,7 +3,7 @@
 The existing teardown entry is maintained as **Decommission AAP Test Instance**
 and runs `destroy-test-aap.yml`. Select the registered `aap_instance_key` and type
 that same value as `aap_decommission_confirmation`. The job uses the one-host
-recovery inventory and its Machine credential, environment Vault and private
+rebuild inventory and its Machine credential, environment Vault and private
 AutoDeploy CaC reader/Vault. It is separate from the deployment workflow.
 The existing source API credential and its configured CA trust are also required
 for the decommission-only related-ownership read and final source cleanup.
@@ -169,9 +169,9 @@ progress. The authoritative application CaC remains unchanged for cross-job
 recovery. No caller-supplied resource map or alternative ownership source is
 accepted.
 
-The same encrypted commit updates the canonical recovery inventory, both
+The same encrypted commit updates the canonical rebuild inventory, both
 hypervisor policy aliases in the shared capture, and equivalent metadata in the
-existing fixed Hactar recovery capture. Exact retired rich-rule entries are
+existing fixed Hactar rebuild capture. Exact retired rich-rule entries are
 removed from saved additional-rule data so a later firewall deployment cannot
 add them back. Captured literal JSON variable wrappers remain literal. Only
 matching AAP rows and memberships in the captured shared inventory are removed;

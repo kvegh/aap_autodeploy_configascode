@@ -53,9 +53,9 @@ from primary ownership and the canonical recovery policy. Caller-supplied
 additional ports, destinations, foreign ownership or unrelated client changes
 are refused.
 
-The same encrypted commit updates the recovery inventory's policy variables,
+The same encrypted commit updates the rebuild inventory's policy variables,
 both policy aliases on the shared hypervisor, and equivalent metadata in the
-existing Hactar recovery capture. The shared AAP row receives its recorded
+existing Hactar rebuild capture. The shared AAP row receives its recorded
 primary `vm_resource`; application ownership remains outside AutoDeploy secrets.
 The existing source API credential updates and verifies the corresponding
 source policy aliases and placement. Literal Vault/template wrappers, other

@@ -1,11 +1,11 @@
 ---
-- name: Require one explicitly pinned recovery hypervisor
+- name: Require one explicitly pinned rebuild hypervisor
   ansible.builtin.assert:
     that:
       - ansible_play_hosts_all | length == 1
       - aap_hypervisor_pin | aap_hypervisor_pin is mapping
       - ansible_host == aap_hypervisor_pin.address
-    fail_msg: Use a single-host recovery inventory with independently verified hypervisor pins.
+    fail_msg: Use a single-host rebuild inventory with independently verified hypervisor pins.
   no_log: true
 
 - name: Allocate the job-local hypervisor trust file
