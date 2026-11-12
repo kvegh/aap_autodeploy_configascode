@@ -99,7 +99,12 @@ function browser(hash = '') {
     key(key, extra = {}) { const event = { key, target: new Element(), preventDefault() { this.prevented = true; }, ...extra }; document.handlers.keydown(event); return event; },
   };
 }
-const objectNames = node => withClass(node, 'object-name').map(item => item.textContent);
+const automationItems = node => withClass(node, 'object-group').flatMap(group => withClass(group, 'object-item'));
+function objectNames(node) {
+  const groups = withClass(node, 'object-group');
+  const names = groups.length ? groups.flatMap(group => withClass(group, 'object-name')) : withClass(node, 'object-name');
+  return names.map(item => item.textContent);
+}
 const manualItems = node => withClass(node, 'object-item').filter(item => item.dataset.origin === 'manual');
 
 test('the seven chapters cover deployment, capture and replay with existing source links', () => {
@@ -109,6 +114,17 @@ test('the seven chapters cover deployment, capture and replay with existing sour
   assert.equal(new Set(story.steps.map(step => step.id)).size, 12);
   assert.equal(story.steps.find(step => step.id === 'infra-change').chapter, 'git-change');
   assert.equal(story.steps.at(-1).id, 'rebuild');
+  assert.deepEqual(story.stateAt(0).sourceObjects.map(object => object.name), [
+    'VMWare Inventory', 'AAP Config-as-Code Git', 'Server access key', 'AAP Config-as-Code jobs',
+  ], 'The source uses the requested names for its base inventory, project, credential and jobs');
+  const project = story.stateAt(story.steps.findIndex(step => step.id === 'project'));
+  assert.deepEqual(project.targetObjects.filter(object => object.origin === 'git').map(object => object.name), [
+    'Satellite Inventory', 'Application automation playbooks', 'Application auth token', 'Deploy application',
+  ], 'Project imports preserve the requested inventory, project and credential names');
+  const configuration = story.configurationLines(project).map(line => line.text).join('\n');
+  assert.match(configuration, /name: VMWare Inventory source/);
+  assert.match(configuration, /inventory: VMWare Inventory(?:\n|$)/);
+
   assert.match(story.sourceRevision, /^[a-f0-9]{40}$/);
   for (const step of story.steps) {
     for (const reference of step.sources) assert.ok(existsSync(path.resolve(repository, reference)), reference);
@@ -135,6 +151,9 @@ test('the seven chapters cover deployment, capture and replay with existing sour
 
 test('the actual HTML hides future objects before scripts run and uses local assets', () => {
   const html = source('index.html');
+  for (const id of ['source-infrastructure-title', 'target-infrastructure-title', 'successor-infrastructure-title', 'target-rhel-detail', 'successor-rhel-detail']) {
+    assert.doesNotMatch(html, new RegExp(`\\bid="${id}"`), `${id}: removed caption does not remain in the page`);
+  }
   const opening = id => { const match = html.match(new RegExp(`<[^>]*\\bid="${id}"[^>]*>`)); assert.ok(match, id); return match[0]; };
   assert.match(opening('target-card'), /\bhidden\b/);
   assert.match(opening('target-card'), /aria-hidden="true"/);
@@ -179,7 +198,7 @@ test('the source job reads both repositories and applies project objects', () =>
   assert.equal(nodes['code-card'].classList.contains('active'), true);
   assert.equal(objectNames(nodes['source-objects']).length, 4);
   assert.equal(objectNames(nodes['target-objects']).length, 8);
-  assert.ok(objectNames(nodes['target-objects']).includes('Operations'));
+  assert.ok(objectNames(nodes['target-objects']).includes('Satellite Inventory'));
   assert.ok(objectNames(nodes['target-objects']).includes('Deploy application'));
   assert.equal(withClass(nodes['target-objects'], 'object-item').filter(item => item.dataset.origin === 'git').length, 4);
   assert.equal(nodes['flow-apply'].hidden, false);
@@ -381,12 +400,12 @@ test('the sidebar owns controls and status while three content columns own the d
 test('active arrows match the highlighted configuration origin and reset on navigation', () => {
   const page = browser();
   for (const [id, origin, names] of [
-    ['base', 'base', ['Platform', 'Platform automation']],
-    ['project', 'git', ['Operations', 'Application automation']],
+    ['base', 'base', ['VMWare Inventory', 'AAP Config-as-Code Git']],
+    ['project', 'git', ['Satellite Inventory', 'Application automation playbooks']],
     ['git-change', 'git', ['Regional servers', 'Regional automation']],
-    ['infra-change', 'git', ['Monitoring Agent Config v2']],
+    ['infra-change', 'git', ['Certificate config v2']],
     ['capture', 'manual', ['Emergency servers', 'Quick-fix automation']],
-    ['vm', 'base', ['Platform']],
+    ['vm', 'base', ['VMWare Inventory']],
   ]) {
     page.hash(`#${id}`);
     const activeRoutes = ['flow-config', 'flow-code', ...futureRoutes].map(route => page.nodes[route]).filter(route => route.classList.contains('active'));
@@ -413,7 +432,7 @@ test('base AAP configuration is deployed and Git updates replace logging without
   const page = browser();
   const { nodes } = page;
   const names = id => objectNames(nodes[id]);
-  assert.deepEqual(names('source-configuration'), ['Logging Config v1', 'EDA Config v1']);
+  assert.deepEqual(names('source-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
   assert.equal(nodes['target-configuration-panel'].hidden, true);
   for (const id of ['vm', 'infrastructure', 'installation']) {
     page.hash(`#${id}`);
@@ -423,19 +442,19 @@ test('base AAP configuration is deployed and Git updates replace logging without
   for (const id of ['base', 'project']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-configuration-panel'].hidden, false);
-    assert.deepEqual(names('target-configuration'), ['Logging Config v1', 'EDA Config v1']);
+    assert.deepEqual(names('target-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
     for (const item of withClass(nodes['target-configuration'], 'configuration-item')) assert.equal(item.dataset.origin, 'base');
   }
   for (const id of ['git-change', 'infra-change', 'manual', 'capture', 'rebuild']) {
     page.hash(`#${id}`);
-    assert.deepEqual(names('target-configuration'), ['Logging Config v2', 'EDA Config v1']);
+    assert.deepEqual(names('target-configuration'), ['AAP Logging Config v2', 'AAP EDA Config v1']);
     const configs = withClass(nodes['target-configuration'], 'configuration-item');
     assert.equal(configs.filter(item => item.dataset.configId === 'logging').length, 1, 'Logging is updated, not duplicated');
     assert.equal(configs.find(item => item.dataset.configId === 'logging').dataset.origin, 'git');
     assert.equal(configs.find(item => item.dataset.configId === 'eda').dataset.origin, 'base');
-    assert.deepEqual(names('source-configuration'), ['Logging Config v1', 'EDA Config v1']);
-    assert.match(nodes['config-lines'].textContent, /Logging Config v2/);
-    assert.doesNotMatch(nodes['config-lines'].textContent, /Logging Config v1/);
+    assert.deepEqual(names('source-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
+    assert.match(nodes['config-lines'].textContent, /AAP Logging Config v2/);
+    assert.doesNotMatch(nodes['config-lines'].textContent, /AAP Logging Config v1/);
   }
   page.hash('#git-change');
   assert.equal(nodes['job-label'].textContent, 'Apply configuration');
@@ -445,7 +464,7 @@ test('base AAP configuration is deployed and Git updates replace logging without
   assert.match(logging[0].textContent, /20000/);
   assert.ok(nodes['source-links'].children.some(link => link.href.endsWith('/04-aap-config.yml')));
   page.hash('#base');
-  assert.deepEqual(names('target-configuration'), ['Logging Config v1', 'EDA Config v1']);
+  assert.deepEqual(names('target-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
   assert.match(nodes['config-lines'].textContent, /LOG_AGGREGATOR_ACTION_QUEUE_SIZE: 10000/);
   nodes.restart.click();
   assert.equal(nodes['target-configuration-panel'].hidden, true);
@@ -475,10 +494,17 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   assert.equal(nodes['successor-card'].attributes['aria-hidden'], 'false');
   assert.equal(nodes['successor-placeholder'].hidden, true);
   assert.deepEqual(objectNames(nodes['successor-objects']).sort(), captured.configObjects.map(object => object.name).sort());
-  assert.deepEqual(objectNames(nodes['successor-configuration']), ['Logging Config v2', 'EDA Config v1']);
-  assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Monitoring Agent Config v2', 'Firewall Config v1', 'nginx / TLS Config v2']);
-  const successorItems = withClass(nodes['successor-objects'], 'object-item');
+  assert.deepEqual(objectNames(nodes['successor-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
+  assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Certificate config v2', 'Firewall Config v1']);
+  const successorItems = automationItems(nodes['successor-objects']);
   assert.equal(successorItems.length, 13);
+  for (const prefix of ['target', 'successor']) {
+    const columns = withClass(nodes[`${prefix}-objects`], 'aap-object-column');
+    assert.equal(columns.length, 2, `${prefix}: exactly two receiving object columns`);
+    assert.deepEqual(withClass(columns[0], 'object-type').map(item => item.textContent.split(' · ')[0]), ['Inventories', 'Projects']);
+    assert.deepEqual(withClass(columns[1], 'object-type').map(item => item.textContent.split(' · ')[0]), ['Credentials', 'Job Templates']);
+    assert.ok(columns[1].children.includes(nodes[`${prefix}-configuration-panel`]), `${prefix}: real AAP configuration belongs in the right column`);
+  }
   assert.equal(successorItems.filter(item => item.dataset.origin === 'base').length, 4);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'git').length, 6);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'manual').length, 3);
@@ -488,7 +514,7 @@ test('another AAP receives the complete Git snapshot only after capture and reve
     assert.equal(withClass(item, 'git-badge')[0].textContent, 'In Git');
   }
   assert.deepEqual(objectNames(nodes['target-objects']).sort(), captured.targetObjects.map(object => object.name).sort());
-  assert.deepEqual(objectNames(nodes['target-configuration']), ['Logging Config v2', 'EDA Config v1']);
+  assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
   assert.deepEqual(objectNames(nodes['source-objects']), originalObjects);
   assert.deepEqual(objectNames(nodes['source-configuration']), originalConfiguration);
   assert.deepEqual(objectNames(nodes['source-infrastructure']), originalInfrastructure);
@@ -506,11 +532,11 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   assert.equal(replay.targetObjects[0].name, expectedObjectName, 'Replay does not alias the first target');
   assert.notEqual(replay.configObjects[0].name, 'Changed replay fixture', 'Replay does not mutate Git definitions');
   replay.successorConfiguration[0].name = 'Changed configuration fixture';
-  assert.equal(replay.targetConfiguration[0].name, 'Logging Config v2');
-  assert.equal(story.stateAt(story.steps.length - 1).successorConfiguration[0].name, 'Logging Config v2');
+  assert.equal(replay.targetConfiguration[0].name, 'AAP Logging Config v2');
+  assert.equal(story.stateAt(story.steps.length - 1).successorConfiguration[0].name, 'AAP Logging Config v2');
   replay.successorInfrastructure[0].name = 'Changed infrastructure fixture';
-  assert.equal(replay.targetInfrastructure[0].name, 'Monitoring Agent Config v2');
-  assert.equal(story.stateAt(story.steps.length - 1).successorInfrastructure[0].name, 'Monitoring Agent Config v2');
+  assert.equal(replay.targetInfrastructure[0].name, 'Certificate config v2');
+  assert.equal(story.stateAt(story.steps.length - 1).successorInfrastructure[0].name, 'Certificate config v2');
   nodes.previous.click();
   assert.equal(nodes['successor-card'].hidden, true);
   assert.deepEqual(objectNames(nodes['successor-objects']), []);
@@ -560,11 +586,13 @@ test('the sidebar marks completed chapters and follows only a changed current ch
 });
 
 
-test('infrastructure configuration updates monitoring and nginx while retaining firewall and source revisions', () => {
+test('infrastructure configuration updates certificates while retaining firewall and source revisions', () => {
+  assert.doesNotMatch(source('src/scenario.js'), /Monitoring Agent Config/, 'Monitoring profiles are removed from the story');
   const page = browser();
   const { nodes } = page;
   const names = id => objectNames(nodes[id]);
-  const original = ['Monitoring Agent Config v1', 'Firewall Config v1', 'nginx / TLS Config v1'];
+  const original = ['Certificate config v1', 'Firewall Config v1'];
+  const updated = ['Certificate config v2', 'Firewall Config v1'];
   assert.deepEqual(names('source-infrastructure'), original);
   for (const id of ['separation', 'vm', 'infrastructure', 'installation']) {
     page.hash(`#${id}`);
@@ -577,32 +605,28 @@ test('infrastructure configuration updates monitoring and nginx while retaining 
     assert.deepEqual(names('target-infrastructure'), original, id);
     for (const item of withClass(nodes['target-infrastructure'], 'configuration-item')) assert.equal(item.dataset.origin, 'base');
   }
-  for (const id of ['infra-change', 'manual', 'capture', 'rebuild']) {
+  for (const id of ['infra-change', 'manual', 'capture', 'next-aap', 'rebuild']) {
     page.hash(`#${id}`);
-    assert.deepEqual(names('target-infrastructure'), ['Monitoring Agent Config v2', 'Firewall Config v1', 'nginx / TLS Config v2'], id);
+    assert.deepEqual(names('target-infrastructure'), updated, id);
     assert.deepEqual(names('source-infrastructure'), original, id);
     const configurations = withClass(nodes['target-infrastructure'], 'configuration-item');
-    assert.equal(configurations.filter(item => item.dataset.configId === 'monitoring').length, 1, 'Monitoring is replaced, not duplicated');
-    assert.equal(configurations.find(item => item.dataset.configId === 'monitoring').dataset.origin, 'git');
+    assert.equal(configurations.filter(item => item.dataset.configId === 'certificate').length, 1, 'Certificates are replaced, not duplicated');
+    assert.equal(configurations.find(item => item.dataset.configId === 'certificate').dataset.origin, 'git');
     assert.equal(configurations.find(item => item.dataset.configId === 'firewall').dataset.origin, 'base');
-    assert.equal(configurations.filter(item => item.dataset.configId === 'nginx').length, 1, 'nginx is replaced, not duplicated');
-    assert.equal(configurations.find(item => item.dataset.configId === 'nginx').dataset.origin, 'git');
-    assert.match(nodes['config-lines'].textContent, /nginx \/ TLS Config v2/);
-    assert.doesNotMatch(nodes['config-lines'].textContent, /nginx \/ TLS Config v1/);
-    assert.match(nodes['config-lines'].textContent, /Monitoring Agent Config v2/);
-    assert.doesNotMatch(nodes['config-lines'].textContent, /Monitoring Agent Config v1/);
+    assert.match(nodes['config-lines'].textContent, /Certificate config v2/);
+    assert.doesNotMatch(nodes['config-lines'].textContent, /Certificate config v1|Monitoring Agent Config/);
   }
   page.hash('#infra-change');
   assert.equal(nodes['job-label'].textContent, 'Apply infrastructure configuration');
   assert.equal(nodes['apply-caption'].textContent, 'Apply infra');
   const highlighted = withClass(nodes['config-lines'], 'line-active');
-  assert.ok(highlighted.some(line => /config_revision:\s*v2/.test(line.textContent)), 'Updated monitoring inputs are highlighted');
+  assert.ok(highlighted.some(line => /Certificate config v2/.test(line.textContent)), 'The updated certificate definition is highlighted');
   for (const line of highlighted) assert.equal(line.dataset.origin, 'git');
   nodes.previous.click();
   assert.deepEqual(names('target-infrastructure'), original, 'Backing up restores the previous infrastructure revision');
-  assert.deepEqual(names('target-configuration'), ['Logging Config v2', 'EDA Config v1'], 'The earlier logging update is retained');
+  assert.deepEqual(names('target-configuration'), ['AAP Logging Config v2', 'AAP EDA Config v1'], 'The earlier logging update is retained');
   page.hash('#rebuild');
-  assert.deepEqual(names('successor-infrastructure'), ['Monitoring Agent Config v2', 'Firewall Config v1', 'nginx / TLS Config v2']);
+  assert.deepEqual(names('successor-infrastructure'), updated);
   nodes.restart.click();
   assert.equal(nodes['target-infrastructure-panel'].hidden, true);
   assert.deepEqual(names('target-infrastructure'), []);
@@ -611,29 +635,27 @@ test('infrastructure configuration updates monitoring and nginx while retaining 
 
 
 test('the RHEL foundation follows deployment without implying a guest OS upgrade', () => {
+  assert.doesNotMatch(source('index.html'), /id="(?:target|successor)-rhel-status"/, 'Both unwanted status spans are removed from the page');
+  assert.doesNotMatch(source('src/app.js'), /-rhel-status|-rhel-detail|Host networking prepared/, 'The presenter does not write removed status fields');
   const page = browser();
   const { nodes } = page;
   assert.equal(nodes['target-rhel'].hidden, true);
   assert.equal(nodes['successor-rhel'].hidden, true);
   const milestones = id => withClass(nodes[id], 'rhel-milestone').map(item => [item.textContent, item.dataset.state]);
-  for (const [id, stage, status, states] of [
-    ['vm', '1', 'VM created', ['complete', 'current', 'pending']],
-    ['infrastructure', '2', 'Host networking prepared', ['complete', 'current', 'pending']],
-    ['installation', '3', 'RHEL ready · AAP installed', ['complete', 'complete', 'complete']],
-    ['base', '4', 'RHEL ready · AAP installed', ['complete', 'complete', 'complete']],
+  for (const [id, stage, states] of [
+    ['vm', '1', ['complete', 'current', 'pending']],
+    ['infrastructure', '2', ['complete', 'current', 'pending']],
+    ['installation', '3', ['complete', 'complete', 'complete']],
+    ['base', '4', ['complete', 'complete', 'complete']],
   ]) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-rhel'].hidden, false, id);
     assert.equal(nodes['target-rhel'].dataset.stage, stage, id);
-    assert.equal(nodes['target-rhel-status'].textContent, status, id);
     assert.deepEqual(milestones('target-rhel-progress'), ['VM created', 'OS prepared', 'AAP installed'].map((name, index) => [name, states[index]]), id);
-    const detail = nodes['target-rhel-detail'].textContent;
-    assert.match(detail, stage === '1' ? /RHEL golden image.*guest OS prerequisites next/ : /Host networking: firewall · nginx · TLS/, id);
-    assert.doesNotMatch(detail, /all packages updated|full OS upgrade/i, id);
     assert.equal(nodes['successor-rhel'].hidden, true, id);
   }
   page.hash('#vm');
-  assert.equal(nodes['target-rhel-status'].textContent, 'VM created', 'Backing up restores the VM-only foundation');
+  assert.equal(nodes['target-rhel'].dataset.stage, '1', 'Backing up restores the VM-only foundation');
   assert.equal(milestones('target-rhel-progress')[1][1], 'current');
   nodes.restart.click();
   assert.equal(nodes['target-rhel'].hidden, true);
@@ -643,28 +665,22 @@ test('the RHEL foundation follows deployment without implying a guest OS upgrade
 test('the RHEL foundation persists under AAP changes and replays into the third AAP', () => {
   const page = browser('#base');
   const { nodes } = page;
-  const status = nodes['target-rhel-status'].textContent;
-  const detail = nodes['target-rhel-detail'].textContent;
+  const states = id => withClass(nodes[id], 'rhel-milestone').map(item => item.dataset.state);
   for (const id of ['project', 'git-change', 'infra-change', 'manual', 'capture']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-rhel'].hidden, false, id);
-    assert.equal(nodes['target-rhel-status'].textContent, status, id);
-    assert.equal(nodes['target-rhel-detail'].textContent, detail, id);
+    assert.deepEqual(states('target-rhel-progress'), ['complete', 'complete', 'complete'], id);
     assert.equal(nodes['successor-rhel'].hidden, true, id);
   }
   page.hash('#rebuild');
   assert.equal(nodes['successor-rhel'].hidden, false);
   assert.equal(nodes['successor-rhel'].dataset.stage, '4');
-  assert.equal(nodes['successor-rhel-status'].textContent, status);
-  assert.equal(nodes['successor-rhel-detail'].textContent, detail);
-  const milestones = withClass(nodes['successor-rhel-progress'], 'rhel-milestone');
-  assert.equal(milestones.length, 3);
-  assert.ok(milestones.every(item => item.dataset.state === 'complete'));
-  assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Monitoring Agent Config v2', 'Firewall Config v1', 'nginx / TLS Config v2'], 'All infrastructure profiles remain inside the receiving RHEL foundation');
+  assert.deepEqual(states('successor-rhel-progress'), ['complete', 'complete', 'complete']);
+  assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Certificate config v2', 'Firewall Config v1'], 'Both infrastructure profiles remain inside the receiving RHEL foundation');
   nodes.previous.click();
   assert.equal(nodes['successor-rhel'].hidden, true);
   assert.equal(nodes['target-rhel'].hidden, false);
-  assert.equal(nodes['target-rhel-status'].textContent, status);
+  assert.deepEqual(states('target-rhel-progress'), ['complete', 'complete', 'complete']);
   page.hash('#rebuild');
   nodes.restart.click();
   assert.equal(nodes['target-rhel'].hidden, true);
@@ -677,8 +693,8 @@ test('OS configuration lands in RHEL before the full infrastructure group takes 
   const { nodes } = page;
   const configs = prefix => withClass(nodes[`${prefix}-rhel-configs`], 'rhel-config');
   const names = prefix => configs(prefix).map(item => withClass(item, 'rhel-config-name')[0].textContent);
-  const temporary = ['Firewall Config v1', 'nginx / TLS Config v1'];
-  const updated = ['Monitoring Agent Config v2', 'Firewall Config v1', 'nginx / TLS Config v2'];
+  const temporary = ['Certificate config v1', 'Firewall Config v1'];
+  const updated = ['Certificate config v2', 'Firewall Config v1'];
   for (const step of story.steps) {
     page.hash(`#${step.id}`);
     const preparing = step.stage >= 2 && step.stage < 4;
@@ -689,7 +705,6 @@ test('OS configuration lands in RHEL before the full infrastructure group takes 
     assert.equal(nodes['flow-apply'].dataset.destination, landing ? 'rhel' : 'aap', `${step.id}: flow destination`);
     assert.deepEqual(names('successor'), [], `${step.id}: final replay uses the full infrastructure group without duplicate tiles`);
     assert.equal(nodes['successor-rhel'].classList.contains('landing'), false, `${step.id}: replay does not retain a first-target landing cue`);
-    if (step.stage >= 2) assert.match(nodes['target-rhel-detail'].textContent, /Host networking: firewall · nginx · TLS/);
   }
   assert.deepEqual(objectNames(nodes['successor-infrastructure']), updated, 'Replay preserves the complete updated infrastructure group');
   nodes.previous.click();

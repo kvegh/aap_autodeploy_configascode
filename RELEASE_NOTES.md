@@ -1,11 +1,38 @@
 # Release notes
 
+## 0.61.6
+
+Integrate encrypted organization diagnostics with the current compact visualization, preserving both histories. Diagnostic privacy tests pass in actual Core 2.20; the focused production lint passes.
+
+## 0.61.5
+
+Apply the owner-selected inventory, credential, project and Job Template names
+throughout the visualization and YAML preview. Prefix logging and EDA examples
+with AAP and preserve inventory-source references, stable IDs, colours and replay.
+These fixture names do not rename live AAP objects.
+
+## 0.61.4
+
+Document caption cleanup `cc324a6` and complete compact visualization `60490df`:
+independent AAP columns, Certificate/Firewall-only RHEL boxes, deleted captions
+and seated sysadmin. Record successful Pages publication, five exact assets and
+twenty-three deployed interaction checks; preserve the browser-geometry limit.
+Refresh completed task recovery records.
+
 ## 0.61.3
 
 Seal initial organization failures with the existing explicitly labelled CaC
 Vault key and retain only ciphertext in native job artifacts. Keep original
 async and cleanup errors, omit invocation arguments and stop immediately.
 Actual Core 2.20 privacy, missing-key and unchanged-success tests pass.
+
+Pack receiving AAP objects into two independent compact columns without internal
+scrolling. Remove Monitoring Agent examples and rename the TLS profile Certificate
+config, retaining its blue v1 to purple v2 update and blue Firewall v1. Keep RHEL
+and its three preparation indicators left, with exactly two configuration boxes
+stacked right. Delete redundant captions and rendering code, and seat the outage
+sysadmin at the laptop. All twenty-three existing interaction checks pass locally;
+rendered browser geometry remains unverified.
 
 ## 0.61.2
 

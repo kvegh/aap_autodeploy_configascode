@@ -1,5 +1,46 @@
 # Design decisions history
 
+## Retain protected organization failure evidence — 2026-11-12
+
+Implementation `f19b9dc2a63860d1e6c425cf94fa6901ed2d2a86` captures a failed initial organization role into
+Vault ciphertext using its existing explicit CaC key and native job artifacts.
+The role and its secure logging stay unchanged; the rescue stops immediately
+and preserves both original async and subsequent cleanup errors. No new job,
+credential, token, persistent store or image change is introduced. Actual Core
+2.20 tests verify missing-key refusal, absence of plaintext canaries, recovery
+of encrypted errors and unchanged successful execution. The underlying failed
+organization operation still requires its diagnostic run before selecting a fix.
+
+## Pack complete AAP catalogues and simplify the RHEL layer — 2026-11-12
+
+Implementation `60490df8a3d1a93c17198cbeaf6c542e4ffc810b` (source 0.61.3)
+replaces row-synchronised receiving groups with two independent compact columns:
+Inventories/Projects on the left, AAP settings/Credentials/Job Templates on the
+right. This removes wasted row space and internal receiving-card scrolling while
+retaining every automation object and readable 13px names. Shorter layouts let
+the whole card grow rather than clipping objects or restoring a nested scroll pane.
+
+The owner's latest directions supersede the earlier monitoring example: remove
+Monitoring Agent entirely, rename the TLS profile Certificate config, and keep
+exactly Certificate above Firewall on the right of RHEL. Certificate changes
+from blue v1 to purple v2; Firewall stays blue v1. RHEL and the three preparation
+indicators remain left. The outage sysadmin is seated at a laptop above the
+original AAP; the third rectangle still appears only in its preparation/final stops.
+
+The redundant top-right status text, group headings and host-networking captions
+are deleted from HTML/presenter code, including the earlier screen-reader-only
+copies. Ordinary page accessibility names and intentional scene visibility remain.
+Caption cleanup began in `cc324a6fd0762687fa8652bd05ac7c4884533a67`; final 0.61.3
+includes that cleanup plus the packing, profile and seated-figure refinements.
+
+Pages run 43302802336 completed successfully. Five published assets matched the
+checkout, and all twenty-three deployed interaction checks passed. Static HTML,
+model, source links and whitespace were checked; browser geometry remains
+unverified under the existing-tools-only choice. Concurrent receiver-EE and SSH
+changes were preserved through normal metadata conflict resolution. No runtime
+AAP/host operation, dependency installation or visibility workaround was added.
+
+
 ## Resolve receiver SSH options in their original scope — 2026-11-12
 
 Implementation `a28948a38d73f7d0e064e4d039400fb71dcb1d31` fixes the receiver-build connection failure observed
