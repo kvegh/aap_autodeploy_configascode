@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.58.1
+
+Record EE-v1 implementation `cd10989`, verified local build and the separate
+failed initial Hub publication. Default activation remains unverified.
+
 ## 0.58.0
 
 Add the default EE-v1 build recipe from the exact official Core 2.20 base,

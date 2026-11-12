@@ -4262,3 +4262,20 @@ policy with protected CaC and checks the persistent service before reserving a
 new name. The README and guide now describe the existing implementation. No
 firewall permission, identity check, runtime path or allocation behavior changed.
 Version 0.57.4 records the documentation correction.
+
+## 2026-11-12 — Build a layered shared default EE-v1
+
+Implementation `cd10989` (0.58.0) follows the owner's explicit replacement of
+the earlier unmodified-default decision: derive a new shared EE from the exact
+Red Hat Core 2.20 base, add the Kubernetes Python client, publish to the existing
+Private Automation Hub and then change AAP/CaC defaults. The recipe adds client
+35.0.0 plus jsonpatch 1.33 required by the intended collection, with all nine new
+distributions and wheel hashes locked. Collections remain native project content.
+
+Actual local build and offline checks preserve all 57 original Python package
+versions, the full base layer chain and native user/entrypoint/command/working
+directory. Core remains 2.20.10 and Python 3.12.15. The original vendor image is
+unchanged. The complete vendor package inventory and native build/publish steps
+are documented. The first Hub push failed with HTTP 502 and Hub worker timeout
+evidence; publication, AAP default activation and fresh runtime acceptance are
+not claimed. Version 0.58.1 records this implementation and its current limits.
