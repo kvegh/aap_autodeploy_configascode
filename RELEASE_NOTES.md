@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.54.0
+
+Use Controller's built-in Container Registry credential on the declared EE so
+the official unchanged image can be pulled before job startup. Base CaC creates
+credentials before execution environments. Remove Stage 05's manual image-copy
+tasks, which cannot bootstrap the runtime needed to execute themselves and used
+the wrong host store. Authenticated official manifest access passes; fresh-target
+download and runtime verification remain normal deployment acceptance.
+
 ## 0.53.7
 
 Document verified current-configuration retirement and the fresh-image

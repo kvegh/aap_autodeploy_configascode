@@ -621,6 +621,15 @@ capture and Hactar controller/recovery capture use the same named runtime.
 The Hactar provider reinstall, conversion, setup, reboot and verification jobs
 all select that EE. Preserved legacy jobs retain their existing engine choices.
 
+Base CaC creates a built-in Container Registry credential with verified TLS and
+links it to the execution environment. Controller uses that credential to pull
+the declared official image before starting a job. The installer bundle contains
+the older default stream; a fresh controller acquires Core 2.20 through this
+native mechanism. Stage 05 prepares collection content and does not copy or pull
+its own EE image: those tasks cannot run before their runtime is available.
+Real registry inputs stay in encrypted shared base CaC. Fresh-target download
+and job-runtime verification remain part of the normal deployment acceptance.
+
 Core 2.20 plugins preserve repository configuration trust through Ansible's
 public template API. Literal template-bearing data remains explicitly `!unsafe`
 when encrypted configuration is rewritten; ordinary repository references still
