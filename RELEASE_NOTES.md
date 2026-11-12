@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.61.3
+
+Pack receiving AAP objects into two independent compact columns without internal
+scrolling. Remove Monitoring Agent examples and rename the TLS profile Certificate
+config, retaining its blue v1 to purple v2 update and blue Firewall v1. Keep RHEL
+and its three preparation indicators left, with exactly two configuration boxes
+stacked right. Delete redundant captions and rendering code, and seat the outage
+sysadmin at the laptop. All twenty-three existing interaction checks pass locally;
+rendered browser geometry remains unverified.
+
 ## 0.61.2
 
 Integrate the tested receiver SSH-context fix with concurrent visualization updates. Preserve both source histories and all diagram changes. Five actual Core 2.20 context tests and focused production lint pass.

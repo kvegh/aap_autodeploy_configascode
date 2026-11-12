@@ -11,7 +11,7 @@
   };
   const objectTypes = ['Inventories', 'Projects', 'Credentials', 'Job Templates'];
   let index = Math.max(0, story.steps.findIndex(step => `#${step.id}` === window.location.hash));
-  function drawObjects(container, objects, replayedFromGit = false) {
+  function drawObjects(container, objects, replayedFromGit = false, configurationPanel = null) {
     const groups = objectTypes.map(type => {
       const items = objects.filter(object => object.type === type);
       const group = element('section', 'object-group');
@@ -27,7 +27,14 @@
       }
       return group;
     });
-    container.replaceChildren(...groups);
+    if (configurationPanel) {
+      // Independent columns pack the groups without reserving empty neighbouring rows.
+      const primary = element('div', 'aap-object-column');
+      const secondary = element('div', 'aap-object-column');
+      primary.append(...groups.slice(0, 2));
+      secondary.append(configurationPanel, ...groups.slice(2));
+      container.replaceChildren(primary, secondary);
+    } else container.replaceChildren(...groups);
   }
   function drawConfiguration(container, configurations) {
     container.replaceChildren(...configurations.map(config => {
@@ -45,8 +52,6 @@
     foundation.dataset.stage = String(stage);
     foundation.classList.toggle('landing', visible && receivingConfiguration);
     foundation.dataset.origin = receivingConfiguration ? origin : 'base';
-    byId(`${prefix}-rhel-status`).textContent = !visible ? '' : stage === 1
-      ? 'VM created' : stage === 2 ? 'Host networking prepared' : 'RHEL ready · AAP installed';
     // OS prerequisites run in stage 03; stage 02 configures networking on the host.
     const milestones = [
       { title: 'VM created', complete: stage >= 1 },
@@ -61,16 +66,13 @@
       return item;
     }) : []));
     // These are the host-side configurations that provide access to this RHEL guest.
-    const hostConfigurations = visible && stage >= 2 && stage < 4 ? ['Firewall Config v1', 'nginx / TLS Config v1'] : [];
+    const hostConfigurations = visible && stage >= 2 && stage < 4 ? ['Certificate config v1', 'Firewall Config v1'] : [];
     byId(`${prefix}-rhel-configs`).replaceChildren(...hostConfigurations.map(name => {
       const item = element('div', 'rhel-config');
       item.dataset.origin = 'base';
       item.append(element('span', 'rhel-config-name', name), element('span', 'rhel-config-origin', 'Base'));
       return item;
     }));
-    byId(`${prefix}-rhel-detail`).textContent = !visible ? '' : stage === 1
-      ? 'RHEL golden image · guest OS prerequisites next'
-      : 'Host networking: firewall · nginx · TLS';
   }
   function drawCode(container, lines, activeOrigin) {
     container.replaceChildren(...lines.map((value, position) => {
@@ -183,9 +185,9 @@
     drawConfiguration(byId('source-infrastructure'), state.sourceInfrastructure);
     drawConfiguration(byId('target-infrastructure'), state.targetInfrastructure);
     drawConfiguration(byId('successor-infrastructure'), state.successorInfrastructure);
-    drawObjects(byId('successor-objects'), state.successorObjects, true);
+    drawObjects(byId('successor-objects'), state.successorObjects, true, byId('successor-configuration-panel'));
     drawObjects(byId('source-objects'), state.sourceObjects);
-    drawObjects(byId('target-objects'), state.targetObjects);
+    drawObjects(byId('target-objects'), state.targetObjects, false, byId('target-configuration-panel'));
     drawCode(byId('config-lines'), story.configurationLines(state));
     drawCode(byId('code-lines'), story.executionLines(state), step.routes.includes('flow-code') ? (state.rebuilding ? 'git' : state.flowOrigin) : undefined);
     let executionFile = step.sources[0];
@@ -201,7 +203,7 @@
       byId('actor-title').textContent = step.actor[0];
       byId('actor-description').textContent = step.actor[1];
     }
-    byId('feedback').textContent = state.successorPlaceholderVisible ? 'The saved Git configuration is ready for another AAP.' : state.rebuilding ? `${state.successorObjects.length} automation objects and ${state.successorConfiguration.length + state.successorInfrastructure.length} configuration profiles restored from Git` : index === 0 ? 'Two repositories. One repeatable configuration.' : step.id === 'manual' ? '3 manual additions · not recorded in Git yet' : step.id === 'capture' ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} automation objects · ${state.targetConfiguration.length} AAP configurations · ${state.targetInfrastructure.length} infrastructure job definitions`;
+    byId('feedback').textContent = state.successorPlaceholderVisible ? 'The saved Git configuration is ready for another AAP.' : state.rebuilding ? `${state.successorObjects.length} automation objects and ${state.successorConfiguration.length + state.successorInfrastructure.length} configuration profiles restored from Git` : index === 0 ? 'Two repositories. One repeatable configuration.' : step.id === 'manual' ? '3 manual additions · not recorded in Git yet' : step.id === 'capture' ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} automation objects · ${state.targetConfiguration.length} AAP configurations · ${state.targetInfrastructure.length} RHEL configurations`;
     byId('source-links').replaceChildren(...step.sources.map(path => {
       const link = element('a', 'source-link', path.split('/').at(-1));
       link.href = story.sourceRoot + path;

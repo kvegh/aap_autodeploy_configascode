@@ -23,12 +23,15 @@ with the upper code window, with room for another below. Code previews have more
 space; the original AAP is centred between rows. Every installed AAP has the same
 prominent platform identity; card dimensions are illustrative. Receiving object
 definitions share one continuous content area inside each AAP. Receiving cards
-use two columns of compact groups, with plain headings instead of boxed horizontal
-configuration bands. On desktop, the receiving/code rows use 95 percent of the
+use two independently packed, unboxed columns. Inventories and Projects fill
+the left; AAP configuration, Credentials and Job Templates fill the right. Compact
+22px bars retain 13px names without row-synchronised empty space or an internal
+receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
 available canvas height, centred with balanced top/bottom spacing rather than a
 fixed 860px maximum. Major card borders are dark 3px and Git previews use 14px text;
 the repository-type headings use 17px text. If a short viewport still requires scrolling,
-the entire content area owns it; there is no independently scrolling lower half.
+the receiving card grows with its contents; no objects are clipped or put in a
+separately scrolling inner pane.
 The narrow source uses one column to keep names readable. Three internal columns
 remain deferred while the owner tries this height-first revision. The sidebar uses larger readable
 labels, a persistent current-step heading and distinct completed/current chapters;
@@ -58,14 +61,14 @@ Ansible prerequisite before installation. The strip qualifies those host service
 and does not claim that the playbooks perform a full guest OS update/upgrade.
 The third AAP receives the completed foundation at the existing final replay stop;
 no new runtime deployment operation is added. Blue **Firewall config** and
-**nginx / TLS config** bars land inside that rectangle from Stage 02 onward.
+**Certificate config** bars land inside that rectangle from Stage 02 onward.
 The Stage 02 connector points into the RHEL foundation, which briefly highlights
 on receipt; reduced motion keeps the static configurations and strong boundary.
-From base configuration onward, the RHEL group contains Monitoring Agent,
-Firewall and nginx/TLS profiles. The infrastructure CaC stop replaces Monitoring
-Agent and nginx/TLS with violet v2, retaining blue Firewall v1. All three replay
+From base configuration onward, the RHEL group contains Certificate and Firewall
+profiles. The infrastructure CaC stop replaces Certificate config with violet v2,
+retaining blue Firewall v1. Both replay
 to the third instance, while the original retains its blue v1 baseline. The
-host-networking qualification remains in the accessible description and this guide; the strip represents the
+host-networking scope is explained in this guide; the strip represents the
 infrastructure associated with AAP, not a claim that host nginx runs inside its VM.
 
 AAP configuration remains a distinct category alongside inventories, projects,
@@ -76,10 +79,12 @@ navigation restores v1. These are illustrative configuration revisions, not AAP
 product versions.
 
 The **Infrastructure configuration** group is inside RHEL, outside the AAP
-object catalogue. The visible strip keeps its RHEL label and configuration bars;
-redundant group and host-networking captions are omitted while accessible group
-names and descriptions are retained. Monitoring and firewall examples preserve their existing saved
-Job Template inputs, while nginx/TLS follows the host configuration in
+object catalogue. The strip keeps the RHEL label, three preparation indicators
+on the left, and two configuration boxes stacked on the right. Redundant group,
+host-networking and top-right status captions are deleted, including presenter
+rendering code; sections keep concise direct accessibility labels. The redundant status text is removed from the presenter code, not retained
+as hidden content. The firewall example preserves its existing saved Job Template inputs;
+Certificate config represents the TLS configuration in
 `02-infra-config.yml`. The private YAML keeps stable template names with synthetic
 `extra_vars.config_revision` inputs and shows the supported
 `aap_upstream_hostname` input with generic before/after placeholders for nginx.
@@ -95,7 +100,7 @@ replay. Backwards navigation and restart restore the corresponding visibility.
 This presentation-only preparation does not add a runtime job or host operation.
 
 During **Change in AAP**, an unframed stick-figure sysadmin appears above the
-small original AAP, hands on a laptop while resolving an outage. An amber directional
+small original AAP, seated at a desk with hands on a laptop while resolving an outage. An amber directional
 flow carries manual configuration into the first receiving AAP. This actor
 appears only at the manual stop; the third-AAP placeholder remains hidden there.
 The existing amber inventory/project/credential additions are still absent from
@@ -104,7 +109,7 @@ asset or dependency, and honours reduced-motion preferences.
 
 The final **Deploy again** stop restores the whole Git-recorded snapshot into
 the lower destination: base definitions, Git changes and captured manual-origin
-objects, plus Logging Config v2, EDA Config v1, Monitoring Agent Config v2, nginx/TLS Config v2 and
+objects, plus Logging Config v2, EDA Config v1, Certificate config v2 and
 Firewall Config v1. The first destination remains
 intact. The lower card is genuinely hidden before this final stop; going back or
 restarting removes its future content. Amber objects on the replayed AAP are
