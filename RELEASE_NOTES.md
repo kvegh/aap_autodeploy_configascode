@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.59.6
+
+Correct the initial EE publication claim: its cached pull did not establish
+remote integrity, and native AAP rejected a truncated Hub layer. Document native
+content-preserving republication as 1.0.1 and the successful uncached verification
+of its manifest, configuration and every compressed/decompressed layer.
+
 ## 0.59.5
 
 Document height-first correction6c33f0f and its verified Pages/live assets and

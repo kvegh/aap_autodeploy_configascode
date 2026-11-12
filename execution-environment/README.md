@@ -81,8 +81,12 @@ read -r -s -p 'Hub password: ' ee_registry_password
 printf '\n'
 printf '%s' "$ee_registry_password" | podman login --authfile "$ee_authfile" --tls-verify=true --username "$ee_registry_user" --password-stdin "$ee_registry"
 unset ee_registry_password
-podman tag localhost/aap-autodeploy-ee-v1:1.0.0 "$ee_registry/aap-autodeploy-ee-v1:1.0.0"
-podman push --authfile "$ee_authfile" --tls-verify=true "$ee_registry/aap-autodeploy-ee-v1:1.0.0"
+ee_export=$(mktemp -d)
+skopeo copy --retry-times 0 --dest-compress --dest-compress-format gzip --dest-compress-level 1 --dest-force-compress-format containers-storage:localhost/aap-autodeploy-ee-v1:1.0.0 "dir:$ee_export"
+skopeo copy --retry-times 0 --preserve-digests --dest-authfile "$ee_authfile" --dest-tls-verify=true --digestfile "$ee_export/published-digest.txt" "dir:$ee_export" "docker://$ee_registry/aap-autodeploy-ee-v1:1.0.1"
+ee_digest=$(cat "$ee_export/published-digest.txt")
+ee_download=$(mktemp -d)
+skopeo copy --retry-times 0 --preserve-digests --src-authfile "$ee_authfile" --src-tls-verify=true "docker://$ee_registry/aap-autodeploy-ee-v1@$ee_digest" "dir:$ee_download"
 ```
 
 Verify the repository tag and registry manifest digest after the push. Record
@@ -107,11 +111,19 @@ Offline imports and `pip check` passed; all 57 original Python distribution
 versions and the complete base layer chain were preserved. The inherited user,
 entrypoint, command and working directory matched the Red Hat base. The local
 image ID is `4715ff8f1ff18ffa090dc0dc7a9529a277f7c0550bbca4e1c012b69d67a5205a`.
-Private Hub publication and an independent TLS-verified pull passed for manifest
-`sha256:6c92f09144e3b8b49bd6d39b8c6225964d234753e3c5bdbbd0ea6104d8b6a1f0`.
-The pulled image matched that local image ID. Offline Kubernetes object/date
-serialization and a JSON patch operation also passed without cluster access.
-Actual native AAP execution and fresh-receiver pulls remain separate checks.
+Offline Kubernetes object/date serialization and a JSON patch operation also
+passed without cluster access. The initial `1.0.0` publication was rejected by
+AAP's native image pull: Hub stored a truncated compressed base layer. An earlier
+local pull could reuse cached layers, so its matching image ID did not establish
+remote blob integrity. The failed native job remains recorded.
+
+The replacement `1.0.1` publication preserves the image configuration and every
+uncompressed layer. Native Skopeo gzip level 1 compression gives fresh layer
+digests, allowing a normal upload without changing Hub access policy or storage
+internals. Download the immutable manifest to a new directory transport with no
+local image cache and check every layer's size and SHA-256 before testing normal
+AAP execution. Keep TLS and digest verification enabled. Default activation and
+fresh-receiver acceptance remain pending until those checks pass.
 
 ## Persist upload timeouts in deployment and CaC
 
@@ -121,7 +133,9 @@ workers had a 10-second limit and the native registry route an effective
 found. With the owner's approval, only the Hub API container was reconciled to
 200 seconds using its existing native module and image, and only the registry
 route was changed to 600 seconds. Other running containers retained their starts.
-The same image then published successfully.
+The retry accepted the manifest, but subsequent native AAP verification exposed
+a truncated stored blob left from the earlier upload. A successful push alone
+is therefore insufficient evidence of a usable image.
 
 `vars/main.yml` declares `aap_hub_gunicorn_timeout: 200` and
 `aap_registry_route_timeout: 600`. Stage 03 writes the supported worker setting
