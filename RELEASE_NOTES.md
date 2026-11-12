@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.57.0
+
+Show AAP configuration separately from automation objects. Base setup creates
+blue Logging Config v1 and EDA Config v1; Change in Git replaces only Logging
+with violet v2 while EDA v1 and the source AAP remain unchanged. Show matching
+YAML changes and real base/object-import code excerpts, keeping active code in
+view. Add a regression for staged settings, replacement, retention and reverse
+navigation. Preserve the smaller source AAP and larger Git repository headings.
+
 ## 0.56.3
 
 Rename the repository-type headings to Private Git Repository and Public Git

@@ -309,7 +309,7 @@ test('active routes remain visible and deployment actions name the current stage
     ['installation', 'Install AAP', 'New AAP', ['flow-code', 'flow-apply']],
     ['base', 'Apply base', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['git-change', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['git-change', 'Apply changes', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['manual', null, null, []],
     ['capture', null, null, ['flow-scan', 'flow-return']],
   ];
@@ -393,4 +393,48 @@ test('active arrows match the highlighted configuration origin and reset on navi
   page.hash('#manual');
   assert.equal(withClass(page.nodes['config-lines'], 'line-active').length, 0);
   assert.equal(withClass(page.nodes['code-lines'], 'line-active').length, 0);
+});
+
+
+test('base AAP configuration is deployed and Git updates replace logging without changing EDA', () => {
+  const page = browser();
+  const { nodes } = page;
+  const names = id => objectNames(nodes[id]);
+  assert.deepEqual(names('source-configuration'), ['Logging Config v1', 'EDA Config v1']);
+  assert.equal(nodes['target-configuration-panel'].hidden, true);
+  for (const id of ['vm', 'infrastructure', 'installation']) {
+    page.hash(`#${id}`);
+    assert.equal(nodes['target-configuration-panel'].hidden, true);
+    assert.deepEqual(names('target-configuration'), []);
+  }
+  for (const id of ['base', 'project']) {
+    page.hash(`#${id}`);
+    assert.equal(nodes['target-configuration-panel'].hidden, false);
+    assert.deepEqual(names('target-configuration'), ['Logging Config v1', 'EDA Config v1']);
+    for (const item of withClass(nodes['target-configuration'], 'configuration-item')) assert.equal(item.dataset.origin, 'base');
+  }
+  for (const id of ['git-change', 'manual', 'capture']) {
+    page.hash(`#${id}`);
+    assert.deepEqual(names('target-configuration'), ['Logging Config v2', 'EDA Config v1']);
+    const configs = withClass(nodes['target-configuration'], 'configuration-item');
+    assert.equal(configs.filter(item => item.dataset.configId === 'logging').length, 1, 'Logging is updated, not duplicated');
+    assert.equal(configs.find(item => item.dataset.configId === 'logging').dataset.origin, 'git');
+    assert.equal(configs.find(item => item.dataset.configId === 'eda').dataset.origin, 'base');
+    assert.deepEqual(names('source-configuration'), ['Logging Config v1', 'EDA Config v1']);
+    assert.match(nodes['config-lines'].textContent, /Logging Config v2/);
+    assert.doesNotMatch(nodes['config-lines'].textContent, /Logging Config v1/);
+  }
+  page.hash('#git-change');
+  assert.equal(nodes['job-label'].textContent, 'Apply configuration');
+  const logging = withClass(nodes['config-lines'], 'line-active').filter(line => line.textContent.includes('LOG_AGGREGATOR_ACTION_QUEUE_SIZE'));
+  assert.equal(logging.length, 1);
+  assert.equal(logging[0].dataset.origin, 'git');
+  assert.match(logging[0].textContent, /20000/);
+  assert.ok(nodes['source-links'].children.some(link => link.href.endsWith('/04-aap-config.yml')));
+  page.hash('#base');
+  assert.deepEqual(names('target-configuration'), ['Logging Config v1', 'EDA Config v1']);
+  assert.match(nodes['config-lines'].textContent, /LOG_AGGREGATOR_ACTION_QUEUE_SIZE: 10000/);
+  nodes.restart.click();
+  assert.equal(nodes['target-configuration-panel'].hidden, true);
+  assert.deepEqual(names('target-configuration'), []);
 });

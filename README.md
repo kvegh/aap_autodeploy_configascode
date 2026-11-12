@@ -288,8 +288,10 @@ do not establish live migration or complete end-to-end acceptance.
 [Open the interactive story](https://kvegh.github.io/aap_autodeploy_configascode/)
 to follow two AAP instances and the separation between private encrypted YAML
 configuration and public execution playbooks. The new light presentation shows
-four deployment stages, base objects, project imports, Git-authored changes and
-manual additions returning to CaC. A left sidebar holds navigation, deployment
+four deployment stages, base objects and platform configuration, project imports,
+Git-authored changes and manual additions returning to CaC. Separate AAP
+configuration panels show blue Logging Config v1 and EDA Config v1; a later
+purple Git update replaces Logging with v2 while EDA v1 stays unchanged. A left sidebar holds navigation, deployment
 stages and status. The three-column diagram gives the repository code previews
 more room beside a compact original AAP and the larger receiving AAP. Active
 arrows match the highlighted YAML/playbook origin: blue for deployment/base,

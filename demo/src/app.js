@@ -29,6 +29,16 @@
     });
     container.replaceChildren(...groups);
   }
+  function drawConfiguration(container, configurations) {
+    container.replaceChildren(...configurations.map(config => {
+      const item = element('div', 'object-item configuration-item');
+      item.dataset.origin = config.origin;
+      item.dataset.configId = config.id;
+      item.append(element('span', 'object-name', config.name));
+      item.append(element('span', 'origin-label', config.origin === 'base' ? 'Base' : 'From Git'));
+      return item;
+    }));
+  }
   function drawCode(container, lines, activeOrigin) {
     container.replaceChildren(...lines.map((value, position) => {
       const entry = typeof value === 'string' ? { text: value } : value;
@@ -44,6 +54,10 @@
       else line.append(element('span', 'yaml-value', entry.text));
       return line;
     }));
+    // Keep the matching YAML section visible without scrolling the whole page.
+    const activeLine = [...container.children].find(line => line.classList.contains('line-active'));
+    if (container.parentElement) container.parentElement.scrollTop = activeLine
+      ? Math.max(0, activeLine.offsetTop - container.offsetTop - 6) : 0;
   }
   const chapterButtons = story.chapters.map(chapter => {
     const button = element('button', 'chapter-button', chapter.title);
@@ -83,9 +97,10 @@
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
     const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
-    byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : index === 4 ? 'Apply base' : 'Apply objects';
+    byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : index === 4 ? 'Apply base' : index === 6 ? 'Apply changes' : 'Apply objects';
     byId('apply-detail').textContent = step.stage < 3 ? 'New VM' : 'New AAP';
     byId('target-objects').hidden = step.stage < 4;
+    byId('target-configuration-panel').hidden = step.stage < 4;
     byId('target-card').dataset.stage = String(step.stage);
     byId('target-card').classList.toggle('captured', state.captured);
     byId('source-card').classList.toggle('phase-job', step.routes.length > 0);
@@ -108,11 +123,13 @@
         }
       }
     }
+    drawConfiguration(byId('source-configuration'), state.sourceConfiguration);
+    drawConfiguration(byId('target-configuration'), state.targetConfiguration);
     drawObjects(byId('source-objects'), state.sourceObjects);
     drawObjects(byId('target-objects'), state.targetObjects);
     drawCode(byId('config-lines'), story.configurationLines(state));
     drawCode(byId('code-lines'), story.executionLines(state), step.routes.includes('flow-code') ? state.flowOrigin : undefined);
-    const executionFile = index >= 7 ? 'capture-aap-cac.yml' : index === 0 || index >= 5 ? 'cac-resource-definitions.yml' : step.sources[0];
+    const executionFile = index === 6 ? '04-aap-config.yml + imports' : index >= 7 ? 'capture-aap-cac.yml' : index === 0 || index >= 5 ? 'cac-resource-definitions.yml' : step.sources[0];
     byId('execution-file-name').textContent = executionFile;
     byId('job-label').textContent = step.job;
     byId('job-status').textContent = step.routes.length ? 'Job in focus' : 'Job Template';
@@ -121,7 +138,7 @@
       byId('actor-title').textContent = step.actor[0];
       byId('actor-description').textContent = step.actor[1];
     }
-    byId('feedback').textContent = index === 0 ? 'Two repositories. One repeatable configuration.' : index === 7 ? '3 manual additions · not recorded in Git yet' : index === 8 ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} illustrative objects on the new AAP`;
+    byId('feedback').textContent = index === 0 ? 'Two repositories. One repeatable configuration.' : index === 7 ? '3 manual additions · not recorded in Git yet' : index === 8 ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} automation objects · ${state.targetConfiguration.length} AAP configurations`;
     byId('source-links').replaceChildren(...step.sources.map(path => {
       const link = element('a', 'source-link', path.split('/').at(-1));
       link.href = story.sourceRoot + path;

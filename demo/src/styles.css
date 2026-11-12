@@ -126,6 +126,11 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .aap-toolbar { min-height:34px; padding:9px 14px; flex:none; border-top:1px solid #edf1f7; border-bottom:1px solid #edf1f7; background:#f8fafd; }
 .toolbar-label { display:flex; align-items:center; gap:7px; color:#8293ac; font-size:10px; }
 .status-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:#5c87d0; }
+/* Platform settings remain distinct from inventory, project and other component objects. */
+.configuration-panel { flex:none; min-width:0; padding:10px 12px; border-bottom:1px solid var(--line); background:#f8fafd; }
+.configuration-heading { margin:0 0 7px; color:var(--muted); font-size:11px; font-weight:650; }
+.configuration-list { display:grid; gap:5px; min-width:0; }
+.configuration-panel .configuration-item { min-height:29px; margin:0; padding:5px 8px; gap:4px 6px; }
 .object-list { min-width:0; min-height:0; flex:1; overflow:auto; padding:14px 12px; scrollbar-width:thin; scrollbar-color:#d2def0 transparent; }
 .object-group { min-width:0; margin-bottom:17px; }
 .object-group:last-child { margin-bottom:0; }

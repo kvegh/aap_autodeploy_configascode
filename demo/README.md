@@ -34,6 +34,13 @@ not ciphertext rendered as readable text. The repository-type headings read
 **Private Git Repository** and **Public Git Repository**, using larger dark text
 at every breakpoint. All examples are synthetic.
 
+The AAP configuration panel is separate from inventories, projects, credentials
+and Job Templates. Stage 04 creates blue **Logging Config v1** and **EDA Config
+v1**. Change in Git replaces the same logging entry with violet **Logging Config
+v2**; EDA v1 and the original AAP's own configuration remain unchanged. Backwards
+navigation restores v1. These are illustrative configuration revisions, not AAP
+product versions.
+
 ## Code and data
 
 `src/scenario.js` contains the story, object fixtures and source links. `src/app.js`
@@ -52,8 +59,19 @@ the operation, rather than inventing new deployed Job Templates.
 |---|---|
 | Private definitions and public execution code | `tasks/cac-project-checkout.yml`, `tasks/cac-resource-definitions.yml` |
 | VM, infrastructure, installer and shared base | `01-linux-vm-setup.yml` through `04-aap-config.yml` |
-| Project objects and later Git-defined additions | `deploy-cac-project.yml`, `tasks/cac-resource-definitions.yml` |
+| Project objects | `deploy-cac-project.yml`, `tasks/cac-resource-definitions.yml` |
+| Later Git-defined settings and object updates | `04-aap-config.yml`, `tasks/cac-resource-definitions.yml` |
 | Manual changes returning to configuration | `capture-aap-cac.yml`, `docs/cac-reconciliation.md` |
+
+The logging example uses the supported Controller setting
+`LOG_AGGREGATOR_ACTION_QUEUE_SIZE`, with synthetic 10000-to-20000 values.
+`controller_settings_base.settings` follows the shared/base configuration path;
+the generic project importer excludes Controller settings. The Git-change code
+preview cites both the existing base reapply and object-import paths. EDA Config
+v1 represents a retained decision-environment/rulebook-activation bundle using
+supported EDA CaC variables, not a generic EDA global-settings API. Its YAML is
+an excerpt, with other required activation fields omitted. Highlighted code is
+kept in view within its own preview pane.
 
 As requested, the story abstracts the application trigger and detailed scan/review
 mechanics. It does not change those mechanisms: imports and captures remain
