@@ -1,5 +1,40 @@
 # Design decisions history
 
+## Align receiving AAPs with code and replay the saved configuration — 2026-11-12
+
+Implementation `a56c0c57dd93a9c4e603268e7dbe0f1844e38c85` follows the owner's
+requested composition: equal-width Git and receiving columns with matching rows,
+first destination aligned with the upper code window, original AAP centred and
+a later destination below. Code windows get more space. All installed cards
+share a readable AAP identity; their dimensions are illustrative. The sidebar
+uses stronger current/completed states, a persistent current-step heading and
+active chapter following.
+
+Seven chapters now contain eleven stops. The last stop creates another AAP from
+the complete saved Git definitions, retaining the first destination and the
+blue/violet/amber origins. Captured manual-origin definitions are labelled
+Captured and In Git on the replayed platform. Future content is hidden until the
+last stop, and reverse navigation/reset removes it.
+
+The owner also requested a separate infrastructure-configuration job category,
+then confirmed that Monitoring Agent Config changes from v1 to v2 while Firewall
+Config stays v1. These are illustrative saved Job Template inputs, imported by
+the existing native configuration role; no host monitoring/firewall operation is
+executed. Logging v2 and EDA v1 are retained across the complete replay. Existing
+source citations and protected-secret limitations remain explicit.
+
+Seventeen named interaction checks passed locally and against the downloaded
+live assets. Pages run `43255522355` completed successfully at 16:09:41 UTC; all
+five HTTPS assets matched source. Syntax, static HTML/CSS structure, equal-track
+fit, hiding, palette and whitespace checks passed. A local patch guard and one
+test ordering assumption were corrected in their own scope, without an app
+workaround or uncertain-operation retry. Actual browser rendering remains
+unverified under the existing-tools-only choice.
+
+Concurrent EE-v1 source and documentation updates were preserved; the visual
+feature advanced to 0.59.0 after main had reached 0.58.1. No runtime AAP automation
+or environment settings were changed by this work.
+
 ## Show platform configuration changing alongside automation content — 2026-11-12
 
 Implementation `c6ed2b04610a67e143025adb2f805bebc1e6f74d` adds separate AAP

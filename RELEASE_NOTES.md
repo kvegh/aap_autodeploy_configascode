@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.59.1
+
+Document visualization implementation a56c0c5, matching receiving/code tiles,
+readable progress and the full Git replay. Preserve verified Pages/live-asset
+evidence, seventeen interaction outcomes, infrastructure Job Template scope and
+completed task recovery records. Rendered-browser acceptance remains separate.
+
 ## 0.59.0
 
 Align the first receiving AAP with the upper repository window and use matching
