@@ -301,6 +301,9 @@ Git, keeping private encrypted YAML separate from public execution playbooks.
 Seven chapters contain twelve stops: four deployment stages, project imports,
 platform/infrastructure configuration updates, manual additions, capture and a
 complete replay from Git.
+Regional servers and Regional automation arrive during Apply objects with
+Satellite Inventory and Application automation playbooks. The later AAP settings
+update changes Logging to v2 without adding automation objects.
 
 Blue base configuration includes AAP Logging Config v1, AAP EDA Config v1, Certificate config v1 and
 Firewall v1. Git updates AAP Logging Config and Certificate config to violet v2 while EDA
@@ -324,7 +327,9 @@ two independently packed, unboxed object columns: Inventories/Credentials on the
 left and Projects/Job Templates on the right. AAP configuration is a separate
 full-width category below them, divided by one light inset horizontal line; RHEL
 remains underneath. The settings category stays anchored at the bottom as
-objects fill the space above. Compact bars
+objects fill the space above. Automation, AAP-setting and RHEL configuration
+bars share the same width as Deploy application. The two object columns use equal
+left, middle and right spacing. Compact bars
 keep all definitions visible without internal receiving-card scrolling. The first destination aligns with the upper code window;
 the lower AAP rectangle is hidden throughout the main story. “Room for another AAP”
 appears only in a brief preparation stop immediately before the final deployment,

@@ -11,6 +11,9 @@ chapter gives all four stages their own view. The receiving platform is genuinel
 hidden initially; Stage 01 reveals a RHEL VM, Stage 03 reveals AAP, and Stage 04
 reveals the shared base objects and configuration profiles. Additional project
 definitions and configuration revisions follow.
+Regional servers and Regional automation are part of the same project import as
+Satellite Inventory and Application automation playbooks. The Change in Git stop
+updates AAP Logging Config only; it retains the already imported objects.
 Backwards navigation, restart and direct links restore the corresponding state.
 
 The interface uses a light canvas and labelled origin colours: blue for base
@@ -28,7 +31,10 @@ fill the left; Projects and Job Templates fill the right. AAP configuration foll
 as a full-width bottom category, separated by one light horizontal line inset from
 the card borders. Its two settings share a compact row, with RHEL beneath. The category is anchored
 at the bottom of the receiving AAP body from initial setup, reserving empty
-space for objects above so the divider does not follow their growing count. Compact
+space for objects above so the divider does not follow their growing count.
+All component bars share the same column width, including AAP Logging/EDA and
+RHEL Certificate/Firewall. A shared gutter gives the object columns equal left,
+middle and right spacing; the RHEL boxes retain their compact right-hand stack. Compact
 22px bars retain 13px names without row-synchronised empty space or an internal
 receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
 available canvas height, centred with balanced top/bottom spacing rather than a
@@ -168,7 +174,7 @@ services. No live AAP or Git operation is performed by the page.
 
 The public execution preview uses condensed excerpts from the actual playbooks
 and configuration roles. Source citations pin the inspected runtime logic at
-`20f70af1c9006a06d422ffa368d38a9f25ae2e13`; that source pin is separate from the
+`f52546d3456614869aa254d220de4a786b96c31f`; that source pin is separate from the
 new visualization's own publication revision. Human-facing job labels describe
 the operation, rather than inventing new deployed Job Templates.
 

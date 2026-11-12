@@ -119,11 +119,13 @@ test('the seven chapters cover deployment, capture and replay with existing sour
   ], 'The source uses the requested names for its base inventory, project, credential and jobs');
   const project = story.stateAt(story.steps.findIndex(step => step.id === 'project'));
   assert.deepEqual(project.targetObjects.filter(object => object.origin === 'git').map(object => object.name), [
-    'Satellite Inventory', 'Application automation playbooks', 'Application auth token', 'Deploy application',
+    'Satellite Inventory', 'Application automation playbooks', 'Application auth token', 'Deploy application', 'Regional servers', 'Regional automation',
   ], 'Project imports preserve the requested inventory, project and credential names');
   const configuration = story.configurationLines(project).map(line => line.text).join('\n');
   assert.match(configuration, /name: VMWare Inventory source/);
   assert.match(configuration, /inventory: VMWare Inventory(?:\n|$)/);
+  const initialConfiguration = story.configurationLines(story.stateAt(0)).map(line => line.text).join('\n');
+  for (const name of ['Regional servers', 'Regional automation']) assert.ok(initialConfiguration.includes(name), `${name}: project definition is already in Git`);
 
   assert.match(story.sourceRevision, /^[a-f0-9]{40}$/);
   for (const step of story.steps) {
@@ -197,30 +199,37 @@ test('the source job reads both repositories and applies project objects', () =>
   assert.equal(nodes['config-card'].classList.contains('active'), true);
   assert.equal(nodes['code-card'].classList.contains('active'), true);
   assert.equal(objectNames(nodes['source-objects']).length, 4);
-  assert.equal(objectNames(nodes['target-objects']).length, 8);
+  assert.equal(objectNames(nodes['target-objects']).length, 10);
   assert.ok(objectNames(nodes['target-objects']).includes('Satellite Inventory'));
   assert.ok(objectNames(nodes['target-objects']).includes('Deploy application'));
-  assert.equal(withClass(nodes['target-objects'], 'object-item').filter(item => item.dataset.origin === 'git').length, 4);
+  assert.equal(withClass(nodes['target-objects'], 'object-item').filter(item => item.dataset.origin === 'git').length, 6);
+  for (const name of ['Regional servers', 'Regional automation']) assert.ok(objectNames(nodes['target-objects']).includes(name), `${name}: deployed with the project objects`);
   assert.equal(nodes['flow-apply'].hidden, false);
 });
 
-test('CaC edits appear in YAML and the receiving catalogue without altering the source AAP', () => {
-  const page = browser();
-  const original = objectNames(page.nodes['source-objects']);
-  page.chapter('git-change');
+test('the CaC logging edit updates settings without adding project objects or altering the source AAP', () => {
+  const page = browser('#project');
   const { nodes } = page;
+  const original = objectNames(nodes['source-objects']);
+  const projectObjects = objectNames(nodes['target-objects']);
+  assert.equal(projectObjects.length, 10);
+  for (const name of ['Regional servers', 'Regional automation']) assert.ok(projectObjects.includes(name));
+  page.chapter('git-change');
+  assert.deepEqual(objectNames(nodes['target-objects']), projectObjects, 'All six project objects were deployed in the preceding stop');
+  assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
+  assert.equal(withClass(nodes['config-lines'], 'line-added').length, 0, 'The settings edit does not introduce new inventory or project definitions');
+  const highlighted = withClass(nodes['config-lines'], 'line-active').map(line => line.textContent);
+  assert.ok(highlighted.some(line => line.includes('AAP Logging Config v2')));
   for (const name of ['Regional servers', 'Regional automation']) {
-    assert.ok(objectNames(nodes['target-objects']).includes(name));
     assert.ok(nodes['config-lines'].textContent.includes(name));
+    assert.ok(!highlighted.some(line => line.includes(name)), `${name}: not part of the settings update`);
   }
-  const additions = withClass(nodes['config-lines'], 'line-added').map(line => line.textContent);
-  for (const name of ['Regional servers', 'Regional automation']) {
-    assert.ok(additions.some(line => line.includes(name)), `${name} must be highlighted as a new definition`);
-  }
+  assert.doesNotMatch(nodes['code-lines'].textContent, /Import ordinary configuration resources/, 'The public excerpt shows settings application only');
   assert.deepEqual(objectNames(nodes['source-objects']), original);
   assert.equal(nodes.actor.hidden, false);
   assert.equal(nodes['actor-title'].textContent, 'Configuration author');
 });
+
 
 test('manual objects exist on the target but remain absent from CaC until capture', () => {
   const page = browser('#manual');
@@ -246,7 +255,7 @@ test('manual objects exist on the target but remain absent from CaC until captur
   assert.equal(nodes['job-label'].textContent, 'Scan AAP configuration');
 });
 
-test('backwards navigation and restart reverse capture, manual and Git additions', () => {
+test('backwards navigation and restart reverse capture, manual additions and settings updates', () => {
   const { nodes } = browser('#capture');
   nodes.previous.click();
   assert.equal(withClass(nodes['target-objects'], 'git-badge').length, 0);
@@ -255,10 +264,14 @@ test('backwards navigation and restart reverse capture, manual and Git additions
   assert.equal(manualItems(nodes['target-objects']).length, 0);
   assert.ok(nodes['config-lines'].textContent.includes('Regional servers'));
   nodes.previous.click();
-  assert.ok(objectNames(nodes['target-objects']).includes('Regional servers'), 'Git object changes precede the infrastructure substep');
+  assert.ok(objectNames(nodes['target-objects']).includes('Regional servers'), 'Project objects remain while backing up before the infrastructure update');
+  assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
   nodes.previous.click();
-  assert.ok(!objectNames(nodes['target-objects']).includes('Regional servers'));
-  assert.ok(!nodes['config-lines'].textContent.includes('Regional servers'));
+  assert.ok(objectNames(nodes['target-objects']).includes('Regional servers'), 'The project stop already contains the regional inventory');
+  assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v1', 'AAP EDA Config v1'], 'Backing up before the logging update restores its v1 settings');
+  nodes.previous.click();
+  assert.ok(!objectNames(nodes['target-objects']).includes('Regional servers'), 'Base AAP does not yet contain the additional project inventory');
+  assert.ok(nodes['config-lines'].textContent.includes('Regional servers'), 'Its desired definition remains in Git before deployment');
   nodes.restart.click();
   assert.equal(nodes['step-count'].textContent, `1 / ${story.steps.length}`);
   assert.equal(nodes['target-card'].hidden, true);
@@ -401,8 +414,8 @@ test('active arrows match the highlighted configuration origin and reset on navi
   const page = browser();
   for (const [id, origin, names] of [
     ['base', 'base', ['VMWare Inventory', 'AAP Config-as-Code Git']],
-    ['project', 'git', ['Satellite Inventory', 'Application automation playbooks']],
-    ['git-change', 'git', ['Regional servers', 'Regional automation']],
+    ['project', 'git', ['Satellite Inventory', 'Application automation playbooks', 'Regional servers', 'Regional automation']],
+    ['git-change', 'git', ['AAP Logging Config v2']],
     ['infra-change', 'git', ['Certificate config v2']],
     ['capture', 'manual', ['Emergency servers', 'Quick-fix automation']],
     ['vm', 'base', ['VMWare Inventory']],
@@ -515,7 +528,20 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   }
   const styles = source('src/styles.css');
   assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/, 'Receiving content declares independent vertical layout');
-  assert.match(styles, /\.receiving-column \.aap-settings-panel\s*\{[^}]*margin:\s*auto\s+[1-9]\d*px\s+0;/, 'Settings declare bottom anchoring while the divider stays inset');
+  assert.match(styles, /\.receiving-column\s*\{[^}]*--aap-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/, 'Receiving bars share two equal tracks');
+  assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*padding:\s*\d+px var\(--aap-gutter\);/, 'Outer body gutters use the common spacing');
+  assert.match(styles, /\.object-list\.receiving-catalog\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*var\(--aap-gutter\);/, 'The object middle gap matches its outer gutters');
+  assert.match(styles, /\.receiving-column \.aap-settings-panel\s*\{[^}]*margin:\s*auto\s+0\s+0;/, 'Settings keep bottom anchoring without narrowing their bars');
+  assert.match(styles, /\.aap-settings-panel \.configuration-list\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*\d+px var\(--aap-gutter\);/, 'AAP configuration uses the same track widths and middle gap');
+  assert.match(styles, /\.receiving-column \.rhel-foundation\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*column-gap:\s*var\(--aap-gutter\);/, 'RHEL profiles use the same tracks and gap');
+  const gutter = Number(styles.match(/--aap-gutter:\s*(\d+)px/)[1]);
+  const rhelBase = styles.match(/(?:^|\n)\.rhel-foundation\s*\{([^}]+)}/)[1];
+  const rhelReceiving = styles.match(/\.receiving-column \.rhel-foundation\s*\{([^}]+)}/)[1];
+  const border = Number(rhelBase.match(/\bborder:\s*(\d+)px/)[1]);
+  const leftBorder = Number(rhelBase.match(/border-left:\s*(\d+)px/)[1]);
+  const margin = Number(rhelReceiving.match(/margin:\s*0\s+(\d+)px\s+\d+px/)[1]);
+  const padding = rhelReceiving.match(/padding:\s*\d+px\s+(\d+)px\s+\d+px\s+(\d+)px/).slice(1).map(Number);
+  assert.equal(2 * margin + border + leftBorder + padding[0] + padding[1], 2 * gutter, 'Declared RHEL horizontal insets leave the same bar width as the AAP body');
   assert.match(styles, /\.aap-settings-panel::before\s*\{[^}]*border-top:\s*1px solid/, 'The category has one thin separator');
   assert.equal(successorItems.filter(item => item.dataset.origin === 'base').length, 4);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'git').length, 6);

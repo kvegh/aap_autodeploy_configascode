@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.61.10
+
+Give every receiving-AAP component bar the same width as Deploy application,
+including AAP settings and RHEL profiles. Use equal left, middle and right object
+spacing while preserving anchored settings, the inset divider and stacked RHEL
+profiles. Import Regional servers and Regional automation with the other project
+objects; the later AAP settings update changes Logging only. Keep the generated
+sysadmin and reversible story interactions. All twenty-three existing interaction
+checks, script syntax and whitespace checks pass locally.
+Refresh the actual-code source pin and VM play name after integrating concurrent
+Rebuild naming and protected async-result updates.
+
+Document preceding anchored-settings/image implementation `14cbf02`. Pages run
+43309866775 succeeded; all six assets matched and twenty-three checks passed.
+Rendered browser coordinates remain independently unverified.
+
 ## 0.61.9
 
 Integrate the tested private async-directory fix and completed Rebuild labels with the current visualization. Preserve both implementation histories and task records.
