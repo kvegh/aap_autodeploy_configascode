@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.53.4
+
+Document completed visualization removal and outline analysis in the authoritative
+Beads overview and encrypted recovery export. The retained Pages workflow passed
+its absent-source check and skipped publication; no replacement is implemented.
+
 ## 0.53.3
 
 Document visualization withdrawal implementation30e35f8 and its successful

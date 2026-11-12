@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-150 tasks: 28 outstanding; 122 closed.
+151 tasks: 28 outstanding; 123 closed.
 
 ## Outstanding tasks
 
@@ -21,6 +21,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1 | Retire v18 and rebuild bare metal with v19 after the EE upgrade | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
 | bead-wd-3ix.1.10 | Prepare ACME account readiness in fresh host setup | in_progress | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.11 | Retire v18 external DNS and current configuration | in_progress | P1 | task | bead-wd-3ix.1 |
+| bead-wd-3ix.1.12 | Verify official Core 2.20 image availability for the fresh target | open | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
@@ -30,7 +31,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | in_progress | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
-| bead-wd-0z3f | Remove AAP CaC visualization code and retain its Pages workflow | in_progress | P2 | task | — |
 | bead-wd-1rl.40.6 | Add separate CCNG infrastructure playbook and CaC job | deferred | P2 | task | bead-wd-1rl.40 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
@@ -148,6 +148,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-x7k | Preserve running EDA activations during repeat CaC import | closed | P1 | bug | — |
 | bead-wd-xzi | Confirm public AAP access policy and future-only TLS scope | closed | P1 | task | — |
 | bead-wd-xzi.1 | Verify upstream TLS for future AAP deployments only | closed | P1 | bug | bead-wd-xzi |
+| bead-wd-0z3f | Remove AAP CaC visualization code and retain its Pages workflow | closed | P2 | task | — |
 | bead-wd-1rl.40.5 | Choose backend certificate prerequisite order for fresh CCNG deployment | closed | P2 | decision | bead-wd-1rl.40 |
 | bead-wd-2uk | Compare production and test website launch settings | closed | P2 | task | — |
 | bead-wd-3ix.1.1 | Declare jq for rebuilt hypervisor cleanup | closed | P2 | task | bead-wd-3ix.1 |
