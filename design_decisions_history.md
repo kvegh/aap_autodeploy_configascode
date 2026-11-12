@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Require uncached remote EE verification — 2026-11-12
+
+Implementation `5c8f46a` corrects an overstatement in the initial EE-v1
+publication checkpoint. A local pull could reuse cached layers; native AAP then
+rejected the published image because Hub's stored compressed base layer was
+truncated. The retained failure establishes why push success and matching local
+image IDs do not prove registry integrity.
+
+The replacement publication uses native gzip level 1 compression and normal
+Skopeo upload under a new tag, preserving the exact image configuration and all
+uncompressed layers. This avoids the damaged encoded blob without changing Hub
+policy, disabling checks or directly editing registry storage. An uncached
+download verified the replacement manifest, configuration, all layer lengths
+and compressed/decompressed hashes. Native AAP execution and receiver access
+remain distinct acceptance gates. The building and publishing instructions now
+include the fresh transport and protected authentication workflow.
+
 ## Use the available height and one continuous AAP body — 2026-11-12
 
 Implementation `6c33f0f4f16529920327077ba23b3353408f0af6` follows the owner's

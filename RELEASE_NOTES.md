@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.59.7
+
+Record corrected publication evidence and implementation `5c8f46a`. Distinguish
+uncached registry integrity from native AAP execution and receiver access.
+
 ## 0.59.6
 
 Correct the initial EE publication claim: its cached pull did not establish
