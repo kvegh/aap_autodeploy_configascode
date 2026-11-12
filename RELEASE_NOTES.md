@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.52.16
+
+Clear inherited logical delegation only for the certified firewall role, retaining
+the transaction's pinned SSH connection and all protected values for apply and
+rollback. The previous inventory loop still failed when inventory names were
+unsafe. Extend the real Ansible/package-action regression to both inventory
+formats and the complete protected connection inputs. No backend, interpreter,
+credential, server-key or permission override is introduced. Live acceptance
+remains separate from the passing local reproduction.
+Comment both role calls and document upstream Ansible issue #82598, the observed
+2.16.19 engine and the direct fact lookup present in upstream 2.17.0. The execution
+environment and certified role are unchanged.
+
 ## 0.52.15
 
 Document implementation d98c8f2, the exact unsafe-delegation reproduction,

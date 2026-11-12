@@ -137,11 +137,11 @@
         name: redhat.rhel_system_roles.firewall
         apply:
           no_log: true
-          delegate_to: '{{ aap_management_firewall_host }}'
-      loop: "{{ groups['all'] }}"
-      loop_control:
-        loop_var: aap_management_firewall_host
-      when: aap_management_firewall_host in aap_management_hypervisor_hosts
+          # ansible-core 2.16's package action fails when delegate_to is unsafe:
+          # https://github.com/ansible/ansible/issues/82598
+          # Clear delegation only inside this role; the pinned SSH address, user,
+          # port and strict server-key checks above still target the hypervisor.
+          delegate_to: null
       vars:
         firewall:
           - zone: libvirt
@@ -217,11 +217,8 @@
             name: redhat.rhel_system_roles.firewall
             apply:
               no_log: true
-              delegate_to: '{{ aap_management_firewall_host }}'
-          loop: "{{ groups['all'] }}"
-          loop_control:
-            loop_var: aap_management_firewall_host
-          when: aap_management_firewall_host in aap_management_hypervisor_hosts
+              # Use the same direct, pinned SSH connection for rollback; see above.
+              delegate_to: null
           vars:
             firewall:
               - zone: libvirt

@@ -529,9 +529,20 @@ Access transactions gather the actual hypervisor's package-manager fact with
 delegated fact ownership on its existing inventory identity before invoking the
 certified firewall role. The route must match exactly one inventory host. The role
 keeps its normal backend selection; no package backend or interpreter is forced.
-The firewall role receives that inventory name through a separate inventory loop
-and matching condition. This avoids propagating a protected route's unsafe marker
-into Ansible's internal package lookup, while preserving all Vault/unsafe values.
+The affected job's execution environment reports `ansible-core 2.16.19`.
+[Upstream issue #82598](https://github.com/ansible/ansible/issues/82598)
+describes the same failure: protected delegation text makes the package action's
+generated fact lookup remain literal instead of returning the package manager.
+Upstream 2.17.0 reads the facts directly; upgrading the engine is a separate
+execution-environment change and is not part of this correction.
+The firewall role explicitly clears inherited logical delegation with
+`apply.delegate_to: null`, while retaining the transaction's pinned SSH address,
+user, port and strict server-key checks. This prevents a protected inventory name
+from making Ansible's internal package lookup remain unrendered. Primary and
+rollback use the same connection; all Vault/unsafe values remain protected.
+The earlier inventory-loop fix did not resolve the live failure. The regression
+now covers both plain JSON and unsafe YAML inventory names with the complete
+protected route, rule and connection variables.
 The one-time protected error capture used to diagnose this problem has been
 removed, and its temporary host log was deleted after retrieval.
 
