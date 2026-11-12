@@ -417,7 +417,7 @@ registry credential. The existing [Orchestrator CaC deployment](docs/orchestrato
 also invokes the builder before importing project definitions. Other reviewed
 project image references resolve that receiver's native shared EE; unrelated
 custom images are preserved. Encrypted target credentials and normal pinned SSH
-access remain prerequisites. No Source-Hub firewall exception is required.
+access remain prerequisites. No Source-Hub firewall exception is required. Delegated builds resolve the job-local pinned SSH options from the original orchestration host.
 
 The v2 artifact passed a real build, publication, uncached download and a repeat
 run that skipped rebuilding and publishing. Native Source AAP job 3744, Verify Registered AAP Guest Access, passed with

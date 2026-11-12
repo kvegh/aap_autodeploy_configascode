@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.60.5
+
+Resolve pinned SSH arguments from the original orchestration host during receiver
+build delegation. This fixes the pre-connection UID failure; retain actual
+delegation in the regression fixture and verify it rejects the old expression.
+
 ## 0.60.4
 
 Correct the generated task overview after the concurrent merge and retain the
