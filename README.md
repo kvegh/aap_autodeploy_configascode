@@ -295,7 +295,8 @@ complete replay from Git.
 Blue base configuration includes Logging v1, EDA v1, Monitoring Agent v1,
 Firewall v1 and nginx/TLS v1. Git updates Logging, Monitoring Agent and nginx/TLS
 to violet v2 while EDA and Firewall stay at v1. The whole Infrastructure
-configuration group sits inside RHEL. The page performs no host configuration
+configuration group sits inside RHEL. Only the RHEL label and configuration
+bars are shown; redundant infrastructure/networking captions are omitted. The page performs no host configuration
 or live AAP operation.
 Captured manual-origin definitions remain amber when replayed to the next AAP. During the manual-change stop, a
 sysadmin above the small original AAP has hands on a laptop while responding

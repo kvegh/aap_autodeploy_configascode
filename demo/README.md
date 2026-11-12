@@ -65,7 +65,7 @@ From base configuration onward, the RHEL group contains Monitoring Agent,
 Firewall and nginx/TLS profiles. The infrastructure CaC stop replaces Monitoring
 Agent and nginx/TLS with violet v2, retaining blue Firewall v1. All three replay
 to the third instance, while the original retains its blue v1 baseline. The
-host-networking qualification remains visible; the strip represents the
+host-networking qualification remains in the accessible description and this guide; the strip represents the
 infrastructure associated with AAP, not a claim that host nginx runs inside its VM.
 
 AAP configuration remains a distinct category alongside inventories, projects,
@@ -76,7 +76,9 @@ navigation restores v1. These are illustrative configuration revisions, not AAP
 product versions.
 
 The **Infrastructure configuration** group is inside RHEL, outside the AAP
-object catalogue. Monitoring and firewall examples preserve their existing saved
+object catalogue. The visible strip keeps its RHEL label and configuration bars;
+redundant group and host-networking captions are omitted while accessible group
+names and descriptions are retained. Monitoring and firewall examples preserve their existing saved
 Job Template inputs, while nginx/TLS follows the host configuration in
 `02-infra-config.yml`. The private YAML keeps stable template names with synthetic
 `extra_vars.config_revision` inputs and shows the supported

@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.61.1
+
+Remove redundant visible RHEL group/networking captions, retaining configuration
+bars and accessible descriptions.
+
+Document visualization implementations `2dd1495` and `beec5ea`: stronger borders,
+RHEL infrastructure revisions, incident-response sysadmin and interim-only third
+AAP. Record successful Pages publication, five exact assets and twenty-three
+deployed interaction checks, preserving the browser-rendering limit and task recovery.
+
 ## 0.61.0
 
 Hide the whole third-AAP rectangle until its brief preparation step before replay.
