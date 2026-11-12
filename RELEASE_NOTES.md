@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.56.3
+
+Rename the repository-type headings to Private Git Repository and Public Git
+Repository. Increase them to readable 15px dark bold text and remove the
+small breakpoint overrides. Preserve the wider code windows, compact original
+AAP and matching origin-coloured arrows.
+
 ## 0.56.2
 
 Give the repository code windows approximately 50 percent more desktop width and

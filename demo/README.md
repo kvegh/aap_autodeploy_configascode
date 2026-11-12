@@ -30,7 +30,9 @@ definitions in focus; execution-code highlighting means code being read, not a
 change to the public playbook. Reduced motion keeps the strong static activity cue.
 Captured manual objects keep their origin and gain an **In Git** badge. The
 private repository carries a lock; its YAML is an illustrative decrypted view,
-not ciphertext rendered as readable text. All examples are synthetic.
+not ciphertext rendered as readable text. The repository-type headings read
+**Private Git Repository** and **Public Git Repository**, using larger dark text
+at every breakpoint. All examples are synthetic.
 
 ## Code and data
 
