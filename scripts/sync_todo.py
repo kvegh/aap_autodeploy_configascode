@@ -16,6 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT_LABELS = {'aap-autodeploy', 'hactarconfig'}
 FAMILY = 'bead-wd-72f'
 RELATED_IDS = {'bead-wd-3ix', 'bead-wd-mcr', 'bead-wd-mcr.1', 'bead-wd-zau', 'bead-wd-72v', 'bead-wd-sc8'}
+# Ownership moved to separate chats. Keep their full recovery records, while
+# omitting the completed handoffs from this project's overview at owner request.
+TRANSFERRED_HANDOFFS = {'bead-wd-72f.38', 'bead-wd-72f.39'}
 IDENTIFIER = re.compile(r'^[A-Za-z][A-Za-z0-9_.-]*$')
 SNAPSHOT_FORMAT = 'beads-project-recovery-export'
 VAULT_ID = 'cac'
@@ -121,8 +124,10 @@ def public_title(value):
 
 
 def public_records(records):
-    return [row for row in records if 'aap-autodeploy' in row.get('labels', [])
-            or family_member(row['id']) or row['id'] in RELATED_IDS]
+    return [row for row in records if not any(row['id'] == task or row['id'].startswith(task + '.')
+                                              for task in TRANSFERRED_HANDOFFS)
+            and ('aap-autodeploy' in row.get('labels', [])
+                 or family_member(row['id']) or row['id'] in RELATED_IDS)]
 
 
 def render(records):

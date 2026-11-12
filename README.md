@@ -350,13 +350,14 @@ populated configuration encrypted. [Restart instructions](RESTART_HERE.md)
 explain recovery without the current tracker. Lasting decisions and implementation
 commits remain in `design_decisions_history.md`; older run evidence belongs there
 or in the protected task records, rather than the README's opening instructions.
+Completed visualization and performance handoffs are omitted from this overview;
+their history remains in Beads and the encrypted recovery export. Their owning
+chats track subsequent implementation.
 
-The current checkpoint preserves 181 complete selected recovery records and the
-122-task AutoDeploy overview. Published native firewall source and private input
-preparation remain separate from successful source retrieval and host application:
-authentication delivery is in progress after a normal setup fetch failed.
-The fresh-instance Zabbix ownership-publication decision is blocked; its saved
-record must not be assumed to appear automatically.
+The generated overview and protected export reflect the current Beads records.
+The source Core 2.20 runtime passed its normal preflight and zero-error CaC
+preview. Fresh-target image acquisition and the full physical rebuild remain
+separate verification; those source checks do not prove either outcome.
 
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
 conversation association and original parent so the existing export includes

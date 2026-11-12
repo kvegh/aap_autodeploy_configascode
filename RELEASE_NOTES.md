@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.53.5
+
+Omit completed visualization and performance handoffs and their transferred
+workstreams from this project overview. Preserve complete Beads and encrypted
+recovery records; refresh verified migration and retirement task states.
+
 ## 0.53.4
 
 Document completed visualization removal and outline analysis in the authoritative

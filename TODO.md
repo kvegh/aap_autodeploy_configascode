@@ -20,8 +20,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Retire v18 and rebuild bare metal with v19 after the EE upgrade | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
 | bead-wd-3ix.1.10 | Prepare ACME account readiness in fresh host setup | in_progress | P1 | task | bead-wd-3ix.1 |
-| bead-wd-3ix.1.11 | Retire v18 external DNS and current configuration | in_progress | P1 | task | bead-wd-3ix.1 |
-| bead-wd-3ix.1.12 | Verify official Core 2.20 image availability for the fresh target | open | P1 | task | bead-wd-3ix.1 |
+| bead-wd-3ix.1.12 | Verify official Core 2.20 image availability for the fresh target | in_progress | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
@@ -39,6 +38,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.5 | Verify Automation Orchestrator against a disposable OpenShift cluster | deferred | P2 | task | bead-wd-72f.31 |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
+| bead-wd-jjzm | Build the new two-instance AAP CaC visualization | in_progress | P2 | feature | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | in_progress | P2 | task | bead-wd-mcr |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
@@ -57,6 +57,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-1rl.40.3 | Integrate Command Center through the shared AAP CaC importer | closed | P1 | task | bead-wd-1rl.40 |
 | bead-wd-1rl.40.4 | Choose the project for the fresh test Command Center | closed | P1 | decision | bead-wd-1rl.40 |
 | bead-wd-2i1 | Separate AIOps CaC into its private companion repository | closed | P1 | task | — |
+| bead-wd-3ix.1.11 | Retire v18 external DNS and current configuration | closed | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.2 | Fix existing external-controller teardown for successor ownership records | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.3 | Fix final access retirement after normal decommission | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.4 | Verify reinstalled Ng hardware against encrypted CaC | closed | P1 | feature | bead-wd-3ix.1 |
@@ -159,10 +160,9 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.6.1 | Apply the corrected prerequisite survey to both AAP instances | closed | P2 | task | bead-wd-72f.31.6 |
 | bead-wd-72f.31.7 | Assess Assistant Team deployment readiness on the fresh successor | closed | P2 | task | bead-wd-72f.31 |
 | bead-wd-72f.33 | Prepare the private Claude runtime and verify agent remediation | closed | P2 | task | bead-wd-72f |
-| bead-wd-72f.38 | Create an AAP CaC GitHub Pages visualization | closed | P2 | task | bead-wd-72f |
-| bead-wd-72f.39 | Review long runs and redundant work from v16 onward | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.40.1 | Research Red Hat EE stream packaging and DNS dependency choices | closed | P2 | task | bead-wd-72f.40 |
 | bead-wd-72f.40.2 | Replace DNS lookups with native runtime and RHEL tools | closed | P2 | task | bead-wd-72f.40 |
+| bead-wd-72f.41 | Omit completed handoffs from the task overview | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.6 | Review AutoDeploy allocator and registry credential design with owner | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.7 | Prefix project deployment Job Template names with Deploy | closed | P2 | task | bead-wd-72f |
 | bead-wd-72f.8 | Reuse AutoDeploy CaC Vault credential for registry encryption and decryption | closed | P2 | task | bead-wd-72f |
