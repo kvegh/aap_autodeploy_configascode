@@ -1,16 +1,31 @@
 # Release notes
 
+## 0.60.3
+
+Integrate the receiver-owned EE automation with the concurrent RHEL-foundation
+visualization updates. Preserve both implementation histories, stable EE naming
+and all visualization content; refresh the generated task overview.
+
 ## 0.60.2
 
 Document the receiver-owned build implementation and stable EE-name decision,
 including actual validation and the distinction between Source startup, stable
 image publication and remaining receiver acceptance.
 
+Make major card borders visibly stronger with dark 3px outlines. Place blue
+firewall and nginx/TLS configuration bars inside the RHEL foundation from Stage
+02, direct that step's connector there, and retain the bars through later AAP
+changes and final replay. Host-networking scope and reduced-motion support remain.
+
 ## 0.60.1
 
 Use the stable ee-proj-aap-cac repository and AAP EE name. Keep 2.0.0 as the
 image tag so future updates do not rename execution-environment objects. Update
 current build defaults, import guards, guides and focused fixtures together.
+
+Document RHEL-foundation implementation `a6fa859`, its successful Pages publication,
+five exact deployed assets and nineteen passing interaction checks. Preserve the
+rendered-browser verification limit and refresh the completed task recovery record.
 
 ## 0.60.0
 
@@ -26,6 +41,13 @@ checks passed inside actual Core 2.20.10. Native Source job 3744, Verify Registe
 AAP Guest Access, passed using EE-v2; its 62 managed templates and default now
 select that EE. Receiving AAP v19 now has the approved RHEL Skopeo prerequisite and verified
 Hub API timeout 200; its normal base/application acceptance remains pending.
+
+Add a persistent RHEL foundation to both receiving AAPs, with reversible VM/OS
+prerequisite/install milestones and correctly qualified host firewall/nginx/TLS.
+Use stronger 2px card borders, larger Git text and a centred diagram five percent
+shorter for outer spacing. Preserve the continuous two-column AAP body and full
+Git replay. All nineteen existing-tool interaction checks passed; rendered
+browser layout remains unverified and no AAP or host operation is performed.
 
 ## 0.59.9
 
@@ -202,7 +224,6 @@ Preserve the story and smaller-screen layout. Existing interaction checks and
 focused layout-source checks cover the change; rendered-browser acceptance
 remains separate under the existing-tools-only decision.
 
-
 ## 0.55.1
 
 Document the authenticated native EE preflight and zero-error final CaC preview.
@@ -219,8 +240,6 @@ returning to CaC. Use a light interface with labelled object-origin colours,
 real source excerpts and reversible chapter/stage navigation. Keep trigger and
 scan-review mechanics out of the main narrative. Reuse the Pages workflow and
 existing tools; rendered browser/layout acceptance remains separate.
-
-
 
 ## 0.54.1
 
@@ -2676,7 +2695,6 @@ Document implementation `0b3910b` and encrypted capture commits `0146052` and
 secrets, empty new lifecycle groups, verified CA selection and safe reruns.
 Documentation whitespace, version consistency and staged-sensitive-data checks
 passed. Assistant rollout remains separate from the 70 offline checks.
-
 
 ## 0.15.0
 

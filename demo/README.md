@@ -24,8 +24,10 @@ space; the original AAP is centred between rows. Every installed AAP has the sam
 prominent platform identity; card dimensions are illustrative. Receiving object
 definitions share one continuous content area inside each AAP. Receiving cards
 use two columns of compact groups, with plain headings instead of boxed horizontal
-configuration bands. On desktop, the receiving/code rows use the full available page height,
-rather than a fixed 860px maximum. If a short viewport still requires scrolling,
+configuration bands. On desktop, the receiving/code rows use 95 percent of the
+available canvas height, centred with balanced top/bottom spacing rather than a
+fixed 860px maximum. Major card borders are dark 3px and Git previews use 14px text;
+the repository-type headings use 17px text. If a short viewport still requires scrolling,
 the entire content area owns it; there is no independently scrolling lower half.
 The narrow source uses one column to keep names readable. Three internal columns
 remain deferred while the owner tries this height-first revision. The sidebar uses larger readable
@@ -45,6 +47,22 @@ private repository carries a lock; its YAML is an illustrative decrypted view,
 not ciphertext rendered as readable text. The repository-type headings read
 **Private Git Repository** and **Public Git Repository**, using larger dark text
 at every breakpoint. All examples are synthetic.
+
+A slim RHEL foundation remains at the bottom of each receiving card after its
+VM is created. Milestones show VM creation, OS prerequisites and AAP installation;
+backwards navigation and restart reverse them. Stage 01 clones the existing golden
+image. Stage 02 prepares host networking, including firewall, nginx and TLS on the
+hypervisor. Stage 03 prepares the guest filesystem, subscription/repositories and
+Ansible prerequisite before installation. The strip qualifies those host services
+and does not claim that the playbooks perform a full guest OS update/upgrade.
+The third AAP receives the completed foundation at the existing final replay stop;
+no new deployment stop or runtime operation is added. Blue **Firewall config** and
+**nginx / TLS config** bars land inside that rectangle from Stage 02 onward.
+The Stage 02 connector points into the RHEL foundation, which briefly highlights
+on receipt; reduced motion keeps the static configurations and strong boundary.
+Both bars persist through AAP changes and replay to the third instance. Their
+host-networking qualification remains visible, separate from saved infrastructure
+Job Template definitions inside AAP.
 
 AAP configuration remains a distinct category alongside inventories, projects,
 credentials and Job Templates in the same content flow. Stage 04 creates blue **Logging Config v1** and **EDA Config

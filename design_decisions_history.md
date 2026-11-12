@@ -25,6 +25,26 @@ postcheck was corrected by independent mapping and multiset comparison, without
 retrying the successful service action. CoP review terminology was clarified:
 custom code alone is not a demonstrated departure from a CoP recommendation.
 
+## Show the RHEL foundation and strengthen the diagram — 2026-11-12
+
+Implementation `a6fa859f5526d30ee9c1f1a122451176260e4da4` (source 0.60.0)
+adds a slim RHEL foundation below each receiving AAP. The owner requested visible
+VM/OS preparation without expanding the story. Source inspection distinguishes
+the golden-image VM clone, host firewall/nginx/TLS setup, and guest prerequisites
+before AAP installation; a full OS upgrade is not implemented or claimed.
+The foundation persists under later configuration changes and appears completed
+on the final rebuilt AAP, while reverse/restart navigation removes future state.
+
+The owner also requested stronger boundaries and more breathing room: major
+borders are 2px, Git code is 14px with 17px repository headings, and the matching
+code/receiving rows are centred at 95 percent of the available canvas height.
+The continuous two-column AAP body remains; no separate lower scroll pane returns.
+Nineteen local and deployed interaction checks passed, and all five Pages assets
+matched the checkout. Pages workflow 43292899539 completed successfully. These
+existing-tool checks do not verify rendered browser layout; no browser or runtime
+AAP/host action was added. Concurrent EE/runtime updates were preserved.
+
+
 ## Activate the verified EE-v1 default and preserve runtime boundaries — 2026-11-12
 
 Implementation `7e5d2e6e55f926d58701754b930b7bd6d4fa2854` records the

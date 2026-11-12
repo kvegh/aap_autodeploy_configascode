@@ -84,25 +84,25 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .origin-manual { background:var(--origin-manual); }
 .illustration-note { margin:13px 0 0; color:#6f819a; font-size:10px; line-height:1.5; }
 .canvas-shell { display:flex; align-items:stretch; justify-content:center; min-width:0; min-height:100svh; height:100svh; padding:12px 24px; }
-.diagram-grid { display:grid; grid-template-columns:minmax(300px,1fr) 88px 260px 88px minmax(300px,1fr); align-items:stretch; width:100%; height:100%; min-height:0; }
+.diagram-grid { display:grid; grid-template-columns:minmax(300px,1fr) 88px 260px 88px minmax(300px,1fr); align-items:stretch; align-self:center; width:100%; height:95%; min-height:0; }
 .repository-column,.receiving-column { display:grid; grid-template-rows:minmax(0,1fr) minmax(0,1fr); gap:12px; min-width:0; min-height:0; }
-.repository-card { display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; border:1px solid #d9e3ef; border-radius:11px; background:#fff; box-shadow:0 5px 17px #2e4e7a05; transition:border-color 180ms,box-shadow 180ms; }
-.repository-card.active { border-color:#79a2ef; box-shadow:0 0 0 3px #e3edff; }
+.repository-card { display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; border:3px solid #617792; border-radius:11px; background:#fff; box-shadow:0 5px 17px #2e4e7a05; transition:border-color 180ms,box-shadow 180ms; }
+.repository-card.active { border-color:#2763c2; box-shadow:0 0 0 3px #e3edff; }
 .repository-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-height:63px; padding:12px 13px; }
 .repository-identity { display:flex; align-items:center; gap:8px; min-width:0; }
 .repository-icon { display:flex; align-items:center; justify-content:center; width:27px; height:30px; border-radius:6px; color:#5a7ba9; background:#f0f5fd; }
 .repository-icon svg { width:19px; height:19px; }
-.repository-kind { margin:0 0 6px; color:#273b57; font-size:15px; font-weight:700; line-height:1.35; letter-spacing:0; }
-.repository-header h3 { margin:0; font-size:14px; font-weight:650; letter-spacing:-.2px; }
+.repository-kind { margin:0 0 6px; color:#273b57; font-size:17px; font-weight:700; line-height:1.35; letter-spacing:0; }
+.repository-header h3 { margin:0; font-size:15px; font-weight:650; letter-spacing:-.2px; }
 .privacy-badge,.open-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 5px; border:1px solid #e5ecf6; border-radius:4px; color:#6e83a3; background:#f7f9fd; font-size:8px; font-weight:600; white-space:nowrap; }
 .privacy-badge svg,.open-badge svg { width:11px; height:11px; }
 .file-heading { display:flex; align-items:center; gap:7px; height:31px; flex:none; padding:0 12px; overflow:hidden; color:#6d82a2; background:#f6f8fc; border-top:1px solid #edf1f7; border-bottom:1px solid #edf1f7; font-family:ui-monospace,Consolas,monospace; font-size:10px; }
 .file-heading > span { flex:none; }
 .file-mark { color:#7b94b9; font-family:inherit; font-size:8px; font-weight:700; }
-.code-window { flex:1; min-height:0; margin:0; padding:11px 0; overflow:auto; color:#536986; background:#fff; font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace; font-size:12px; line-height:1.8; scrollbar-width:thin; scrollbar-color:#d4dfef transparent; tab-size:2; }
+.code-window { flex:1; min-height:0; margin:0; padding:11px 0; overflow:auto; color:#536986; background:#fff; font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace; font-size:14px; line-height:1.7; scrollbar-width:thin; scrollbar-color:#d4dfef transparent; tab-size:2; }
 .code-window code { display:block; min-width:max-content; font:inherit; }
 .yaml-line { display:block; min-height:21px; padding:0 12px; border-left:3px solid transparent; white-space:pre; }
-.line-number { display:inline-block; width:19px; margin-right:10px; color:#91a0b5; font-size:9px; user-select:none; }
+.line-number { display:inline-block; width:19px; margin-right:10px; color:#7b8da7; font-size:10px; user-select:none; }
 .yaml-key { color:#174f92; }
 .yaml-value { color:#5b2b83; }
 .yaml-comment { color:#64768e; }
@@ -115,9 +115,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .line-active { background:var(--highlight-background,var(--origin-git-soft)); border-left-color:var(--highlight-colour,var(--origin-git)); }
 .repository-footer { display:flex; align-items:center; justify-content:space-between; gap:7px; min-height:31px; padding:8px 12px; flex:none; border-top:1px solid #edf1f6; color:#7489a8; font-size:9px; }
 .file-caption { color:#99a7ba; font-size:8px; }
-.aap-card { display:flex; flex-direction:column; min-width:0; min-height:0; height:100%; overflow:hidden; border:1px solid #d8e3f1; border-radius:11px; background:#fff; box-shadow:0 6px 20px #284a7d06; transition:border-color 180ms,box-shadow 180ms; }
-.source-aap { align-self:center; height:min(500px,100%); }
-.aap-card.phase-job { border-color:#7ea7ee; box-shadow:0 0 0 3px #e2ecff; }
+.aap-card { display:flex; flex-direction:column; min-width:0; min-height:0; height:100%; overflow:hidden; border:3px solid #617792; border-radius:11px; background:#fff; box-shadow:0 6px 20px #284a7d06; transition:border-color 180ms,box-shadow 180ms; }
+.source-aap { align-self:center; height:min(475px,100%); }
+.aap-card.phase-job { border-color:#2763c2; box-shadow:0 0 0 3px #e2ecff; }
 .aap-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-height:64px; padding:10px 12px; flex:none; }
 .aap-identity { display:flex; align-items:center; gap:9px; min-width:0; }
 .aap-symbol { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #edc1c4; border-radius:7px; color:#b82d38; background:#fff2f3; font-size:12px; font-weight:800; flex:none; }
@@ -151,7 +151,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .phase-job #job-label { color:#225fd0; }
 .receiving-slot { display:flex; min-width:0; min-height:0; }
 .receiving-slot > * { width:100%; height:100%; }
-.target-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:0; padding:25px 20px; border:1px dashed #c6d4e8; border-radius:11px; color:#91a2bb; background:#ffffff62; text-align:center; }
+.target-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:0; padding:25px 20px; border:3px dashed #8292a7; border-radius:11px; color:#91a2bb; background:#ffffff62; text-align:center; }
 .prepared-host-icon svg { width:43px; height:43px; color:#90a4c2; }
 .placeholder-eyebrow { margin:17px 0 10px; color:#9aaac0; font-size:9px; font-weight:650; letter-spacing:1px; }
 .target-placeholder h3 { margin:0; color:#7d91ae; font-size:23px; font-weight:500; line-height:1.35; letter-spacing:-.6px; }
@@ -164,15 +164,41 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .target-aap[data-stage="1"] .platform-name,.target-aap[data-stage="2"] .platform-name,.target-aap[data-stage="1"] .aap-symbol,.target-aap[data-stage="2"] .aap-symbol,.target-aap[data-stage="1"] .target-footer,.target-aap[data-stage="2"] .target-footer,.target-aap[data-stage="3"] .target-footer { display:none; }
 .target-aap[data-stage="1"] .aap-content,.target-aap[data-stage="2"] .aap-content,.target-aap[data-stage="3"] .aap-content { display:none; }
 .target-aap[data-stage="1"]::after,.target-aap[data-stage="2"]::after,.target-aap[data-stage="3"]::after { display:flex; flex:1; align-items:center; justify-content:center; padding:25px; color:#8ca0bd; font-size:14px; line-height:1.8; text-align:center; white-space:pre-line; }
-.target-aap[data-stage="1"]::after { content:"RHEL virtual machine\a No AAP installed yet"; }
-.target-aap[data-stage="2"]::after { content:"OS prepared\a Ready for AAP installation"; }
-.target-aap[data-stage="3"]::after { content:"AAP installed\a Base configuration comes next"; }
+.target-aap[data-stage="1"]::after { content:"Create the RHEL VM\a Clone the golden image and start the guest"; }
+.target-aap[data-stage="2"]::after { content:"Prepare access to the VM\a Host firewall · nginx · TLS"; }
+.target-aap[data-stage="3"]::after { content:"Prepare RHEL and install AAP\a Base configuration comes next"; }
+/* Keep the slim OS foundation below the continuous AAP body, including early stages. */
+.aap-header { order:0; }
+.target-aap::after { order:1; }
+.aap-content { order:2; }
+.target-footer { order:3; }
+.rhel-foundation { order:4; flex:none; margin:0 8px 8px; padding:6px 8px; border:2px solid #687f9a; border-left:4px solid #b42c35; border-radius:5px; background:#f5f7fa; }
+.rhel-foundation.landing { border-color:var(--origin-base); box-shadow:0 0 0 2px var(--origin-base-soft); }
+.rhel-configs { display:flex; flex-wrap:wrap; gap:5px; }
+.rhel-config { display:flex; align-items:center; flex:1 1 120px; gap:6px; min-width:0; margin-top:5px; padding:4px 6px; border:1px solid var(--origin-base); border-left:3px solid var(--origin-base); border-radius:4px; color:#153f7e; background:var(--origin-base-soft); font-size:11px; line-height:1.4; }
+.rhel-config-name { overflow-wrap:anywhere; }
+.rhel-config-origin { margin-left:auto; padding:1px 4px; border-radius:3px; color:#fff; background:#2455af; font-size:8px; font-weight:700; }
+.landing .rhel-config { animation:configuration-landing 480ms ease-out both; }
+@keyframes configuration-landing { from { transform:translateX(-12px); opacity:.4; } to { transform:translateX(0); opacity:1; } }
+.rhel-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px 8px; }
+.rhel-label { color:#a32630; font-size:12px; font-weight:800; letter-spacing:.4px; }
+.rhel-status { color:#385777; font-size:11px; font-weight:650; }
+.rhel-progress { display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:4px; }
+.rhel-milestone { display:inline-flex; align-items:center; gap:4px; color:#77889e; font-size:11px; line-height:1.4; }
+.rhel-milestone::before { content:"○"; color:currentColor; font-weight:800; }
+.rhel-milestone[data-state="complete"] { color:#2455af; }
+.rhel-milestone[data-state="complete"]::before { content:"✓"; }
+.rhel-milestone[data-state="current"] { color:#174f92; font-weight:700; }
+.rhel-milestone[data-state="current"]::before { content:"›"; }
+.rhel-detail { margin:4px 0 0; color:#536b86; font-size:10px; line-height:1.4; }
 .repository-connections,.instance-connections { position:relative; min-width:0; min-height:0; }
 .connector-route { position:absolute; left:0; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#becbde; text-align:center; }
 .feed-config { top:calc(50% - 166px); }
 .feed-code { top:calc(50% + 110px); }
 .route-return { top:calc(50% - 110px); }
 #flow-apply { top:calc(50% - 180px); }
+/* Stage 02 delivers the blue host configurations into the upper RHEL foundation. */
+#flow-apply[data-destination="rhel"] { top:auto; bottom:calc(50% + 12px); }
 #flow-scan { top:calc(50% - 90px); }
 #flow-rebuild { top:calc(50% + 60px); }
 .connection-caption { display:block; max-width:100%; padding:0 4px; color:currentColor; font-size:12px; font-weight:650; line-height:1.35; }
@@ -224,20 +250,21 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
   .experience { grid-template-columns:190px minmax(0,1fr); }
   .canvas-shell { display:block; height:auto; padding:20px; }
   .diagram-grid { display:flex; flex-direction:column; gap:0; height:auto; min-height:0; max-width:580px; margin:0 auto; }
-  .repository-column,.receiving-column { grid-template-rows:none; grid-auto-rows:500px; gap:20px; }
-  .repository-card { min-height:0; height:500px; }
+  .repository-column,.receiving-column { grid-template-rows:none; grid-auto-rows:475px; gap:20px; }
+  .repository-card { min-height:0; height:475px; }
   .repository-header { flex-wrap:wrap; }
   .repository-header h3 { font-size:15px; }
   .privacy-badge,.open-badge { font-size:9px; }
   .repository-connections { display:flex; justify-content:space-around; align-items:center; height:110px; flex:none; }
   .connector-route { position:relative; top:auto !important; left:auto; width:80px; }
+  #flow-apply[data-destination="rhel"] { bottom:auto; }
   .repository-connections .connector-route { width:28%; }
   .connector-track { width:61px; height:28px; margin:13px 0; overflow:visible; transform:rotate(90deg); }
   .bundle-tracks { width:72px; margin:14px 0; transform:rotate(90deg); }
   .route-return { margin-left:3px; }
   .instance-connections { display:flex; align-items:center; justify-content:center; gap:20px; height:155px; flex:none; }
-  .aap-card { height:auto; min-height:0; max-height:500px; }
-  .source-aap { align-self:stretch; height:500px; }
+  .aap-card { height:auto; min-height:0; max-height:475px; }
+  .source-aap { align-self:stretch; height:475px; }
   .receiving-slot > * { height:100%; min-height:0; }
   .receiving-slot > .aap-card { height:100%; }
   .target-placeholder { min-height:0; }

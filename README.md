@@ -299,13 +299,22 @@ Template inputs; the page performs no host configuration or live AAP operation.
 Captured manual-origin definitions remain amber when replayed to the next AAP.
 
 The three-column diagram uses matching code/receiving rows across the available
-page height, with the original AAP centred between them. Each receiving AAP uses
+page height, with five percent of that height reserved for balanced outer spacing
+and the original AAP centred between them. Each receiving AAP uses
 one continuous two-column content area, without a fixed configuration strip
 above a separately scrolling lower list. The first destination aligns with the upper code window;
 the lower destination receives the complete saved configuration at the final
 stop. All installed cards share prominent AAP branding. Larger sidebar text,
 a fixed current-step heading and completed/current chapter states make progress
 easier to follow. Examples are synthetic.
+
+A slim RHEL foundation stays at the bottom of both receiving cards. It shows
+VM creation, OS prerequisite preparation and AAP installation, plus the host
+firewall/nginx/TLS setup. These host services are not shown as guest services,
+and a general OS upgrade is not claimed. Stage 02 delivers blue firewall and
+nginx/TLS configuration bars into this RHEL rectangle; they remain through later
+AAP changes and appear on the final rebuilt instance. Dark 3px card borders and
+larger Git text make the diagram easier to read.
 
 The new VM appears in Stage 01, receiving AAP in Stage 03 and base definitions
 in Stage 04. Trigger choices and detailed scan/review mechanics are abstracted.
