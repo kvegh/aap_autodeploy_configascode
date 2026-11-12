@@ -43,6 +43,29 @@ environment and recovery after loss. Technical identifiers, file paths,
 stored schema values, unrelated recovery safeguards and historical evidence
 are preserved. Live object and encrypted CaC naming were published separately.
 
+## Anchor settings and use a generated sysadmin image — 2026-11-12
+
+Implementation `14cbf02f84635da6623b07c215097322e5df56bd` (source 0.61.8)
+anchors the settings category at the bottom of each receiving AAP body. Automatic
+space above it keeps the divider from following the growing object count. The
+two compact object columns, inset line, RHEL layer and natural whole-card growth
+remain; no position-measurement helper or inner scroll pane is added.
+
+The owner explicitly replaced the SVG approach with image generation: simple,
+expressive Linux-admin cues and restrained humour. The built-in imagegen output
+is saved unchanged as `demo/sysadmin.png`; the old character SVG is deleted.
+The 1536 × 1024 RGBA image has actual transparent pixels and retains its original
+alpha. Its full prompt and generation method are in the demo guide. The image
+appears only during manual changes with the existing accessible caption and
+amber flow; publication and live verification now include all six assets.
+
+Twenty-three local interaction checks passed (368.5 ms), along with script syntax
+and whitespace checks. Pages run 43309866775 completed successfully. All six
+published assets, including the PNG, exactly matched the checkout; twenty-three
+deployed interaction checks passed (641.3 ms). The generated image was inspected,
+while browser layout and the divider's rendered coordinates remain independently
+unverified. No renderer, dependency, runtime AAP job or service was installed.
+
 ## Separate platform settings and give the manual operator a clear role — 2026-11-12
 
 Implementation `89496f61d3bb994a85d1319128033e24b31550ea` (source 0.61.7)

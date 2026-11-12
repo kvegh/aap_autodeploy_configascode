@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.61.12
+
+Integrate the tested Orchestrator selector binding with current visualization changes. Preserve both histories. Document successful fresh-receiver base configuration and actual Core 2.20 runtime acceptance; normal Orchestrator import acceptance remains pending.
+
 ## 0.61.11
 
 Document implementation `719812a`, its exact Orchestrator route-credential
@@ -13,6 +17,20 @@ credential for its receiver-owned EE build. Match the independently registered
 route identity and keep repository ownership, shared token-store and duplicate
 credential guards. Other generic importers continue to refuse SSH credentials.
 Seventeen actual Core 2.20 tests and focused production lint pass.
+
+Give every receiving-AAP component bar the same width as Deploy application,
+including AAP settings and RHEL profiles. Use equal left, middle and right object
+spacing while preserving anchored settings, the inset divider and stacked RHEL
+profiles. Import Regional servers and Regional automation with the other project
+objects; the later AAP settings update changes Logging only. Keep the generated
+sysadmin and reversible story interactions. All twenty-three existing interaction
+checks, script syntax and whitespace checks pass locally.
+Refresh the actual-code source pin and VM play name after integrating concurrent
+Rebuild naming and protected async-result updates.
+
+Document preceding anchored-settings/image implementation `14cbf02`. Pages run
+43309866775 succeeded; all six assets matched and twenty-three checks passed.
+Rendered browser coordinates remain independently unverified.
 
 ## 0.61.9
 
