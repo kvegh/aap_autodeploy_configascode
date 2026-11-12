@@ -1,10 +1,13 @@
 # Release notes
 
-## 0.56.3
+## 0.57.2
 
-Record the implementation and verified scope of the Core 2.20 host checkpoint.
+Record successful Core 2.20 host setup and post-reboot checks, preserve the failed
+parent workflow outcome, and document gate-free workflows and the remaining
+fresh AAP acceptance. Clarify current Orchestrator EE ownership. Correct the
+documentation merge in f406fcf while preserving all concurrent visualization
+versions and release notes. Runtime automation is unchanged.
 
-<<<<<<< HEAD
 ## 0.57.1
 
 Document the platform-configuration story in c6ed2b0, compact proportion/colour
@@ -36,14 +39,6 @@ arrow strokes, markers and labels to the relevant highlighted configuration and
 playbook origin: blue deployment/base, violet Git additions, amber manual capture.
 Preserve readable source objects, receiving-AAP space and existing story controls.
 Add one regression for origin matching and navigation reset.
-=======
-## 0.56.2
-
-Record successful Core 2.20 host setup and post-reboot checks, preserve the failed
-parent workflow outcome, and document the removal of manual approval nodes.
-Clarify current Orchestrator EE ownership and refresh the Beads task overview.
-Fresh AAP and use-case runtime acceptance remain separate.
->>>>>>> 8e5a382 (Record verified Core 2.20 host and workflow checkpoint)
 
 ## 0.56.1
 

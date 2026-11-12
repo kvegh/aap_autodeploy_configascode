@@ -4238,7 +4238,7 @@ and complete versioned deployment still require their own observed outcomes.
 
 ## 2026-11-12 — Record verified Core 2.20 host progress
 
-Implementation `eac9e93408a2d57fed6c89e37b958cc26bd2f84d` (0.56.2) updates current recovery documentation after
+Implementation `f406fcf` updates current recovery documentation after
 conversion, host setup and all seventeen post-reboot host checks passed on the
 unmodified official Core 2.20 EE. It preserves the failed parent workflow result:
 removing an approval definition during the active run left a runtime node without
@@ -4250,4 +4250,6 @@ Current Orchestrator documentation names the base-owned Core 2.20 EE. Its
 OpenShift runtime remains deferred because the stock image lacks its Python
 client; documentation is not runtime acceptance or image-build authorization.
 Fresh receiving AAP and full use-case acceptance remain separate. Version
-0.56.3 records this checkpoint without changing runtime automation.
+0.57.2 corrects an accidentally committed documentation/version merge conflict,
+preserves concurrent visualization history and records this checkpoint without
+changing runtime automation.
