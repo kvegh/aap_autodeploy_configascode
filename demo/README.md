@@ -6,7 +6,7 @@ execution code and follows an original AAP, its first destination and a later
 fresh AAP through deployment, project imports, Git-authored additions, manual UI
 additions, capture and replay of the complete saved configuration.
 
-Seven chapters contain eleven presenter-controlled stops because the deployment
+Seven chapters contain twelve presenter-controlled stops because the deployment
 chapter gives all four stages their own view. The receiving platform is genuinely
 hidden initially; Stage 01 reveals a RHEL VM, Stage 03 reveals AAP, and Stage 04
 reveals the shared base objects and configuration profiles. Additional project
@@ -48,7 +48,8 @@ not ciphertext rendered as readable text. The repository-type headings read
 **Private Git Repository** and **Public Git Repository**, using larger dark text
 at every breakpoint. All examples are synthetic.
 
-A slim RHEL foundation remains at the bottom of each receiving card after its
+A RHEL foundation at the bottom of each AAP card contains the whole
+Infrastructure configuration group. Receiving foundations appear when their
 VM is created. Milestones show VM creation, OS prerequisites and AAP installation;
 backwards navigation and restart reverse them. Stage 01 clones the existing golden
 image. Stage 02 prepares host networking, including firewall, nginx and TLS on the
@@ -56,13 +57,16 @@ hypervisor. Stage 03 prepares the guest filesystem, subscription/repositories an
 Ansible prerequisite before installation. The strip qualifies those host services
 and does not claim that the playbooks perform a full guest OS update/upgrade.
 The third AAP receives the completed foundation at the existing final replay stop;
-no new deployment stop or runtime operation is added. Blue **Firewall config** and
+no new runtime deployment operation is added. Blue **Firewall config** and
 **nginx / TLS config** bars land inside that rectangle from Stage 02 onward.
 The Stage 02 connector points into the RHEL foundation, which briefly highlights
 on receipt; reduced motion keeps the static configurations and strong boundary.
-Both bars persist through AAP changes and replay to the third instance. Their
-host-networking qualification remains visible, separate from saved infrastructure
-Job Template definitions inside AAP.
+From base configuration onward, the RHEL group contains Monitoring Agent,
+Firewall and nginx/TLS profiles. The infrastructure CaC stop replaces Monitoring
+Agent and nginx/TLS with violet v2, retaining blue Firewall v1. All three replay
+to the third instance, while the original retains its blue v1 baseline. The
+host-networking qualification remains in the accessible description and this guide; the strip represents the
+infrastructure associated with AAP, not a claim that host nginx runs inside its VM.
 
 AAP configuration remains a distinct category alongside inventories, projects,
 credentials and Job Templates in the same content flow. Stage 04 creates blue **Logging Config v1** and **EDA Config
@@ -71,19 +75,36 @@ v2**; EDA v1 and the original AAP's own configuration remain unchanged. Backward
 navigation restores v1. These are illustrative configuration revisions, not AAP
 product versions.
 
-The **Infrastructure configuration** category represents Job Template
-definitions with saved inputs. Both monitoring and firewall start at blue v1.
-The additional infrastructure-configuration stop updates only **Monitoring Agent
-Config v2** to violet; **Firewall Config v1** and the original AAP stay unchanged.
-The private YAML keeps stable template names and shows a synthetic
-`extra_vars.config_revision` input. Full project/playbook/inventory/credential
-fields are omitted from this illustrative excerpt. This input is a demonstration
-revision label, not an asserted contract of a real infrastructure playbook.
-Importing the definitions does not run an agent installation or firewall change.
+The **Infrastructure configuration** group is inside RHEL, outside the AAP
+object catalogue. The visible strip keeps its RHEL label and configuration bars;
+redundant group and host-networking captions are omitted while accessible group
+names and descriptions are retained. Monitoring and firewall examples preserve their existing saved
+Job Template inputs, while nginx/TLS follows the host configuration in
+`02-infra-config.yml`. The private YAML keeps stable template names with synthetic
+`extra_vars.config_revision` inputs and shows the supported
+`aap_upstream_hostname` input with generic before/after placeholders for nginx.
+These are illustrative revisions; full runtime definitions and dependent TLS
+settings are omitted. No new infrastructure playbook or runtime operation is
+introduced by the visualization.
+
+The lower AAP rectangle stays hidden during the main story. **Room for another AAP**
+appears only in the brief **Ready for another AAP** preparation stop immediately
+before the final replay. The **Deploy again** chapter opens this interim stop;
+Next deploys the third AAP. A direct `#rebuild` link still opens the completed
+replay. Backwards navigation and restart restore the corresponding visibility.
+This presentation-only preparation does not add a runtime job or host operation.
+
+During **Change in AAP**, an unframed stick-figure sysadmin appears above the
+small original AAP, hands on a laptop while resolving an outage. An amber directional
+flow carries manual configuration into the first receiving AAP. This actor
+appears only at the manual stop; the third-AAP placeholder remains hidden there.
+The existing amber inventory/project/credential additions are still absent from
+CaC until the subsequent scan. The figure is native SVG/HTML, uses no external
+asset or dependency, and honours reduced-motion preferences.
 
 The final **Deploy again** stop restores the whole Git-recorded snapshot into
 the lower destination: base definitions, Git changes and captured manual-origin
-objects, plus Logging Config v2, EDA Config v1, Monitoring Agent Config v2 and
+objects, plus Logging Config v2, EDA Config v1, Monitoring Agent Config v2, nginx/TLS Config v2 and
 Firewall Config v1. The first destination remains
 intact. The lower card is genuinely hidden before this final stop; going back or
 restarting removes its future content. Amber objects on the replayed AAP are

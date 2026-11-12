@@ -1,5 +1,42 @@
 # Design decisions history
 
+## Resolve receiver SSH options in their original scope — 2026-11-12
+
+Implementation `a28948a38d73f7d0e064e4d039400fb71dcb1d31` fixes the receiver-build connection failure observed
+in the base job. Ansible resolves delegated connection options in the managed
+host context, while the pinned SSH arguments belong to the original localhost
+facts. The task now explicitly reads that original host value. Five actual
+Core 2.20 tests preserve the real UID, installation-user and runtime-directory
+delegation; restoring the old expression fails the strengthened regression.
+The focused production lint also passes. Existing failed job history is retained;
+normal base rerun remains the live acceptance check.
+
+## Put infrastructure in RHEL and give manual changes an origin — 2026-11-12
+
+Implementation `beec5ea7e9f002df24afa0c9536a2296aabbee8d` (source 0.61.0)
+places the complete Infrastructure configuration group in each RHEL foundation.
+The owner delegated the revision choice: nginx/TLS and the previously agreed
+monitoring example become purple v2; Firewall remains blue v1. The original
+retains its v1 baseline, and the final AAP receives the complete saved snapshot.
+The nginx example uses the supported upstream-hostname input with generic
+placeholders; revision labels remain illustrative, with no runtime action here.
+
+At the owner's request, an outage-response sysadmin with hands on a laptop
+appears above the original AAP only during manual additions. An amber arrow
+shows direct input to the receiving AAP. The entire third-AAP rectangle stays
+hidden until a brief preparation stop, followed by the final deployment.
+Twelve stops, reverse/restart, keyboard/chapter navigation and origin colours
+remain consistent. No external asset, dependency or new runtime job was added.
+
+The preceding correction `2dd1495a3b09bc300659c7380404e4643e4af007` made the
+major borders dark 3px and delivered firewall/nginx bars into RHEL. Its Pages
+publication and twenty deployed checks passed. The integrated 0.61.0 publication
+completed in Pages run 43297643513; all five assets matched and all twenty-three
+deployed interaction checks passed. Concurrent receiver-EE changes were preserved
+through a normal rebase. Rendered browser layout remains unverified under the
+owner's existing-tools-only choice.
+
+
 ## Build the receiver-owned shared execution environment — 2026-11-12
 
 Implementation `c711505dabd5937dc0d051eb183a8c0901023c42` adds the

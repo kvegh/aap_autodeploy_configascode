@@ -1,5 +1,28 @@
 # Release notes
 
+## 0.61.2
+
+Integrate the tested receiver SSH-context fix with concurrent visualization updates. Preserve both source histories and all diagram changes. Five actual Core 2.20 context tests and focused production lint pass.
+
+## 0.61.1
+
+Remove redundant visible RHEL group/networking captions, retaining configuration
+bars and accessible descriptions.
+
+Document visualization implementations `2dd1495` and `beec5ea`: stronger borders,
+RHEL infrastructure revisions, incident-response sysadmin and interim-only third
+AAP. Record successful Pages publication, five exact assets and twenty-three
+deployed interaction checks, preserving the browser-rendering limit and task recovery.
+
+## 0.61.0
+
+Hide the whole third-AAP rectangle until its brief preparation step before replay.
+Show an incident-response sysadmin above the original AAP, with a laptop and amber
+configuration flow directly to the receiving AAP. Place the whole Infrastructure
+configuration group inside RHEL: Monitoring Agent and nginx/TLS become purple v2,
+while Firewall stays blue v1. Preserve the original v1 baseline, complete replay,
+reversible navigation and direct final links. No runtime job or dependency is added.
+
 ## 0.60.5
 
 Resolve pinned SSH arguments from the original orchestration host during receiver
