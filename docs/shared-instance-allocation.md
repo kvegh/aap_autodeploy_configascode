@@ -50,7 +50,8 @@ belong to the connected hypervisor. AutoDeploy compares the complete policy and
 does not configure firewall permissions implicitly.
 
 Before reservation, Stage 01 enforces SSH host-key checking, reads the actual
-machine ID, verifies the existing persistent recovery isolation helper/service,
+machine ID, compares the complete native firewall policy with its protected CaC
+and verifies the persistent isolation service is active and enabled. It also
 checks the selected network bridge and requires the already-published golden
 image through explicit `aap_golden_image_path`; the source host's legacy image
 default is not used. Existing disks/domains are never overwritten. Fresh guest host keys are

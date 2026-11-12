@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.57.3
+
+Clarify that allocation compares native firewall policy with protected CaC and
+checks the persistent isolation service. Remove the stale reference to the
+retired helper. Runtime automation remains unchanged.
+
 ## 0.57.2
 
 Record successful Core 2.20 host setup and post-reboot checks, preserve the failed

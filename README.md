@@ -370,6 +370,8 @@ identity. Conversion, host setup and all seventeen post-reboot host checks passe
 under Core 2.20. Removing an approval definition during the active run caused
 AAP to mark its parent workflow failed despite successful child jobs; that result
 is retained. Current workflow definitions contain no manual approval nodes.
+Stage 01 verifies the native firewall policy against protected CaC and checks
+the persistent isolation service before allocating a new guest.
 Fresh-target EE acquisition and complete versioned AAP acceptance remain separate.
 
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
