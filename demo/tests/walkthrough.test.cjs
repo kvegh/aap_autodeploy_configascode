@@ -114,6 +114,17 @@ test('the seven chapters cover deployment, capture and replay with existing sour
   assert.equal(new Set(story.steps.map(step => step.id)).size, 12);
   assert.equal(story.steps.find(step => step.id === 'infra-change').chapter, 'git-change');
   assert.equal(story.steps.at(-1).id, 'rebuild');
+  assert.deepEqual(story.stateAt(0).sourceObjects.map(object => object.name), [
+    'VMWare Inventory', 'AAP Config-as-Code Git', 'Server access key', 'AAP Config-as-Code jobs',
+  ], 'The source uses the requested names for its base inventory, project, credential and jobs');
+  const project = story.stateAt(story.steps.findIndex(step => step.id === 'project'));
+  assert.deepEqual(project.targetObjects.filter(object => object.origin === 'git').map(object => object.name), [
+    'Satellite Inventory', 'Application automation playbooks', 'Application auth token', 'Deploy application',
+  ], 'Project imports preserve the requested inventory, project and credential names');
+  const configuration = story.configurationLines(project).map(line => line.text).join('\n');
+  assert.match(configuration, /name: VMWare Inventory source/);
+  assert.match(configuration, /inventory: VMWare Inventory(?:\n|$)/);
+
   assert.match(story.sourceRevision, /^[a-f0-9]{40}$/);
   for (const step of story.steps) {
     for (const reference of step.sources) assert.ok(existsSync(path.resolve(repository, reference)), reference);
@@ -187,7 +198,7 @@ test('the source job reads both repositories and applies project objects', () =>
   assert.equal(nodes['code-card'].classList.contains('active'), true);
   assert.equal(objectNames(nodes['source-objects']).length, 4);
   assert.equal(objectNames(nodes['target-objects']).length, 8);
-  assert.ok(objectNames(nodes['target-objects']).includes('Operations'));
+  assert.ok(objectNames(nodes['target-objects']).includes('Satellite Inventory'));
   assert.ok(objectNames(nodes['target-objects']).includes('Deploy application'));
   assert.equal(withClass(nodes['target-objects'], 'object-item').filter(item => item.dataset.origin === 'git').length, 4);
   assert.equal(nodes['flow-apply'].hidden, false);
@@ -389,12 +400,12 @@ test('the sidebar owns controls and status while three content columns own the d
 test('active arrows match the highlighted configuration origin and reset on navigation', () => {
   const page = browser();
   for (const [id, origin, names] of [
-    ['base', 'base', ['Platform', 'Platform automation']],
-    ['project', 'git', ['Operations', 'Application automation']],
+    ['base', 'base', ['VMWare Inventory', 'AAP Config-as-Code Git']],
+    ['project', 'git', ['Satellite Inventory', 'Application automation playbooks']],
     ['git-change', 'git', ['Regional servers', 'Regional automation']],
     ['infra-change', 'git', ['Certificate config v2']],
     ['capture', 'manual', ['Emergency servers', 'Quick-fix automation']],
-    ['vm', 'base', ['Platform']],
+    ['vm', 'base', ['VMWare Inventory']],
   ]) {
     page.hash(`#${id}`);
     const activeRoutes = ['flow-config', 'flow-code', ...futureRoutes].map(route => page.nodes[route]).filter(route => route.classList.contains('active'));
@@ -421,7 +432,7 @@ test('base AAP configuration is deployed and Git updates replace logging without
   const page = browser();
   const { nodes } = page;
   const names = id => objectNames(nodes[id]);
-  assert.deepEqual(names('source-configuration'), ['Logging Config v1', 'EDA Config v1']);
+  assert.deepEqual(names('source-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
   assert.equal(nodes['target-configuration-panel'].hidden, true);
   for (const id of ['vm', 'infrastructure', 'installation']) {
     page.hash(`#${id}`);
@@ -431,19 +442,19 @@ test('base AAP configuration is deployed and Git updates replace logging without
   for (const id of ['base', 'project']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-configuration-panel'].hidden, false);
-    assert.deepEqual(names('target-configuration'), ['Logging Config v1', 'EDA Config v1']);
+    assert.deepEqual(names('target-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
     for (const item of withClass(nodes['target-configuration'], 'configuration-item')) assert.equal(item.dataset.origin, 'base');
   }
   for (const id of ['git-change', 'infra-change', 'manual', 'capture', 'rebuild']) {
     page.hash(`#${id}`);
-    assert.deepEqual(names('target-configuration'), ['Logging Config v2', 'EDA Config v1']);
+    assert.deepEqual(names('target-configuration'), ['AAP Logging Config v2', 'AAP EDA Config v1']);
     const configs = withClass(nodes['target-configuration'], 'configuration-item');
     assert.equal(configs.filter(item => item.dataset.configId === 'logging').length, 1, 'Logging is updated, not duplicated');
     assert.equal(configs.find(item => item.dataset.configId === 'logging').dataset.origin, 'git');
     assert.equal(configs.find(item => item.dataset.configId === 'eda').dataset.origin, 'base');
-    assert.deepEqual(names('source-configuration'), ['Logging Config v1', 'EDA Config v1']);
-    assert.match(nodes['config-lines'].textContent, /Logging Config v2/);
-    assert.doesNotMatch(nodes['config-lines'].textContent, /Logging Config v1/);
+    assert.deepEqual(names('source-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
+    assert.match(nodes['config-lines'].textContent, /AAP Logging Config v2/);
+    assert.doesNotMatch(nodes['config-lines'].textContent, /AAP Logging Config v1/);
   }
   page.hash('#git-change');
   assert.equal(nodes['job-label'].textContent, 'Apply configuration');
@@ -453,7 +464,7 @@ test('base AAP configuration is deployed and Git updates replace logging without
   assert.match(logging[0].textContent, /20000/);
   assert.ok(nodes['source-links'].children.some(link => link.href.endsWith('/04-aap-config.yml')));
   page.hash('#base');
-  assert.deepEqual(names('target-configuration'), ['Logging Config v1', 'EDA Config v1']);
+  assert.deepEqual(names('target-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
   assert.match(nodes['config-lines'].textContent, /LOG_AGGREGATOR_ACTION_QUEUE_SIZE: 10000/);
   nodes.restart.click();
   assert.equal(nodes['target-configuration-panel'].hidden, true);
@@ -483,7 +494,7 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   assert.equal(nodes['successor-card'].attributes['aria-hidden'], 'false');
   assert.equal(nodes['successor-placeholder'].hidden, true);
   assert.deepEqual(objectNames(nodes['successor-objects']).sort(), captured.configObjects.map(object => object.name).sort());
-  assert.deepEqual(objectNames(nodes['successor-configuration']), ['Logging Config v2', 'EDA Config v1']);
+  assert.deepEqual(objectNames(nodes['successor-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
   assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Certificate config v2', 'Firewall Config v1']);
   const successorItems = automationItems(nodes['successor-objects']);
   assert.equal(successorItems.length, 13);
@@ -503,7 +514,7 @@ test('another AAP receives the complete Git snapshot only after capture and reve
     assert.equal(withClass(item, 'git-badge')[0].textContent, 'In Git');
   }
   assert.deepEqual(objectNames(nodes['target-objects']).sort(), captured.targetObjects.map(object => object.name).sort());
-  assert.deepEqual(objectNames(nodes['target-configuration']), ['Logging Config v2', 'EDA Config v1']);
+  assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
   assert.deepEqual(objectNames(nodes['source-objects']), originalObjects);
   assert.deepEqual(objectNames(nodes['source-configuration']), originalConfiguration);
   assert.deepEqual(objectNames(nodes['source-infrastructure']), originalInfrastructure);
@@ -521,8 +532,8 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   assert.equal(replay.targetObjects[0].name, expectedObjectName, 'Replay does not alias the first target');
   assert.notEqual(replay.configObjects[0].name, 'Changed replay fixture', 'Replay does not mutate Git definitions');
   replay.successorConfiguration[0].name = 'Changed configuration fixture';
-  assert.equal(replay.targetConfiguration[0].name, 'Logging Config v2');
-  assert.equal(story.stateAt(story.steps.length - 1).successorConfiguration[0].name, 'Logging Config v2');
+  assert.equal(replay.targetConfiguration[0].name, 'AAP Logging Config v2');
+  assert.equal(story.stateAt(story.steps.length - 1).successorConfiguration[0].name, 'AAP Logging Config v2');
   replay.successorInfrastructure[0].name = 'Changed infrastructure fixture';
   assert.equal(replay.targetInfrastructure[0].name, 'Certificate config v2');
   assert.equal(story.stateAt(story.steps.length - 1).successorInfrastructure[0].name, 'Certificate config v2');
@@ -613,7 +624,7 @@ test('infrastructure configuration updates certificates while retaining firewall
   for (const line of highlighted) assert.equal(line.dataset.origin, 'git');
   nodes.previous.click();
   assert.deepEqual(names('target-infrastructure'), original, 'Backing up restores the previous infrastructure revision');
-  assert.deepEqual(names('target-configuration'), ['Logging Config v2', 'EDA Config v1'], 'The earlier logging update is retained');
+  assert.deepEqual(names('target-configuration'), ['AAP Logging Config v2', 'AAP EDA Config v1'], 'The earlier logging update is retained');
   page.hash('#rebuild');
   assert.deepEqual(names('successor-infrastructure'), updated);
   nodes.restart.click();

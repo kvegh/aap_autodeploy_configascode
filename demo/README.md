@@ -72,8 +72,8 @@ host-networking scope is explained in this guide; the strip represents the
 infrastructure associated with AAP, not a claim that host nginx runs inside its VM.
 
 AAP configuration remains a distinct category alongside inventories, projects,
-credentials and Job Templates in the same content flow. Stage 04 creates blue **Logging Config v1** and **EDA Config
-v1**. Change in Git replaces the same logging entry with violet **Logging Config
+credentials and Job Templates in the same content flow. Stage 04 creates blue **AAP Logging Config v1** and **AAP EDA Config
+v1**. Change in Git replaces the same logging entry with violet **AAP Logging Config
 v2**; EDA v1 and the original AAP's own configuration remain unchanged. Backwards
 navigation restores v1. These are illustrative configuration revisions, not AAP
 product versions.
@@ -109,7 +109,7 @@ asset or dependency, and honours reduced-motion preferences.
 
 The final **Deploy again** stop restores the whole Git-recorded snapshot into
 the lower destination: base definitions, Git changes and captured manual-origin
-objects, plus Logging Config v2, EDA Config v1, Certificate config v2 and
+objects, plus AAP Logging Config v2, AAP EDA Config v1, Certificate config v2 and
 Firewall Config v1. The first destination remains
 intact. The lower card is genuinely hidden before this final stop; going back or
 restarting removes its future content. Amber objects on the replayed AAP are
@@ -117,6 +117,21 @@ labelled **Captured**, preserving their historical origin while showing that
 these definitions came from Git. Three coloured lanes show the complete replay.
 This one visual stop groups the existing VM/install/base/object-import paths;
 it adds no runtime job, deployment wrapper or live AAP operation.
+
+The object names used throughout the cards and private YAML are:
+
+| Object | Name |
+|---|---|
+| Base inventory | VMWare Inventory |
+| Added inventory | Satellite Inventory |
+| AAP settings | AAP Logging Config v1 → v2; AAP EDA Config v1 |
+| Base credential | Server access key |
+| Application credential | Application auth token |
+| Base project | AAP Config-as-Code Git |
+| Application project | Application automation playbooks |
+| Base Job Template | AAP Config-as-Code jobs |
+
+Names are illustrative; changing these fixtures does not rename live AAP objects.
 
 ## Code and data
 
@@ -146,7 +161,7 @@ The logging example uses the supported Controller setting
 `LOG_AGGREGATOR_ACTION_QUEUE_SIZE`, with synthetic 10000-to-20000 values.
 `controller_settings_base.settings` follows the shared/base configuration path;
 the generic project importer excludes Controller settings. The Git-change code
-preview cites both the existing base reapply and object-import paths. EDA Config
+preview cites both the existing base reapply and object-import paths. AAP EDA Config
 v1 represents a retained decision-environment/rulebook-activation bundle using
 supported EDA CaC variables, not a generic EDA global-settings API. Its YAML is
 an excerpt, with other required activation fields omitted. Highlighted code is

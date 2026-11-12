@@ -292,8 +292,8 @@ Seven chapters contain twelve stops: four deployment stages, project imports,
 platform/infrastructure configuration updates, manual additions, capture and a
 complete replay from Git.
 
-Blue base configuration includes Logging v1, EDA v1, Certificate config v1 and
-Firewall v1. Git updates Logging and Certificate config to violet v2 while EDA
+Blue base configuration includes AAP Logging Config v1, AAP EDA Config v1, Certificate config v1 and
+Firewall v1. Git updates AAP Logging Config and Certificate config to violet v2 while EDA
 and Firewall stay at v1. The whole Infrastructure
 configuration group sits inside RHEL. Only the RHEL label, preparation indicators and configuration
 bars are shown; redundant infrastructure/networking captions are omitted. Bars stack on the
@@ -315,7 +315,9 @@ the lower AAP rectangle is hidden throughout the main story. “Room for another
 appears only in a brief preparation stop immediately before the final deployment,
 which fills that destination with the complete saved configuration. All installed cards share prominent AAP branding. Larger sidebar text,
 a fixed current-step heading and completed/current chapter states make progress
-easier to follow. Examples are synthetic.
+easier to follow. Examples are synthetic. The named examples include VMWare Inventory, Satellite Inventory,
+Server access key, Application auth token and the AAP Config-as-Code Git project;
+see the demo guide for the complete naming table.
 
 A RHEL foundation holds the infrastructure group at the bottom of each AAP card. It shows
 VM creation, OS prerequisite preparation and AAP installation, plus the host

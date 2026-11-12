@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.61.5
+
+Apply the owner-selected inventory, credential, project and Job Template names
+throughout the visualization and YAML preview. Prefix logging and EDA examples
+with AAP and preserve inventory-source references, stable IDs, colours and replay.
+These fixture names do not rename live AAP objects.
+
 ## 0.61.4
 
 Document caption cleanup `cc324a6` and complete compact visualization `60490df`:
