@@ -283,22 +283,27 @@ pins. Do not run old policy-writing revisions on that host concurrently with the
 new callers. Unrelated production deployments retain their existing tested pins. Local fixture tests
 do not establish live migration or complete end-to-end acceptance.
 
-## Interactive AAP Configuration as Code walkthrough
+## AAP Configuration as Code visualization
 
-[Open the guided visualization](https://kvegh.github.io/aap_autodeploy_configascode/)
-to explore how shared base configuration, selected project imports and reviewed
-Controller capture fit together. The twelve-step story follows implementation
-`e371c76` (runtime 0.50.13), links to its source and illustrates configuration of
-the same AAP or another verified AAP. Examples are synthetic; the page makes no
-AAP connections. Dedicated deployment views explain VM creation, DNS/TLS/nginx,
-AAP installation and Base AAP configuration before the project CaC flow. The
-initial view shows only the existing source AAP and prepared host. The empty VM
-appears in Stage 01, AAP in Stage 03, and its configured API view in Stage 04;
-backwards navigation and restart remove objects that do not exist yet. The
-palette uses blue, slate and neutral shades. Source and local checks are
-in [demo/README.md](demo/README.md). The public Pages artifact contains only the
-allowlisted presentation assets. Interaction and structural checks pass; browser
-layout and screenshots were not checked because the owner chose existing tools.
+The previous visualization has been withdrawn so its replacement can be designed
+from scratch. No visualization application is currently included.
+
+The existing GitHub Pages workflow remains in
+[.github/workflows/deploy-demo.yml](.github/workflows/deploy-demo.yml). It checks
+for `demo/index.html` after checkout and skips both visualization checks and
+publication while that source is absent. This small shell check uses the GitHub
+Actions output interface; Ansible content is not needed to control this static
+site workflow. A replacement must update the workflow's asset and test paths if
+its source layout changes.
+
+For publication, repository Settings → Pages must select **GitHub Actions**.
+A push to `main` changing `demo/**` or the workflow runs its JavaScript checks,
+packages only the explicitly listed HTML/CSS/JavaScript/icon files, uploads the
+Pages artifact and deploys it. Pull requests run checks without publication;
+manual workflow dispatch is also available. No JavaScript build step is used.
+Deleting source does not remove an earlier Pages deployment: withdrawing that
+site is a separate repository Pages operation. Re-enable Pages with GitHub
+Actions when the replacement is ready if the old site has been unpublished.
 
 ## Tasks and decisions
 
@@ -1196,7 +1201,7 @@ The owner’s follow-up `bead-wd-72f.31.2.6` starts only after v18 acceptance:
 the AIOps project will own monitoring-server and demonstration-guest installation
 and setup, triggered by its project configuration deployment. The main TRA
 toolkit remains in the base. This is a planned ownership/trigger change; the
-current run and the pinned visualization retain their existing behavior.
+current run retains its existing behavior.
 
 ### Disconnected Windows configuration deployment
 

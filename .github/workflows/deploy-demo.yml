@@ -22,17 +22,30 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    outputs:
+      source_present: ${{ steps.source.outputs.present }}
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+      # README.md#aap-configuration-as-code-visualization explains this pause.
+      - name: Check for visualization source
+        id: source
+        run: |
+          if [ -f demo/index.html ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Visualization source is absent; checks and publication are skipped."
+          fi
       - name: Check the public walkthrough
+        if: steps.source.outputs.present == 'true'
         run: |
           node --check demo/src/scenario.js
           node --check demo/src/app.js
           node --test demo/tests/*.test.cjs
 
   publish:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.check.outputs.source_present == 'true'
     needs: check
     runs-on: ubuntu-latest
     permissions:

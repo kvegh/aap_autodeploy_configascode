@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.53.2
+
+Remove the withdrawn AAP CaC visualization assets, scripts, styles and tests so
+its replacement can be designed from scratch. Retain the GitHub Pages workflow
+with a source-presence check that skips testing and publication while the site
+is absent. Update current README guidance and preserve historical decisions.
+Validate the guard's present/absent branches, workflow structure, version tools
+and whitespace; no AAP runtime content or deployment is changed.
+
 ## 0.53.1
 
 Document implementation feab264, the owner-selected unchanged-image DNS approach,
