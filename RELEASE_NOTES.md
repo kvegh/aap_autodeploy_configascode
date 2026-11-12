@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.52.17
+
+Document implementation ae03bb3, the upstream package-action bug, preservation of
+the direct pinned SSH connection and the expanded protected-input regression.
+The existing VM remains the target of access repair and subsequent installation.
+
 ## 0.52.16
 
 Clear inherited logical delegation only for the certified firewall role, retaining

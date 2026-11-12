@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Keep direct SSH while avoiding the unsafe delegated package lookup — 2026-11-12
+
+Implementation `ae03bb3` clears inherited delegation only inside the certified
+firewall role's apply and rollback calls. The surrounding transaction still
+supplies the verified hypervisor's SSH address, user, port and strict server-key
+settings. No protected value is unwrapped, package backend forced, vendor role
+patched or execution environment changed.
+
+The previous inventory loop passed a simplified fixture but failed live. The
+expanded regression covers both plain JSON and unsafe YAML inventory names,
+the protected route/rule inputs and the actual transaction connection variables.
+It exercises Ansible's real package action, verifies the same SSH destination
+and DNF selection for both calls, and reproduces the original failure as a
+negative control. All three focused Ansible regressions passed on resumption;
+scoped syntax and production lint had also passed for the same runtime change.
+
+The observed engine is `ansible-core 2.16.19`. Maintainer-verified
+[upstream issue #82598](https://github.com/ansible/ansible/issues/82598)
+documents the protected delegation/template failure. Upstream 2.17.0 uses direct
+fact lookup; 2.16.20 still contains the old expression. An engine upgrade remains
+a separate change. Live access repair and the remaining installation stages
+must be verified independently; passing local tests is not deployment acceptance.
+
 ## Preserve protected values while selecting a trusted delegation name — 2026-11-11
 
 Implementation `d98c8f2` addresses the actual package failure. The privately
