@@ -304,16 +304,19 @@ bars are shown; redundant infrastructure/networking captions are omitted. Bars s
 right beside the RHEL label and preparation indicators to save vertical space. The page performs no host configuration
 or live AAP operation.
 Captured manual-origin definitions remain amber when replayed to the next AAP. During the manual-change stop, a
-seated sysadmin above the small original AAP has hands on a laptop while responding
-to an outage. An amber arrow shows their
+seated Linux sysadmin above the small original AAP wears a plain hoodie and glasses,
+leaning toward a laptop with hands on the keyboard. A small amber outage alert
+and one coffee mug establish the incident-response scene. An amber arrow shows their
 configuration entering the first receiving AAP directly; the figure disappears
 when the scan brings those definitions into Git.
 
 The three-column diagram uses matching code/receiving rows across the available
 page height, with five percent of that height reserved for balanced outer spacing
 and the original AAP centred between them. Each receiving AAP uses
-two independently packed, unboxed columns: Inventories/Projects on the left;
-AAP configuration, Credentials and Job Templates on the right. Compact bars
+two independently packed, unboxed object columns: Inventories/Credentials on the
+left and Projects/Job Templates on the right. AAP configuration is a separate
+full-width category below them, divided by one light inset horizontal line; RHEL
+remains underneath. Compact bars
 keep all definitions visible without internal receiving-card scrolling. The first destination aligns with the upper code window;
 the lower AAP rectangle is hidden throughout the main story. “Room for another AAP”
 appears only in a brief preparation stop immediately before the final deployment,

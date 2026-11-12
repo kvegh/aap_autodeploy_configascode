@@ -23,8 +23,10 @@ with the upper code window, with room for another below. Code previews have more
 space; the original AAP is centred between rows. Every installed AAP has the same
 prominent platform identity; card dimensions are illustrative. Receiving object
 definitions share one continuous content area inside each AAP. Receiving cards
-use two independently packed, unboxed columns. Inventories and Projects fill
-the left; AAP configuration, Credentials and Job Templates fill the right. Compact
+use two independently packed, unboxed object columns. Inventories and Credentials
+fill the left; Projects and Job Templates fill the right. AAP configuration follows
+as a full-width bottom category, separated by one light horizontal line inset from
+the card borders. Its two settings share a compact row, with RHEL beneath. Compact
 22px bars retain 13px names without row-synchronised empty space or an internal
 receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
 available canvas height, centred with balanced top/bottom spacing rather than a
@@ -71,8 +73,8 @@ to the third instance, while the original retains its blue v1 baseline. The
 host-networking scope is explained in this guide; the strip represents the
 infrastructure associated with AAP, not a claim that host nginx runs inside its VM.
 
-AAP configuration remains a distinct category alongside inventories, projects,
-credentials and Job Templates in the same content flow. Stage 04 creates blue **AAP Logging Config v1** and **AAP EDA Config
+AAP configuration is a distinct full-width category below inventories, projects,
+credentials and Job Templates, separated by a light inset rule. Stage 04 creates blue **AAP Logging Config v1** and **AAP EDA Config
 v1**. Change in Git replaces the same logging entry with violet **AAP Logging Config
 v2**; EDA v1 and the original AAP's own configuration remain unchanged. Backwards
 navigation restores v1. These are illustrative configuration revisions, not AAP
@@ -99,8 +101,11 @@ Next deploys the third AAP. A direct `#rebuild` link still opens the completed
 replay. Backwards navigation and restart restore the corresponding visibility.
 This presentation-only preparation does not add a runtime job or host operation.
 
-During **Change in AAP**, an unframed stick-figure sysadmin appears above the
-small original AAP, seated at a desk with hands on a laptop while resolving an outage. An amber directional
+During **Change in AAP**, an unframed Linux sysadmin appears above the small
+original AAP. The owner-selected figure wears a plain hoodie with its hood down
+and glasses, seated in an office chair with a slight forward lean and hands on
+the laptop keyboard. One coffee mug and a small amber outage alert provide
+restrained role and incident cues. An amber directional
 flow carries manual configuration into the first receiving AAP. This actor
 appears only at the manual stop; the third-AAP placeholder remains hidden there.
 The existing amber inventory/project/credential additions are still absent from

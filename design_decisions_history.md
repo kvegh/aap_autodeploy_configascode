@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Use recognisable illustrative object names — 2026-11-12
+
+Implementation `49115f50d90e86d34bab9138b06c5aeb1ee54ad0` (source 0.61.5)
+applies the owner-selected VMWare/Satellite inventories, Server access key and
+Application auth token credentials, AAP Config-as-Code Git project/jobs,
+Application automation playbooks and AAP-prefixed Logging/EDA configuration.
+The decrypted YAML preview and inventory-source binding use the same names,
+while stable IDs, origin colours and replay behavior remain unchanged. These
+are synthetic fixtures; no live AAP objects were renamed.
+
+Pages run 43305022025 completed successfully. All five published assets matched
+the checkout and twenty-three deployed interaction checks passed, including
+exact names, inventory-source binding and manual-scene sysadmin visibility.
+Rendered browser geometry was not independently verified.
+
 ## Retain protected organization failure evidence — 2026-11-12
 
 Implementation `f19b9dc2a63860d1e6c425cf94fa6901ed2d2a86` captures a failed initial organization role into

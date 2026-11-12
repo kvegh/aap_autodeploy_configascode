@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.61.7
+
+Separate AAP settings below the two compact automation-object columns in both
+receiving AAPs, using one light inset divider above the settings and keeping RHEL
+below. Replace the manual-change stick figure with the owner-selected seated
+Linux admin: hoodie, glasses, laptop, coffee and a restrained outage alert.
+Retain all object names, configuration revisions, origin colours and scene states.
+All twenty-three existing interaction checks, app/scenario syntax, SVG XML/security
+and whitespace checks pass locally. Rendered browser geometry remains unverified.
+
 ## 0.61.6
 
 Integrate encrypted organization diagnostics with the current compact visualization, preserving both histories. Diagnostic privacy tests pass in actual Core 2.20; the focused production lint passes.
