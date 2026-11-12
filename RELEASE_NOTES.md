@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.61.3
+
+Seal initial organization failures with the existing explicitly labelled CaC
+Vault key and retain only ciphertext in native job artifacts. Keep original
+async and cleanup errors, omit invocation arguments and stop immediately.
+Actual Core 2.20 privacy, missing-key and unchanged-success tests pass.
+
 ## 0.61.2
 
 Integrate the tested receiver SSH-context fix with concurrent visualization updates. Preserve both source histories and all diagram changes. Five actual Core 2.20 context tests and focused production lint pass.

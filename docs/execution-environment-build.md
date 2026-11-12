@@ -12,6 +12,17 @@ The source assets come from the current project checkout; the build context and
 registry authentication file live in a private temporary directory on the
 actual build host.
 
+If the initial base organization role fails after the receiver image verifies,
+Stage 04 stops immediately and records only a Vault-encrypted diagnostic in
+the native job artifact `aap_base_organization_failure_vault`. Use the existing
+CaC Vault credential, labelled `cac`, to inspect it privately. The diagnostic
+retains the original async result, any subsequent cleanup failure and bounded
+launch/path context; it excludes invocation/module-argument objects. It never
+falls back to an environment Vault key or enables collection error continuation.
+Successful organization setup creates no diagnostic artifact. Normal secure
+logging stays enabled; the image's successful verification does not establish
+that the later base configuration completed.
+
 ## Required inputs and prerequisites
 
 The build host must already provide working **Podman** and **Skopeo** for its

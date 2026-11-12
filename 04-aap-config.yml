@@ -415,11 +415,30 @@
           ansible.builtin.include_tasks: tasks/base-execution-environment.yml
 
         - name: Create base organizations before their PAH credentials
-          ansible.builtin.include_role:
-            name: infra.aap_configuration.gateway_organizations
-          vars:
-            aap_organizations: "{{ aap_organizations_base }}"
-            assign_galaxy_credentials_to_org: false
+          block:
+            - name: Apply initial base organizations through the existing configuration role
+              ansible.builtin.include_role:
+                name: infra.aap_configuration.gateway_organizations
+              vars:
+                aap_organizations: "{{ aap_organizations_base }}"
+                assign_galaxy_credentials_to_org: false
+          rescue:
+            - name: Encrypt the original organization and async cleanup failure without exposing credentials
+              aap_cac_diagnostic:
+              register: cac_base_organization_diagnostic
+              no_log: true
+
+            - name: Preserve only encrypted organization diagnostics in the native job artifact
+              ansible.builtin.set_stats:
+                data:
+                  aap_base_organization_failure_vault: "{{ cac_base_organization_diagnostic.encrypted_diagnostic }}"
+                per_host: false
+                aggregate: false
+              no_log: true
+
+            - name: Stop base configuration after its protected organization failure
+              ansible.builtin.fail:
+                msg: Base organization configuration failed; inspect the encrypted diagnostic in this job's artifacts before retrying.
 
         - name: Prepare persistent local PAH download credentials
           ansible.builtin.include_tasks:

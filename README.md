@@ -1,5 +1,9 @@
 # AAP AutoDeploy and Configuration as Code
 
+Initial organization failures retain a Vault-encrypted diagnostic in the native
+AAP job artifacts, using the existing CaC Vault credential. The base job stops
+at that failure; credentials remain protected in its normal logs.
+
 Deploy a fresh AAP, import selected use cases, run their demonstrations, and clean
 up the disposable resources so the demonstration can be repeated. Recovery can
 be driven by an external AAP; it must not depend on the hypervisor being rebuilt.
