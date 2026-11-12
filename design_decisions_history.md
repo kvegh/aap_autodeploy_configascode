@@ -1,5 +1,42 @@
 # Design decisions history
 
+## Use desktop space and distinguish object origins — 2026-11-12
+
+Implementation `18b5b2c044228aebf3d7e963c19adb74f1de2b3e` follows the owner's
+browser screenshot and feedback: the capped central canvas left excessive empty
+space, stacked panels were too tall and origin colours were too pale. The
+visualization now uses fluid desktop width, bounded panels with two-column
+scrollable object groups, larger code/object text and stronger labelled blue,
+violet and amber fills and borders. Scrollable regions are keyboard focusable.
+The story and smaller-screen layout remained intact. The owner subsequently
+rejected the rendered composition: width and colour corrections did not solve
+the stacked diagram. The next approved revision uses three columns and a left
+sidebar, following a visual mockup shown before implementation.
+
+All ten interaction checks, syntax, focused CSS assertions and whitespace passed.
+Independent source review found no blocking cascade, overflow or story regression.
+The Pages run completed successfully, and all five public HTTPS assets matched
+source. This establishes publication and tested interactions; rendered-browser
+layout remains separately unverified under the existing-tools-only decision.
+
+## Separate private configuration from public execution in the two-AAP story — 2026-11-12
+
+Implementation `9bb4b12cac43acb0b7d785f4f1e9096eb9e71fe1` rebuilt the withdrawn
+visualization around the owner's selected narrative: original AAP, two separate
+repositories, four deployment stages, base objects, project additions, Git
+changes and manual objects returning to encrypted CaC. Only two AAP instances
+are shown. Trigger choices and detailed scan/review mechanics are deliberately
+abstracted from the main flow, as requested. The YAML preview is marked encrypted
+and illustrative; execution excerpts link to the real implementation. Captured
+manual objects keep their origin and gain an In Git badge.
+
+Ten interaction/source checks passed and initial Pages publication plus live
+asset parity were verified. No live AAP operations or browser installation were
+performed. At initial publication the deployed-source interaction runner remained pending;
+its original native write later completed, and normal plus copied-asset fixture
+runs passed. The next layout revision integrates that runner with byte parity
+before downloaded code is executed. Browser rendering remains outside that check.
+
 ## Publish verified identity before normal recovery — 2026-11-12
 
 Hactar implementation `e629966` and private configuration implementation

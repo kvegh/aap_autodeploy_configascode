@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.56.0
+
+Recompose the AAP CaC walkthrough around the owner-selected three-column diagram:
+compact repositories, original AAP and new AAP. Move chapter navigation,
+deployment stages, status, progress and controls to a left sidebar; remove the
+large hero and explanatory scene header. Give active connectors strong direction
+and brief moving markers with a persistent static cue and reduced-motion support.
+Rename Stage 02 to Prepare OS for AAP installation. Keep the approved two-instance
+story, private/public separation, object origins and publishing workflow. Add a
+repeatable HTTPS asset-parity and deployed-source interaction command using
+existing Node, with no browser installation or live AAP calls.
+
 ## 0.55.3
 
 Record the authenticated physical-reinstall identity publication, preserved

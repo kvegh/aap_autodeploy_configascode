@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="See how private configuration and public automation code recreate AAP, apply new objects and bring manual changes back into Git.">
+  <meta name="description" content="Explore how private encrypted configuration and public automation code configure two AAP instances and bring manual changes back into Git.">
   <meta name="color-scheme" content="light">
   <title>AAP, kept in Git</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -12,119 +12,78 @@
   <script src="src/app.js" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#story">Skip to the walkthrough</a>
-  <div class="page-shell">
-    <header class="masthead">
-      <a class="wordmark" href="#" aria-label="AAP configuration as code, start">
-        <svg class="wordmark-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="m16 3 12 7v12l-12 7L4 22V10Z" stroke="currentColor" stroke-width="2"/><path d="m10 20 6-11 6 11M12 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span>AAP <span class="wordmark-secondary">/ configuration as code</span></span>
-      </a>
-      <span class="masthead-note"><span class="status-dot"></span>A guided explanation</span>
-    </header>
-
-    <main id="story">
-      <section class="introduction" aria-labelledby="page-title">
-        <p class="eyebrow">YOUR AUTOMATION. YOUR SOURCE OF TRUTH.</p>
-        <h1 id="page-title">Your AAP.<br> <span>Kept in Git.</span> Ready for its next home.</h1>
-        <p class="intro-copy">Keep configuration private and execution code open. Build a new AAP, apply what belongs there, and bring changes back into Git.</p>
-      </section>
-
-      <section class="walkthrough" aria-label="AAP configuration walkthrough">
-        <div class="story-navigation">
-          <nav id="chapter-list" class="chapter-list" aria-label="Story chapters"></nav>
-          <button id="restart" class="button-restart" type="button" aria-label="Restart the walkthrough"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.1 7a6.3 6.3 0 1 1-.2 5M4 3v4h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Restart</span></button>
-        </div>
+  <a class="skip-link" href="#story">Skip to the diagram</a>
+  <div class="experience">
+    <aside class="sidebar" aria-label="Walkthrough navigation and status">
+      <header class="sidebar-brand">
+        <a class="wordmark" href="#" aria-label="AAP configuration as code, start"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="m16 3 12 7v12l-12 7L4 22V10Z" stroke="currentColor" stroke-width="2"/><path d="m10 20 6-11 6 11M12 17h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>AAP<span class="wordmark-secondary">Configuration as code</span></span></a>
+        <h1 id="page-title" class="sr-only">AAP configuration as code</h1>
+      </header>
+      <div class="sidebar-scroll">
+        <div class="chapter-header"><span class="section-label">THE STORY</span><span id="step-count" class="scene-counter">1 / 9</span></div>
+        <nav id="chapter-list" class="chapter-list" aria-label="Story chapters"></nav>
         <div class="progress-track" aria-hidden="true"><span id="progress-fill"></span></div>
+        <section id="stage-list" class="stage-list" aria-label="Four AAP deployment stages">
+          <h2 class="section-label">AAP DEPLOYMENT</h2>
+          <button type="button" data-stage="1"><span class="stage-number">01</span><span>Create VM</span></button>
+          <button type="button" data-stage="2"><span class="stage-number">02</span><span>Prepare OS for AAP installation</span></button>
+          <button type="button" data-stage="3"><span class="stage-number">03</span><span>Install AAP</span></button>
+          <button type="button" data-stage="4"><span class="stage-number">04</span><span>Base configuration</span></button>
+        </section>
+        <section class="status-panel" aria-label="Current operation status"><h2 class="section-label">CURRENT OPERATION</h2><dl><div><dt>Source job</dt><dd id="job-status">Job Template</dd></div><div><dt>Step result</dt><dd id="target-state">Not created yet</dd></div></dl></section>
+        <aside id="actor" class="actor" aria-labelledby="actor-title" hidden><span class="actor-icon"><svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><circle cx="14" cy="9" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M6 24v-3a8 8 0 0 1 16 0v3M20 5h5m-2.5-2.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><div><h3 id="actor-title">An operator makes a change</h3><p id="actor-description"></p></div></aside>
+        <details class="source-details"><summary><span aria-hidden="true">&lt;/&gt;</span>Actual source code</summary><div id="source-links" class="source-links"></div></details>
+      </div>
+      <div class="sidebar-footer">
+        <div class="scene-controls" aria-label="Step navigation"><button id="previous" class="button-step button-previous" type="button" aria-label="Previous step" disabled><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="next" class="button-step button-next" type="button"><span id="next-label">Next</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m10 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="restart" class="button-restart" type="button" aria-label="Restart the walkthrough"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.1 7a6.3 6.3 0 1 1-.2 5M4 3v4h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+        <p id="feedback" class="feedback" aria-live="polite" aria-atomic="true">Two repositories. One configuration story.</p>
+        <div id="legend" class="legend" aria-label="Object origin colours"><span><i class="legend-dot origin-base"></i>Base objects</span><span><i class="legend-dot origin-git"></i>Added through CaC</span><span><i class="legend-dot origin-manual"></i>Added manually</span></div>
+        <p class="illustration-note">Illustrative data<br>No live AAP connection</p>
+      </div>
+    </aside>
 
-        <div class="scene-heading">
-          <div class="scene-heading-copy">
-            <p id="step-count" class="scene-counter">01 / 09</p>
-            <h2 id="scene-title">One platform. Two kinds of knowledge.</h2>
-            <p id="scene-description">AAP reads what to configure from a private repository and how to configure it from public automation code.</p>
-          </div>
-          <div class="scene-controls" aria-label="Step navigation">
-            <button id="previous" class="button-step button-previous" type="button" aria-label="Previous step" disabled><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-            <button id="next" class="button-step button-next" type="button"><span id="next-label">Next</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m10 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          </div>
+    <main id="story" class="canvas-shell" aria-labelledby="page-title">
+      <div class="sr-only"><h2 id="scene-title">Configuration data and execution code</h2><p id="scene-description">AAP configuration walkthrough.</p></div>
+      <div class="diagram-grid" aria-label="Two repositories, the original AAP and its new destination">
+        <div class="repository-column">
+          <section id="config-card" class="repository-card config-repository" aria-labelledby="config-title">
+            <header class="repository-header"><div class="repository-identity"><span class="repository-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 14v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><p class="repository-kind">PRIVATE REPOSITORY</p><h3 id="config-title">Configuration data</h3></div></div><span class="privacy-badge"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 7V5a3 3 0 0 1 6 0v2M3.5 7h9v7h-9z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/></svg>Encrypted</span></header>
+            <div class="file-heading"><span class="file-mark">YML</span><span>configuration.yml</span></div>
+            <pre class="code-window" tabindex="0"><code id="config-lines" aria-label="Illustrative decrypted configuration YAML, stored encrypted"></code></pre>
+            <div class="repository-footer">What should exist<span class="file-caption">Illustrative view</span></div>
+          </section>
+          <section id="code-card" class="repository-card execution-repository" aria-labelledby="code-title">
+            <header class="repository-header"><div class="repository-identity"><span class="repository-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><p class="repository-kind">PUBLIC REPOSITORY</p><h3 id="code-title">Execution code</h3></div></div><span class="open-badge"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.25"/><path d="M2 8h12M8 2c3 3 3 9 0 12-3-3-3-9 0-12Z" stroke="currentColor" stroke-width="1.1"/></svg>Open</span></header>
+            <div class="file-heading"><span class="file-mark">YML</span><span id="execution-file-name">deploy-cac-project.yml</span></div>
+            <pre class="code-window" tabindex="0"><code id="code-lines" aria-label="Execution playbook excerpt"></code></pre>
+            <div class="repository-footer">How to configure it<span class="file-caption">Ansible playbook</span></div>
+          </section>
         </div>
 
-        <div class="architecture" aria-label="Configuration, code and AAP instances">
-          <div class="repository-row">
-            <section id="config-card" class="repository-card config-repository" aria-labelledby="config-title">
-              <header class="repository-header">
-                <div class="repository-identity"><span class="repository-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 14v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><p class="repository-kind">PRIVATE REPOSITORY</p><h3 id="config-title">Configuration data</h3></div></div>
-                <span class="privacy-badge"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M5 7V5a3 3 0 0 1 6 0v2M3.5 7h9v7h-9z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/></svg>Encrypted</span>
-              </header>
-              <div class="file-heading"><span class="file-mark">YML</span><span>configuration.yml</span><span class="file-caption">illustrative view</span></div>
-              <pre class="code-window" tabindex="0"><code id="config-lines" aria-label="Illustrative encrypted configuration YAML"></code></pre>
-              <div class="repository-footer"><span class="repository-purpose">What should exist</span><span class="repository-reader">Read by original AAP</span></div>
-            </section>
-
-            <section id="code-card" class="repository-card execution-repository" aria-labelledby="code-title">
-              <header class="repository-header">
-                <div class="repository-identity"><span class="repository-icon"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><p class="repository-kind">PUBLIC REPOSITORY</p><h3 id="code-title">Execution code</h3></div></div>
-                <span class="open-badge"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.25"/><path d="M2 8h12M8 2c3 3 3 9 0 12-3-3-3-9 0-12Z" stroke="currentColor" stroke-width="1.1"/></svg>Open</span>
-              </header>
-              <div class="file-heading"><span class="file-mark">YML</span><span id="execution-file-name">deploy-cac-project.yml</span><span class="file-caption">Ansible playbook</span></div>
-              <pre class="code-window" tabindex="0"><code id="code-lines" aria-label="Execution playbook excerpt"></code></pre>
-              <div class="repository-footer"><span class="repository-purpose">How to configure it</span><span class="repository-reader">Read by original AAP</span></div>
-            </section>
-          </div>
-
-          <svg class="repository-flow" viewBox="0 0 1000 72" preserveAspectRatio="none" aria-label="Both repositories connect to the original AAP">
-            <defs><marker id="arrow-feed" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="m1 1 4 2.5L1 6" fill="none" stroke="#7997c4" stroke-width="1.2"/></marker></defs>
-            <g id="flow-config" class="route"><path class="route-line" d="M230 0V64" marker-end="url(#arrow-feed)"/><text x="242" y="50">Read configuration</text></g>
-            <g id="flow-code" class="route"><path class="route-line" d="M750 0v15q0 15-15 15H295q-15 0-15 15v19" marker-end="url(#arrow-feed)"/><text x="500" y="22">Read execution code</text></g>
-            <g id="flow-return" class="route route-return" hidden><path class="route-line" d="M190 68V5" marker-end="url(#arrow-feed)"/><text x="36" y="40">Save into CaC</text></g>
-          </svg>
-
-          <div class="aap-row">
-            <section id="source-card" class="aap-card source-aap" aria-labelledby="source-title">
-              <header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">A</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="source-title">Original AAP</h3></div></div><span class="instance-badge">Source</span></header>
-              <div class="aap-toolbar"><span class="toolbar-label"><span class="status-dot"></span>Automation content</span><span class="toolbar-menu" aria-hidden="true">···</span></div>
-              <div id="source-objects" class="object-list" tabindex="0" role="region" aria-label="Original AAP objects"></div>
-              <div class="job-panel"><div class="job-identity"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="m8 7 5 3-5 3z" fill="currentColor"/></svg><span id="job-label">Configuration jobs</span></div><span id="job-status" class="job-status">Ready</span></div>
-            </section>
-
-            <div class="instance-connection" aria-label="Operations between AAP instances">
-              <div id="flow-apply" class="route inter-instance-flow" hidden><span id="apply-caption" class="connection-caption">Configure</span><svg viewBox="0 0 112 24" fill="none" aria-hidden="true"><path class="route-line" d="M4 12h101m-7-6 7 6-7 6"/></svg><span id="apply-detail" class="connection-detail">AAP API</span></div>
-              <div id="flow-scan" class="route inter-instance-flow route-scan" hidden><span class="connection-caption">Read objects</span><svg viewBox="0 0 112 24" fill="none" aria-hidden="true"><path class="route-line" d="M108 12H7m7-6-7 6 7 6"/></svg><span class="connection-detail">Scan job</span></div>
-            </div>
-
-            <div class="receiving-slot">
-              <div id="target-placeholder" class="target-placeholder"><span class="prepared-host-icon"><svg viewBox="0 0 44 44" fill="none" aria-hidden="true"><rect x="7" y="5" width="30" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><rect x="7" y="20" width="30" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M13 11h1m-1 15h1M22 33v6m-9 0h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><p class="placeholder-eyebrow">THE NEXT DESTINATION</p><h3>A prepared host.<br>Room for a new AAP.</h3><p>The VM and its automation platform appear as the deployment progresses.</p><span class="prerequisite-badge">Host preparation complete</span></div>
-              <section id="target-card" class="aap-card target-aap" aria-labelledby="target-title" aria-hidden="true" hidden>
-                <header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">A</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="target-title">New AAP</h3></div></div><span class="instance-badge target-badge">Destination</span></header>
-                <div class="aap-toolbar"><span id="target-state" class="toolbar-label">RHEL VM created</span><span class="toolbar-menu" aria-hidden="true">···</span></div>
-                <div id="target-objects" class="object-list" tabindex="0" role="region" aria-label="Receiving AAP objects"></div>
-                <div class="target-footer"><span class="instance-footnote">Same platform. A new home.</span><span class="capture-indicator"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3.5 8 3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Definitions in Git</span></div>
-              </section>
-            </div>
-          </div>
-
-          <div id="stage-list" class="stage-list" aria-label="Four AAP deployment stages">
-            <span class="stage-list-label">THE DEPLOYMENT</span>
-            <button type="button" data-stage="1"><span class="stage-number">01</span><span>Create VM</span></button>
-            <span class="stage-divider" aria-hidden="true"></span>
-            <button type="button" data-stage="2"><span class="stage-number">02</span><span>DNS · TLS · nginx</span></button>
-            <span class="stage-divider" aria-hidden="true"></span>
-            <button type="button" data-stage="3"><span class="stage-number">03</span><span>Install AAP</span></button>
-            <span class="stage-divider" aria-hidden="true"></span>
-            <button type="button" data-stage="4"><span class="stage-number">04</span><span>Base configuration</span></button>
-          </div>
-
-          <aside id="actor" class="actor" aria-labelledby="actor-title" hidden><span class="actor-icon"><svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><circle cx="14" cy="9" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M6 24v-3a8 8 0 0 1 16 0v3M20 5h5m-2.5-2.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><div><h3 id="actor-title">An operator makes a change</h3><p id="actor-description"></p></div><span class="actor-tag">Human input</span></aside>
+        <div class="repository-connections" aria-label="Repository connections to the original AAP">
+          <div id="flow-config" class="route connector-route feed-config"><span class="connection-caption">Read CaC</span><div class="connector-track" aria-hidden="true"><span id="arrow-feed" class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><span class="active-cue">ACTIVE</span></div>
+          <div id="flow-code" class="route connector-route feed-code"><span class="connection-caption">Read code</span><div class="connector-track" aria-hidden="true"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><span class="active-cue">ACTIVE</span></div>
+          <div id="flow-return" class="route connector-route reverse route-return" hidden><span class="connection-caption">Save CaC</span><div class="connector-track" aria-hidden="true"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><span class="active-cue">ACTIVE</span></div>
         </div>
 
-        <div class="story-footer">
-          <div id="legend" class="legend" aria-label="Object origin colours"><span><i class="legend-dot origin-base"></i>Base objects</span><span><i class="legend-dot origin-git"></i>Added through CaC</span><span><i class="legend-dot origin-manual"></i>Added manually</span></div>
-          <p id="feedback" class="feedback" aria-live="polite" aria-atomic="true">Follow the story to see the configuration move.</p>
+        <section id="source-card" class="aap-card source-aap" aria-labelledby="source-title">
+          <header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">A</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="source-title">Original AAP</h3></div></div><span class="instance-badge">Source</span></header>
+          <div class="aap-toolbar"><span class="toolbar-label"><span class="status-dot"></span>Automation content</span></div>
+          <div id="source-objects" class="object-list" tabindex="0" role="region" aria-label="Original AAP objects"></div>
+          <div class="job-panel"><svg class="job-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="m8 7 5 3-5 3z" fill="currentColor"/></svg><div><span class="job-kicker">JOB TEMPLATE</span><span id="job-label">Configuration jobs</span></div></div>
+        </section>
+
+        <div class="instance-connections" aria-label="Operations between AAP instances">
+          <div id="flow-apply" class="route connector-route inter-instance-flow" hidden><span id="apply-caption" class="connection-caption">Configure</span><div class="connector-track" aria-hidden="true"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><span id="apply-detail" class="connection-detail">New AAP</span><span class="active-cue">ACTIVE</span></div>
+          <div id="flow-scan" class="route connector-route inter-instance-flow reverse route-scan" hidden><span class="connection-caption">Read objects</span><div class="connector-track" aria-hidden="true"><span class="route-line"></span><span class="flow-packets"><i></i><i></i></span></div><span class="connection-detail">Scan job</span><span class="active-cue">ACTIVE</span></div>
         </div>
 
-        <details class="source-details"><summary><span class="source-brackets" aria-hidden="true">&lt;/&gt;</span>Follow the actual code<span class="details-plus" aria-hidden="true">+</span></summary><div class="source-details-content"><p>This scene follows the maintained deployment and configuration playbooks.</p><div id="source-links" class="source-links"></div></div></details>
-      </section>
+        <div class="receiving-slot">
+          <div id="target-placeholder" class="target-placeholder"><span class="prepared-host-icon"><svg viewBox="0 0 44 44" fill="none" aria-hidden="true"><rect x="7" y="5" width="30" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><rect x="7" y="20" width="30" height="12" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M13 11h1m-1 15h1M22 33v6m-9 0h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span><p class="placeholder-eyebrow">PREPARED HOST</p><h3>The next AAP<br>starts here.</h3><p>The new VM appears during deployment.</p></div>
+          <section id="target-card" class="aap-card target-aap" aria-labelledby="target-title" aria-hidden="true" hidden><header class="aap-header"><div class="aap-identity"><span class="aap-symbol" aria-hidden="true">A</span><div><p class="platform-name">ANSIBLE AUTOMATION PLATFORM</p><h3 id="target-title">New AAP</h3></div></div><span class="instance-badge target-badge">Destination</span></header><div class="aap-toolbar"><span class="toolbar-label">Automation content</span></div><div id="target-objects" class="object-list" tabindex="0" role="region" aria-label="Receiving AAP objects"></div><div class="target-footer"><span class="instance-footnote">Same platform. A new home.</span><span class="capture-indicator"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m3.5 8 3 3 6-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Definitions in Git</span></div></section>
+        </div>
+      </div>
     </main>
-    <footer class="page-footer"><span>AAP configuration as code</span><span>Illustrative data · no live AAP connection</span><span class="keyboard-hint"><kbd>←</kbd><kbd>→</kbd> to explore · <kbd>R</kbd> to restart</span></footer>
   </div>
 </body>
 </html>

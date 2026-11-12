@@ -5,8 +5,11 @@ const { readFileSync, existsSync } = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { test } = require('node:test');
-const story = require('../src/scenario.js');
-const demo = path.resolve(__dirname, '..');
+const checkoutDemo = path.resolve(__dirname, '..');
+const repository = path.resolve(checkoutDemo, '..');
+// Live verification supplies downloaded assets; code citations still use this checkout.
+const demo = process.env.AAP_CAC_DEMO_DIR ? path.resolve(process.env.AAP_CAC_DEMO_DIR) : checkoutDemo;
+const story = require(path.join(demo, 'src/scenario.js'));
 const source = name => readFileSync(path.join(demo, name), 'utf8');
 const futureRoutes = ['flow-apply', 'flow-scan', 'flow-return'];
 
@@ -104,8 +107,8 @@ test('the six chapters cover the four deployment stages and link to existing sou
   assert.equal(new Set(story.steps.map(step => step.id)).size, 9);
   assert.match(story.sourceRevision, /^[a-f0-9]{40}$/);
   for (const step of story.steps) {
-    for (const reference of step.sources) assert.ok(existsSync(path.resolve(demo, '..', reference)), reference);
-    const code = step.sources.map(reference => readFileSync(path.resolve(demo, '..', reference), 'utf8')).join('\n');
+    for (const reference of step.sources) assert.ok(existsSync(path.resolve(repository, reference)), reference);
+    const code = step.sources.map(reference => readFileSync(path.resolve(repository, reference), 'utf8')).join('\n');
     const actualLines = new Set(code.split('\n').map(line => line.trim()));
     const excerpt = story.executionLines(story.stateAt(story.steps.indexOf(step)));
     if (step.id === 'capture') {
@@ -295,4 +298,69 @@ test('source links stay pinned and the presentation performs no network operatio
   assert.equal(story.stateAt(8).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 3);
   assert.equal(story.stateAt(7).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 0);
   assert.throws(() => story.stateAt('capture'), TypeError);
+});
+
+test('active routes remain visible and deployment actions name the current stage', () => {
+  const page = browser();
+  const expected = [
+    ['separation', null, null, []],
+    ['vm', 'Create VM', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
+    ['infrastructure', 'Prepare OS', 'New VM', ['flow-code', 'flow-apply']],
+    ['installation', 'Install AAP', 'New AAP', ['flow-code', 'flow-apply']],
+    ['base', 'Apply base', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['git-change', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['manual', null, null, []],
+    ['capture', null, null, ['flow-scan', 'flow-return']],
+  ];
+  for (const [id, caption, detail, activeRoutes] of expected) {
+    page.hash(`#${id}`);
+    if (caption) {
+      assert.equal(page.nodes['apply-caption'].textContent, caption, id);
+      assert.equal(page.nodes['apply-detail'].textContent, detail, id);
+    }
+    for (const routeId of ['flow-config', 'flow-code', ...futureRoutes]) {
+      const route = page.nodes[routeId];
+      const active = activeRoutes.includes(routeId);
+      assert.equal(route.classList.contains('active'), active, `${id}: ${routeId}`);
+      const visible = active || routeId === 'flow-config' || routeId === 'flow-code';
+      assert.equal(route.hidden, !visible, `${id}: ${routeId} visibility`);
+      assert.equal(route.attributes['aria-hidden'], String(!visible), `${id}: ${routeId} accessibility`);
+    }
+  }
+});
+
+test('the sidebar owns controls and status while three content columns own the diagram', () => {
+  const html = source('index.html');
+  const opening = html.match(/<aside\b[^>]*class="[^"]*\bsidebar\b[^"]*"[^>]*>/);
+  assert.ok(opening, 'The walkthrough needs its sidebar');
+  // The operator annotation is also an aside; stop at the matching outer close.
+  let depth = 0;
+  let sidebar = '';
+  for (const tag of html.slice(opening.index).matchAll(/<\/?aside\b[^>]*>/gi)) {
+    depth += tag[0].startsWith('</') ? -1 : 1;
+    if (depth === 0) { sidebar = html.slice(opening.index, opening.index + tag.index + tag[0].length); break; }
+  }
+  assert.ok(sidebar, 'The sidebar has a matching closing tag');
+  for (const id of ['chapter-list', 'stage-list', 'previous', 'next', 'restart', 'step-count', 'progress-fill', 'feedback', 'legend']) {
+    assert.match(sidebar, new RegExp(`\\bid="${id}"`), `${id} belongs in the sidebar`);
+  }
+  const main = html.match(/<main\b[^>]*id="story"[^>]*>/);
+  assert.ok(main, 'The diagram keeps its main landmark');
+  assert.match(main[0], /class="[^"]*\bcanvas-shell\b/);
+  assert.doesNotMatch(html, /class="[^"]*\b(?:introduction|hero|scene-heading)\b[^"]*"/);
+  const regions = [
+    html.search(/class="[^"]*\brepository-column\b/),
+    html.search(/class="[^"]*\brepository-connections\b/),
+    html.indexOf('id="source-card"'),
+    html.search(/class="[^"]*\binstance-connections\b/),
+    html.search(/class="[^"]*\breceiving-slot\b/),
+  ];
+  assert.ok(regions.every(position => position >= 0), 'All three content columns and their connectors exist');
+  assert.deepEqual([...regions].sort((left, right) => left - right), regions, 'Repositories, original AAP and receiving AAP remain in reading order');
+  for (const id of ['config-card', 'code-card']) {
+    const position = html.indexOf(`id="${id}"`);
+    assert.ok(position > regions[0] && position < regions[1], `${id} belongs in the repository column`);
+  }
+  assert.ok(html.indexOf('id="target-card"') > regions[4], 'The new AAP belongs in the receiving column');
 });

@@ -81,8 +81,9 @@
     byId('target-card').setAttribute('aria-hidden', String(!state.targetVisible));
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
-    byId('apply-caption').textContent = step.stage < 4 ? 'Deploy' : 'Configure';
-    byId('apply-detail').textContent = step.stage < 4 ? 'VM · infrastructure · installer' : 'AAP API';
+    const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
+    byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : index === 4 ? 'Apply base' : 'Apply objects';
+    byId('apply-detail').textContent = step.stage < 3 ? 'New VM' : 'New AAP';
     byId('target-objects').hidden = step.stage < 4;
     byId('target-card').dataset.stage = String(step.stage);
     byId('target-card').classList.toggle('captured', state.captured);
@@ -96,6 +97,14 @@
       route.hidden = !active && !sourceFeed;
       route.setAttribute('aria-hidden', String(route.hidden));
       route.classList.toggle('active', active);
+      // Restart brief directional motion when entering another active story step.
+      // Reduced-motion styles remove the animation while keeping the active line.
+      if (active) {
+        for (const animation of route.getAnimations?.({ subtree: true }) || []) {
+          animation.cancel();
+          animation.play();
+        }
+      }
     }
     drawObjects(byId('source-objects'), state.sourceObjects);
     drawObjects(byId('target-objects'), state.targetObjects);

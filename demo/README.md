@@ -13,9 +13,15 @@ Backwards navigation, restart and direct links restore the corresponding state.
 
 The interface uses a light canvas and labelled origin colours: blue for base
 objects, violet for Git-defined additions and amber for manually created objects.
-The desktop canvas uses most of the browser width; compact repository panes and
-bounded, scrollable two-column object groups avoid growing the four panels
-vertically. Stronger fills, borders and labelled badges distinguish the origins.
+A left sidebar holds chapter navigation, the four deployment stages, job status,
+progress and presenter controls. The main diagram has three columns: compact
+repositories, original AAP and new AAP. The two AAP cards share the same visual
+language; longer object lists scroll within the card. There is no marketing hero
+or explanatory scene header above the diagram. Stage 02 is labelled **Prepare OS
+for AAP installation**. Strong fills, borders and labelled badges distinguish the
+origins. Active connectors use a bold directional line, brief travelling markers
+and normal HTML action labels, avoiding stretched SVG text. Reduced motion keeps
+the strong static activity cue.
 Captured manual objects keep their origin and gain an **In Git** badge. The
 private repository carries a lock; its YAML is an illustrative decrypted view,
 not ciphertext rendered as readable text. All examples are synthetic.
@@ -49,14 +55,16 @@ Credential secrets are maintained separately through protected inputs; scanning
 cannot recover newly masked passwords or tokens. The page does not establish
 universal AAP export, live deployment or workload acceptance.
 
-## Checks and local preview
+## Verification
 
-Use existing Node and Python; do not install a browser or dependency for this demo.
+Use existing Node 18 or newer (verified with Node 22.23.1) and Python; no browser
+or dependency installation is needed.
 
 ```sh
 node --check demo/src/scenario.js
 node --check demo/src/app.js
 node --test demo/tests/walkthrough.test.cjs
+node demo/tests/live.cjs https://kvegh.github.io/aap_autodeploy_configascode/
 python3 -m http.server 8765 --directory demo --bind 127.0.0.1
 ```
 
@@ -67,18 +75,14 @@ links open the real implementation. Motion honours reduced-motion preferences.
 
 The Node tests exercise the real scripts against a disposable DOM and check
 visible object outcomes, source mapping, true hidden state and reversible
-navigation. After publication, the repeatable deployed check downloads the five
-public assets over HTTPS, runs the same interactions against those downloaded
-HTML/JavaScript bytes and cleans up its temporary fixtures:
-
-```sh
-node demo/tests/live.cjs https://kvegh.github.io/aap_autodeploy_configascode/
-```
-
-This requires network access to that Pages site and the existing checkout for
-source references. It returns a nonzero status for failed downloads or
-interactions. It changes no remote resources. These checks do not establish
-rendered browser, desktop or phone layout.
+navigation. The live runner downloads only the five allowlisted assets over HTTPS, refuses
+redirects, checks size/time limits and requires exact checkout byte parity before
+executing the same interaction suite against the downloaded files. It removes
+only its own temporary directory and exits nonzero for a failure. Run it from the
+checkout matching the intended deployment; an older or not-yet-published checkout
+will fail parity. No credentials or live AAP inputs are needed, and no remote data
+is changed. These checks exercise deployed HTML/JavaScript interactions in a
+disposable DOM; they do not establish rendered browser, desktop or phone layout.
 The owner chose existing checks only; no browser installation is authorized.
 
 ## Publication
