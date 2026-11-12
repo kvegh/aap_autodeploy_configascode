@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.55.2
+
+Use the available desktop width for the AAP CaC visualization, reduce stacked
+panel height and arrange wide-screen object groups in two columns. Increase
+code/object text and strengthen blue/violet/amber fills, borders and labels.
+Preserve the story and smaller-screen layout. Existing interaction checks and
+focused layout-source checks cover the change; rendered-browser acceptance
+remains separate under the existing-tools-only decision.
+
+
 ## 0.55.1
 
 Document the authenticated native EE preflight and zero-error final CaC preview.

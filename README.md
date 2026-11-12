@@ -289,8 +289,9 @@ do not establish live migration or complete end-to-end acceptance.
 to follow two AAP instances and the separation between private encrypted YAML
 configuration and public execution playbooks. The new light presentation shows
 four deployment stages, base objects, project imports, Git-authored changes and
-manual additions returning to CaC. Object origins stay visible through blue,
-violet and amber accents and text labels. Examples are synthetic and no live
+manual additions returning to CaC. The fluid desktop canvas uses compact panels and side-by-side object groups.
+Object origins stay visible through stronger blue, violet and amber fills,
+borders and text labels. Examples are synthetic and no live
 AAP or Git connection is made.
 
 Six chapters contain nine stops. The new VM appears in Stage 01, receiving AAP

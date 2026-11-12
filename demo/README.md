@@ -13,6 +13,9 @@ Backwards navigation, restart and direct links restore the corresponding state.
 
 The interface uses a light canvas and labelled origin colours: blue for base
 objects, violet for Git-defined additions and amber for manually created objects.
+The desktop canvas uses most of the browser width; compact repository panes and
+bounded, scrollable two-column object groups avoid growing the four panels
+vertically. Stronger fills, borders and labelled badges distinguish the origins.
 Captured manual objects keep their origin and gain an **In Git** badge. The
 private repository carries a lock; its YAML is an illustrative decrypted view,
 not ciphertext rendered as readable text. All examples are synthetic.
