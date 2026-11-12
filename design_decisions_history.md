@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Preserve Orchestrator's reviewed build access in the normal selector — 2026-11-12
+
+Implementation `719812a8058a5d05a20877e5f42f33da78efdd45` aligns the existing
+selector with the approved receiver-owned Orchestrator EE build. That importer
+already saved the required Machine credential, but the selector's older generic
+API-only check rejected it before launching the normal job. The Orchestrator
+contract may now retain exactly one saved Machine whose ID, name, type and
+organization match the independently resolved registered hypervisor credential.
+Repository ownership, exact shared token-store identity and duplicate credential
+checks remain in force. Other generic imports still reject SSH credentials.
+
+Seventeen actual Core 2.20 tests cover native argument rendering and refusal of
+wrong or extra Machines, another project's SSH binding and changed repository
+or store associations. The live importer's non-Machine names match the reviewed
+selector list. Production lint passes. No alternate launcher, credential type,
+job template or API authentication path was added; normal selected-use-case
+acceptance remains required after publication.
+
 ## Keep configuration results in one private job directory — 2026-11-12
 
 Implementation `6db4be5ce0ec01085aef343b2b79526a8a8a8797` fixes the

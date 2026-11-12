@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.61.11
+
+Document implementation `719812a`, its exact Orchestrator route-credential
+validation and actual Core 2.20 regression results. Keep normal selected-use-case
+acceptance distinct from passing local tests.
+
 ## 0.61.10
 
 Allow the normal selector to retain only Orchestrator's reviewed saved Machine
