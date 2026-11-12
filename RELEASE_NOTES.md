@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.60.4
+
+Correct the generated task overview after the concurrent merge and retain the
+current Beads task names and encrypted recovery export. Runtime is unchanged.
+
 ## 0.60.3
 
 Integrate the receiver-owned EE automation with the concurrent RHEL-foundation
