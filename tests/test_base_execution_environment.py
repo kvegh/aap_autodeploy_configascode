@@ -21,14 +21,14 @@ DIGEST = "sha256:" + "a" * 64
 
 def variables():
     return {
-        "aap_default_execution_environment": "ee-proj-aap-cac-v2",
+        "aap_default_execution_environment": "ee-proj-aap-cac",
         "aap_hostname": "https://receiver.example.invalid:8448",
         "aap_username": "receiver-admin", "aap_password": DESIRED,
         "cac_gateway_login_password": CURRENT,
         "aap_registry_route_timeout": 600, "aap_hub_gunicorn_timeout": 200,
         "cac_registry_route_readback": {"json": {"request_timeout_seconds": 600, "idle_timeout_seconds": 600}},
         "controller_execution_environments_base": [
-            {"name": "ee-proj-aap-cac-v2", "image": "source.example.invalid/reviewed-v2@" + DIGEST,
+            {"name": "ee-proj-aap-cac", "image": "source.example.invalid/reviewed-v2@" + DIGEST,
              "credential": "Project AAP CaC EE registry", "pull": "missing"},
             {"name": "Unrelated custom EE", "image": "other.example.invalid/custom:1", "credential": "Unrelated registry"},
         ],
@@ -69,10 +69,10 @@ class ReceiverExecutionEnvironment(unittest.TestCase):
                      "aap_ee_registry_username == 'receiver-admin'",
                      "aap_ee_registry_password == current_password",
                      "aap_ee_redhat_password == redhat_password",
-                     "aap_ee_image_name == 'ee-proj-aap-cac-v2'",
+                     "aap_ee_image_name == 'ee-proj-aap-cac'",
                  ]}, "no_log": True},
                 {"ansible.builtin.set_fact": {"aap_ee_build_result": {
-                    "image": returned_registry + "/ee-proj-aap-cac-v2@" + DIGEST, "verified": True}}, "no_log": True},
+                    "image": returned_registry + "/ee-proj-aap-cac@" + DIGEST, "verified": True}}, "no_log": True},
             ]
             (root / "build-stub.yml").write_text(yaml.safe_dump(stub, sort_keys=False))
             tasks.append({"name": "Retain only the synthetic fixture result", "ansible.builtin.copy": {
@@ -96,7 +96,7 @@ class ReceiverExecutionEnvironment(unittest.TestCase):
         original = variables()
         code, output, result = self.run_case(original)
         self.assertEqual(code, 0, output)
-        self.assertEqual(result["environments"][0]["image"], "receiver.example.invalid:8448/ee-proj-aap-cac-v2@" + DIGEST)
+        self.assertEqual(result["environments"][0]["image"], "receiver.example.invalid:8448/ee-proj-aap-cac@" + DIGEST)
         self.assertEqual(result["environments"][1], original["controller_execution_environments_base"][1])
         self.assertEqual(result["credentials"][0]["inputs"], {"host": "receiver.example.invalid:8448",
                          "username": "receiver-admin", "password": DESIRED, "verify_ssl": True})

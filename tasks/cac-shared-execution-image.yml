@@ -14,7 +14,7 @@
 
 - name: Resolve the exact receiver-owned shared native execution environment without changing it
   ansible.controller.execution_environment:
-    name: ee-proj-aap-cac-v2
+    name: ee-proj-aap-cac
     state: exists
     controller_host: "{{ aap_hostname }}"
     controller_oauthtoken: "{{ aap_token }}"
@@ -37,10 +37,10 @@
   ansible.builtin.assert:
     that:
       - cac_shared_native_ee_definition.json.id == cac_shared_native_ee.id
-      - cac_shared_native_ee_definition.json.name == 'ee-proj-aap-cac-v2'
+      - cac_shared_native_ee_definition.json.name == 'ee-proj-aap-cac'
       - >-
         cac_shared_native_ee_definition.json.image is match('^' ~ ((aap_hostname | urlsplit('netloc')) | regex_escape) ~
-        '/ee-proj-aap-cac-v2@sha256:[a-f0-9]{64}$')
+        '/ee-proj-aap-cac@sha256:[a-f0-9]{64}$')
       - cac_shared_native_ee_definition.json.credential is integer
       - cac_shared_native_ee_definition.json.credential > 0
     fail_msg: Prepare this receiver's native shared EE with its own immutable Hub image before importing reviewed projects.

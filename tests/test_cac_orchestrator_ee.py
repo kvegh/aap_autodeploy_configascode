@@ -85,7 +85,7 @@ class ActionModule(ActionBase):
    assert self._task.args['username']=='fixture'
    assert self._task.args['password']=='synthetic-hub-only'
    assert self._task.args['redhat_username']=='synthetic-upstream'
-   image=('foreign.example.invalid' if task_vars['behavior']=='foreign-image' else 'aap27.v07.example.invalid')+'/ee-proj-aap-cac-v2@sha256:'+'2'*64
+   image=('foreign.example.invalid' if task_vars['behavior']=='foreign-image' else 'aap27.v07.example.invalid')+'/ee-proj-aap-cac@sha256:'+'2'*64
    return {'changed':False,'ansible_facts':{'aap_ee_build_result':{'verified':task_vars['behavior']!='unverified','image':image}}}
   return {'changed':False}
 '''.replace("TRACE", repr(str(trace)))

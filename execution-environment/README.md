@@ -1,6 +1,6 @@
 # Project AAP CaC execution environment v2
 
-The current image is **ee-proj-aap-cac-v2:2.0.0**. Use the
+The current image is **ee-proj-aap-cac:2.0.0**. Use the
 [automated build and verification playbook](../docs/execution-environment-build.md)
 and [Orchestrator CaC hook](../docs/orchestrator-execution-environment.md).
 The two direct requirements and every transitive wheel are pinned below this

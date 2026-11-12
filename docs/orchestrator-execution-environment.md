@@ -3,7 +3,7 @@
 Deploying the `automation-orchestrator` CaC project now runs the shared
 `tasks/build-execution-environment.yml` before rendering or importing its
 execution-environment definitions. The selected receiver builds and publishes
-`ee-proj-aap-cac-v2:2.0.0` to its own Automation Hub. The build verifies the remote
+`ee-proj-aap-cac:2.0.0` to its own Automation Hub. The build verifies the remote
 manifest, blobs, image configuration and runtime before returning a digest-bound
 image. An existing version with different build inputs is rejected.
 
@@ -15,7 +15,7 @@ not invoke this hook. The API continues using the selected target's bearer;
 registry passwords do not replace `aap_username` or `aap_password`.
 
 Every reviewed project import also resolves the receiver's existing native EE
-named `ee-proj-aap-cac-v2` before resource normalization. It reads that object's
+named `ee-proj-aap-cac` before resource normalization. It reads that object's
 immutable image and associated `Project AAP CaC EE registry` credential from the
 selected receiver, requires the image and credential to use that receiver's own
 Hub with TLS verification, then sets `aap_shared_execution_image`. Reviewed

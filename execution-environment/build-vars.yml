@@ -1,7 +1,7 @@
 ---
 # Public recipe defaults only. Registry location and credentials are caller inputs.
 defaults:
-  image_name: ee-proj-aap-cac-v2
+  image_name: ee-proj-aap-cac
   image_tag: 2.0.0
 assets:
   - Containerfile

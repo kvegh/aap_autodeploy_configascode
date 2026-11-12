@@ -189,7 +189,7 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
                     'runtime_value': 'synthetic-injector-evaluation-must-not-appear',
                     'capture_reviewed': True,
                     'cac_project_contract': {'project_id': 'aiops-selfhealing-demo'},
-                    'aap_shared_execution_image': 'target-aap.example.invalid/ee-proj-aap-cac-v2@sha256:' + '2' * 64,
+                    'aap_shared_execution_image': 'target-aap.example.invalid/ee-proj-aap-cac@sha256:' + '2' * 64,
                     'example_organization': 'Example', 'cac_import_metadata': configuration,
                     'captured': {
                         'projects': [{'name': 'Project', 'scm_url': trust_as_template('{{ aap_hostname }}/example.git')}],
@@ -280,7 +280,7 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
                                  'aap_instance_key': wrap_var('synthetic-aap'),
                                  'aap_validate_certs': True, 'aap_token': 'synthetic-destination-token',
                                  'aap_username': '', 'aap_password': '',
-                                 'aap_shared_execution_image': 'test-aap.example.invalid/ee-proj-aap-cac-v2@sha256:' + '2' * 64,
+                                 'aap_shared_execution_image': 'test-aap.example.invalid/ee-proj-aap-cac@sha256:' + '2' * 64,
                                  'cac_project_contract': {'project_id': project},
                                  'windows_disconnected_ad_target_ca': 'synthetic-prepared-public-ca',
                                  'windows_disconnected_ad_target_known_hosts': 'synthetic-prepared-public-host-key'}

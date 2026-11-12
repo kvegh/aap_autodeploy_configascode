@@ -13,7 +13,7 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
-IMAGE = "receiver.example.invalid/ee-proj-aap-cac-v2@sha256:" + "2" * 64
+IMAGE = "receiver.example.invalid/ee-proj-aap-cac@sha256:" + "2" * 64
 
 
 class SharedExecutionImageTests(unittest.TestCase):
@@ -57,7 +57,7 @@ class ActionModule(ActionBase):
   stage=self._task.args['stage'];behavior=task_vars['behavior']
   with Path(TRACE).open('a') as stream:stream.write(json.dumps({'stage':stage})+'\\n')
   if stage=='resolve':
-   assert self._task.args['name']=='ee-proj-aap-cac-v2'
+   assert self._task.args['name']=='ee-proj-aap-cac'
    assert self._task.args['state']=='exists'
    assert self._task.args['controller_host']=='https://receiver.example.invalid'
    assert self._task.args['controller_oauthtoken']=='synthetic-bearer'
@@ -70,8 +70,8 @@ class ActionModule(ActionBase):
   if '/execution_environments/' in self._task.args['url']:
    image=IMAGE
    if behavior=='foreign-image':image=image.replace('receiver.example.invalid','source.example.invalid')
-   if behavior=='mutable':image='receiver.example.invalid/ee-proj-aap-cac-v2:2.0.0'
-   return {'changed':False,'json':{'id':70,'name':'ee-proj-aap-cac-v2','image':image,'credential':71}}
+   if behavior=='mutable':image='receiver.example.invalid/ee-proj-aap-cac:2.0.0'
+   return {'changed':False,'json':{'id':70,'name':'ee-proj-aap-cac','image':image,'credential':71}}
   assert self._task.args['url']=='https://receiver.example.invalid/api/controller/v2/credentials/71/'
   return {'changed':False,'json':{'id':71,'name':'Wrong credential' if behavior=='credential-name' else 'Project AAP CaC EE registry',
    'inputs':{'host':'source.example.invalid' if behavior=='credential-host' else 'receiver.example.invalid','verify_ssl':behavior!='tls'}}}

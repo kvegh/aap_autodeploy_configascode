@@ -156,7 +156,7 @@
         aap_ee_registry_password: "{{ cac_orchestrator_ee_target.hub_password }}"
         aap_ee_redhat_username: "{{ orchestrator_registry_username }}"
         aap_ee_redhat_password: "{{ orchestrator_registry_password }}"
-        aap_ee_image_name: ee-proj-aap-cac-v2
+        aap_ee_image_name: ee-proj-aap-cac
         aap_ee_image_tag: 2.0.0
 
     - name: Require independent verification and a digest bound to this receiver's Hub
@@ -165,7 +165,7 @@
           - aap_ee_build_result.verified is sameas true
           - >-
             aap_ee_build_result.image is match('^' ~ ((cac_orchestrator_ee_target.hostname | urlsplit('netloc')) | regex_escape) ~
-            '/ee-proj-aap-cac-v2@sha256:[a-f0-9]{64}$')
+            '/ee-proj-aap-cac@sha256:[a-f0-9]{64}$')
         fail_msg: Only an independently verified receiver-local immutable image can be imported.
       no_log: true
 

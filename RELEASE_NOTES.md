@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.60.1
+
+Use the stable ee-proj-aap-cac repository and AAP EE name. Keep 2.0.0 as the
+image tag so future updates do not rename execution-environment objects. Update
+current build defaults, import guards, guides and focused fixtures together.
+
 ## 0.60.0
 
 Build ee-proj-aap-cac-v2 from the pinned official Core 2.20 image and nine

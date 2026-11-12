@@ -1,8 +1,8 @@
-# Build ee-proj-aap-cac-v2 in the receiving AAP
+# Build ee-proj-aap-cac in the receiving AAP
 
 `build-execution-environment.yml` builds and publishes the versioned project EE
 using the receiving installation's own private automation hub. The default
-repository and AAP execution-environment name are **ee-proj-aap-cac-v2**; the
+repository and AAP execution-environment name are **ee-proj-aap-cac**; the
 default image tag is **2.0.0**. Existing earlier EE definitions remain separate.
 
 The reusable implementation is `tasks/build-execution-environment.yml`. It can
@@ -39,7 +39,7 @@ Vault or AAP credential injection. Do not commit filled plaintext examples.
 | `aap_ee_registry_password` | Required protected login password for that account. |
 | `aap_ee_redhat_username` | Optional existing Red Hat registry login. Supply together with its password. |
 | `aap_ee_redhat_password` | Optional protected Red Hat registry password. |
-| `aap_ee_image_name` | Optional repository override; default `ee-proj-aap-cac-v2`. |
+| `aap_ee_image_name` | Optional repository override; default `ee-proj-aap-cac`. |
 | `aap_ee_image_tag` | Optional version override; default `2.0.0`. Choose a new version when changing recipe inputs. |
 | `aap_ee_build_hosts` | Optional standalone play target; default inventory group `aap_ee_build`. |
 
