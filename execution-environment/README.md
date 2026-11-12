@@ -107,4 +107,32 @@ Offline imports and `pip check` passed; all 57 original Python distribution
 versions and the complete base layer chain were preserved. The inherited user,
 entrypoint, command and working directory matched the Red Hat base. The local
 image ID is `4715ff8f1ff18ffa090dc0dc7a9529a277f7c0550bbca4e1c012b69d67a5205a`.
-Hub publication and actual AAP job acceptance must be recorded separately.
+Private Hub publication and an independent TLS-verified pull passed for manifest
+`sha256:6c92f09144e3b8b49bd6d39b8c6225964d234753e3c5bdbbd0ea6104d8b6a1f0`.
+The pulled image matched that local image ID. Offline Kubernetes object/date
+serialization and a JSON patch operation also passed without cluster access.
+Actual native AAP execution and fresh-receiver pulls remain separate checks.
+
+## Persist upload timeouts in deployment and CaC
+
+The initial Hub upload failed while its API workers hashed a large layer:
+workers had a 10-second limit and the native registry route an effective
+15-second request/idle limit. This was a timeout diagnosis; no OOM evidence was
+found. With the owner's approval, only the Hub API container was reconciled to
+200 seconds using its existing native module and image, and only the registry
+route was changed to 600 seconds. Other running containers retained their starts.
+The same image then published successfully.
+
+`vars/main.yml` declares `aap_hub_gunicorn_timeout: 200` and
+`aap_registry_route_timeout: 600`. Stage 03 writes the supported worker setting
+to installer inventory before installation. Stage 04 discovers this receiver's
+native `/v2/` Hub route, preserves its routing/authentication/TLS policy, applies
+the two timeouts through `ansible.platform.route` and verifies readback. It uses
+target-local IDs and skips mutation when the detail response already matches.
+The global platform timeout and unrelated routes remain unchanged.
+
+Three real-Ansible fixtures passed in the actual stock Core 2.20.10 EE with
+`ansible.platform` 2.7.20260930: installer replacement/rerun, native route
+update/idempotency and seven refusal scenarios. Both complete playbook syntax
+checks passed. This verifies future deployment behavior without rerunning the
+completed installer.

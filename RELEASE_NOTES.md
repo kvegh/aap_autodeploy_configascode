@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.59.3
+
+Persist the approved Hub worker200 and registry request/idle600 timeouts through
+installer inventory and native Platform CaC. Resolve receiver-local route and
+Hub identities, preserve security flags and skip already-correct updates. Three
+actual Core2.20 fixtures pass, including rerun idempotency and refusal cases.
+Record successful EE-v1 publication and independent pull/client checks.
+
 ## 0.59.2
 
 Use the full available page height for the two receiving AAP/code rows. Replace

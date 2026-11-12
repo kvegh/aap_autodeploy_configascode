@@ -7,6 +7,11 @@ aap_version: "2.7-8"
 aap_version_short: "27"
 installer_extract_dir: "/opt/sources"
 
+# Persist the upload timeouts on fresh installations and ordinary base CaC runs.
+# The Gateway setting is scoped to the native Hub container registry /v2/ route.
+aap_hub_gunicorn_timeout: 200
+aap_registry_route_timeout: 600
+
 golden_image_path: "/opt/images/goldimg-vm-1.disk.qcow2"
 
 vm_network: "internal"

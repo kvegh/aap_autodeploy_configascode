@@ -390,6 +390,9 @@ use the exact Red Hat Core 2.20 base and add Kubernetes, jsonpatch and their
 hash-locked dependencies. The initial local build preserves all original Python
 packages and native startup settings. Hub publication, native AAP execution and
 the default/CaC change must pass separately before this replaces the current EE.
+Hub publication and an independent verified pull have passed. The deployment
+now persists the approved 200-second Hub worker and 600-second registry route
+timeouts through the existing installer and native Platform CaC module.
 
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
 conversation association and original parent so the existing export includes

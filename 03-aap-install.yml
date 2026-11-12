@@ -179,6 +179,14 @@
             - "bundle_install=true"
             - "bundle_dir={{ installer_extract_dir }}/{{ installer_dir_name }}/bundle"
 
+        - name: Set the supported Hub worker timeout in installer inventory
+          # Replace the winning assignment rather than appending behind a stale timeout.
+          ansible.builtin.lineinfile:
+            path: "{{ installer_extract_dir }}/{{ installer_dir_name }}/inventory"
+            regexp: '^\s*hub_gunicorn_timeout\s*='
+            line: "hub_gunicorn_timeout={{ aap_hub_gunicorn_timeout | int }}"
+            insertafter: '\[all:vars\]'
+
         - name: Run AAP installer
           ansible.builtin.command:
             cmd: ansible-playbook -i inventory ansible.containerized_installer.install

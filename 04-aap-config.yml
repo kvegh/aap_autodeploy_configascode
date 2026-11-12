@@ -278,6 +278,171 @@
           vars:
             dispatch_include_wildcard_vars: false
 
+        - name: Persist upload timeouts only on the native Hub registry route
+          no_log: true
+          block:
+            - name: Validate the scoped registry timeout choice
+              ansible.builtin.assert:
+                that:
+                  - aap_registry_route_timeout is integer
+                  - aap_registry_route_timeout > 0
+                fail_msg: Supply a positive integer timeout for the Hub registry route.
+
+            - name: Read the target Gateway routes with the authenticated run token
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/routes/?page_size=200"
+                headers:
+                  Authorization: "Bearer {{ aap_token }}"
+                validate_certs: "{{ aap_validate_certs }}"
+                follow_redirects: none
+                status_code: 200
+              register: cac_registry_routes
+
+            - name: Require one complete target-local registry route
+              ansible.builtin.assert:
+                that:
+                  - cac_registry_routes.json.next is none
+                  - cac_registry_routes.json.results | selectattr('gateway_path', 'equalto', '/v2/') | list | length == 1
+                fail_msg: The target must expose one unambiguous native Hub registry route.
+
+            - name: Select the registry identity from this target rather than a source ID
+              ansible.builtin.set_fact:
+                cac_registry_route: "{{ cac_registry_routes.json.results | selectattr('gateway_path', 'equalto', '/v2/') | first }}"
+
+            - name: Require a target-local numeric route identifier before the detail read
+              ansible.builtin.assert:
+                that:
+                  - cac_registry_route.id is integer
+                  - cac_registry_route.id > 0
+                fail_msg: The selected registry route must have a target-local numeric identifier.
+
+            - name: Read the complete registry route before comparing timeout values
+              # List responses can omit or null the per-route timeouts.
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/routes/{{ cac_registry_route.id }}/"
+                headers:
+                  Authorization: "Bearer {{ aap_token }}"
+                validate_certs: "{{ aap_validate_certs }}"
+                follow_redirects: none
+                status_code: 200
+              register: cac_registry_route_detail
+
+            - name: Require the detail response to identify the selected target route
+              ansible.builtin.assert:
+                that:
+                  - cac_registry_route_detail.json.id is integer
+                  - cac_registry_route_detail.json.id == cac_registry_route.id
+                fail_msg: The registry route detail did not match its target-local identity.
+
+            - name: Keep the complete target route for policy validation and idempotent comparison
+              ansible.builtin.set_fact:
+                cac_registry_route: "{{ cac_registry_route_detail.json }}"
+
+            - name: Require the native registry path and existing authenticated HTTPS policy
+              ansible.builtin.assert:
+                that:
+                  - cac_registry_route.id is integer
+                  - cac_registry_route.id > 0
+                  - cac_registry_route.service_cluster is integer
+                  - cac_registry_route.service_cluster > 0
+                  - cac_registry_route.gateway_path == '/v2/'
+                  - cac_registry_route.service_path == '/v2/'
+                  - cac_registry_route.enable_gateway_auth is sameas true
+                  - cac_registry_route.enable_mtls is sameas false
+                  - cac_registry_route.is_service_https is sameas true
+                  - cac_registry_route.is_internal_route is sameas false
+                fail_msg: The registry route differs from the native Hub path or security policy.
+
+            - name: Read this registry route's service cluster
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/service_clusters/{{ cac_registry_route.service_cluster }}/"
+                headers:
+                  Authorization: "Bearer {{ aap_token }}"
+                validate_certs: "{{ aap_validate_certs }}"
+                follow_redirects: none
+                status_code: 200
+              register: cac_registry_cluster
+
+            - name: Require the target's native Hub cluster identity
+              ansible.builtin.assert:
+                that:
+                  - cac_registry_cluster.json.id == cac_registry_route.service_cluster
+                  - cac_registry_cluster.json.name == 'hub'
+                  - cac_registry_cluster.json.service_type is integer
+                  - cac_registry_cluster.json.service_type > 0
+                fail_msg: The registry route must belong to this target's native Hub service cluster.
+
+            - name: Read the registry cluster's service type
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/service_types/{{ cac_registry_cluster.json.service_type }}/"
+                headers:
+                  Authorization: "Bearer {{ aap_token }}"
+                validate_certs: "{{ aap_validate_certs }}"
+                follow_redirects: none
+                status_code: 200
+              register: cac_registry_service_type
+
+            - name: Require the native Hub service type before changing any route
+              ansible.builtin.assert:
+                that:
+                  - cac_registry_service_type.json.id == cac_registry_cluster.json.service_type
+                  - cac_registry_service_type.json.name == 'hub'
+                fail_msg: The selected registry cluster must use the target's Hub service type.
+
+            - name: Set only the native registry route request and idle timeouts
+              # This module defaults is_service_https to false. Preserve the verified
+              # route flags explicitly while changing only its two timeout fields.
+              ansible.platform.route:
+                name: "{{ cac_registry_route.id | string }}"
+                state: present
+                is_service_https: "{{ cac_registry_route.is_service_https }}"
+                enable_gateway_auth: "{{ cac_registry_route.enable_gateway_auth }}"
+                enable_mtls: "{{ cac_registry_route.enable_mtls }}"
+                request_timeout_seconds: "{{ aap_registry_route_timeout }}"
+                idle_timeout_seconds: "{{ aap_registry_route_timeout }}"
+                aap_hostname: "{{ aap_hostname }}"
+                aap_token: "{{ aap_token }}"
+                aap_validate_certs: "{{ aap_validate_certs }}"
+              when: >-
+                cac_registry_route.request_timeout_seconds != aap_registry_route_timeout or
+                cac_registry_route.idle_timeout_seconds != aap_registry_route_timeout
+
+            - name: Read back the same target-local registry route
+              ansible.builtin.uri:
+                url: "{{ aap_hostname | regex_replace('/+$', '') }}/api/gateway/v1/routes/{{ cac_registry_route.id }}/"
+                headers:
+                  Authorization: "Bearer {{ aap_token }}"
+                validate_certs: "{{ aap_validate_certs }}"
+                follow_redirects: none
+                status_code: 200
+              register: cac_registry_route_readback
+
+            - name: Verify the registry timeout and preserve its routing and security identity
+              ansible.builtin.assert:
+                that:
+                  - cac_registry_route_readback.json.request_timeout_seconds == aap_registry_route_timeout
+                  - cac_registry_route_readback.json.idle_timeout_seconds == aap_registry_route_timeout
+                  - >-
+                    (cac_registry_route_readback.json | dict2items | selectattr('key', 'in', registry_identity_fields) | sort(attribute='key')) ==
+                    (cac_registry_route | dict2items | selectattr('key', 'in', registry_identity_fields) | sort(attribute='key'))
+                fail_msg: The Hub registry timeouts or preserved route identity did not verify.
+              vars:
+                registry_identity_fields:
+                  - id
+                  - name
+                  - description
+                  - gateway_path
+                  - service_path
+                  - http_port
+                  - service_cluster
+                  - service_port
+                  - is_service_https
+                  - is_internal_route
+                  - enable_gateway_auth
+                  - enable_mtls
+                  - reject_failed_basic_auth
+                  - node_tags
+
         # EE database IDs differ after reinstall. Resolve the CaC-owned name on
         # this controller rather than copying an ID from the source controller.
         - name: Resolve the configured default job execution environment
