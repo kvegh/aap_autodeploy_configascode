@@ -298,8 +298,10 @@ Firewall stay at v1. Infrastructure configuration represents imported Job
 Template inputs; the page performs no host configuration or live AAP operation.
 Captured manual-origin definitions remain amber when replayed to the next AAP.
 
-The three-column diagram uses matching code/receiving rows with the original AAP
-centred between them. The first destination aligns with the upper code window;
+The three-column diagram uses matching code/receiving rows across the available
+page height, with the original AAP centred between them. Each receiving AAP uses
+one continuous two-column content area, without a fixed configuration strip
+above a separately scrolling lower list. The first destination aligns with the upper code window;
 the lower destination receives the complete saved configuration at the final
 stop. All installed cards share prominent AAP branding. Larger sidebar text,
 a fixed current-step heading and completed/current chapter states make progress

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.59.2
+
+Use the full available page height for the two receiving AAP/code rows. Replace
+the fixed configuration band and independently scrolling object list with one
+continuous content area per AAP, keeping two internal columns and readable
+compact items. Preserve all definitions, current-step navigation and final
+replay; defer the proposed three-column content layout as directed.
+
 ## 0.59.1
 
 Document visualization implementation a56c0c5, matching receiving/code tiles,

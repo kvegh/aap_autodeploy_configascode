@@ -83,9 +83,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .origin-git { background:var(--origin-git); }
 .origin-manual { background:var(--origin-manual); }
 .illustration-note { margin:13px 0 0; color:#6f819a; font-size:10px; line-height:1.5; }
-.canvas-shell { display:flex; align-items:center; justify-content:center; min-width:0; min-height:100svh; padding:24px 30px; }
-.diagram-grid { display:grid; grid-template-columns:minmax(300px,1fr) 88px 260px 88px minmax(300px,1fr); align-items:stretch; width:100%; height:min(860px,calc(100svh - 48px)); min-height:740px; }
-.repository-column,.receiving-column { display:grid; grid-template-rows:minmax(0,1fr) minmax(0,1fr); gap:20px; min-width:0; min-height:0; }
+.canvas-shell { display:flex; align-items:stretch; justify-content:center; min-width:0; min-height:100svh; height:100svh; padding:12px 24px; }
+.diagram-grid { display:grid; grid-template-columns:minmax(300px,1fr) 88px 260px 88px minmax(300px,1fr); align-items:stretch; width:100%; height:100%; min-height:0; }
+.repository-column,.receiving-column { display:grid; grid-template-rows:minmax(0,1fr) minmax(0,1fr); gap:12px; min-width:0; min-height:0; }
 .repository-card { display:flex; flex-direction:column; min-width:0; min-height:0; overflow:hidden; border:1px solid #d9e3ef; border-radius:11px; background:#fff; box-shadow:0 5px 17px #2e4e7a05; transition:border-color 180ms,box-shadow 180ms; }
 .repository-card.active { border-color:#79a2ef; box-shadow:0 0 0 3px #e3edff; }
 .repository-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-height:63px; padding:12px 13px; }
@@ -117,34 +117,23 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .file-caption { color:#99a7ba; font-size:8px; }
 .aap-card { display:flex; flex-direction:column; min-width:0; min-height:0; height:100%; overflow:hidden; border:1px solid #d8e3f1; border-radius:11px; background:#fff; box-shadow:0 6px 20px #284a7d06; transition:border-color 180ms,box-shadow 180ms; }
 .source-aap { align-self:center; height:min(500px,100%); }
-.source-aap .object-list { display:block; }
-.source-aap .object-group { margin-bottom:12px; }
-.source-aap .object-group:last-child { margin-bottom:0; }
 .aap-card.phase-job { border-color:#7ea7ee; box-shadow:0 0 0 3px #e2ecff; }
-.aap-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; min-height:79px; padding:15px 15px 13px; flex:none; }
+.aap-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-height:64px; padding:10px 12px; flex:none; }
 .aap-identity { display:flex; align-items:center; gap:9px; min-width:0; }
 .aap-symbol { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid #edc1c4; border-radius:7px; color:#b82d38; background:#fff2f3; font-size:12px; font-weight:800; flex:none; }
 .platform-name { margin:0 0 6px; color:#596f8d; font-size:10px; font-weight:650; line-height:1.35; letter-spacing:.15px; }
-.aap-header h3 { margin:0; font-size:21px; font-weight:650; letter-spacing:-.5px; }
+.aap-header h3 { margin:0; font-size:19px; font-weight:650; letter-spacing:-.5px; }
 .instance-badge { display:inline-block; padding:4px 6px; border:1px solid #e1eafb; border-radius:4px; color:#718db8; background:#f1f6ff; font-size:9px; font-weight:600; }
 .target-badge { color:#7a8ea9; border-color:#e5ebf4; background:#f7f9fc; }
-.aap-toolbar { min-height:34px; padding:9px 14px; flex:none; border-top:1px solid #edf1f7; border-bottom:1px solid #edf1f7; background:#f8fafd; }
-.toolbar-label { display:flex; align-items:center; gap:7px; color:#8293ac; font-size:10px; }
-.status-dot { display:inline-block; width:5px; height:5px; border-radius:50%; background:#5c87d0; }
-/* Platform settings remain distinct from inventory, project and other component objects. */
-.configuration-panels { display:grid; grid-template-columns:minmax(0,1fr); flex:none; min-width:0; }
-.receiving-column .configuration-panels { grid-template-columns:repeat(2,minmax(0,1fr)); }
-.configuration-panel { min-width:0; padding:8px 10px; border-bottom:1px solid var(--line); background:#f8fafd; }
-.receiving-column .configuration-panel + .configuration-panel { border-left:1px solid var(--line); }
-.source-aap .configuration-panel .configuration-item { min-height:26px; padding:4px 6px; }
-.configuration-heading { margin:0 0 7px; color:var(--muted); font-size:11px; font-weight:650; }
-.configuration-list { display:grid; gap:5px; min-width:0; }
-.configuration-panel .configuration-item { min-height:29px; margin:0; padding:5px 8px; gap:4px 6px; }
-.object-list { min-width:0; min-height:0; flex:1; overflow:auto; padding:14px 12px; scrollbar-width:thin; scrollbar-color:#d2def0 transparent; }
-.object-group { min-width:0; margin-bottom:17px; }
-.object-group:last-child { margin-bottom:0; }
-.object-type { display:block; margin:0 0 7px 2px; color:#7c8da5; font-size:11px; font-weight:650; }
-.object-item { display:flex; align-items:center; flex-wrap:wrap; gap:6px 8px; min-width:0; margin:5px 0; padding:8px 8px; border:1px solid transparent; border-left-width:4px; border-radius:5px; font-size:13px; line-height:1.4; }
+/* All AAP groups share one continuous body and one scroll owner. */
+.aap-content { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; align-items:start; gap:10px 12px; flex:1; min-width:0; min-height:0; padding:12px; overflow:auto; scrollbar-width:thin; scrollbar-color:#d2def0 transparent; }
+.source-aap .aap-content { grid-template-columns:minmax(0,1fr); }
+.configuration-panels,.object-list { display:contents; }
+.configuration-panel,.object-group { min-width:0; margin:0; padding:0; border:0; background:transparent; }
+.configuration-heading,.object-type { display:block; margin:0 0 6px; color:#526b85; font-size:11px; font-weight:650; line-height:1.4; }
+.configuration-list { display:grid; gap:3px; min-width:0; }
+.configuration-list .object-item { margin:0; }
+.object-item { display:flex; align-items:center; flex-wrap:wrap; gap:4px 6px; min-width:0; min-height:26px; margin:3px 0; padding:3px 6px; border:1px solid transparent; border-left-width:4px; border-radius:5px; font-size:13px; line-height:1.35; }
 .object-item[data-origin="base"] { color:#153f7e; background:var(--origin-base-soft); border-left-color:var(--origin-base); }
 .object-item[data-origin="git"] { color:#48217e; background:var(--origin-git-soft); border-left-color:var(--origin-git); }
 .object-item[data-origin="manual"] { color:#653b00; background:var(--origin-manual-soft); border-left-color:var(--origin-manual); }
@@ -154,7 +143,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 [data-origin="git"] > .origin-label { background:#6530a8; }
 [data-origin="manual"] > .origin-label { background:#985300; }
 .git-badge { margin-left:auto; padding:2px 4px; border:1px solid #a3b1c6; border-radius:3px; color:#4e6586; background:#fff; font-size:8px; font-weight:650; white-space:nowrap; }
-.job-panel { display:flex; align-items:center; gap:9px; min-height:56px; margin-top:auto; padding:10px 13px; flex:none; border-top:1px solid #e8eef8; background:#fbfcff; color:#627fae; }
+.job-panel { display:flex; align-items:center; gap:9px; min-height:44px; margin-top:auto; padding:7px 10px; flex:none; color:#627fae; }
 .job-icon { width:20px; height:20px; }
 .job-panel > div { min-width:0; }
 .job-kicker { display:block; margin-bottom:4px; color:#94a4bd; font-size:8px; letter-spacing:.7px; }
@@ -167,24 +156,25 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .placeholder-eyebrow { margin:17px 0 10px; color:#9aaac0; font-size:9px; font-weight:650; letter-spacing:1px; }
 .target-placeholder h3 { margin:0; color:#7d91ae; font-size:23px; font-weight:500; line-height:1.35; letter-spacing:-.6px; }
 .target-placeholder > p:last-child { max-width:190px; margin:15px 0 0; color:#9aaac0; font-size:12px; line-height:1.7; }
-.target-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:7px; min-height:43px; padding:10px 12px; margin-top:auto; flex:none; border-top:1px solid #edf1f7; }
+.target-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; min-height:28px; padding:6px 10px; margin-top:auto; flex:none; }
 .instance-footnote,.stored-definitions { color:#617895; font-size:10px; }
 .capture-indicator { display:none; align-items:center; gap:4px; color:#6a83a7; font-size:9px; }
 .capture-indicator svg { width:12px; height:12px; }
 .captured .capture-indicator { display:inline-flex; }
 .target-aap[data-stage="1"] .platform-name,.target-aap[data-stage="2"] .platform-name,.target-aap[data-stage="1"] .aap-symbol,.target-aap[data-stage="2"] .aap-symbol,.target-aap[data-stage="1"] .target-footer,.target-aap[data-stage="2"] .target-footer,.target-aap[data-stage="3"] .target-footer { display:none; }
+.target-aap[data-stage="1"] .aap-content,.target-aap[data-stage="2"] .aap-content,.target-aap[data-stage="3"] .aap-content { display:none; }
 .target-aap[data-stage="1"]::after,.target-aap[data-stage="2"]::after,.target-aap[data-stage="3"]::after { display:flex; flex:1; align-items:center; justify-content:center; padding:25px; color:#8ca0bd; font-size:14px; line-height:1.8; text-align:center; white-space:pre-line; }
 .target-aap[data-stage="1"]::after { content:"RHEL virtual machine\a No AAP installed yet"; }
 .target-aap[data-stage="2"]::after { content:"OS prepared\a Ready for AAP installation"; }
 .target-aap[data-stage="3"]::after { content:"AAP installed\a Base configuration comes next"; }
 .repository-connections,.instance-connections { position:relative; min-width:0; min-height:0; }
 .connector-route { position:absolute; left:0; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#becbde; text-align:center; }
-.feed-config { top:24%; }
-.feed-code { top:73%; }
-.route-return { top:30%; }
-#flow-apply { top:22%; }
-#flow-scan { top:34%; }
-#flow-rebuild { top:65%; }
+.feed-config { top:calc(50% - 166px); }
+.feed-code { top:calc(50% + 110px); }
+.route-return { top:calc(50% - 110px); }
+#flow-apply { top:calc(50% - 180px); }
+#flow-scan { top:calc(50% - 90px); }
+#flow-rebuild { top:calc(50% + 60px); }
 .connection-caption { display:block; max-width:100%; padding:0 4px; color:currentColor; font-size:12px; font-weight:650; line-height:1.35; }
 .connection-detail { display:block; max-width:100%; margin-top:3px; padding:0 3px; color:#9aabc2; font-size:9px; line-height:1.35; }
 .connector-track { position:relative; width:100%; height:28px; overflow:hidden; }
@@ -219,15 +209,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .route.active[data-origin="mixed"] > .connector-track > .route-line::after { border-color:var(--origin-manual); }
 @keyframes packet-forward { from { left:0; } to { left:calc(100% - 25px); } }
 @keyframes packet-reverse { from { left:calc(100% - 25px); } to { left:0; } }
-@media (min-width:1650px) {
-  .object-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; align-content:start; }
-  .object-group { margin-bottom:0; }
-  .object-item { align-items:flex-start; }
-  .origin-label,.git-badge { margin-left:0; }
-}
 @media (max-width:1400px) {
   .experience { grid-template-columns:218px minmax(0,1fr); }
-  .canvas-shell { padding:22px 20px; }
+  .canvas-shell { padding:12px 16px; }
   .diagram-grid { grid-template-columns:minmax(270px,1fr) 72px 230px 72px minmax(270px,1fr); }
   .sidebar-brand,.current-step { padding-left:17px; padding-right:17px; }
   .sidebar-scroll { padding-left:13px; padding-right:13px; }
@@ -238,7 +222,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 }
 @media (max-width:1200px) {
   .experience { grid-template-columns:190px minmax(0,1fr); }
-  .canvas-shell { display:block; padding:20px; }
+  .canvas-shell { display:block; height:auto; padding:20px; }
   .diagram-grid { display:flex; flex-direction:column; gap:0; height:auto; min-height:0; max-width:580px; margin:0 auto; }
   .repository-column,.receiving-column { grid-template-rows:none; grid-auto-rows:500px; gap:20px; }
   .repository-card { min-height:0; height:500px; }
@@ -254,7 +238,6 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
   .instance-connections { display:flex; align-items:center; justify-content:center; gap:20px; height:155px; flex:none; }
   .aap-card { height:auto; min-height:0; max-height:500px; }
   .source-aap { align-self:stretch; height:500px; }
-  .object-list { min-height:0; }
   .receiving-slot > * { height:100%; min-height:0; }
   .receiving-slot > .aap-card { height:100%; }
   .target-placeholder { min-height:0; }
@@ -262,11 +245,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
   .aap-header h3 { font-size:21px; }
   .object-name { font-size:14px; }
   .origin-label,.git-badge { font-size:9px; }
-  .job-panel { min-height:55px; }
 }
 @media (max-width:620px) {
-  .receiving-column .configuration-panels { grid-template-columns:minmax(0,1fr); }
-  .receiving-column .configuration-panel + .configuration-panel { border-left:0; }
+  .aap-content { grid-template-columns:minmax(0,1fr); }
   .experience { display:block; }
   .sidebar { position:relative; top:auto; height:auto; border-right:0; border-bottom:1px solid #dfe6f0; }
   .sidebar-brand { padding:17px 18px; }

@@ -22,7 +22,13 @@ receiving columns share equal widths and matching rows: the first new AAP aligns
 with the upper code window, with room for another below. Code previews have more
 space; the original AAP is centred between rows. Every installed AAP has the same
 prominent platform identity; card dimensions are illustrative. Receiving object
-lists scroll within the cards when needed. The sidebar uses larger readable
+definitions share one continuous content area inside each AAP. Receiving cards
+use two columns of compact groups, with plain headings instead of boxed horizontal
+configuration bands. The receiving/code rows use the full available page height,
+rather than a fixed 860px maximum. If a short viewport still requires scrolling,
+the entire content area owns it; there is no independently scrolling lower half.
+The narrow source uses one column to keep names readable. Three internal columns
+remain deferred while the owner tries this height-first revision. The sidebar uses larger readable
 labels, a persistent current-step heading and distinct completed/current chapters;
 chapter changes keep the active navigation item in view. There is no marketing hero
 or explanatory scene header above the diagram. Stage 02 is labelled **Prepare OS
@@ -40,14 +46,14 @@ not ciphertext rendered as readable text. The repository-type headings read
 **Private Git Repository** and **Public Git Repository**, using larger dark text
 at every breakpoint. All examples are synthetic.
 
-The AAP configuration panel is separate from inventories, projects, credentials
-and Job Templates. Stage 04 creates blue **Logging Config v1** and **EDA Config
+AAP configuration remains a distinct category alongside inventories, projects,
+credentials and Job Templates in the same content flow. Stage 04 creates blue **Logging Config v1** and **EDA Config
 v1**. Change in Git replaces the same logging entry with violet **Logging Config
 v2**; EDA v1 and the original AAP's own configuration remain unchanged. Backwards
 navigation restores v1. These are illustrative configuration revisions, not AAP
 product versions.
 
-The separate **Infrastructure configuration** category represents Job Template
+The **Infrastructure configuration** category represents Job Template
 definitions with saved inputs. Both monitoring and firewall start at blue v1.
 The additional infrastructure-configuration stop updates only **Monitoring Agent
 Config v2** to violet; **Firewall Config v1** and the original AAP stay unchanged.
