@@ -1,0 +1,5 @@
+# Explicit additions; retain resolved transitive pins/hashes before release.
+# Client 35 supports Python 3.12 and the base's existing urllib3 2.8.0.
+kubernetes==35.0.0
+# Required by kubernetes.core; not a dependency of the Kubernetes Python package.
+jsonpatch==1.33

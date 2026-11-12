@@ -1,0 +1,1446 @@
+{
+  "ansible_core": "2.20.10",
+  "architecture": "amd64",
+  "base_image": "registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.20",
+  "bundled_third_party_collections": [],
+  "image_id": "6ac3ae57346f0900fab85077798225c3498793084662a3a9ee2a14dd5f0dc3a6",
+  "note": "Observed inventory of the exact vendor image; presence does not establish live protocol authentication.",
+  "os": "linux",
+  "python": "3.12.15",
+  "python_distributions": [
+    {
+      "name": "aiohappyeyeballs",
+      "version": "2.7.1"
+    },
+    {
+      "name": "aiohttp",
+      "version": "3.14.5"
+    },
+    {
+      "name": "aiosignal",
+      "version": "1.4.0"
+    },
+    {
+      "name": "ansible-core",
+      "version": "2.20.10"
+    },
+    {
+      "name": "ansible-runner",
+      "version": "2.4.3"
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0"
+    },
+    {
+      "name": "bcrypt",
+      "version": "5.0.0"
+    },
+    {
+      "name": "certifi",
+      "version": "2038.12.31"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.3.0"
+    },
+    {
+      "name": "cryptography",
+      "version": "50.0.2"
+    },
+    {
+      "name": "decorator",
+      "version": "5.3.1"
+    },
+    {
+      "name": "docutils",
+      "version": "0.23"
+    },
+    {
+      "name": "dumb-init",
+      "version": "1.2.5.post1"
+    },
+    {
+      "name": "frozenlist",
+      "version": "1.8.0"
+    },
+    {
+      "name": "gssapi",
+      "version": "1.12.0"
+    },
+    {
+      "name": "idna",
+      "version": "3.20"
+    },
+    {
+      "name": "invoke",
+      "version": "3.0.3"
+    },
+    {
+      "name": "Jinja2",
+      "version": "3.1.6"
+    },
+    {
+      "name": "krb5",
+      "version": "0.10.0"
+    },
+    {
+      "name": "lockfile",
+      "version": "0.12.2"
+    },
+    {
+      "name": "lxml",
+      "version": "6.1.1"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.2.0"
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.4"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "name": "multidict",
+      "version": "7.2.1"
+    },
+    {
+      "name": "ncclient",
+      "version": "0.7.1"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3"
+    },
+    {
+      "name": "paramiko",
+      "version": "5.1.0"
+    },
+    {
+      "name": "pexpect",
+      "version": "4.9.0"
+    },
+    {
+      "name": "pip",
+      "version": "23.2.1"
+    },
+    {
+      "name": "pkgconfig",
+      "version": "1.6.0"
+    },
+    {
+      "name": "propcache",
+      "version": "0.5.4"
+    },
+    {
+      "name": "ptyprocess",
+      "version": "0.7.0"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.12"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.21.0"
+    },
+    {
+      "name": "pykerberos",
+      "version": "1.2.4"
+    },
+    {
+      "name": "PyNaCl",
+      "version": "1.6.2"
+    },
+    {
+      "name": "pyOpenSSL",
+      "version": "26.4.0"
+    },
+    {
+      "name": "pypsrp",
+      "version": "0.9.1"
+    },
+    {
+      "name": "PySocks",
+      "version": "1.7.1"
+    },
+    {
+      "name": "pyspnego",
+      "version": "0.12.4"
+    },
+    {
+      "name": "python-daemon",
+      "version": "3.1.2"
+    },
+    {
+      "name": "pywinrm",
+      "version": "0.5.0"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.1"
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2"
+    },
+    {
+      "name": "requests-credssp",
+      "version": "2.0.0"
+    },
+    {
+      "name": "requests_ntlm",
+      "version": "1.3.0"
+    },
+    {
+      "name": "resolvelib",
+      "version": "1.2.1"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0"
+    },
+    {
+      "name": "setuptools",
+      "version": "68.2.2"
+    },
+    {
+      "name": "six",
+      "version": "1.17.0"
+    },
+    {
+      "name": "toml",
+      "version": "0.10.2"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "name": "urllib3",
+      "version": "2.8.0"
+    },
+    {
+      "name": "xmltodict",
+      "version": "1.0.4"
+    },
+    {
+      "name": "yarl",
+      "version": "1.25.1"
+    }
+  ],
+  "repo_digests": [
+    "registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9@sha256:aea45867ebbfcb57bba69b3b6e33542dbbe95f237dfdf35e8b68773b4f3268f8",
+    "registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9@sha256:f4bcc1c2a8e715b2f02629bd5022cf6890bc43b13837ace70c8ce15bcee4a837"
+  ],
+  "rpm_packages": [
+    {
+      "arch": "x86_64",
+      "name": "alternatives",
+      "version": "0:1.24-2.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "audit-libs",
+      "version": "0:3.1.5-8.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "basesystem",
+      "version": "0:11-13.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "bash",
+      "version": "0:5.1.8-9.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "binutils",
+      "version": "0:2.35.2-72.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "binutils-gold",
+      "version": "0:2.35.2-72.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "bzip2",
+      "version": "0:1.0.8-11.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "bzip2-libs",
+      "version": "0:1.0.8-11.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "ca-certificates",
+      "version": "0:2026.2.92_v9.0.319-90.3.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "cargo",
+      "version": "0:1.92.0-2.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "cmake-filesystem",
+      "version": "0:3.31.8-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "coreutils-single",
+      "version": "0:8.32-41.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "cpp",
+      "version": "0:11.5.0-14.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "cracklib",
+      "version": "0:2.9.6-28.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "cracklib-dicts",
+      "version": "0:2.9.6-28.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "crypto-policies",
+      "version": "0:20260224-1.gitea0f072.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "curl-minimal",
+      "version": "0:7.76.1-40.el9_8.8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "cyrus-sasl-lib",
+      "version": "0:2.1.27-22.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "dejavu-sans-fonts",
+      "version": "0:2.37-18.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "dnf-data",
+      "version": "0:4.14.0-34.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "elfutils-debuginfod-client",
+      "version": "0:0.194-1.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "elfutils-default-yama-scope",
+      "version": "0:0.194-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "elfutils-libelf",
+      "version": "0:0.194-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "elfutils-libs",
+      "version": "0:0.194-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "expat",
+      "version": "0:2.5.0-6.el9_8.7"
+    },
+    {
+      "arch": "x86_64",
+      "name": "file-libs",
+      "version": "0:5.39-17.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "filesystem",
+      "version": "0:3.16-5.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "findutils",
+      "version": "1:4.8.0-7.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "fonts-filesystem",
+      "version": "1:2.0.5-7.el9.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gawk",
+      "version": "0:5.1.0-6.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gcc",
+      "version": "0:11.5.0-14.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gdbm-libs",
+      "version": "1:1.23-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "git-core",
+      "version": "0:2.52.0-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "glib2",
+      "version": "0:2.68.4-19.el9_8.10"
+    },
+    {
+      "arch": "x86_64",
+      "name": "glibc",
+      "version": "0:2.34-283.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "glibc-common",
+      "version": "0:2.34-283.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "glibc-devel",
+      "version": "0:2.34-283.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "glibc-headers",
+      "version": "0:2.34-283.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "glibc-langpack-en",
+      "version": "0:2.34-283.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "glibc-minimal-langpack",
+      "version": "0:2.34-283.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gmp",
+      "version": "1:6.2.0-13.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gnupg2",
+      "version": "0:2.3.3-5.el9_7"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gnutls",
+      "version": "0:3.8.10-9.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gobject-introspection",
+      "version": "0:1.68.0-11.el9"
+    },
+    {
+      "arch": "(none)",
+      "name": "gpg-pubkey",
+      "version": "0:fd431d51-4ae0493b"
+    },
+    {
+      "arch": "(none)",
+      "name": "gpg-pubkey",
+      "version": "0:5a6340b3-6229229e"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gpgme",
+      "version": "0:1.15.1-6.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "grep",
+      "version": "0:3.6-5.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "groff-base",
+      "version": "0:1.22.4-10.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "gzip",
+      "version": "0:1.12-2.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "json-c",
+      "version": "0:0.14-11.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "json-glib",
+      "version": "0:1.6.6-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "kernel-headers",
+      "version": "0:5.14.0-687.61.1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "keyutils-libs",
+      "version": "0:1.6.3-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "krb5-libs",
+      "version": "0:1.21.1-10.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "krb5-pkinit",
+      "version": "0:1.21.1-10.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "krb5-workstation",
+      "version": "0:1.21.1-10.el9_8.1"
+    },
+    {
+      "arch": "noarch",
+      "name": "langpacks-core-en",
+      "version": "0:3.0-16.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "langpacks-core-font-en",
+      "version": "0:3.0-16.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "langpacks-en",
+      "version": "0:3.0-16.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "less",
+      "version": "0:590-6.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libacl",
+      "version": "0:2.4.0-1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libarchive",
+      "version": "0:3.5.3-11.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libassuan",
+      "version": "0:2.5.5-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libattr",
+      "version": "0:2.6.0-1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libblkid",
+      "version": "0:2.37.4-25.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libcap",
+      "version": "0:2.48-10.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libcap-ng",
+      "version": "0:0.8.2-7.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libcbor",
+      "version": "0:0.7.0-5.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libcom_err",
+      "version": "0:1.46.5-8.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libcurl-minimal",
+      "version": "0:7.76.1-40.el9_8.8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libdb",
+      "version": "0:5.3.28-57.el9_6"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libdnf",
+      "version": "0:0.69.0-18.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libeconf",
+      "version": "0:0.4.1-7.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libedit",
+      "version": "0:3.1-39.20210216cvs.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libevent",
+      "version": "0:2.1.13-1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libfdisk",
+      "version": "0:2.37.4-25.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libffi",
+      "version": "0:3.4.2-8.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libffi-devel",
+      "version": "0:3.4.2-8.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libfido2",
+      "version": "0:1.13.0-2.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libgcc",
+      "version": "0:11.5.0-14.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libgcrypt",
+      "version": "0:1.10.0-13.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libgomp",
+      "version": "0:11.5.0-14.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libgpg-error",
+      "version": "0:1.42-5.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libidn2",
+      "version": "0:2.3.0-7.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libkadm5",
+      "version": "0:1.21.1-10.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libksba",
+      "version": "0:1.5.1-7.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libmodulemd",
+      "version": "0:2.13.0-2.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libmount",
+      "version": "0:2.37.4-25.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libmpc",
+      "version": "0:1.2.1-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libnghttp2",
+      "version": "0:1.43.0-6.el9_8.2"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libnsl2",
+      "version": "0:2.0.0-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libpeas",
+      "version": "0:1.30.0-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libpkgconf",
+      "version": "0:1.7.3-10.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libpwquality",
+      "version": "0:1.4.4-8.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "librepo",
+      "version": "0:1.19.0-1.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "libreport-filesystem",
+      "version": "0:2.15.2-6.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "librhsm",
+      "version": "0:0.0.3-9.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libselinux",
+      "version": "0:3.6-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libsemanage",
+      "version": "0:3.6-5.el9_6"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libsepol",
+      "version": "0:3.6-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libsigsegv",
+      "version": "0:2.13-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libsmartcols",
+      "version": "0:2.37.4-25.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libsolv",
+      "version": "0:0.7.24-6.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libss",
+      "version": "0:1.46.5-8.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libstdc++",
+      "version": "0:11.5.0-14.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libtasn1",
+      "version": "0:4.16.0-10.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libtirpc",
+      "version": "0:1.3.3-9.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libtool-ltdl",
+      "version": "0:2.4.6-46.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libunistring",
+      "version": "0:0.9.10-15.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libusbx",
+      "version": "0:1.0.30-1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libutempter",
+      "version": "0:1.2.1-6.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libuuid",
+      "version": "0:2.37.4-25.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libverto",
+      "version": "0:0.3.2-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libxcrypt",
+      "version": "0:4.4.18-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libxcrypt-devel",
+      "version": "0:4.4.18-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libxml2",
+      "version": "0:2.9.13-14.el9_8.5"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libxslt",
+      "version": "0:1.1.34-14.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libyaml",
+      "version": "0:0.2.5-7.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "libzstd",
+      "version": "0:1.5.5-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "llvm-filesystem",
+      "version": "0:21.1.8-2.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "llvm-libs",
+      "version": "0:21.1.8-2.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "lua-libs",
+      "version": "0:5.4.4-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "lz4-libs",
+      "version": "0:1.9.3-5.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "make",
+      "version": "1:4.3-8.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "microdnf",
+      "version": "0:3.9.1-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "mpdecimal",
+      "version": "0:2.5.1-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "mpfr",
+      "version": "0:4.1.0-10.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "ncurses",
+      "version": "0:6.2-12.20210508.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "ncurses-base",
+      "version": "0:6.2-12.20210508.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "ncurses-libs",
+      "version": "0:6.2-12.20210508.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "nettle",
+      "version": "0:3.10.1-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "npth",
+      "version": "0:1.6-8.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "nss_wrapper",
+      "version": "0:1.1.13-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "nss_wrapper-libs",
+      "version": "0:1.1.13-1.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "openldap",
+      "version": "0:2.6.8-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "openssh",
+      "version": "0:9.9p1-13.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "openssh-clients",
+      "version": "0:9.9p1-13.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "openssl",
+      "version": "1:3.5.8-2.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "openssl-devel",
+      "version": "1:3.5.8-2.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "openssl-fips-provider",
+      "version": "0:3.0.7-11.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "openssl-fips-provider-so",
+      "version": "0:3.0.7-11.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "openssl-libs",
+      "version": "1:3.5.8-2.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "p11-kit",
+      "version": "0:0.26.4-1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "p11-kit-trust",
+      "version": "0:0.26.4-1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "pam",
+      "version": "0:1.5.1-28.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "pcre",
+      "version": "0:8.44-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "pcre2",
+      "version": "0:10.40-7.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "pcre2-syntax",
+      "version": "0:10.40-7.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-AutoLoader",
+      "version": "0:5.74-484.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-B",
+      "version": "0:1.80-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Carp",
+      "version": "0:1.50-460.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Class-Struct",
+      "version": "0:0.66-484.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Data-Dumper",
+      "version": "0:2.174-462.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Digest",
+      "version": "0:1.19-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Digest-MD5",
+      "version": "0:2.58-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Encode",
+      "version": "4:3.08-462.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Errno",
+      "version": "0:1.30-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Exporter",
+      "version": "0:5.74-461.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Fcntl",
+      "version": "0:1.13-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-File-Basename",
+      "version": "0:2.85-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-File-Path",
+      "version": "0:2.18-4.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-File-Temp",
+      "version": "1:0.231.100-4.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-File-stat",
+      "version": "0:1.09-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-FileHandle",
+      "version": "0:2.03-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Getopt-Long",
+      "version": "1:2.52-4.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Getopt-Std",
+      "version": "0:1.12-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-HTTP-Tiny",
+      "version": "0:0.076-462.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-IO",
+      "version": "0:1.43-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-IO-Socket-IP",
+      "version": "0:0.41-5.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-IO-Socket-SSL",
+      "version": "0:2.073-2.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-IPC-Open3",
+      "version": "0:1.21-484.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-MIME-Base64",
+      "version": "0:3.16-4.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Mozilla-CA",
+      "version": "0:20200520-6.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Net-SSLeay",
+      "version": "0:1.94-3.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-POSIX",
+      "version": "0:1.94-484.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-PathTools",
+      "version": "0:3.78-461.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Pod-Escapes",
+      "version": "1:1.07-460.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Pod-Perldoc",
+      "version": "0:3.28.01-461.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Pod-Simple",
+      "version": "1:3.42-4.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Pod-Usage",
+      "version": "4:2.01-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Scalar-List-Utils",
+      "version": "4:1.56-462.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-SelectSaver",
+      "version": "0:1.02-484.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Socket",
+      "version": "4:2.031-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Storable",
+      "version": "1:3.21-460.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Symbol",
+      "version": "0:1.08-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Term-ANSIColor",
+      "version": "0:5.01-461.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Term-Cap",
+      "version": "0:1.17-460.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Text-ParseWords",
+      "version": "0:3.30-460.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Text-Tabs+Wrap",
+      "version": "0:2013.0523-460.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-Time-Local",
+      "version": "2:1.300-7.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-URI",
+      "version": "0:5.09-3.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-Unicode-Normalize",
+      "version": "0:1.27-461.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-base",
+      "version": "0:2.27-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-constant",
+      "version": "0:1.33-461.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-if",
+      "version": "0:0.60.800-484.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-interpreter",
+      "version": "4:5.32.1-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-libnet",
+      "version": "0:3.13-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-libs",
+      "version": "4:5.32.1-484.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "perl-mro",
+      "version": "0:1.23-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-overload",
+      "version": "0:1.31-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-overloading",
+      "version": "0:0.02-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-parent",
+      "version": "1:0.238-460.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-podlators",
+      "version": "1:4.14-460.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-subs",
+      "version": "0:1.03-484.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "perl-vars",
+      "version": "0:1.05-484.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "pkgconf",
+      "version": "0:1.7.3-10.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "pkgconf-m4",
+      "version": "0:1.7.3-10.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "pkgconf-pkg-config",
+      "version": "0:1.7.3-10.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "popt",
+      "version": "0:1.18-8.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "python3.12",
+      "version": "0:3.12.15-1.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "python3.12-charset-normalizer",
+      "version": "0:3.3.0-2.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "python3.12-devel",
+      "version": "0:3.12.15-1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "python3.12-libs",
+      "version": "0:3.12.15-1.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "python3.12-pip",
+      "version": "0:23.2.1-5.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "python3.12-pip-wheel",
+      "version": "0:23.2.1-5.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "python3.12-pyyaml",
+      "version": "0:6.0.1-2.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "python3.12-setuptools",
+      "version": "0:68.2.2-5.el9_6"
+    },
+    {
+      "arch": "x86_64",
+      "name": "readline",
+      "version": "0:8.1-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "redhat-release",
+      "version": "0:9.8-1.0.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "rootfiles",
+      "version": "0:8.1-35.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "rpm",
+      "version": "0:4.16.1.3-40.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "rpm-libs",
+      "version": "0:4.16.1.3-40.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "rust",
+      "version": "0:1.92.0-2.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "rust-std-static",
+      "version": "0:1.92.0-2.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "sed",
+      "version": "0:4.8-10.el9"
+    },
+    {
+      "arch": "noarch",
+      "name": "setup",
+      "version": "0:2.13.7-10.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "shadow-utils",
+      "version": "2:4.9-16.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "sqlite-libs",
+      "version": "0:3.34.1-11.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "sshpass",
+      "version": "0:1.09-4.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "systemd-libs",
+      "version": "0:252-67.el9_8.6"
+    },
+    {
+      "arch": "x86_64",
+      "name": "tar",
+      "version": "2:1.34-13.el9_8"
+    },
+    {
+      "arch": "noarch",
+      "name": "tzdata",
+      "version": "0:2026e-1.el9_8"
+    },
+    {
+      "arch": "x86_64",
+      "name": "unzip",
+      "version": "0:6.0-60.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "util-linux",
+      "version": "0:2.37.4-25.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "util-linux-core",
+      "version": "0:2.37.4-25.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "xz",
+      "version": "0:5.2.5-8.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "xz-libs",
+      "version": "0:5.2.5-8.el9_8.1"
+    },
+    {
+      "arch": "x86_64",
+      "name": "zlib",
+      "version": "0:1.2.11-40.el9"
+    },
+    {
+      "arch": "x86_64",
+      "name": "zstd",
+      "version": "0:1.5.5-1.el9"
+    }
+  ]
+}

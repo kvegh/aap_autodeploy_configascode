@@ -378,6 +378,13 @@ The current base and five application EE definitions now select official Core
 passed for AIOps, Assistant, Windows and RHEL. OpenShift execution remains deferred
 because its Python client is absent from the stock image.
 
+The owner subsequently selected a derived **AAP AutoDeploy EE-v1** as the next
+shared default. Its [build instructions and package inventory](execution-environment/README.md)
+use the exact Red Hat Core 2.20 base and add Kubernetes, jsonpatch and their
+hash-locked dependencies. The initial local build preserves all original Python
+packages and native startup settings. Hub publication, native AAP execution and
+the default/CaC change must pass separately before this replaces the current EE.
+
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
 conversation association and original parent so the existing export includes
 them. Moving a task preserves its actual state; an unanswered credential-source

@@ -1,0 +1,110 @@
+# AAP AutoDeploy EE-v1
+
+This derived execution environment adds the Kubernetes Python client and the
+JSON patch library required by the intended Orchestrator Kubernetes modules.
+Its public base is the digest-pinned Red Hat AAP 2.7 minimal RHEL 9 image in
+`Containerfile`. The verified base provides Ansible Core **2.20.10**, Python
+**3.12.15**, user `root`, entrypoint `entrypoint` and command
+`ansible-runner run /runner`. The recipe inherits those settings.
+
+`requirements.txt` declares `kubernetes==35.0.0` and `jsonpatch==1.33`.
+Their required transitive Python dependencies are part of this addition.
+Client 35 declares Python 3.12 support and accepts the base's urllib3 2.8.0.
+The intended `kubernetes.core` 6.4.0 modules require Kubernetes >=24.2.0,
+PyYAML and jsonpatch; the base already supplies PyYAML. The Kubernetes package
+does not itself depend on jsonpatch, so both direct requirements are necessary.
+
+Ansible collections continue to come from native project
+`collections/requirements.yml` files and the receiving organization's configured
+authenticated Galaxy sources. This image does not bake collections or replace
+Core, Runner, the operating system, the base entrypoint or the base command.
+The derived image is a separately maintained artifact; record its build and
+validation evidence with its release.
+
+The complete [base package inventory](base-inventory.json) records 57 Python
+distributions and 240 RPMs. Beyond Core and Python, the base supplies Runner
+2.4.3, WinRM 0.5.0, PSRP 0.9.1, Paramiko 5.1.0, NETCONF, Kerberos/NTLM/CredSSP,
+HTTP/TLS and XML/YAML libraries. No third-party Ansible collections were found.
+
+## Build and verify
+
+Run these commands from the repository root using the existing Podman installation
+and approved registry access. Inspect the exact local base digest first and
+match its image ID against the protected base inventory receipt. If the image is
+missing, obtain that exact digest through the existing authenticated Red Hat
+registry route before building.
+
+```bash
+podman image inspect registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9@sha256:aea45867ebbfcb57bba69b3b6e33542dbbe95f237dfdf35e8b68773b4f3268f8
+podman build --pull=never --file execution-environment/Containerfile --tag localhost/aap-autodeploy-ee-v1:1.0.0 execution-environment
+podman run --rm --pull=never --network=none --entrypoint /usr/bin/python3 localhost/aap-autodeploy-ee-v1:1.0.0 -m pip check
+podman run --rm --pull=never --network=none --entrypoint /usr/bin/python3 localhost/aap-autodeploy-ee-v1:1.0.0 -c 'import importlib.metadata as m,json,sys,ansible,kubernetes,jsonpatch,requests_oauthlib; assert ansible.__version__ == "2.20.10"; assert sys.version_info[:3] == (3,12,15); assert m.version("kubernetes") == "35.0.0"; assert m.version("jsonpatch") == "1.33"; print(json.dumps({"core":ansible.__version__,"python":sys.version.split()[0],"kubernetes":m.version("kubernetes"),"jsonpatch":m.version("jsonpatch")}))'
+podman image inspect --format '{{json .Config.User}} {{json .Config.Entrypoint}} {{json .Config.Cmd}}' localhost/aap-autodeploy-ee-v1:1.0.0
+```
+
+`requirements.lock` pins all nine new distributions and their wheel SHA-256
+hashes, resolved inside this exact base without replacing any of its 57 Python
+distributions. The Containerfile enforces that lock with `--require-hashes`.
+When updating the base or direct requirements, resolve the complete additions
+again inside the new base and retain the resolver report before rebuilding.
+An exact base digest and direct pins alone do not freeze transitive resolution.
+Compare the final Python package and RPM inventory against the protected base
+inventory. Account for every package change, and verify the inherited image
+configuration and Core/Python versions. Keep build logs and receipts protected;
+do not put registry authentication material in the build context or image.
+
+The checks above establish versions, dependency consistency and Python import
+availability with networking disabled. They do not establish Kubernetes API
+authentication, cluster connectivity or successful Orchestrator deployment.
+Those require their separately authorized functional checks using the runtime
+collections and protected cluster inputs.
+
+## Publish to the existing private automation hub
+
+Use the existing private Hub registry and an existing account authorized to
+create and push the selected container repository. AAP 2.7 registry login uses
+that account's username and login password; a controller API bearer token is not
+the registry password. Preserve normal TLS and certificate verification.
+
+This Bash example uses a temporary authentication file and prompts without
+putting the password in command arguments or shell history. Replace only the
+generic registry placeholder with the protected selected Hub location.
+
+```bash
+ee_registry=hub.example.invalid
+ee_authfile=$(mktemp)
+chmod 600 "$ee_authfile"
+printf '{}\n' > "$ee_authfile"
+trap 'rm -f "$ee_authfile"' EXIT
+read -r -p 'Hub username: ' ee_registry_user
+read -r -s -p 'Hub password: ' ee_registry_password
+printf '\n'
+printf '%s' "$ee_registry_password" | podman login --authfile "$ee_authfile" --tls-verify=true --username "$ee_registry_user" --password-stdin "$ee_registry"
+unset ee_registry_password
+podman tag localhost/aap-autodeploy-ee-v1:1.0.0 "$ee_registry/aap-autodeploy-ee-v1:1.0.0"
+podman push --authfile "$ee_authfile" --tls-verify=true "$ee_registry/aap-autodeploy-ee-v1:1.0.0"
+```
+
+Verify the repository tag and registry manifest digest after the push. Record
+the published digest independently from the local image ID: they identify
+different objects. AAP's existing native Container Registry credential must
+permit pulling the private Hub image before any job can start with it.
+Set the named `AAP AutoDeploy EE-v1` definition, desired default and intended
+project/template references through the existing AAP and CaC paths after the
+published artifact passes verification. Retain explicit template bindings when
+evaluating which jobs inherit a changed default.
+
+## Primary references
+
+- [Kubernetes 35.0.0 package metadata](https://pypi.org/pypi/kubernetes/35.0.0/json)
+- [kubernetes.core 6.4.0 Python requirements](https://raw.githubusercontent.com/ansible-collections/kubernetes.core/6.4.0/requirements.txt)
+- [AAP 2.7 image publication and pull workflow](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.7/administer-proc_obtain_images)
+
+## Verified build checkpoint
+
+The initial image built successfully with Core 2.20.10 and Python 3.12.15.
+Offline imports and `pip check` passed; all 57 original Python distribution
+versions and the complete base layer chain were preserved. The inherited user,
+entrypoint, command and working directory matched the Red Hat base. The local
+image ID is `4715ff8f1ff18ffa090dc0dc7a9529a277f7c0550bbca4e1c012b69d67a5205a`.
+Hub publication and actual AAP job acceptance must be recorded separately.

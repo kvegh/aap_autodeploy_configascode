@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.58.0
+
+Add the default EE-v1 build recipe from the exact official Core 2.20 base,
+Kubernetes/jsonpatch dependencies, full hash lock and vendor package inventory.
+Document native build, verification and secure Hub publication. Local build and
+offline checks passed with all 57 base Python versions and startup settings
+preserved. Hub publication and AAP default/CaC activation remain separate.
+
 ## 0.57.5
 
 Refresh completed EE-reference and workflow-gate task records. Record the scoped

@@ -1,0 +1,10 @@
+# This verified Red Hat base provides Core 2.20.10 and Python 3.12.15.
+FROM registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9@sha256:aea45867ebbfcb57bba69b3b6e33542dbbe95f237dfdf35e8b68773b4f3268f8
+
+# Collections remain native AAP project requirements. Add only the Kubernetes
+# client and the JSON patch dependency required by the intended k8s modules.
+COPY requirements.lock /tmp/aap-ee-v1-requirements.lock
+RUN /usr/bin/python3 -m pip install --no-cache-dir --require-hashes --requirement /tmp/aap-ee-v1-requirements.lock \
+    && rm /tmp/aap-ee-v1-requirements.lock
+
+# Inherit the base image's user, entrypoint and command without overrides.
