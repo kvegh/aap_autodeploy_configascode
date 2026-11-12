@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.53.7
+
+Document verified current-configuration retirement and the fresh-image
+registry-input blocker in the authoritative task overview and protected recovery
+export. No reinstall or image acquisition is claimed.
+
 ## 0.53.6
 
 Document implementation e9d19a4 and preserve complete transferred-task history
