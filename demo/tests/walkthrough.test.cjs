@@ -603,3 +603,65 @@ test('infrastructure job configuration updates monitoring while retaining firewa
   assert.deepEqual(names('target-infrastructure'), []);
   assert.deepEqual(names('successor-infrastructure'), []);
 });
+
+
+test('the RHEL foundation follows deployment without implying a guest OS upgrade', () => {
+  const page = browser();
+  const { nodes } = page;
+  assert.equal(nodes['target-rhel'].hidden, true);
+  assert.equal(nodes['successor-rhel'].hidden, true);
+  const milestones = id => withClass(nodes[id], 'rhel-milestone').map(item => [item.textContent, item.dataset.state]);
+  for (const [id, stage, status, states] of [
+    ['vm', '1', 'VM created', ['complete', 'current', 'pending']],
+    ['infrastructure', '2', 'Host networking prepared', ['complete', 'current', 'pending']],
+    ['installation', '3', 'RHEL ready · AAP installed', ['complete', 'complete', 'complete']],
+    ['base', '4', 'RHEL ready · AAP installed', ['complete', 'complete', 'complete']],
+  ]) {
+    page.hash(`#${id}`);
+    assert.equal(nodes['target-rhel'].hidden, false, id);
+    assert.equal(nodes['target-rhel'].dataset.stage, stage, id);
+    assert.equal(nodes['target-rhel-status'].textContent, status, id);
+    assert.deepEqual(milestones('target-rhel-progress'), ['VM created', 'OS prepared', 'AAP installed'].map((name, index) => [name, states[index]]), id);
+    const detail = nodes['target-rhel-detail'].textContent;
+    assert.match(detail, stage === '1' ? /RHEL golden image.*guest OS prerequisites next/ : /Host networking: firewall · nginx · TLS/, id);
+    assert.doesNotMatch(detail, /all packages updated|full OS upgrade/i, id);
+    assert.equal(nodes['successor-rhel'].hidden, true, id);
+  }
+  page.hash('#vm');
+  assert.equal(nodes['target-rhel-status'].textContent, 'VM created', 'Backing up restores the VM-only foundation');
+  assert.equal(milestones('target-rhel-progress')[1][1], 'current');
+  nodes.restart.click();
+  assert.equal(nodes['target-rhel'].hidden, true);
+  assert.equal(nodes['successor-rhel'].hidden, true);
+});
+
+test('the RHEL foundation persists under AAP changes and replays into the third AAP', () => {
+  const page = browser('#base');
+  const { nodes } = page;
+  const status = nodes['target-rhel-status'].textContent;
+  const detail = nodes['target-rhel-detail'].textContent;
+  for (const id of ['project', 'git-change', 'infra-change', 'manual', 'capture']) {
+    page.hash(`#${id}`);
+    assert.equal(nodes['target-rhel'].hidden, false, id);
+    assert.equal(nodes['target-rhel-status'].textContent, status, id);
+    assert.equal(nodes['target-rhel-detail'].textContent, detail, id);
+    assert.equal(nodes['successor-rhel'].hidden, true, id);
+  }
+  page.chapter('rebuild');
+  assert.equal(nodes['successor-rhel'].hidden, false);
+  assert.equal(nodes['successor-rhel'].dataset.stage, '4');
+  assert.equal(nodes['successor-rhel-status'].textContent, status);
+  assert.equal(nodes['successor-rhel-detail'].textContent, detail);
+  const milestones = withClass(nodes['successor-rhel-progress'], 'rhel-milestone');
+  assert.equal(milestones.length, 3);
+  assert.ok(milestones.every(item => item.dataset.state === 'complete'));
+  assert.deepEqual(objectNames(nodes['successor-infrastructure']), ['Monitoring Agent Config v2', 'Firewall Config v1'], 'Saved infrastructure job definitions remain in AAP above the RHEL foundation');
+  nodes.previous.click();
+  assert.equal(nodes['successor-rhel'].hidden, true);
+  assert.equal(nodes['target-rhel'].hidden, false);
+  assert.equal(nodes['target-rhel-status'].textContent, status);
+  page.chapter('rebuild');
+  nodes.restart.click();
+  assert.equal(nodes['target-rhel'].hidden, true);
+  assert.equal(nodes['successor-rhel'].hidden, true);
+});

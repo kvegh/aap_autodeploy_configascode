@@ -39,6 +39,29 @@
       return item;
     }));
   }
+  function drawRhel(prefix, stage, visible) {
+    const foundation = byId(`${prefix}-rhel`);
+    foundation.hidden = !visible;
+    foundation.dataset.stage = String(stage);
+    byId(`${prefix}-rhel-status`).textContent = !visible ? '' : stage === 1
+      ? 'VM created' : stage === 2 ? 'Host networking prepared' : 'RHEL ready · AAP installed';
+    // OS prerequisites run in stage 03; stage 02 configures networking on the host.
+    const milestones = [
+      { title: 'VM created', complete: stage >= 1 },
+      { title: 'OS prepared', complete: stage >= 3 },
+      { title: 'AAP installed', complete: stage >= 3 },
+    ];
+    byId(`${prefix}-rhel-progress`).replaceChildren(...(visible ? milestones.map((milestone, position) => {
+      const item = element('span', 'rhel-milestone', milestone.title);
+      const current = position === 1 && stage < 3;
+      item.dataset.state = milestone.complete ? 'complete' : current ? 'current' : 'pending';
+      item.setAttribute('aria-label', `${milestone.title}: ${milestone.complete ? 'complete' : current ? 'next preparation' : 'pending'}`);
+      return item;
+    }) : []));
+    byId(`${prefix}-rhel-detail`).textContent = !visible ? '' : stage === 1
+      ? 'RHEL golden image · guest OS prerequisites next'
+      : 'Host networking: firewall · nginx · TLS';
+  }
   function drawCode(container, lines, activeOrigin) {
     container.replaceChildren(...lines.map((value, position) => {
       const entry = typeof value === 'string' ? { text: value } : value;
@@ -102,6 +125,8 @@
     byId('successor-card').hidden = !state.successorVisible;
     byId('successor-card').setAttribute('aria-hidden', String(!state.successorVisible));
     byId('successor-card').dataset.stage = '4';
+    drawRhel('target', step.stage, state.targetVisible);
+    drawRhel('successor', 4, state.successorVisible);
     byId('successor-card').classList.toggle('captured', state.successorVisible);
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;

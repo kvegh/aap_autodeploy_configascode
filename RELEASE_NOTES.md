@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.60.0
+
+Add a persistent RHEL foundation to both receiving AAPs, with reversible VM/OS
+prerequisite/install milestones and correctly qualified host firewall/nginx/TLS.
+Use stronger 2px card borders, larger Git text and a centred diagram five percent
+shorter for outer spacing. Preserve the continuous two-column AAP body and full
+Git replay. All nineteen existing-tool interaction checks passed; rendered
+browser layout remains unverified and no AAP or host operation is performed.
+
 ## 0.59.9
 
 Record native EE-v1 acceptance, verified Source default activation and maintained

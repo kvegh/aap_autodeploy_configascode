@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-158 tasks: 27 outstanding; 131 closed.
+161 tasks: 29 outstanding; 132 closed.
 
 ## Outstanding tasks
 
@@ -19,28 +19,30 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 |---|---|---|---|---|---|
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Retire v18 and rebuild bare metal with v19 after the EE upgrade | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
-| bead-wd-3ix.1.12 | Verify official Core 2.20 image availability for the fresh target | in_progress | P1 | task | bead-wd-3ix.1, bead-wd-3ix.1.15 |
-| bead-wd-3ix.1.15 | Build and publish the default Core 2.20 &#91;HOST&#93; with Kubernetes client | in_progress | P1 | task | bead-wd-3ix.1 |
+| bead-wd-3ix.1.12 | Verify the selected &#91;HOST&#93; runtime on fresh AAP | in_progress | P1 | task | bead-wd-3ix.1, bead-wd-3ix.1.15 |
+| bead-wd-3ix.1.12.2 | Build &#91;HOST&#93; with automated trusted dependencies | in_progress | P1 | feature | bead-wd-3ix.1.12 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
-| bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | in_progress | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
-| bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | in_progress | P1 | feature | bead-wd-72f |
-| bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | in_progress | P1 | feature | bead-wd-72f.31 |
+| bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
+| bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
+| bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | open | P1 | feature | bead-wd-72f.31 |
 | bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | open | P1 | feature | bead-wd-72f.31.2 |
-| bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | in_progress | P1 | task | bead-wd-72f.31.2 |
+| bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | open | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
-| bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | in_progress | P1 | task | bead-wd-mcr.1 |
+| bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | open | P1 | task | bead-wd-mcr.1 |
 | bead-wd-1rl.40.6 | Add separate CCNG infrastructure playbook and CaC job | deferred | P2 | task | bead-wd-1rl.40 |
+| bead-wd-3ix.1.16.1 | Review CoP token, ordering and EDA customizations with the owner | open | P2 | task | bead-wd-3ix.1.16 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
 | bead-wd-72f.24 | Review legacy project settings in shared AutoDeploy inventory | open | P2 | task | bead-wd-72f |
-| bead-wd-72f.31.12 | Track Command Center and MCP DNS and nginx configuration in CaC | in_progress | P2 | task | bead-wd-72f.31 |
+| bead-wd-72f.31.12 | Track Command Center and MCP DNS and nginx configuration in CaC | open | P2 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.5 | Verify Automation Orchestrator against a disposable OpenShift cluster | deferred | P2 | task | bead-wd-72f.31 |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
-| bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | in_progress | P2 | task | bead-wd-mcr |
+| bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | open | P2 | task | bead-wd-mcr |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
+| bead-wd-v5c8 | Align the AAP cards and replay full Git configuration to another AAP | in_progress | P2 | feature | — |
 | bead-wd-72f.31.6.5.1 | Evaluate prebuilt container images and a separate build host | deferred | P3 | task | bead-wd-72f.31.6.5 |
 | bead-wd-9ezo | Add External CloudCLI as an independent CaC project | deferred | P3 | task | — |
 | bead-wd-x9a | Consider automating AAP updates | open | P3 | task | — |
@@ -58,8 +60,10 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-2i1 | Separate AIOps CaC into its private companion repository | closed | P1 | task | — |
 | bead-wd-3ix.1.10 | Prepare ACME account readiness in fresh host setup | closed | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.11 | Retire v18 external DNS and current configuration | closed | P1 | task | bead-wd-3ix.1 |
+| bead-wd-3ix.1.12.1 | Verify certified Kubernetes content and dependency acquisition | closed | P1 | task | bead-wd-3ix.1.12 |
 | bead-wd-3ix.1.13 | Replace remaining legacy job EE references in current CaC | closed | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.14 | Remove manual approval gates from workflow definitions and CaC | closed | P1 | task | bead-wd-3ix.1 |
+| bead-wd-3ix.1.15 | Build and publish the default Core 2.20 &#91;HOST&#93; with Kubernetes client | closed | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.16 | Review CoP Ansible CaC guidance and tool adoption | closed | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.2 | Fix existing external-controller teardown for successor ownership records | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.3 | Fix final access retirement after normal decommission | closed | P1 | bug | bead-wd-3ix.1 |
@@ -176,7 +180,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-j0g.8 | Register RHEL CaC deployment with the shared importer and JT | closed | P2 | feature | bead-wd-j0g |
 | bead-wd-jjzm | Build the new two-instance AAP CaC visualization | closed | P2 | feature | — |
 | bead-wd-rhrk | Outline the new code-grounded AAP CaC visualization | closed | P2 | task | — |
-| bead-wd-v5c8 | Align the AAP cards and replay full Git configuration to another AAP | closed | P2 | feature | — |
 | bead-wd-wgn | Verify AutoDeploy infrastructure prerequisites from Hactar base | closed | P2 | task | — |
 | bead-wd-ys3k | Rework the AAP visualization composition after browser feedback | closed | P2 | bug | — |
 | bead-wd-zau | Review copied testserver monitoring and agent remediation readiness | closed | P2 | task | — |
