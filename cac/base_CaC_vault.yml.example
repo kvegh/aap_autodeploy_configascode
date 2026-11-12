@@ -18,6 +18,19 @@ aap_teams_base: []
 aap_user_accounts_base: []
 # Platform content-source credentials may belong here; machine credentials do not.
 controller_credentials_base: []
+# Authenticated official EE pulls need a native registry credential before job
+# startup. In the populated, encrypted copy, declare its owning organization:
+# aap_organizations_base:
+#   - name: ORGANIZATION_PLACEHOLDER
+# controller_credentials_base:
+#   - name: Red Hat registry
+#     credential_type: Container Registry
+#     organization: ORGANIZATION_PLACEHOLDER
+#     inputs:
+#       host: registry.redhat.io
+#       username: REGISTRY_USERNAME_PLACEHOLDER
+#       password: !unsafe REGISTRY_TOKEN_PLACEHOLDER
+#       verify_ssl: true
 controller_settings_base: {}
 # Official, unmodified AAP 2.7 job runtime. Collections come from the project's
 # requirements.yml. This does not replace the platform control-plane image.
@@ -25,6 +38,8 @@ controller_execution_environments_base:
   - name: AAP AutoDeploy EE
     image: registry.redhat.io/ansible-automation-platform-27/ee-minimal-rhel9:2.20
     pull: missing
+    # Enable after declaring the credential above in the encrypted copy:
+    # credential: Red Hat registry
 aap_default_execution_environment: AAP AutoDeploy EE
 # Containerized installations using remote Podman need the generated platform CA
 # in project-update execution environments. Preserve existing isolation mounts

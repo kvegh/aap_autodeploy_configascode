@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.55.1
+
+Document the authenticated native EE preflight and zero-error final CaC preview.
+Show the built-in registry credential and EE relationship with generic commented
+placeholders in the public base example. Refresh recovery task states while
+keeping baseline initialization and fresh-target acceptance separate.
+
 ## 0.55.0
 
 Build the new owner-directed two-instance AAP CaC visualization from scratch.

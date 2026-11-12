@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Verify native EE authentication before physical recovery — 2026-11-12
+
+Implementation `e58acc6` passed the existing managed preflight with native
+registry authentication and a temporary forced pull; the intended `missing`
+policy was restored and independently read back. The final normal CaC preview
+completed with zero validation errors, conflicts or desired changes. Its
+initialization flag remains true: this proves the preview checks, not an
+initialized capture baseline or completed fresh deployment.
+
+The public base example now shows commented organization, built-in registry
+credential and EE-reference placeholders. Real values remain in encrypted base
+CaC. The existing guarded provider installation acknowledged exactly one reset;
+fresh provider identity and authenticated OS/hardware checks remain separate
+from that acknowledgement.
+
 ## Let Controller authenticate image pulls before job startup — 2026-11-12
 
 Implementation `e58acc6` removes the manual Stage 05 image-copy operations.
