@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.61.4
+
+Document caption cleanup `cc324a6` and complete compact visualization `60490df`:
+independent AAP columns, Certificate/Firewall-only RHEL boxes, deleted captions
+and seated sysadmin. Record successful Pages publication, five exact assets and
+twenty-three deployed interaction checks; preserve the browser-geometry limit.
+Refresh completed task recovery records.
+
 ## 0.61.3
 
 Pack receiving AAP objects into two independent compact columns without internal
