@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.55.0
+
+Build the new owner-directed two-instance AAP CaC visualization from scratch.
+Show private encrypted YAML separately from public playbooks, four staged AAP
+deployment steps, base and project objects, Git changes and manual UI additions
+returning to CaC. Use a light interface with labelled object-origin colours,
+real source excerpts and reversible chapter/stage navigation. Keep trigger and
+scan-review mechanics out of the main narrative. Reuse the Pages workflow and
+existing tools; rendered browser/layout acceptance remains separate.
+
+
+
 ## 0.54.1
 
 Document native registry authentication implementation e58acc6, the job-startup

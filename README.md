@@ -285,25 +285,25 @@ do not establish live migration or complete end-to-end acceptance.
 
 ## AAP Configuration as Code visualization
 
-The previous visualization has been withdrawn so its replacement can be designed
-from scratch. No visualization application is currently included.
+[Open the interactive story](https://kvegh.github.io/aap_autodeploy_configascode/)
+to follow two AAP instances and the separation between private encrypted YAML
+configuration and public execution playbooks. The new light presentation shows
+four deployment stages, base objects, project imports, Git-authored changes and
+manual additions returning to CaC. Object origins stay visible through blue,
+violet and amber accents and text labels. Examples are synthetic and no live
+AAP or Git connection is made.
 
-The existing GitHub Pages workflow remains in
-[.github/workflows/deploy-demo.yml](.github/workflows/deploy-demo.yml). It checks
-for `demo/index.html` after checkout and skips both visualization checks and
-publication while that source is absent. This small shell check uses the GitHub
-Actions output interface; Ansible content is not needed to control this static
-site workflow. A replacement must update the workflow's asset and test paths if
-its source layout changes.
+Six chapters contain nine stops. The new VM appears in Stage 01, receiving AAP
+in Stage 03 and base objects in Stage 04. Trigger choices and detailed scan/review
+mechanics are abstracted as requested. Actual implementation links and limits,
+repeatable interaction checks and local preview instructions are in
+[demo/README.md](demo/README.md). Existing-tool checks cover story behaviour and
+source mapping; rendered browser and phone layout remain separately unverified.
 
-For publication, repository Settings → Pages must select **GitHub Actions**.
-A push to `main` changing `demo/**` or the workflow runs its JavaScript checks,
-packages only the explicitly listed HTML/CSS/JavaScript/icon files, uploads the
-Pages artifact and deploys it. Pull requests run checks without publication;
-manual workflow dispatch is also available. No JavaScript build step is used.
-Deleting source does not remove an earlier Pages deployment: withdrawing that
-site is a separate repository Pages operation. Re-enable Pages with GitHub
-Actions when the replacement is ready if the old site has been unpublished.
+The retained [GitHub Pages workflow](.github/workflows/deploy-demo.yml) checks
+source after checkout, runs syntax and interaction tests and deploys the five
+allowlisted public assets after matching main pushes. Pages uses GitHub Actions;
+pull requests only check. No frontend dependency installation or build is needed.
 
 ## Tasks and decisions
 
