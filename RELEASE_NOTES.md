@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.60.2
+
+Document the receiver-owned build implementation and stable EE-name decision,
+including actual validation and the distinction between Source startup, stable
+image publication and remaining receiver acceptance.
+
 ## 0.60.1
 
 Use the stable ee-proj-aap-cac repository and AAP EE name. Keep 2.0.0 as the

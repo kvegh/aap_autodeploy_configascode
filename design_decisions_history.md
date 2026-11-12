@@ -1,5 +1,30 @@
 # Design decisions history
 
+## Build the receiver-owned shared execution environment — 2026-11-12
+
+Implementation `c711505dabd5937dc0d051eb183a8c0901023c42` adds the
+approved native Ansible build playbook. Each receiver builds the pinned
+Red Hat Core 2.20 base with Kubernetes and JSON patch from Red Hat Trusted
+Libraries and publishes into its own Hub. Private registry authentication,
+versioned-tag reuse, offline dependency checks and uncached blob verification
+address the earlier damaged-publication failure and remove Source-Hub dependence.
+Base setup builds before default configuration; Orchestrator CaC imports run
+the same builder before importing their reviewed EE definitions. Native project
+requirements continue to provide certified collections.
+
+Implementation `5d3ac74606f0b9777340d6353a236ddca67e1413` changes the current
+name to `ee-proj-aap-cac` at the owner's request. The repository and native AAP
+EE name stay stable; `2.0.0` remains the image tag. The earlier `-v2` publication
+is historical. Source native startup passed before the name change; the stable
+publication independently passed all byte and runtime checks afterward. Receiving
+AAP base configuration and application acceptance remain separate outcomes.
+
+The owner approved RHEL Skopeo as an explicit OS prerequisite. Current-receiver
+Hub timeout reconciliation succeeded; an order-sensitive environment-list
+postcheck was corrected by independent mapping and multiset comparison, without
+retrying the successful service action. CoP review terminology was clarified:
+custom code alone is not a demonstrated departure from a CoP recommendation.
+
 ## Activate the verified EE-v1 default and preserve runtime boundaries — 2026-11-12
 
 Implementation `7e5d2e6e55f926d58701754b930b7bd6d4fa2854` records the
