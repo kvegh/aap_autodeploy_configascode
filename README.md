@@ -288,32 +288,39 @@ do not establish live migration or complete end-to-end acceptance.
 [Open the interactive story](https://kvegh.github.io/aap_autodeploy_configascode/)
 to follow an original AAP, its first destination and another AAP rebuilt from
 Git, keeping private encrypted YAML separate from public execution playbooks.
-Seven chapters contain eleven stops: four deployment stages, project imports,
+Seven chapters contain twelve stops: four deployment stages, project imports,
 platform/infrastructure configuration updates, manual additions, capture and a
 complete replay from Git.
 
-Blue base configuration includes Logging v1, EDA v1, Monitoring Agent v1 and
-Firewall v1. Git updates Logging and Monitoring Agent to violet v2 while EDA and
-Firewall stay at v1. Infrastructure configuration represents imported Job
-Template inputs; the page performs no host configuration or live AAP operation.
-Captured manual-origin definitions remain amber when replayed to the next AAP.
+Blue base configuration includes Logging v1, EDA v1, Monitoring Agent v1,
+Firewall v1 and nginx/TLS v1. Git updates Logging, Monitoring Agent and nginx/TLS
+to violet v2 while EDA and Firewall stay at v1. The whole Infrastructure
+configuration group sits inside RHEL. The page performs no host configuration
+or live AAP operation.
+Captured manual-origin definitions remain amber when replayed to the next AAP. During the manual-change stop, a
+sysadmin above the small original AAP has hands on a laptop while responding
+to an outage. An amber arrow shows their
+configuration entering the first receiving AAP directly; the figure disappears
+when the scan brings those definitions into Git.
 
 The three-column diagram uses matching code/receiving rows across the available
 page height, with five percent of that height reserved for balanced outer spacing
 and the original AAP centred between them. Each receiving AAP uses
 one continuous two-column content area, without a fixed configuration strip
 above a separately scrolling lower list. The first destination aligns with the upper code window;
-the lower destination receives the complete saved configuration at the final
-stop. All installed cards share prominent AAP branding. Larger sidebar text,
+the lower AAP rectangle is hidden throughout the main story. “Room for another AAP”
+appears only in a brief preparation stop immediately before the final deployment,
+which fills that destination with the complete saved configuration. All installed cards share prominent AAP branding. Larger sidebar text,
 a fixed current-step heading and completed/current chapter states make progress
 easier to follow. Examples are synthetic.
 
-A slim RHEL foundation stays at the bottom of both receiving cards. It shows
+A RHEL foundation holds the infrastructure group at the bottom of each AAP card. It shows
 VM creation, OS prerequisite preparation and AAP installation, plus the host
 firewall/nginx/TLS setup. These host services are not shown as guest services,
 and a general OS upgrade is not claimed. Stage 02 delivers blue firewall and
-nginx/TLS configuration bars into this RHEL rectangle; they remain through later
-AAP changes and appear on the final rebuilt instance. Dark 3px card borders and
+nginx/TLS configuration bars into this RHEL rectangle. A later CaC run visibly
+replaces nginx/TLS v1 with purple v2 there, retaining blue Firewall v1; the final
+rebuilt instance receives the resulting configuration. Dark 3px card borders and
 larger Git text make the diagram easier to read.
 
 The new VM appears in Stage 01, receiving AAP in Stage 03 and base definitions

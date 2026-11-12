@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.61.0
+
+Hide the whole third-AAP rectangle until its brief preparation step before replay.
+Show an incident-response sysadmin above the original AAP, with a laptop and amber
+configuration flow directly to the receiving AAP. Place the whole Infrastructure
+configuration group inside RHEL: Monitoring Agent and nginx/TLS become purple v2,
+while Firewall stays blue v1. Preserve the original v1 baseline, complete replay,
+reversible navigation and direct final links. No runtime job or dependency is added.
+
+
 ## 0.60.4
 
 Correct the generated task overview after the concurrent merge and retain the

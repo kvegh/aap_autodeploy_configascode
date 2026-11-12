@@ -39,11 +39,12 @@
       return item;
     }));
   }
-  function drawRhel(prefix, stage, visible, receivingConfiguration = false) {
+  function drawRhel(prefix, stage, visible, receivingConfiguration = false, origin = 'base') {
     const foundation = byId(`${prefix}-rhel`);
     foundation.hidden = !visible;
     foundation.dataset.stage = String(stage);
     foundation.classList.toggle('landing', visible && receivingConfiguration);
+    foundation.dataset.origin = receivingConfiguration ? origin : 'base';
     byId(`${prefix}-rhel-status`).textContent = !visible ? '' : stage === 1
       ? 'VM created' : stage === 2 ? 'Host networking prepared' : 'RHEL ready · AAP installed';
     // OS prerequisites run in stage 03; stage 02 configures networking on the host.
@@ -60,7 +61,7 @@
       return item;
     }) : []));
     // These are the host-side configurations that provide access to this RHEL guest.
-    const hostConfigurations = visible && stage >= 2 ? ['Firewall config', 'nginx / TLS config'] : [];
+    const hostConfigurations = visible && stage >= 2 && stage < 4 ? ['Firewall Config v1', 'nginx / TLS Config v1'] : [];
     byId(`${prefix}-rhel-configs`).replaceChildren(...hostConfigurations.map(name => {
       const item = element('div', 'rhel-config');
       item.dataset.origin = 'base';
@@ -130,22 +131,30 @@
     byId('target-placeholder').hidden = state.targetVisible;
     byId('target-card').hidden = !state.targetVisible;
     byId('target-card').setAttribute('aria-hidden', String(!state.targetVisible));
-    byId('successor-placeholder').hidden = state.successorVisible;
+    const manualChange = step.id === 'manual';
+    byId('manual-operator').hidden = !manualChange;
+    byId('source-column').classList.toggle('manual-active', manualChange);
+    byId('manual-operator').setAttribute('aria-hidden', String(!manualChange));
+    byId('manual-operator-title').textContent = manualChange ? 'Sysadmin · incident response' : '';
+    byId('manual-operator-description').textContent = manualChange
+      ? 'Creates an inventory, project and credential directly in AAP while resolving an outage.' : '';
+    byId('successor-placeholder').hidden = !state.successorPlaceholderVisible;
+    byId('successor-placeholder').setAttribute('aria-hidden', String(!state.successorPlaceholderVisible));
     byId('successor-card').hidden = !state.successorVisible;
     byId('successor-card').setAttribute('aria-hidden', String(!state.successorVisible));
     byId('successor-card').dataset.stage = '4';
-    drawRhel('target', step.stage, state.targetVisible, step.id === 'infrastructure');
+    drawRhel('target', step.stage, state.targetVisible, ['infrastructure', 'infra-change'].includes(step.id), state.flowOrigin);
     drawRhel('successor', 4, state.successorVisible);
     byId('successor-card').classList.toggle('captured', state.successorVisible);
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
     const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
     byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : step.id === 'base' ? 'Apply base' : step.id === 'git-change' ? 'Apply changes' : step.id === 'infra-change' ? 'Apply infra' : 'Apply objects';
-    byId('flow-apply').dataset.destination = step.id === 'infrastructure' ? 'rhel' : 'aap';
+    byId('flow-apply').dataset.destination = ['infrastructure', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
     byId('apply-detail').textContent = step.stage < 3 ? 'New VM' : 'New AAP';
     byId('target-objects').hidden = step.stage < 4;
     byId('target-configuration-panel').hidden = step.stage < 4;
-    byId('target-infrastructure-panel').hidden = step.stage < 4;
+    byId('target-infrastructure-panel').hidden = step.stage < 2;
     byId('target-card').dataset.stage = String(step.stage);
     byId('target-card').classList.toggle('captured', state.captured);
     byId('source-card').classList.toggle('phase-job', step.routes.length > 0);
@@ -182,7 +191,8 @@
     let executionFile = step.sources[0];
     if (step.id === 'git-change' || state.rebuilding) executionFile = '04-aap-config.yml + imports';
     else if (step.id === 'manual' || step.id === 'capture') executionFile = 'capture-aap-cac.yml';
-    else if (['separation', 'project', 'infra-change'].includes(step.id)) executionFile = 'cac-resource-definitions.yml';
+    else if (step.id === 'infra-change') executionFile = '02-infra-config.yml + imports';
+    else if (['separation', 'project'].includes(step.id)) executionFile = 'cac-resource-definitions.yml';
     byId('execution-file-name').textContent = executionFile;
     byId('job-label').textContent = step.job;
     byId('job-status').textContent = step.job;
@@ -191,7 +201,7 @@
       byId('actor-title').textContent = step.actor[0];
       byId('actor-description').textContent = step.actor[1];
     }
-    byId('feedback').textContent = state.rebuilding ? `${state.successorObjects.length} automation objects and ${state.successorConfiguration.length + state.successorInfrastructure.length} configuration profiles restored from Git` : index === 0 ? 'Two repositories. One repeatable configuration.' : step.id === 'manual' ? '3 manual additions · not recorded in Git yet' : step.id === 'capture' ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} automation objects · ${state.targetConfiguration.length} AAP configurations · ${state.targetInfrastructure.length} infrastructure job definitions`;
+    byId('feedback').textContent = state.successorPlaceholderVisible ? 'The saved Git configuration is ready for another AAP.' : state.rebuilding ? `${state.successorObjects.length} automation objects and ${state.successorConfiguration.length + state.successorInfrastructure.length} configuration profiles restored from Git` : index === 0 ? 'Two repositories. One repeatable configuration.' : step.id === 'manual' ? '3 manual additions · not recorded in Git yet' : step.id === 'capture' ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} automation objects · ${state.targetConfiguration.length} AAP configurations · ${state.targetInfrastructure.length} infrastructure job definitions`;
     byId('source-links').replaceChildren(...step.sources.map(path => {
       const link = element('a', 'source-link', path.split('/').at(-1));
       link.href = story.sourceRoot + path;
