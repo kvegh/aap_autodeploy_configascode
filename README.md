@@ -373,6 +373,10 @@ is retained. Current workflow definitions contain no manual approval nodes.
 Stage 01 verifies the native firewall policy against protected CaC and checks
 the persistent isolation service before allocating a new guest.
 Fresh-target EE acquisition and complete versioned AAP acceptance remain separate.
+The current base and five application EE definitions now select official Core
+2.20. Their reference and preservation audit passed; focused stock-image tests
+passed for AIOps, Assistant, Windows and RHEL. OpenShift execution remains deferred
+because its Python client is absent from the stock image.
 
 Keep AAP-owned integration tasks labeled `aap-autodeploy` alongside their
 conversation association and original parent so the existing export includes

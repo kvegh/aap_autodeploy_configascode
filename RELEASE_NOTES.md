@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.57.5
+
+Refresh completed EE-reference and workflow-gate task records. Record the scoped
+stock-image compatibility checks and retain fresh deployment acceptance and
+deferred OpenShift execution as separate outcomes.
+
 ## 0.57.4
 
 Record implementation `9763121` and its documentation-only scope.
