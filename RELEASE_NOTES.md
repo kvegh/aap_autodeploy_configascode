@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.57.1
+
+Document the platform-configuration story in c6ed2b0, compact proportion/colour
+changes in875473e and readable Git headings in7d66e99. Preserve source citations,
+verified Pages/live interaction evidence, browser-rendering limits and completed
+Beads recovery records. Runtime automation remains unchanged.
+
 ## 0.57.0
 
 Show AAP configuration separately from automation objects. Base setup creates

@@ -1,5 +1,37 @@
 # Design decisions history
 
+## Show platform configuration changing alongside automation content — 2026-11-12
+
+Implementation `c6ed2b04610a67e143025adb2f805bebc1e6f74d` adds separate AAP
+configuration panels at the owner's request. Stage 04 creates blue Logging
+Config v1 and EDA Config v1. A later Git change replaces the stable logging
+entry with violet v2 while EDA v1 and the original AAP's own configuration stay
+unchanged. Navigation restores the corresponding revision without duplicates.
+
+The YAML uses a real Controller logging queue setting with synthetic 10000 and
+20000 values. Settings follow the existing Stage 04 shared-configuration path;
+project imports remain separate in the code preview. EDA Config is an illustrative
+bundle of supported decision-environment/rulebook-activation definitions, not a
+new global-settings API. No runtime AAP change is made by this visualization.
+
+Fourteen named local and downloaded-live-asset interaction checks passed. Pages
+run `43239629244` completed successfully at 14:40:54 UTC and all five HTTPS assets
+matched source. Source tracing, independent bounded review, syntax, static HTML
+and whitespace checks passed. Browser-rendered layout remains unverified under
+the existing-tools-only decision.
+
+## Give Git code more room and match active flow colours — 2026-11-12
+
+Implementation `875473e8867a9b568830a399d865107fdf53e871` makes the repository
+column about 50 percent wider on a wide desktop and the source AAP narrower
+and shorter. It links arrow strokes, markers and action labels to the focused
+YAML/playbook origin: blue for deployment/base, violet for Git additions and
+amber for captured manual definitions. An interaction regression checks matching
+origins and navigation reset. Implementation
+`7d66e99d9fcf235aa02cd391d6a383d2a3708901` then changes the small repository-type
+labels to larger, dark Private Git Repository and Public Git Repository headings.
+Both publications passed exact live asset parity and thirteen interaction checks.
+
 ## Put the operational story beside a three-column diagram — 2026-11-12
 
 Implementation `e0a6d034b1104cd34373028db0ac82208f9f7234` follows the owner's

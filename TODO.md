@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-155 tasks: 29 outstanding; 126 closed.
+155 tasks: 28 outstanding; 127 closed.
 
 ## Outstanding tasks
 
@@ -39,7 +39,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.5 | Verify Automation Orchestrator against a disposable OpenShift cluster | deferred | P2 | task | bead-wd-72f.31 |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
-| bead-wd-hz1a | Refine the visualization and show AAP configuration updates | in_progress | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | in_progress | P2 | task | bead-wd-mcr |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
@@ -171,6 +170,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.9 | Reuse AutoDeploy repository read token for registry reads | closed | P2 | task | bead-wd-72f |
 | bead-wd-b3t | Store explicit AAP FQDNs in the shared host inventory | closed | P2 | task | — |
 | bead-wd-ddq | Disable website launch-variable prompt in CaC | closed | P2 | task | — |
+| bead-wd-hz1a | Refine the visualization and show AAP configuration updates | closed | P2 | task | — |
 | bead-wd-j0g.8 | Register RHEL CaC deployment with the shared importer and JT | closed | P2 | feature | bead-wd-j0g |
 | bead-wd-jjzm | Build the new two-instance AAP CaC visualization | closed | P2 | feature | — |
 | bead-wd-rhrk | Outline the new code-grounded AAP CaC visualization | closed | P2 | task | — |
