@@ -1,5 +1,30 @@
 # Design decisions history
 
+## Activate the verified EE-v1 default and preserve runtime boundaries — 2026-11-12
+
+Implementation `7e5d2e6e55f926d58701754b930b7bd6d4fa2854` records the
+successful native Source AAP job using the repaired publication: Core 2.20.10,
+99.483 seconds and no failed or unreachable hosts. The candidate retained its
+native registry credential and immutable manifest pin; temporary observer
+verbosity and target selection were restored after completion.
+
+The owner requested this derived image as the shared default. Source AAP's
+global default, all 62 managed templates and the Hactar project default now use
+EE-v1. The original official EE, upstream registry credential and historical
+jobs remain available. Maintained encrypted CaC mirrors the new portable names,
+immutable image and native base-owned private Hub pull credential, with
+unrelated values, YAML tags, allocation history and application-owned names
+preserved. The current Command Center capture has one template; the update
+preserves that current shape and its deferred installation.
+
+The failed initial Hub manifest was retired through the supported scoped
+remove-image action only after replacement acceptance. Native task completion
+and exact repository-content preservation were verified; no physical artifact
+or global orphan cleanup was performed. DNS checks continue to use native tools
+without dnspython or the retired delegation workaround. Fresh receiver registry
+access is still a separate network-policy decision, so Source acceptance does
+not claim complete receiver configuration or application acceptance.
+
 ## Require uncached remote EE verification — 2026-11-12
 
 Implementation `5c8f46a` corrects an overstatement in the initial EE-v1

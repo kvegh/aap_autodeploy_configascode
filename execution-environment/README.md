@@ -18,6 +18,8 @@ Ansible collections continue to come from native project
 `collections/requirements.yml` files and the receiving organization's configured
 authenticated Galaxy sources. This image does not bake collections or replace
 Core, Runner, the operating system, the base entrypoint or the base command.
+DNS validation continues to use the existing native tools; this build does not
+add dnspython or reintroduce the retired lookup/delegation workaround.
 The derived image is a separately maintained artifact; record its build and
 validation evidence with its release.
 
@@ -28,7 +30,7 @@ HTTP/TLS and XML/YAML libraries. No third-party Ansible collections were found.
 
 ## Build and verify
 
-Run these commands from the repository root using the existing Podman installation
+Run these commands from the repository root using the existing Podman and Skopeo installations
 and approved registry access. Inspect the exact local base digest first and
 match its image ID against the protected base inventory receipt. If the image is
 missing, obtain that exact digest through the existing authenticated Red Hat
@@ -161,3 +163,17 @@ Three real-Ansible fixtures passed in the actual stock Core 2.20.10 EE with
 update/idempotency and seven refusal scenarios. Both complete playbook syntax
 checks passed. This verifies future deployment behavior without rerunning the
 completed installer.
+
+## Retire a failed owned publication
+
+After its replacement passes uncached integrity and normal AAP execution, use
+Hub's supported repository `remove_image` action for the exact failed manifest.
+Check the owning repository, tags, signatures and manifest-list references
+before submission, record the returned native task and follow it to completion.
+Verify that the replacement and shared content remain in the latest repository
+version. Do not assume a registry DELETE endpoint exists, bypass an unsupported
+repair policy, edit storage or use global orphan cleanup for a single image.
+
+The initial failed `1.0.0` manifest is now absent from the current owned
+repository. The healthy `1.0.1` image and shared configuration/layers were
+preserved, and physical artifact files remained unchanged.

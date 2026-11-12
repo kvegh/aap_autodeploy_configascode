@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.59.9
+
+Record native EE-v1 acceptance, verified Source default activation and maintained
+CaC migration. Explain supported retirement of the failed publication and retain
+receiver network access and deferred application acceptance as separate work.
+
 ## 0.59.8
 
 Record the passing native Core 2.20.10 job for verified EE-v1 publication 1.0.1
