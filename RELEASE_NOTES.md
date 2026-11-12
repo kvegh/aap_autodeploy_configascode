@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.52.19
+
+Document implementation 8e400c0, the implicit-localhost interpreter regression
+and the real vendor fact task's pinned read-only SSH verification. Preserve the
+failed live attempt separately from the next access-repair acceptance result.
+
 ## 0.52.18
 
 Preserve the selected hypervisor's Python interpreter override, or its normal

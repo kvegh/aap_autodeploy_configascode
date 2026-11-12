@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Preserve the target interpreter after clearing role delegation — 2026-11-12
+
+Implementation `8e400c0` completes the connection context for the firewall role.
+The first live nondelegated retry failed during the vendor role's fact task,
+before package selection. Source inventory has no explicit localhost entry;
+Ansible's implicit localhost supplies the execution container's Python path.
+That path must not be inherited by an SSH task on the hypervisor.
+
+Both role calls now use the selected hypervisor's existing interpreter override
+or normal remote discovery. No new interpreter path, package backend, credential,
+vendor patch or execution environment is introduced. The regression reproduces
+the omitted controller-only Python input and passes with the corrected setting.
+The actual vendor fact task also passed a machine-pinned read-only SSH check;
+the old context failed. Source retry `3610` remains failed and its exact raw
+message remains censored. Syntax, focused production lint and whitespace pass;
+the next normal tagged retry must separately prove live acceptance.
+
 ## Keep direct SSH while avoiding the unsafe delegated package lookup — 2026-11-12
 
 Implementation `ae03bb3` clears inherited delegation only inside the certified
