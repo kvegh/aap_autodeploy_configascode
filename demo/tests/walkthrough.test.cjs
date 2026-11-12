@@ -163,7 +163,7 @@ test('the actual HTML hides future objects before scripts run and uses local ass
   assert.doesNotMatch(opening('source-card'), /\bhidden\b/);
   for (const route of futureRoutes) assert.match(opening(route), /\bhidden\b/);
   for (const route of ['flow-config', 'flow-code']) assert.doesNotMatch(opening(route), /\bhidden\b/);
-  for (const match of html.matchAll(/(?:href|src)="([^"#]+\.(?:css|js|svg))"/g)) assert.ok(existsSync(path.join(demo, match[1])), match[1]);
+  for (const match of html.matchAll(/(?:href|src)="([^"#]+\.(?:css|js|svg|png))"/g)) assert.ok(existsSync(path.join(demo, match[1])), match[1]);
   assert.match(source('src/styles.css'), /\[hidden\][\s\S]{0,100}display\s*:\s*none/);
 });
 
@@ -514,7 +514,8 @@ test('another AAP receives the complete Git snapshot only after capture and reve
     assert.deepEqual([...ordered].sort((left, right) => left - right), ordered, `${prefix}: automation is followed by AAP settings, then RHEL`);
   }
   const styles = source('src/styles.css');
-  assert.match(styles, /\.receiving-column \.aap-settings-panel\s*\{[^}]*margin:\s*\d+px\s+[1-9]\d*px(?:\s+[^;]+)?;/, 'The settings divider is inset from the card edges');
+  assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/, 'Receiving content declares independent vertical layout');
+  assert.match(styles, /\.receiving-column \.aap-settings-panel\s*\{[^}]*margin:\s*auto\s+[1-9]\d*px\s+0;/, 'Settings declare bottom anchoring while the divider stays inset');
   assert.match(styles, /\.aap-settings-panel::before\s*\{[^}]*border-top:\s*1px solid/, 'The category has one thin separator');
   assert.equal(successorItems.filter(item => item.dataset.origin === 'base').length, 4);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'git').length, 6);
@@ -790,6 +791,18 @@ test('the incident-response sysadmin appears only for direct manual AAP changes'
   const html = source('index.html');
   const opening = html.match(/<[^>]*\bid="manual-operator"[^>]*>/);
   assert.ok(opening);
+  const figure = html.slice(opening.index, html.indexOf('</figure>', opening.index) + '</figure>'.length);
+  const image = figure.match(/<img\b([^>]*\bclass="[^"]*\bsysadmin-illustration\b[^"]*"[^>]*)>/);
+  assert.ok(image, 'The sysadmin uses its generated local image');
+  const imageAttributes = attributes(new Element('img'), image[1]).attributes;
+  assert.equal(imageAttributes.src, 'sysadmin.png');
+  assert.equal(imageAttributes.alt, '', 'The visible figure caption provides the description');
+  assert.equal(imageAttributes['aria-hidden'], 'true');
+  assert.doesNotMatch(figure, /<svg\b[^>]*\bclass="[^"]*\bsysadmin-illustration\b/, 'The old sysadmin SVG is removed');
+  const png = readFileSync(path.join(demo, imageAttributes.src));
+  assert.ok(png.length <= 8 * 1024 * 1024, 'The image stays within the live checker limit');
+  assert.ok(png.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex')), 'The local image is PNG');
+
   assert.match(opening[0], /\bhidden\b/);
   assert.match(opening[0], /aria-hidden="true"/);
   const page = browser();

@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.61.8
+
+Anchor receiving AAP settings at the bottom from initial setup so the divider
+does not shift as objects are added. Replace the SVG operator with a simple,
+expressive generated Linux sysadmin image, preserving the seated incident posture,
+hoodie/glasses/coffee cues, transparency and manual-only visibility. Publish and
+verify the PNG alongside the five existing assets. Preserve the existing flow.
+
+Document preceding implementation `89496f6` and its successful Pages run
+43308022666: five deployed assets matched and twenty-three checks passed.
+Browser geometry remains independently unverified.
+
 ## 0.61.7
 
 Separate AAP settings below the two compact automation-object columns in both

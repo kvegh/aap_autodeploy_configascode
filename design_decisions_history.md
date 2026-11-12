@@ -1,5 +1,30 @@
 # Design decisions history
 
+## Separate platform settings and give the manual operator a clear role — 2026-11-12
+
+Implementation `89496f61d3bb994a85d1319128033e24b31550ea` (source 0.61.7)
+puts AAP configuration in its own full-width bottom category in both receiving
+AAPs. One thin horizontal rule is inset from the card edges; RHEL remains below.
+Inventories/Credentials and Projects/Job Templates form two independent compact
+columns above it. This separates platform settings from automation content while
+retaining all thirteen objects and the existing no-inner-scroll presentation.
+
+The owner selected an experienced Linux administrator's appearance with the
+incident responder's working posture and outage alert. The seated native SVG
+uses a plain dropped hood, glasses, clear clothing/chair, hands on the laptop,
+one mug and a small amber alert. It appears only for manual changes above the
+original AAP; the existing amber path still enters the first receiving AAP.
+No external illustration, dependency or new runtime operation was introduced.
+
+Twenty-three local interaction checks passed. One old test assumed identical
+source/receiver traversal order; comparing membership while separately asserting
+the approved column order corrected that test without changing application
+behavior. App/scenario syntax, SVG XML/security and whitespace checks passed.
+Pages run 43308022666 completed successfully. All five published assets matched
+the checkout and twenty-three deployed interaction checks passed (652.2 ms).
+Browser geometry and the rendered illustration remain independently unverified;
+no browser/renderer was installed. Concurrent encrypted diagnostics were preserved.
+
 ## Use recognisable illustrative object names — 2026-11-12
 
 Implementation `49115f50d90e86d34bab9138b06c5aeb1ee54ad0` (source 0.61.5)

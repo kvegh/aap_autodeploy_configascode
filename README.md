@@ -306,7 +306,8 @@ or live AAP operation.
 Captured manual-origin definitions remain amber when replayed to the next AAP. During the manual-change stop, a
 seated Linux sysadmin above the small original AAP wears a plain hoodie and glasses,
 leaning toward a laptop with hands on the keyboard. A small amber outage alert
-and one coffee mug establish the incident-response scene. An amber arrow shows their
+and one coffee mug establish the incident-response scene. The illustration is a
+locally stored generated PNG; its prompt is documented in the demo guide. An amber arrow shows their
 configuration entering the first receiving AAP directly; the figure disappears
 when the scan brings those definitions into Git.
 
@@ -316,7 +317,8 @@ and the original AAP centred between them. Each receiving AAP uses
 two independently packed, unboxed object columns: Inventories/Credentials on the
 left and Projects/Job Templates on the right. AAP configuration is a separate
 full-width category below them, divided by one light inset horizontal line; RHEL
-remains underneath. Compact bars
+remains underneath. The settings category stays anchored at the bottom as
+objects fill the space above. Compact bars
 keep all definitions visible without internal receiving-card scrolling. The first destination aligns with the upper code window;
 the lower AAP rectangle is hidden throughout the main story. “Room for another AAP”
 appears only in a brief preparation stop immediately before the final deployment,
@@ -342,7 +344,7 @@ are in [demo/README.md](demo/README.md). Existing-tool checks cover story behavi
 and source mapping; rendered browser and phone layout remain separately unverified.
 
 The retained [GitHub Pages workflow](.github/workflows/deploy-demo.yml) checks
-source after checkout, runs syntax and interaction tests and deploys the five
+source after checkout, runs syntax and interaction tests and deploys the six
 allowlisted public assets after matching main pushes. Pages uses GitHub Actions;
 pull requests only check. No frontend dependency installation or build is needed.
 
