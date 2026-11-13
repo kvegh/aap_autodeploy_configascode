@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.61.23
+
+Document the previously missing `31dab22` component-width and project-import
+decision. Preserve all later layout revisions and distinguish interaction checks
+from rendered browser acceptance. Task overview and encrypted recovery-export
+refresh remain separately pending; no runtime or visualization asset changes.
+
 ## 0.61.22
 
 Document dual-preview publisher `26a34d2`, its exact tested-revision pin, existing

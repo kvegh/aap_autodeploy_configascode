@@ -295,6 +295,10 @@ do not establish live migration or complete end-to-end acceptance.
 
 ## AAP Configuration as Code visualization
 
+The [decision history](design_decisions_history.md) records the original
+component-width and project-import choices separately from later layout fixes
+and their verification limits.
+
 A separate [light-style comparison](https://kvegh.github.io/aap_autodeploy_configascode/light/)
 is maintained on the `visualization-light` branch. The existing presentation
 remains at the site root. The main Pages workflow checks both versions, pins

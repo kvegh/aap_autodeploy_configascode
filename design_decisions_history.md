@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Document the original shared-width and project-import decision — 2026-11-13
+
+Implementation `31dab22dc9fa821f6b858c321214ec2c45f99da0` (source 0.61.10)
+introduced common component columns and gutters for automation objects, AAP
+settings and RHEL profiles. It retained the bottom-anchored settings divider,
+generated administrator image, complete replay and existing navigation.
+The owner also moved Regional servers and Regional automation into Apply
+objects with the other project content. The later Git update changes Logging
+without importing more automation objects.
+
+The recorded source checks, six-asset publication comparison and twenty-three
+deployed interaction checks passed for that revision. They did not establish
+rendered browser geometry. The later stretch correction `512a2e5` and the
+subsequent proportional-width and alignment decisions remain authoritative for
+their later revisions; this entry does not restore the earlier CSS or repeat
+its source-only width assertions as browser acceptance.
+
+This fills the missing implementation history returned to the original
+AutoDeploy conversation. Fresh public task overviews and the encrypted recovery
+snapshot still require their separately reviewed export helper; this
+documentation update does not refresh those records or run any deployment.
+
 ## Publish both presentation variants through the existing Pages site — 2026-11-13
 
 Implementation `26a34d2395eb8d83b2f5e7ee6363d328dc7d903f` (source 0.61.21)
