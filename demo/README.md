@@ -18,7 +18,7 @@ Backwards navigation, restart and direct links restore the corresponding state.
 
 The interface uses a light canvas and labelled origin colours: blue for base
 objects, violet for Git-defined additions and amber for manually created objects.
-A left sidebar holds chapter navigation, the four deployment stages, job status,
+A left sidebar holds chapter navigation, job status,
 progress and presenter controls. The main diagram has three columns: compact
 repositories, the original AAP and two receiving slots. The repository and
 receiving columns share equal widths and matching rows: the first new AAP aligns
@@ -226,8 +226,9 @@ python3 -m http.server 8765 --directory demo --bind 127.0.0.1
 ```
 
 Open the local URL only on the host running the server, or through an existing
-supported forwarding mechanism. Next/Previous, the seven chapter buttons, the
-four stage buttons, arrow keys, R and restart navigate the same state. Source
+supported forwarding mechanism. Next/Previous, the seven chapter buttons,
+arrow keys, R and restart navigate the same state. The separate deployment-stage
+sidebar controls are removed; the four deployment stops remain in the story. Source
 links open the real implementation. Motion honours reduced-motion preferences.
 
 The Node tests exercise the real scripts against a disposable DOM and check

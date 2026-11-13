@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.61.17
+
+Remove the AAP Deployment section and its four sidebar buttons, including unused
+event handlers and styles. Preserve the deployment story stops through the main
+chapter, Next/Previous, keyboard and hash navigation.
+
 ## 0.61.16
 
 Document responsive component sizing and coloured-bar text implementation

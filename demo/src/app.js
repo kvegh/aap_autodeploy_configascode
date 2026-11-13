@@ -102,8 +102,6 @@
     byId('chapter-list').append(button);
     return button;
   });
-  const stages = [...byId('stage-list').querySelectorAll('[data-stage]')];
-  stages.forEach(button => button.addEventListener('click', () => navigate(Number(button.dataset.stage))));
   function render() {
     const state = story.stateAt(index);
     const { step } = state;
@@ -123,12 +121,6 @@
       button.classList.toggle('complete', position < currentChapter);
       if (active) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current');
       if (active && !wasActive) button.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-    });
-    stages.forEach(button => {
-      const stage = Number(button.dataset.stage);
-      button.classList.toggle('active', step.chapter === 'deployment' && step.stage === stage);
-      button.classList.toggle('complete', step.stage >= stage);
-      if (step.chapter === 'deployment' && step.stage === stage) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current');
     });
     byId('target-placeholder').hidden = state.targetVisible;
     byId('target-card').hidden = !state.targetVisible;

@@ -300,7 +300,8 @@ to follow an original AAP, its first destination and another AAP rebuilt from
 Git, keeping private encrypted YAML separate from public execution playbooks.
 Seven chapters contain twelve stops: four deployment stages, project imports,
 platform/infrastructure configuration updates, manual additions, capture and a
-complete replay from Git.
+complete replay from Git. Deployment stops use the main chapter and Next/Previous
+navigation; the redundant AAP Deployment sidebar section is removed.
 Regional servers and Regional automation arrive during Apply objects with
 Satellite Inventory and Application automation playbooks. The later AAP settings
 update changes Logging to v2 without adding automation objects.

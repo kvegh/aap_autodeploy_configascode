@@ -51,10 +51,6 @@ class Element {
   addEventListener(name, callback) { (this.handlers[name] ||= []).push(callback); }
   scrollIntoView(options) { this.scrollRequests.push(options); }
   click() { if (!this.disabled) (this.handlers.click || []).forEach(callback => callback({ target: this })); }
-  querySelectorAll(selector) {
-    assert.equal(selector, '[data-stage]');
-    return descendants(this).filter(node => node.dataset.stage !== undefined);
-  }
   closest() {
     for (let node = this; node; node = node.parentElement) {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName) || node.attributes.contenteditable === 'true') return node;
@@ -75,10 +71,6 @@ function browser(hash = '') {
   for (const match of html.matchAll(/<([a-z][\w:-]*)\b([^>]*\bid="([^"]+)"[^>]*)>/gi)) {
     assert.equal(nodes[match[3]], undefined, `Duplicate HTML ID ${match[3]}`);
     nodes[match[3]] = attributes(new Element(match[1]), match[2]);
-  }
-  for (const match of html.matchAll(/<button\b([^>]*\bdata-stage=(?:"[^"]+"|'[^']+')[^>]*)>/gi)) {
-    const button = attributes(new Element('button'), match[1]);
-    nodes['stage-list'].append(button);
   }
   const document = {
     handlers: {},
@@ -169,25 +161,25 @@ test('the actual HTML hides future objects before scripts run and uses local ass
   assert.match(source('src/styles.css'), /\[hidden\][\s\S]{0,100}display\s*:\s*none/);
 });
 
-test('the four real stage buttons reveal VM, installed AAP, then base objects', () => {
+test('Next reveals all four deployment stops without separate sidebar stage controls', () => {
   const { nodes } = browser();
   const sourceNames = objectNames(nodes['source-objects']);
   assert.equal(nodes['target-card'].hidden, true);
   assert.equal(nodes['target-placeholder'].hidden, false);
   assert.equal(nodes['previous'].disabled, true);
-  const buttons = nodes['stage-list'].querySelectorAll('[data-stage]');
-  assert.equal(buttons.length, 4);
-  buttons.forEach((button, index) => {
-    button.click();
+  assert.equal(nodes['stage-list'], undefined, 'The redundant stage section is deleted');
+  assert.doesNotMatch(source('index.html'), /AAP DEPLOYMENT|<button\b[^>]*data-stage=/);
+  for (const [index, step] of ['vm', 'infrastructure', 'installation', 'base'].entries()) {
+    nodes.next.click();
+    assert.equal(nodes['target-card'].dataset.stage, String(index + 1));
+    assert.equal(nodes['scene-title'].textContent, story.steps.find(item => item.id === step).title);
     assert.equal(nodes['target-card'].hidden, false);
     assert.equal(nodes['target-placeholder'].hidden, true);
     assert.equal(nodes['target-card'].attributes['aria-hidden'], 'false');
     assert.equal(nodes['target-title'].textContent, index < 2 ? 'New RHEL VM' : 'New AAP');
     assert.equal(nodes['target-objects'].hidden, index < 3);
     assert.deepEqual(objectNames(nodes['target-objects']).sort(), index < 3 ? [] : [...sourceNames].sort());
-    assert.equal(button.attributes['aria-current'], 'step');
-    assert.equal(buttons.filter(item => item.attributes['aria-current'] === 'step').length, 1);
-  });
+  }
 });
 
 test('the source job reads both repositories and applies project objects', () => {
@@ -386,7 +378,7 @@ test('the sidebar owns controls and status while three content columns own the d
     if (depth === 0) { sidebar = html.slice(opening.index, opening.index + tag.index + tag[0].length); break; }
   }
   assert.ok(sidebar, 'The sidebar has a matching closing tag');
-  for (const id of ['chapter-list', 'stage-list', 'previous', 'next', 'restart', 'step-count', 'progress-fill', 'feedback', 'legend']) {
+  for (const id of ['chapter-list', 'previous', 'next', 'restart', 'step-count', 'progress-fill', 'feedback', 'legend']) {
     assert.match(sidebar, new RegExp(`\\bid="${id}"`), `${id} belongs in the sidebar`);
   }
   const main = html.match(/<main\b[^>]*id="story"[^>]*>/);
