@@ -330,8 +330,11 @@ full-width category below them, divided by one light inset horizontal line; RHEL
 remains underneath. The settings category stays anchored at the bottom as
 objects fill the space above. Automation, AAP-setting and RHEL configuration
 bars follow the Deploy application screenshot proportions, scaling with each
-AAP rather than using a fixed width. Two equal columns share equal left, middle
-and right gutters. Names and object counts do not resize the bars. Text inside
+AAP rather than using a fixed width. The two stacks start just inside their
+respective halves, with small vertical gaps between blocks. Names and object
+counts do not resize the bars. Repeated object badges are deleted; a single
+colour legend below the original middle AAP explains blue base configuration,
+purple Git-defined changes and yellow manual configuration captured back to Git. Text inside
 the coloured bars is two sizes larger; headings, sidebar and code text retain
 their existing sizes. Compact bars
 keep all definitions visible without internal receiving-card scrolling. The first destination aligns with the upper code window;

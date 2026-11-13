@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.61.19
+
+Replace repeated object origin/capture badges with one explanatory colour legend
+below the original AAP. Left-align responsive component stacks within their
+respective halves, with a small inset and tiny vertical gaps. Keep accessible
+origin/capture descriptions and all story behavior.
+
 ## 0.61.18
 
 Document sidebar removal `e65e534`, preserved main-story navigation and the

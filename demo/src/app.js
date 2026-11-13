@@ -10,8 +10,13 @@
     return node;
   };
   const objectTypes = ['Inventories', 'Projects', 'Credentials', 'Job Templates'];
+  const originDescriptions = {
+    base: 'Base CaC configuration at AAP deployment',
+    git: 'New configuration and changes defined in CaC Git',
+    manual: 'Manual change made directly in AAP',
+  };
   let index = Math.max(0, story.steps.findIndex(step => `#${step.id}` === window.location.hash));
-  function drawObjects(container, objects, replayedFromGit = false, independentColumns = false) {
+  function drawObjects(container, objects, independentColumns = false) {
     const groups = objectTypes.map(type => {
       const items = objects.filter(object => object.type === type);
       const group = element('section', 'object-group');
@@ -20,9 +25,10 @@
         const item = element('div', 'object-item');
         item.dataset.origin = object.origin;
         item.append(element('span', 'object-name', object.name));
-        const label = object.origin === 'base' ? 'Base' : object.origin === 'git' ? 'From Git' : replayedFromGit ? 'Captured' : 'Manual';
-        item.append(element('span', 'origin-label', label));
-        if (object.origin === 'manual' && object.inGit) item.append(element('span', 'git-badge', 'In Git'));
+        item.dataset.inGit = String(object.inGit);
+        const captureState = object.origin === 'manual' ? (object.inGit ? '; saved in Git' : '; not yet saved in Git') : '';
+        item.setAttribute('role', 'group');
+        item.setAttribute('aria-label', `${object.name}. ${originDescriptions[object.origin]}${captureState}`);
         group.append(item);
       }
       return group;
@@ -42,7 +48,8 @@
       item.dataset.origin = config.origin;
       item.dataset.configId = config.id;
       item.append(element('span', 'object-name', config.name));
-      item.append(element('span', 'origin-label', config.origin === 'base' ? 'Base' : 'From Git'));
+      item.setAttribute('role', 'group');
+      item.setAttribute('aria-label', `${config.name}. ${originDescriptions[config.origin]}`);
       return item;
     }));
   }
@@ -70,7 +77,9 @@
     byId(`${prefix}-rhel-configs`).replaceChildren(...hostConfigurations.map(name => {
       const item = element('div', 'rhel-config');
       item.dataset.origin = 'base';
-      item.append(element('span', 'rhel-config-name', name), element('span', 'rhel-config-origin', 'Base'));
+      item.append(element('span', 'rhel-config-name', name));
+      item.setAttribute('role', 'group');
+      item.setAttribute('aria-label', `${name}. ${originDescriptions.base}`);
       return item;
     }));
   }
@@ -177,9 +186,9 @@
     drawConfiguration(byId('source-infrastructure'), state.sourceInfrastructure);
     drawConfiguration(byId('target-infrastructure'), state.targetInfrastructure);
     drawConfiguration(byId('successor-infrastructure'), state.successorInfrastructure);
-    drawObjects(byId('successor-objects'), state.successorObjects, true, true);
+    drawObjects(byId('successor-objects'), state.successorObjects, true);
     drawObjects(byId('source-objects'), state.sourceObjects);
-    drawObjects(byId('target-objects'), state.targetObjects, false, true);
+    drawObjects(byId('target-objects'), state.targetObjects, true);
     drawCode(byId('config-lines'), story.configurationLines(state));
     drawCode(byId('code-lines'), story.executionLines(state), step.routes.includes('flow-code') ? (state.rebuilding ? 'git' : state.flowOrigin) : undefined);
     let executionFile = step.sources[0];

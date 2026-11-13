@@ -34,15 +34,16 @@ at the bottom of the receiving AAP body from initial setup, reserving empty
 space for objects above so the divider does not follow their growing count.
 All component bars follow the Deploy application reference proportions from the
 supplied screenshot, including AAP Logging/EDA and RHEL Certificate/Firewall.
-Each receiving slot provides its own width reference: the left, middle and right
-gutters each use 4.7 percent of that slot's width, with two equal flexible tracks
-between them. Bars and gutters scale together without a fixed bar width. The
-RHEL boxes retain their compact right-hand stack, aligned with the object and
-AAP-setting columns. Text and object counts do not change bar length between
-stages. Coloured bar names are two sizes larger (15px-equivalent automation/AAP
-names and 14px-equivalent RHEL names, expressed in relative rem units); their
-origin badges also increase by two sizes. Category headings, sidebar and code
-text are unchanged. Text wraps without an internal receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
+Two equal halves hold left-aligned stacks with a small inset of 2 percent of
+the receiving AAP width. Bars share 43 percent of that AAP width and scale with
+it; their width does not depend on their names or the number of objects. Small
+vertical gaps separate adjacent blocks. RHEL configurations remain stacked in
+the right half, aligned with the project and AAP-setting bars.
+Coloured bar names retain their larger relative font sizes. Repeated Base,
+From Git, Manual, Captured and In Git badges are deleted. One blue/purple/yellow
+legend below the original middle AAP explains the colours and capture story.
+Accessible descriptions retain origins and whether manual changes are saved
+in Git. Category headings, sidebar and code text are unchanged. Text wraps without an internal receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
 available canvas height, centred with balanced top/bottom spacing rather than a
 fixed 860px maximum. Major card borders are dark 3px and Git previews use 14px text;
 the repository-type headings use 17px text. If a short viewport still requires scrolling,
@@ -53,15 +54,15 @@ remain deferred while the owner tries this height-first revision. The sidebar us
 labels, a persistent current-step heading and distinct completed/current chapters;
 chapter changes keep the active navigation item in view. There is no marketing hero
 or explanatory scene header above the diagram. Stage 02 is labelled **Prepare OS
-for AAP installation**. Strong fills, borders and labelled badges distinguish the
-origins. Active connectors use a bold directional line, brief travelling markers
+for AAP installation**. Strong fills, borders and the central legend distinguish the origins. Active connectors use a bold directional line, brief travelling markers
 and normal HTML action labels, avoiding stretched SVG text. Arrow strokes,
 markers and labels share the highlighted code/object-origin colour: deployment
 and base configuration remain blue, Git-defined additions use violet, and
 captured manual definitions use amber. The highlighted YAML identifies the
 definitions in focus; execution-code highlighting means code being read, not a
 change to the public playbook. Reduced motion keeps the strong static activity cue.
-Captured manual objects keep their origin and gain an **In Git** badge. The
+Captured manual objects keep their yellow origin; the returned definitions and
+step feedback show that they are saved in Git. The
 private repository carries a lock; its YAML is an illustrative decrypted view,
 not ciphertext rendered as readable text. The repository-type headings read
 **Private Git Repository** and **Public Git Repository**, using larger dark text

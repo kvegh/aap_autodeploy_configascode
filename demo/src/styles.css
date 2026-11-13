@@ -66,9 +66,9 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .button-restart svg { width:18px; height:18px; }
 .button-restart:hover { color:#326bd2; }
 .feedback { min-height:29px; margin:12px 0; color:#4c6586; font-size:12px; line-height:1.5; }
-.legend { display:flex; flex-direction:column; gap:6px; padding-top:10px; border-top:1px solid #edf1f7; }
-.legend > span { display:flex; align-items:center; gap:7px; color:#4e6685; font-size:11px; }
-.legend-dot { display:inline-block; width:8px; height:8px; border-radius:2px; }
+.legend { display:flex; flex-direction:column; flex:none; gap:.5rem; padding:.75rem .25rem 0; border-top:1px solid #dfe6f0; }
+.legend > span { display:flex; align-items:flex-start; gap:.5rem; color:#4e6685; font-size:.8125rem; line-height:1.4; }
+.legend-dot { display:inline-block; flex:none; width:.625rem; height:.625rem; margin-top:.25rem; border-radius:.125rem; }
 .origin-base { background:var(--origin-base); }
 .origin-git { background:var(--origin-git); }
 .origin-manual { background:var(--origin-manual); }
@@ -107,7 +107,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .file-caption { color:#99a7ba; font-size:8px; }
 .aap-card { display:flex; flex-direction:column; min-width:0; min-height:0; height:100%; overflow:hidden; border:3px solid #617792; border-radius:11px; background:#fff; box-shadow:0 6px 20px #284a7d06; transition:border-color 180ms,box-shadow 180ms; }
 .source-column { position:relative; display:flex; flex-direction:column; justify-content:center; gap:12px; min-width:0; min-height:0; --instance-gap:88px; }
-.source-aap { flex:none; align-self:center; width:100%; height:min(475px,100%); }
+.source-aap { flex:0 1 auto; align-self:center; width:100%; height:min(475px,100%); }
 .source-column.manual-active .source-aap { height:min(475px,calc(100% - 192px)); }
 .aap-card.phase-job { border-color:#2763c2; box-shadow:0 0 0 3px #e2ecff; }
 .aap-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-height:64px; padding:10px 12px; flex:none; }
@@ -121,15 +121,15 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .aap-content { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:start; align-items:start; gap:10px 12px; flex:1; min-width:0; min-height:0; padding:12px; overflow:auto; scrollbar-width:thin; scrollbar-color:#d2def0 transparent; }
 .source-aap .aap-content { grid-template-columns:minmax(0,1fr); }
 /* Independent stacks avoid the empty row space created by synchronising whole groups. */
-/* Scale the screenshot proportions with each receiving slot, sharing all three gutters. */
-.receiving-column { --aap-gutter:4.7cqw; --aap-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(min-content,1fr)); }
-.receiving-column .receiving-slot { min-height:min-content; container-type:inline-size; }
-.receiving-column .aap-card { min-height:min-content; overflow:visible; }
-.receiving-column .aap-content { display:flex; flex-direction:column; align-items:stretch; gap:8px; flex:1 0 auto; min-height:min-content; padding:6px var(--aap-gutter); overflow:visible; }
-.object-list.receiving-catalog { display:grid; grid-template-columns:var(--aap-columns); align-items:start; gap:var(--aap-gutter); }
-.aap-object-column { display:flex; flex-direction:column; gap:6px; min-width:0; }
+/* Each stack starts just inside its half, retaining shared responsive bar widths. */
+.receiving-column { --aap-inset:2cqw; --aap-bar-width:43cqw; --aap-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(min-content,1fr)); }
+.receiving-column .receiving-slot { min-height:min-content; }
+.receiving-column .aap-card { min-height:min-content; overflow:visible; container-type:inline-size; }
+.receiving-column .aap-content { display:flex; flex-direction:column; align-items:stretch; gap:8px; flex:1 0 auto; min-height:min-content; padding:6px 0; overflow:visible; }
+.object-list.receiving-catalog { display:grid; grid-template-columns:var(--aap-columns); align-items:start; gap:0; }
+.aap-object-column { width:var(--aap-bar-width); margin-inline-start:var(--aap-inset); display:flex; flex-direction:column; gap:6px; min-width:0; }
 .receiving-catalog .object-type,.aap-settings-panel .configuration-heading { margin:0 0 4px; font-size:11px; line-height:1.3; }
-.receiving-catalog .object-item,.aap-settings-panel .object-item { gap:2px 4px; min-height:22px; margin:1px 0; padding:1px 4px; }
+.receiving-catalog .object-item,.aap-settings-panel .object-item { gap:2px 4px; min-height:22px; margin:.125rem 0; padding:1px 4px; }
 .receiving-catalog .object-name,.aap-settings-panel .object-name { font-size:.9375rem; }
 
 .configuration-panels,.object-list { display:contents; }
@@ -141,18 +141,15 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 /* Fill spare catalogue space above settings so the divider stays at its final bottom position. */
 .receiving-column .receiving-catalog { flex:none; }
 .receiving-column .aap-settings-panel { position:relative; flex:none; margin:auto 0 0; padding:8px 0 0; }
-.aap-settings-panel::before { content:""; position:absolute; top:0; left:0; right:0; border-top:1px solid #c8d2df; }
-.aap-settings-panel .configuration-list { grid-template-columns:var(--aap-columns); gap:2px var(--aap-gutter); }
+.aap-settings-panel::before { content:""; position:absolute; top:0; left:var(--aap-inset); right:var(--aap-inset); border-top:1px solid #c8d2df; }
+.aap-settings-panel .configuration-heading { margin-inline-start:var(--aap-inset); }
+.aap-settings-panel .configuration-list { grid-template-columns:var(--aap-columns); gap:.1875rem 0; }
+.aap-settings-panel .configuration-item { width:var(--aap-bar-width); margin-inline-start:var(--aap-inset); }
 .object-item { display:flex; align-items:center; flex-wrap:wrap; gap:4px 6px; min-width:0; min-height:26px; margin:3px 0; padding:3px 6px; border:1px solid transparent; border-left-width:4px; border-radius:5px; font-size:.9375rem; line-height:1.35; }
 .object-item[data-origin="base"] { color:#153f7e; background:var(--origin-base-soft); border-left-color:var(--origin-base); }
 .object-item[data-origin="git"] { color:#48217e; background:var(--origin-git-soft); border-left-color:var(--origin-git); }
 .object-item[data-origin="manual"] { color:#653b00; background:var(--origin-manual-soft); border-left-color:var(--origin-manual); }
 .object-name { min-width:0; overflow-wrap:anywhere; color:inherit; font-size:.9375rem; }
-.origin-label { margin-left:auto; padding:2px 5px; border-radius:3px; color:#fff; font-size:.625rem; font-weight:650; white-space:nowrap; }
-[data-origin="base"] > .origin-label { background:#2455af; }
-[data-origin="git"] > .origin-label { background:#6530a8; }
-[data-origin="manual"] > .origin-label { background:#985300; }
-.git-badge { margin-left:auto; padding:2px 4px; border:1px solid #a3b1c6; border-radius:3px; color:#4e6586; background:#fff; font-size:.625rem; font-weight:650; white-space:nowrap; }
 .job-panel { display:flex; align-items:center; gap:9px; min-height:44px; margin-top:auto; padding:7px 10px; flex:none; color:#627fae; }
 .job-icon { width:20px; height:20px; }
 .job-panel > div { min-width:0; }
@@ -197,21 +194,20 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .target-footer,.job-panel { order:3; }
 /* Preparation stays on the left; one compact stack of configuration bars sits on the right. */
 .rhel-foundation { order:4; display:grid; grid-template-columns:minmax(86px,.8fr) minmax(0,1.2fr); grid-template-areas:"heading configs" "progress configs"; align-content:center; align-items:start; gap:4px 8px; flex:none; margin:0 8px 8px; padding:6px 8px; border:2px solid #687f9a; border-left:4px solid #b42c35; border-radius:5px; background:#f5f7fa; }
-/* Subtract the RHEL margin and border from each shared gutter so its bars
-   align with the AAP body at every receiving-slot width. */
-.receiving-column .rhel-foundation { grid-template-columns:var(--aap-columns); column-gap:var(--aap-gutter); border-width:.125rem; border-left-width:.25rem; margin:0 .25rem .5rem; padding:.375rem calc(var(--aap-gutter) - .375rem) .375rem calc(var(--aap-gutter) - .5rem); }
+/* Offset the inset RHEL border so its right half starts at the AAP midpoint. */
+.receiving-column .rhel-foundation { grid-template-columns:minmax(0,calc(50cqw - .5rem)) minmax(0,1fr); column-gap:0; border-width:.125rem; border-left-width:.25rem; margin:0 .25rem .5rem; padding:.375rem 0; }
+.receiving-column .rhel-foundation > .configuration-panel { width:var(--aap-bar-width); margin-inline-start:var(--aap-inset); }
 .rhel-foundation > .configuration-panel { grid-area:configs; align-self:center; }
 .source-rhel { grid-template-columns:40px minmax(0,1fr); grid-template-areas:"heading configs"; }
 .source-rhel .rhel-heading { align-self:center; }
 .rhel-foundation.landing { border-color:var(--origin-base); box-shadow:0 0 0 2px var(--origin-base-soft); }
 .rhel-foundation.landing[data-origin="git"] { border-color:var(--origin-git); box-shadow:0 0 0 2px var(--origin-git-soft); }
 .rhel-foundation .configuration-list { grid-template-columns:minmax(0,1fr); }
-.rhel-foundation .object-item { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px; min-height:22px; padding:2px 5px; font-size:.875rem; }
+.rhel-foundation .object-item { display:flex; align-items:center; gap:4px; min-height:22px; padding:2px 5px; font-size:.875rem; }
 .rhel-foundation .object-name { font-size:.875rem; }
 .rhel-configs { display:grid; grid-template-columns:minmax(0,1fr); gap:3px; }
 .rhel-config { display:flex; align-items:center; gap:6px; min-width:0; margin:0; padding:3px 6px; border:1px solid var(--origin-base); border-left:3px solid var(--origin-base); border-radius:4px; color:#153f7e; background:var(--origin-base-soft); font-size:.8125rem; line-height:1.4; }
 .rhel-config-name { overflow-wrap:anywhere; }
-.rhel-config-origin { margin-left:auto; padding:1px 4px; border-radius:3px; color:#fff; background:#2455af; font-size:.625rem; font-weight:700; }
 .landing[data-origin="base"] .rhel-config,.landing[data-origin="git"] .configuration-item[data-origin="git"] { animation:configuration-landing 480ms ease-out both; }
 @keyframes configuration-landing { from { transform:translateX(-12px); opacity:.4; } to { transform:translateX(0); opacity:1; } }
 .rhel-heading { grid-area:heading; display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:0; }
@@ -298,8 +294,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
   .route-return { margin-left:3px; }
   .instance-connections { display:flex; align-items:center; justify-content:center; gap:20px; height:155px; flex:none; }
   .aap-card { height:auto; min-height:0; max-height:475px; }
-  .source-column { height:475px; flex:none; }
-  .source-column.manual-active { height:667px; }
+  .source-column,.source-column.manual-active { height:auto; flex:none; }
   .source-aap,.source-column.manual-active .source-aap { align-self:stretch; height:475px; }
   .manual-upflow { left:calc(100% + 5px); top:74px; width:12px; height:748px; }
   .manual-arrow { top:0; left:4px; width:4px; height:100%; }
@@ -326,7 +321,6 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
   .sidebar-footer { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px 20px; padding:15px 18px; }
   .scene-controls { align-self:start; }
   .feedback { margin:0; min-height:0; }
-  .legend { border-top:0; padding:0; }
   .illustration-note { align-self:end; margin:0; }
   .canvas-shell { padding:22px 18px; }
   .diagram-grid { max-width:none; }

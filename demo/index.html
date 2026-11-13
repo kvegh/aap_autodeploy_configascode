@@ -31,7 +31,6 @@
       <div class="sidebar-footer">
         <div class="scene-controls" aria-label="Step navigation"><button id="previous" class="button-step button-previous" type="button" aria-label="Previous step" disabled><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m14 6-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="next" class="button-step button-next" type="button"><span id="next-label">Next</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m10 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button id="restart" class="button-restart" type="button" aria-label="Restart the walkthrough"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.1 7a6.3 6.3 0 1 1-.2 5M4 3v4h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
         <p id="feedback" class="feedback" aria-live="polite" aria-atomic="true">Two repositories. One configuration story.</p>
-        <div id="legend" class="legend" aria-label="Object origin colours"><span><i class="legend-dot origin-base"></i>Base objects</span><span><i class="legend-dot origin-git"></i>Added through CaC</span><span><i class="legend-dot origin-manual"></i>Added manually</span></div>
         <p class="illustration-note">Illustrative data<br>No live AAP connection</p>
       </div>
     </aside>
@@ -74,6 +73,11 @@
           <div class="job-panel"><svg class="job-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="14" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="m8 7 5 3-5 3z" fill="currentColor"/></svg><div><span class="job-kicker">JOB TEMPLATE</span><span id="job-label">Configuration jobs</span></div></div>
           <section id="source-rhel" class="rhel-foundation source-rhel" aria-label="Original RHEL infrastructure configuration"><div class="rhel-heading"><strong class="rhel-label">RHEL</strong></div><section class="configuration-panel" aria-label="RHEL configuration"><div id="source-infrastructure" class="configuration-list" aria-label="Original AAP infrastructure configuration"></div></section></section>
         </section>
+          <div id="legend" class="legend" aria-label="Configuration colour legend">
+            <span><i class="legend-dot origin-base" aria-hidden="true"></i><span><strong>Blue:</strong> Base CaC configuration at AAP deployment.</span></span>
+            <span><i class="legend-dot origin-git" aria-hidden="true"></i><span><strong>Purple:</strong> New configuration and changes defined in CaC Git.</span></span>
+            <span><i class="legend-dot origin-manual" aria-hidden="true"></i><span><strong>Yellow:</strong> Manual changes read from AAP configuration and pushed back into Git.</span></span>
+          </div>
         </div>
 
         <div class="instance-connections" aria-label="Operations between AAP instances">

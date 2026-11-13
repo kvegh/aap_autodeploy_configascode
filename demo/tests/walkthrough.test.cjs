@@ -65,6 +65,16 @@ function attributes(element, text) {
   for (const match of text.matchAll(pattern)) element.setAttribute(match[1], match[2] ?? match[3] ?? match[4] ?? '');
   return element;
 }
+function htmlRegion(html, id) {
+  const opening = html.match(new RegExp(`<([a-z][\\w:-]*)\\b[^>]*\\bid="${id}"[^>]*>`, 'i'));
+  assert.ok(opening, `Missing actual HTML region ${id}`);
+  let depth = 0;
+  for (const tag of html.slice(opening.index).matchAll(new RegExp(`<\\/?${opening[1]}\\b[^>]*>`, 'gi'))) {
+    depth += tag[0].startsWith('</') ? -1 : 1;
+    if (depth === 0) return html.slice(opening.index, opening.index + tag.index + tag[0].length);
+  }
+  assert.fail(`${id} has no matching closing tag`);
+}
 function browser(hash = '') {
   const html = source('index.html');
   const nodes = {};
@@ -231,15 +241,16 @@ test('manual objects exist on the target but remain absent from CaC until captur
     assert.ok(objectNames(nodes['target-objects']).includes(name));
     assert.ok(!nodes['config-lines'].textContent.includes(name));
   }
-  assert.equal(withClass(nodes['target-objects'], 'git-badge').length, 0);
+  assert.ok(manualItems(nodes['target-objects']).every(item => item.dataset.inGit === 'false'));
   assert.match(nodes.feedback.textContent, /not recorded in Git yet/);
   assert.equal(nodes['flow-apply'].hidden, true);
   page.chapter('capture');
   for (const item of manualItems(nodes['target-objects'])) {
     const name = withClass(item, 'object-name')[0].textContent;
     assert.ok(nodes['config-lines'].textContent.includes(name));
-    assert.equal(withClass(item, 'git-badge')[0].textContent, 'In Git');
-    assert.equal(withClass(item, 'origin-label')[0].textContent, 'Manual');
+    assert.equal(item.dataset.inGit, 'true');
+    assert.equal(item.dataset.origin, 'manual');
+    assert.equal(item.textContent, name, 'Capture preserves colour origin without adding visible badges');
   }
   assert.equal(nodes['flow-scan'].hidden, false);
   assert.equal(nodes['flow-return'].hidden, false);
@@ -250,7 +261,8 @@ test('manual objects exist on the target but remain absent from CaC until captur
 test('backwards navigation and restart reverse capture, manual additions and settings updates', () => {
   const { nodes } = browser('#capture');
   nodes.previous.click();
-  assert.equal(withClass(nodes['target-objects'], 'git-badge').length, 0);
+  assert.equal(manualItems(nodes['target-objects']).length, 3);
+  assert.ok(manualItems(nodes['target-objects']).every(item => item.dataset.inGit === 'false'), 'Reversing capture restores unsaved manual objects');
   assert.ok(!nodes['config-lines'].textContent.includes('Emergency servers'));
   nodes.previous.click();
   assert.equal(manualItems(nodes['target-objects']).length, 0);
@@ -305,14 +317,47 @@ test('direct links and later hash changes restore the complete scene state', () 
     const page = browser(`#${step.id}`);
     assert.equal(page.nodes['step-count'].textContent, `${index + 1} / ${story.steps.length}`);
     assert.equal(page.nodes['scene-title'].textContent, step.title);
-    assert.equal(objectNames(page.nodes['target-objects']).length, story.stateAt(index).targetObjects.length);
+    const state = story.stateAt(index);
+    assert.equal(objectNames(page.nodes['target-objects']).length, state.targetObjects.length);
+    for (const prefix of ['source', 'target', 'successor']) {
+      const expectedObjects = state[`${prefix}Objects`];
+      for (const item of automationItems(page.nodes[`${prefix}-objects`])) {
+        const name = withClass(item, 'object-name')[0].textContent;
+        const expected = expectedObjects.find(object => object.name === name);
+        assert.ok(expected, `${step.id}: ${prefix} object ${name}`);
+        assert.equal(item.dataset.origin, expected.origin, `${step.id}: ${name} retains its colour origin`);
+        assert.equal(item.dataset.inGit, String(expected.inGit), `${step.id}: ${name} Git capture state`);
+        const accessibleLabel = item.attributes['aria-label'];
+        assert.ok(accessibleLabel?.includes(name), `${step.id}: ${name} has an accessible object name`);
+        assert.match(accessibleLabel, new RegExp(expected.origin === 'base' ? 'base' : expected.origin === 'git' ? 'Git' : 'manual', 'i'));
+        if (expected.origin === 'manual') {
+          assert.match(accessibleLabel, expected.inGit ? /saved.*Git/i : /not.*saved.*Git/i, `${step.id}: accessible manual capture state`);
+          if (expected.inGit) assert.doesNotMatch(accessibleLabel, /not.*saved/i);
+        }
+      }
+      const roots = ['objects', 'configuration', 'infrastructure'];
+      if (prefix !== 'source') roots.push('rhel-configs');
+      for (const suffix of roots) {
+        const root = page.nodes[`${prefix}-${suffix}`];
+        for (const className of ['origin-label', 'git-badge', 'rhel-config-origin']) {
+          assert.equal(withClass(root, className).length, 0, `${step.id}: ${prefix}-${suffix} has no repeated ${className} badges`);
+        }
+        const items = [...withClass(root, 'object-item'), ...withClass(root, 'rhel-config')];
+        for (const item of items) {
+          const name = [...withClass(item, 'object-name'), ...withClass(item, 'rhel-config-name')][0];
+          assert.ok(name, `${step.id}: each coloured bar has a name`);
+          assert.equal(item.textContent, name.textContent, `${step.id}: coloured bars show their name without repeated badges`);
+        }
+      }
+    }
   }
   const page = browser('#unrecognized');
   assert.equal(page.nodes['step-count'].textContent, `1 / ${story.steps.length}`);
   page.hash('#capture');
-  assert.equal(withClass(page.nodes['target-objects'], 'git-badge').length, 3);
+  assert.equal(manualItems(page.nodes['target-objects']).filter(item => item.dataset.inGit === 'true').length, 3);
   page.hash('#manual');
-  assert.equal(withClass(page.nodes['target-objects'], 'git-badge').length, 0);
+  assert.equal(manualItems(page.nodes['target-objects']).length, 3);
+  assert.ok(manualItems(page.nodes['target-objects']).every(item => item.dataset.inGit === 'false'));
   page.hash('#unrecognized');
   assert.equal(page.nodes['target-card'].hidden, true);
 });
@@ -378,8 +423,24 @@ test('the sidebar owns controls and status while three content columns own the d
     if (depth === 0) { sidebar = html.slice(opening.index, opening.index + tag.index + tag[0].length); break; }
   }
   assert.ok(sidebar, 'The sidebar has a matching closing tag');
-  for (const id of ['chapter-list', 'previous', 'next', 'restart', 'step-count', 'progress-fill', 'feedback', 'legend']) {
+  for (const id of ['chapter-list', 'previous', 'next', 'restart', 'step-count', 'progress-fill', 'feedback']) {
     assert.match(sidebar, new RegExp(`\\bid="${id}"`), `${id} belongs in the sidebar`);
+  }
+  assert.doesNotMatch(sidebar, /\bid="legend"/, 'The origin legend has moved out of the sidebar');
+  assert.equal((html.match(/\bid="legend"/g) || []).length, 1, 'One shared legend explains every coloured bar');
+  const sourceColumn = htmlRegion(html, 'source-column');
+  const sourceCard = htmlRegion(html, 'source-card');
+  const legend = htmlRegion(html, 'legend');
+  assert.ok(sourceColumn.includes(legend), 'The shared legend belongs in the original middle AAP column');
+  assert.ok(sourceColumn.indexOf(legend) > sourceColumn.indexOf(sourceCard) + sourceCard.length, 'The shared legend follows the complete original AAP card');
+  const legendText = legend.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  for (const [origin, text] of [
+    ['base', 'Blue: Base CaC configuration at AAP deployment.'],
+    ['git', 'Purple: New configuration and changes defined in CaC Git.'],
+    ['manual', 'Yellow: Manual changes read from AAP configuration and pushed back into Git.'],
+  ]) {
+    assert.match(legend, new RegExp(`\\borigin-${origin}\\b`), `${origin}: legend retains its colour swatch`);
+    assert.ok(legendText.includes(text), `${origin}: legend explains the configuration lifecycle`);
   }
   const main = html.match(/<main\b[^>]*id="story"[^>]*>/);
   assert.ok(main, 'The diagram keeps its main landmark');
@@ -522,39 +583,45 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/, 'Receiving content declares independent vertical layout');
   assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*align-items:\s*stretch;/, 'Receiving catalogues and settings must stretch across the body instead of inheriting shrink-to-content alignment');
   const receivingLayout = styles.match(/(?:^|\n)\.receiving-column\s*\{([^}]+)}/)[1];
-  assert.match(receivingLayout, /--aap-gutter:\s*4\.7cqw;/, 'Receiving gutters scale with the card container');
-  assert.match(receivingLayout, /--aap-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/, 'Receiving bars share two equal proportional tracks');
-  assert.doesNotMatch(receivingLayout, /--aap-bar-width\s*:/, 'The rejected fixed bar width is removed');
-  assert.match(styles, /\.receiving-column \.receiving-slot\s*\{[^}]*container-type:\s*inline-size;/, 'Each receiving slot supplies its own proportional width context');
-  assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*padding:\s*[^;]+ var\(--aap-gutter\);/, 'Outer body gutters use the common proportional spacing');
-  assert.match(styles, /\.object-list\.receiving-catalog\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*var\(--aap-gutter\);/, 'The object middle gap matches its outer gutters');
-  assert.match(styles, /\.receiving-column \.aap-settings-panel\s*\{[^}]*margin:\s*auto\s+0\s+0;/, 'Settings keep bottom anchoring without narrowing their bars');
-  assert.match(styles, /\.aap-settings-panel \.configuration-list\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*[^;]+ var\(--aap-gutter\);/, 'AAP configuration uses the same track widths and middle gap');
-  assert.match(styles, /\.receiving-column \.rhel-foundation\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*column-gap:\s*var\(--aap-gutter\);/, 'RHEL profiles use the same tracks and gap');
+  assert.match(receivingLayout, /--aap-inset:\s*2cqw;/, 'Each receiving stack starts a small distance inside its half');
+  assert.match(receivingLayout, /--aap-bar-width:\s*43cqw;/, 'Receiving bars retain one proportional width across categories');
+  assert.match(receivingLayout, /--aap-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/, 'Automation and AAP settings use equal half-column tracks');
+  assert.doesNotMatch(receivingLayout, /--aap-gutter\s*:/, 'The superseded equal-gutter layout is removed');
+  assert.match(styles, /\.receiving-column \.aap-card\s*\{[^}]*container-type:\s*inline-size;/, 'Each receiving card supplies the same proportional width context to all its bars');
+  assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*padding:\s*6px\s+0;/, 'Body padding does not shift the two half-column tracks');
+  assert.match(styles, /\.object-list\.receiving-catalog\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*0;/, 'The catalogue starts each stack in its respective half');
   for (const [label, rule] of [
-    ['Object catalogue', /\.object-list\.receiving-catalog\s*\{([^}]+)}/],
-    ['AAP settings', /\.aap-settings-panel \.configuration-list\s*\{([^}]+)}/],
-    ['RHEL settings', /\.receiving-column \.rhel-foundation\s*\{([^}]+)}/],
-  ]) assert.doesNotMatch(styles.match(rule)[1], /justify-content:\s*space-evenly;/, `${label}: shared gutters provide spacing without a fixed-width distribution`);
+    ['Object columns', /(?:^|\n)\.aap-object-column\s*\{([^}]+)}/],
+    ['AAP settings', /\.aap-settings-panel \.configuration-item\s*\{([^}]+)}/],
+    ['RHEL settings', /\.receiving-column \.rhel-foundation > \.configuration-panel\s*\{([^}]+)}/],
+  ]) {
+    const match = styles.match(rule);
+    assert.ok(match, `${label}: scoped bar layout exists`);
+    assert.match(match[1], /width:\s*var\(--aap-bar-width\);/, `${label}: bars share the same relative width`);
+    assert.match(match[1], /margin-inline-start:\s*var\(--aap-inset\);/, `${label}: bars left-align with a small inset`);
+  }
+  assert.match(styles, /\.receiving-catalog \.object-item,\.aap-settings-panel \.object-item\s*\{[^}]*margin:\s*\.125rem\s+0;/, 'Receiving automation bars use compact vertical spacing');
+  assert.match(styles, /\.receiving-column \.aap-settings-panel\s*\{[^}]*margin:\s*auto\s+0\s+0;/, 'Settings keep bottom anchoring');
+  assert.match(styles, /\.aap-settings-panel \.configuration-list\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*\.1875rem\s+0;/, 'AAP settings preserve the same halves with compact vertical gaps');
+  assert.match(styles, /\.aap-settings-panel::before\s*\{[^}]*left:\s*var\(--aap-inset\);[^}]*right:\s*var\(--aap-inset\);/, 'The divider follows the small outer inset');
   const rhelReceiving = styles.match(/\.receiving-column \.rhel-foundation\s*\{([^}]+)}/)[1];
+  assert.match(rhelReceiving, /grid-template-columns:\s*minmax\(0,\s*calc\(50cqw\s*-\s*\.5rem\)\)\s+minmax\(0,\s*1fr\);/, 'RHEL compensates its inset border so configuration starts in the right half');
+  assert.match(rhelReceiving, /column-gap:\s*0;/);
   assert.match(rhelReceiving, /border-width:\s*\.125rem;/);
   assert.match(rhelReceiving, /border-left-width:\s*\.25rem;/);
   assert.match(rhelReceiving, /margin:\s*0\s+\.25rem\s+\.5rem;/);
-  assert.match(rhelReceiving, /padding:\s*\.375rem\s+calc\(var\(--aap-gutter\) - \.375rem\)\s+\.375rem\s+calc\(var\(--aap-gutter\) - \.5rem\);/, 'RHEL padding compensates its margins and borders to preserve the same proportional rails');
+  assert.match(rhelReceiving, /padding:\s*\.375rem\s+0;/);
   assert.match(styles, /(?:^|\n)\.object-name\s*\{[^}]*font-size:\s*\.9375rem;/, 'Object names use the larger bar-only text size');
   assert.match(styles, /\.rhel-foundation \.object-name\s*\{[^}]*font-size:\s*\.875rem;/, 'RHEL names use the larger bar-only text size');
-  assert.match(styles, /(?:^|\n)\.origin-label\s*\{[^}]*font-size:\s*\.625rem;/, 'Origin badges remain readable inside coloured bars');
-  assert.match(styles, /(?:^|\n)\.git-badge\s*\{[^}]*font-size:\s*\.625rem;/, 'Captured-origin badges use the larger coloured-bar text size');
   assert.match(styles, /(?:^|\n)\.rhel-config\s*\{[^}]*font-size:\s*\.8125rem;/, 'Early RHEL configuration bars use the larger scoped text size');
-  assert.match(styles, /(?:^|\n)\.rhel-config-origin\s*\{[^}]*font-size:\s*\.625rem;/, 'Early RHEL origin badges use the larger scoped text size');
   assert.match(styles, /\.aap-settings-panel::before\s*\{[^}]*border-top:\s*1px solid/, 'The category has one thin separator');
   assert.equal(successorItems.filter(item => item.dataset.origin === 'base').length, 4);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'git').length, 6);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'manual').length, 3);
-  assert.equal(withClass(nodes['successor-objects'], 'git-badge').length, 3);
+  assert.ok(successorItems.every(item => item.dataset.inGit === 'true'), 'Replay retains the complete captured Git snapshot');
   for (const item of manualItems(nodes['successor-objects'])) {
-    assert.equal(withClass(item, 'origin-label')[0].textContent, 'Captured');
-    assert.equal(withClass(item, 'git-badge')[0].textContent, 'In Git');
+    assert.equal(item.dataset.origin, 'manual', 'Replayed manual objects retain their yellow origin');
+    assert.equal(item.dataset.inGit, 'true');
   }
   assert.deepEqual(objectNames(nodes['target-objects']).sort(), captured.targetObjects.map(object => object.name).sort());
   assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
@@ -585,7 +652,7 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   assert.deepEqual(objectNames(nodes['successor-objects']), []);
   assert.deepEqual(objectNames(nodes['successor-configuration']), []);
   assert.deepEqual(objectNames(nodes['successor-infrastructure']), []);
-  assert.equal(withClass(nodes['target-objects'], 'git-badge').length, 3, 'Captured first target is retained');
+  assert.equal(manualItems(nodes['target-objects']).filter(item => item.dataset.inGit === 'true').length, 3, 'Captured first target is retained');
   page.hash('#rebuild');
   nodes.restart.click();
   assert.equal(nodes['successor-card'].hidden, true);
