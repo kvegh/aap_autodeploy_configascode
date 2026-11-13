@@ -137,17 +137,17 @@
     byId('successor-card').hidden = !state.successorVisible;
     byId('successor-card').setAttribute('aria-hidden', String(!state.successorVisible));
     byId('successor-card').dataset.stage = '4';
-    drawRhel('target', step.stage, state.targetVisible, ['infrastructure', 'base-rhel', 'infra-change'].includes(step.id), state.flowOrigin);
+    drawRhel('target', step.stage, state.targetVisible, ['infrastructure', 'infra-change'].includes(step.id), state.flowOrigin);
     drawRhel('successor', 4, state.successorVisible);
     byId('successor-card').classList.toggle('captured', state.successorVisible);
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
     const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
-    const baseCaptions = { 'base-rhel': 'Apply RHEL', 'base-aap': 'Apply AAP', base: 'Apply content' };
+    const baseCaptions = { 'base-aap': 'Apply AAP', base: 'Apply content' };
     byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : baseCaptions[step.id] || (step.id === 'git-change' ? 'Apply changes' : step.id === 'infra-change' ? 'Apply infra' : 'Apply objects');
     // The base categories arrive independently; later steps keep prior categories.
-    byId('flow-apply').dataset.destination = ['infrastructure', 'base-rhel', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
-    byId('apply-detail').textContent = step.id === 'base-rhel' ? 'RHEL' : step.stage < 3 ? 'New VM' : 'New AAP';
+    byId('flow-apply').dataset.destination = ['infrastructure', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
+    byId('apply-detail').textContent = step.stage < 3 ? 'New VM' : 'New AAP';
     byId('target-objects').hidden = !state.baseContentApplied;
     byId('target-configuration-panel').hidden = !state.aapConfigurationApplied;
     byId('target-infrastructure-panel').hidden = step.stage < 2;
@@ -197,7 +197,6 @@
       byId('actor-title').textContent = step.actor[0];
       byId('actor-description').textContent = step.actor[1];
     }
-    byId('feedback').textContent = state.successorPlaceholderVisible ? 'The saved Git configuration is ready for another AAP.' : state.rebuilding ? `${state.successorObjects.length} automation objects and ${state.successorConfiguration.length + state.successorInfrastructure.length} configuration profiles restored from Git` : index === 0 ? 'Two repositories. One repeatable configuration.' : step.id === 'manual' ? '3 manual additions · not recorded in Git yet' : step.id === 'capture' ? '3 manual additions now recorded in encrypted CaC' : step.stage < 4 ? step.status : `${state.targetObjects.length} automation objects · ${state.targetConfiguration.length} AAP configurations · ${state.targetInfrastructure.length} RHEL configurations`;
     byId('source-links').replaceChildren(...step.sources.map(path => {
       const link = element('a', 'source-link', path.split('/').at(-1));
       link.href = story.sourceRoot + path;

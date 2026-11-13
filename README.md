@@ -307,13 +307,15 @@ and their verification limits.
 [Open the interactive story](https://kvegh.github.io/aap_autodeploy_configascode/)
 to follow an original AAP, its first destination and another AAP rebuilt from
 Git, keeping private encrypted YAML separate from public execution playbooks.
-Seven chapters contain fourteen stops. The first base push has three separate
-steps: RHEL configuration, AAP configuration, then AAP content. Each highlights
+Seven chapters contain thirteen stops. RHEL configuration is applied during OS
+preparation. The base push then has two steps: AAP configuration and AAP content. Each highlights
 only its definitions; settings appear before shared automation objects. Project
 imports, platform/infrastructure changes, manual additions, capture and complete
 replay follow. The original `#base` link still opens completed base content.
 Certificate and Firewall use one consistent RHEL stack throughout, with Certificate
-above Firewall; early OS preparation does not switch their placement or styles. Deployment stops use the main chapter and Next/Previous
+above Firewall; early OS preparation does not switch their placement or styles.
+Navigation stays in a stable sidebar footer, outside changing step content. The
+redundant bottom object/profile status summary is deleted. Deployment stops use the main chapter and Next/Previous
 navigation; the redundant AAP Deployment sidebar section is removed.
 Regional servers and Regional automation arrive during Apply objects with
 Satellite Inventory and Application automation playbooks. The later AAP settings

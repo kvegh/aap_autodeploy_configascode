@@ -6,15 +6,16 @@ execution code and follows an original AAP, its first destination and a later
 fresh AAP through deployment, project imports, Git-authored additions, manual UI
 additions, capture and replay of the complete saved configuration.
 
-Seven chapters contain fourteen presenter-controlled stops. VM creation, OS
-preparation and AAP installation have their own views. The first base push then
-advances through **RHEL configuration**, **AAP configuration** and **AAP content**
-separately: each stop highlights only its definitions and shows its application.
-AAP settings appear before the four shared inventories/projects/credentials/jobs.
-The existing `#base` link opens completed base content; `#base-rhel` and
-`#base-aap` open the earlier base categories. Chapter positions follow the stops.
-These are visual stops explaining existing configuration paths, not new AAP Job
-Templates or runtime deployment stages. Later project imports and revisions follow.
+Seven chapters contain thirteen presenter-controlled stops. VM creation, OS
+preparation and AAP installation have their own views. RHEL configuration applies
+during OS preparation, so there is no second Apply RHEL stop. The base push then
+advances through **AAP configuration** and **AAP content** separately: each stop
+highlights only its definitions and shows its application. AAP settings appear
+before the four shared inventories/projects/credentials/jobs. `#base-aap` opens
+the settings stop and the existing `#base` link opens completed base content.
+Chapter positions follow the stops. These are visual stops explaining existing
+configuration paths, not new AAP Job Templates or runtime deployment stages.
+Later project imports and revisions follow.
 Regional servers and Regional automation are part of the same project import as
 Satellite Inventory and Application automation playbooks. The Change in Git stop
 updates AAP Logging Config only; it retains the already imported objects.
@@ -56,7 +57,10 @@ separately scrolling inner pane.
 The narrow source uses one column to keep names readable. Three internal columns
 remain deferred while the owner tries this height-first revision. The sidebar uses larger readable
 labels, a persistent current-step heading and distinct completed/current chapters;
-chapter changes keep the active navigation item in view. There is no marketing hero
+chapter changes keep the active navigation item in view. The navigation footer
+is separate from changing step content and uses stable control tracks. Its Next
+button retains the same frame for Next and Complete. The bottom object/profile
+status summary and its presenter/styles are deleted. There is no marketing hero
 or explanatory scene header above the diagram. Stage 02 is labelled **Prepare OS
 for AAP installation**. Strong fills, borders and the central legend distinguish the origins. Active connectors use a bold directional line, brief travelling markers
 and larger HTML action labels that wrap between words, avoiding stretched SVG text. Arrow strokes,
@@ -65,9 +69,8 @@ and base configuration remain blue, Git-defined additions use violet, and
 captured manual definitions use amber. The highlighted YAML identifies the
 definitions in focus; execution-code highlighting means code being read, not a
 change to the public playbook. Reduced motion keeps the strong static activity cue.
-Captured manual objects keep their yellow origin; the returned definitions and
-step feedback show that they are saved in Git. The
-private repository carries a lock; its YAML is an illustrative decrypted view,
+Captured manual objects keep their yellow origin; the returned definitions show
+that they are saved in Git. The private repository carries a lock; its YAML is an illustrative decrypted view,
 not ciphertext rendered as readable text. The repository-type headings read
 **Private Git Repository** and **Public Git Repository**, using larger dark text
 at every breakpoint. All examples are synthetic.
@@ -103,7 +106,7 @@ product versions.
 The **Infrastructure configuration** group is inside RHEL, outside the AAP
 object catalogue. The strip keeps the RHEL label, three preparation indicators
 on the left, and two configuration boxes stacked on the right. Certificate stays above
-Firewall across preparation, the three base stops, later changes and replay.
+Firewall across preparation, the two base stops, later changes and replay.
 One shared renderer and a top-aligned stack prevent a placement/style switch
 between early OS preparation and full configuration. Redundant group,
 host-networking and top-right status captions are deleted, including presenter
@@ -238,7 +241,7 @@ python3 -m http.server 8765 --directory demo --bind 127.0.0.1
 Open the local URL only on the host running the server, or through an existing
 supported forwarding mechanism. Next/Previous, the seven chapter buttons,
 arrow keys, R and restart navigate the same state. The separate deployment-stage
-sidebar controls are removed; the deployment chapter now has six story stops. Source
+sidebar controls are removed; the deployment chapter now has five story stops. Source
 links open the real implementation. Motion honours reduced-motion preferences.
 
 The Node tests exercise the real scripts against a disposable DOM and check

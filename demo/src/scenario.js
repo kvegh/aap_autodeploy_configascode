@@ -35,7 +35,6 @@
     { id: 'vm', chapter: 'deployment', title: '01 / Create a new home.', description: 'The original AAP creates a RHEL VM on the prepared host. It is a new guest, with no AAP content yet.', stage: 1, job: '01 · Create VM', status: 'VM created', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['01-linux-vm-setup.yml'] },
     { id: 'infrastructure', chapter: 'deployment', title: 'Prepare OS for AAP installation', description: 'DNS, TLS certificates and nginx connect that same guest to its reserved address. The VM is ready for AAP installation.', stage: 2, job: '02 · Prepare OS for AAP installation', status: 'OS prepared for AAP installation', routes: ['flow-code', 'flow-apply'], sources: ['02-infra-config.yml'] },
     { id: 'installation', chapter: 'deployment', title: '03 / Install AAP inside the VM.', description: 'The platform is installed in the new guest. A second AAP now exists; its automation catalogue comes next.', stage: 3, job: '03 · Install AAP', status: 'AAP installed', routes: ['flow-code', 'flow-apply'], sources: ['03-aap-install.yml'] },
-    { id: 'base-rhel', chapter: 'deployment', title: 'RHEL configuration', description: 'Apply the initial RHEL configuration profiles: Certificate config v1 and Firewall Config v1. The installed AAP has no shared settings or imported automation objects yet.', stage: 4, baseFocus: 'rhel', job: 'Apply RHEL configuration', status: 'RHEL configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['02-infra-config.yml'] },
     { id: 'base-aap', chapter: 'deployment', title: 'AAP configuration', description: 'Apply AAP Logging Config v1 and AAP EDA Config v1. RHEL configuration is retained; shared automation objects come next.', stage: 4, baseFocus: 'aap', job: 'Apply AAP configuration', status: 'AAP configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['04-aap-config.yml'] },
     { id: 'base', chapter: 'deployment', title: 'AAP content', description: 'Import the shared inventories, projects, credentials and Job Templates. The initial RHEL configuration, AAP settings and base automation content are now applied.', stage: 4, baseFocus: 'content', job: 'Import base AAP content', status: 'Base configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['04-aap-config.yml'] },
     { id: 'project', chapter: 'project', title: 'Turn definitions into more automation.', description: 'A configuration Job Template on the original AAP combines the private YAML with the public playbooks. Additional objects appear on the receiving AAP.', stage: 4, job: 'Deploy objects', status: 'Project objects applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['deploy-cac-project.yml', 'tasks/cac-resource-definitions.yml'] },
@@ -56,7 +55,7 @@
     if (!Number.isInteger(index)) throw new TypeError('Step index must be an integer.');
     const position = Math.max(0, Math.min(steps.length - 1, index));
     const step = steps[position];
-    const rhelConfigurationApplied = position >= stepPositions['base-rhel'];
+    const rhelConfigurationApplied = step.stage >= 2;
     const aapConfigurationApplied = position >= stepPositions['base-aap'];
     const baseContentApplied = position >= stepPositions.base;
     const targetObjects = [
@@ -100,7 +99,7 @@
     const readingConfiguration = state.step.routes.includes('flow-config');
     const baseFocus = state.step.baseFocus;
     const readingAapConfiguration = readingConfiguration && (!baseFocus || baseFocus === 'aap');
-    const readingRhelConfiguration = readingConfiguration && (!baseFocus || baseFocus === 'rhel');
+    const readingRhelConfiguration = readingConfiguration && !baseFocus;
     const loggingActive = readingAapConfiguration && state.step.id !== 'infra-change' && (state.rebuilding || logging.origin === state.flowOrigin);
     const edaActive = readingAapConfiguration && (state.rebuilding || state.flowOrigin === 'base');
     for (const text of [
@@ -172,7 +171,7 @@
     if (state.step.id === 'infra-change') return ['# Certificate configuration · 02-infra-config.yml', '- name: "Configure DNS, certificate, and nginx reverse proxy"', '  hosts: hypervisor', '  become: true', '  gather_facts: false', '', '# Infrastructure Job Template definitions · excerpt', '- name: Import job templates after their persistent credential dependencies', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.controller_job_templates'];
     if (stage === 1 || state.step.id === 'next-aap') return ['# 01-linux-vm-setup.yml · excerpt', '- name: Create a test VM only after shared name reservation and pinned rebuild preflight', '  hosts: hypervisor', '  become: true', '  gather_facts: false'];
     if (state.index >= stepPositions.project || state.step.id === 'separation') return ['# Inventories, projects and credentials · excerpt', '- name: Import ordinary configuration resources without wildcard merging or workload execution', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch', '', '# Job Templates, after their dependencies', '- name: Import job templates after their persistent credential dependencies', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.controller_job_templates'];
-    if (stage === 2 || state.step.baseFocus === 'rhel') return ['# 02-infra-config.yml · excerpt', '- name: "Configure DNS, certificate, and nginx reverse proxy"', '  hosts: hypervisor', '  become: true', '  gather_facts: false'];
+    if (stage === 2) return ['# 02-infra-config.yml · excerpt', '- name: "Configure DNS, certificate, and nginx reverse proxy"', '  hosts: hypervisor', '  become: true', '  gather_facts: false'];
     if (stage === 3) return ['# 03-aap-install.yml · excerpt', '- name: Run AAP installer', '  ansible.builtin.command:', '    cmd: ansible-playbook -i inventory ansible.containerized_installer.install', '    chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"', '  async: 7200', '  poll: 30'];
     return ['# 04-aap-config.yml · excerpt', '- name: Configure new AAP instance (config-as-code)', '  hosts: localhost', '  connection: local', '  gather_facts: false', '', '  # Verified target API', '  # aap_validate_certs: true'];
   }

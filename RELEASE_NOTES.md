@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.62.4
+
+Remove the duplicate Apply RHEL stop; OS preparation already applies those
+profiles. Retain separate AAP configuration and AAP content stops in a thirteen-
+stop story. Delete the bottom status summary and keep navigation in a stable
+sidebar footer with consistent button tracks and sizing.
+
 ## 0.62.3
 
 Document native lock-wait implementation `2c3f568`, its observed parallel Windows

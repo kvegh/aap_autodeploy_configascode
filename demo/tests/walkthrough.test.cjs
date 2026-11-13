@@ -111,11 +111,12 @@ const manualItems = node => withClass(node, 'object-item').filter(item => item.d
 
 test('the seven chapters cover deployment, capture and replay with existing source links', () => {
   assert.equal(story.chapters.length, 7);
-  assert.equal(story.steps.length, 14);
-  assert.deepEqual(story.steps.slice(0, 7).map(step => step.id), ['separation', 'vm', 'infrastructure', 'installation', 'base-rhel', 'base-aap', 'base']);
-  assert.deepEqual(story.steps.slice(1, 7).map(step => step.stage), [1, 2, 3, 4, 4, 4]);
-  assert.ok(story.steps.slice(1, 7).every(step => step.chapter === 'deployment'));
-  assert.equal(new Set(story.steps.map(step => step.id)).size, 14);
+  assert.equal(story.steps.length, 13);
+  assert.deepEqual(story.steps.slice(0, 6).map(step => step.id), ['separation', 'vm', 'infrastructure', 'installation', 'base-aap', 'base']);
+  assert.ok(story.steps.every(step => step.id !== 'base-rhel'), 'OS preparation already applies RHEL configuration; no duplicate apply stop remains');
+  assert.deepEqual(story.steps.slice(1, 6).map(step => step.stage), [1, 2, 3, 4, 4]);
+  assert.ok(story.steps.slice(1, 6).every(step => step.chapter === 'deployment'));
+  assert.equal(new Set(story.steps.map(step => step.id)).size, 13);
   assert.equal(story.steps.find(step => step.id === 'infra-change').chapter, 'git-change');
   assert.equal(story.steps.at(-1).id, 'rebuild');
   assert.deepEqual(story.stateAt(0).sourceObjects.map(object => object.name), [
@@ -173,7 +174,7 @@ test('the actual HTML hides future objects before scripts run and uses local ass
   assert.match(source('src/styles.css'), /\[hidden\][\s\S]{0,100}display\s*:\s*none/);
 });
 
-test('Next and Previous separate RHEL, AAP settings and base content within deployment', () => {
+test('Next and Previous apply RHEL during OS preparation, then AAP settings and base content', () => {
   const page = browser();
   const { nodes } = page;
   const sourceNames = objectNames(nodes['source-objects']);
@@ -184,9 +185,8 @@ test('Next and Previous separate RHEL, AAP settings and base content within depl
   assert.doesNotMatch(source('index.html'), /AAP DEPLOYMENT|<button\b[^>]*data-stage=/);
   const stops = [
     ['vm', 1, false, false, false],
-    ['infrastructure', 2, false, false, false],
-    ['installation', 3, false, false, false],
-    ['base-rhel', 4, true, false, false],
+    ['infrastructure', 2, true, false, false],
+    ['installation', 3, true, false, false],
     ['base-aap', 4, true, true, false],
     ['base', 4, true, true, true],
   ];
@@ -268,7 +268,7 @@ test('manual objects exist on the target but remain absent from CaC until captur
     assert.ok(!nodes['config-lines'].textContent.includes(name));
   }
   assert.ok(manualItems(nodes['target-objects']).every(item => item.dataset.inGit === 'false'));
-  assert.match(nodes.feedback.textContent, /not recorded in Git yet/);
+  assert.equal(nodes.feedback, undefined, 'The removed bottom-left summary has no hidden DOM replacement');
   assert.equal(nodes['flow-apply'].hidden, true);
   page.chapter('capture');
   for (const item of manualItems(nodes['target-objects'])) {
@@ -344,9 +344,9 @@ test('direct links and later hash changes restore the complete scene state', () 
     assert.equal(page.nodes['step-count'].textContent, `${index + 1} / ${story.steps.length}`);
     assert.equal(page.nodes['scene-title'].textContent, step.title);
     const state = story.stateAt(index);
-    assert.equal(state.rhelConfigurationApplied, index >= 4, `${step.id}: direct-link RHEL state`);
-    assert.equal(state.aapConfigurationApplied, index >= 5, `${step.id}: direct-link AAP settings state`);
-    assert.equal(state.baseContentApplied, index >= 6, `${step.id}: direct-link content state`);
+    assert.equal(state.rhelConfigurationApplied, step.stage >= 2, `${step.id}: direct-link RHEL state`);
+    assert.equal(state.aapConfigurationApplied, index >= 4, `${step.id}: direct-link AAP settings state`);
+    assert.equal(state.baseContentApplied, index >= 5, `${step.id}: direct-link content state`);
     assert.equal(page.nodes['target-objects'].hidden, !state.baseContentApplied, `${step.id}: direct-link content visibility`);
     assert.equal(page.nodes['target-configuration-panel'].hidden, !state.aapConfigurationApplied, `${step.id}: direct-link settings visibility`);
     assert.equal(objectNames(page.nodes['target-objects']).length, state.targetObjects.length);
@@ -414,7 +414,6 @@ test('active routes remain visible and deployment actions name the current stage
     ['vm', 'Create VM', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
     ['infrastructure', 'Prepare OS', 'New VM', ['flow-code', 'flow-apply']],
     ['installation', 'Install AAP', 'New AAP', ['flow-code', 'flow-apply']],
-    ['base-rhel', 'Apply RHEL', 'RHEL', ['flow-config', 'flow-code', 'flow-apply']],
     ['base-aap', 'Apply AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['base', 'Apply content', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
@@ -454,9 +453,29 @@ test('the sidebar owns controls and status while three content columns own the d
     if (depth === 0) { sidebar = html.slice(opening.index, opening.index + tag.index + tag[0].length); break; }
   }
   assert.ok(sidebar, 'The sidebar has a matching closing tag');
-  for (const id of ['chapter-list', 'previous', 'next', 'restart', 'step-count', 'progress-fill', 'feedback']) {
+  for (const id of ['chapter-list', 'previous', 'next', 'restart', 'step-count', 'progress-fill']) {
     assert.match(sidebar, new RegExp(`\\bid="${id}"`), `${id} belongs in the sidebar`);
   }
+  for (const file of ['index.html', 'src/app.js', 'src/styles.css']) {
+    assert.doesNotMatch(source(file), /\bfeedback\b/, `${file}: the bottom-left summary is deleted entirely`);
+  }
+  const footerOpening = sidebar.match(/<div\b[^>]*class="[^"]*\bsidebar-footer\b[^"]*"[^>]*>/);
+  assert.ok(footerOpening, 'Navigation retains its dedicated footer');
+  const footer = sidebar.slice(footerOpening.index);
+  assert.match(footer, /class="[^"]*\bscene-controls\b/);
+  assert.match(footer, /class="[^"]*\billustration-note\b/);
+  assert.doesNotMatch(footer, /aria-live|\bid="(?:scene-title|chapter-list|job-status|target-state|actor|source-links)"/, 'Dynamic story content remains outside the navigation footer');
+  const styles = source('src/styles.css');
+  const footerRule = styles.match(/(?:^|\n)\.sidebar-footer\s*\{([^}]+)}/)[1];
+  assert.match(footerRule, /flex:\s*none;/, 'The navigation footer retains its own height');
+  assert.match(footerRule, /margin-top:\s*auto;/, 'The navigation footer stays anchored below scrollable story content');
+  assert.match(styles, /(?:^|\n)\.sidebar-scroll\s*\{[^}]*flex:\s*1;[^}]*min-height:\s*0;[^}]*overflow-y:\s*auto;/, 'Dynamic sidebar content scrolls within its available space');
+  assert.match(styles, /(?:^|\n)\.scene-controls\s*\{[^}]*display:\s*grid;[^}]*grid-template-columns:\s*2\.1875rem\s+minmax\(0,\s*1fr\)\s+1\.6875rem;/, 'Navigation uses stable previous, Next and restart tracks');
+  assert.match(styles, /(?:^|\n)\.button-step\s*\{[^}]*height:\s*2\.3125rem;/, 'Step buttons retain one height across chapters');
+  const nextRule = styles.match(/(?:^|\n)\.button-next\s*\{([^}]+)}/)[1];
+  assert.match(nextRule, /width:\s*100%;/);
+  assert.match(nextRule, /min-width:\s*0;/);
+  assert.match(nextRule, /white-space:\s*nowrap;/, 'Next and Complete labels cannot wrap and shift the controls');
   assert.doesNotMatch(sidebar, /\bid="legend"/, 'The origin legend has moved out of the sidebar');
   assert.equal((html.match(/\bid="legend"/g) || []).length, 1, 'One shared legend explains every coloured bar');
   const sourceColumn = htmlRegion(html, 'source-column');
@@ -497,7 +516,6 @@ test('the sidebar owns controls and status while three content columns own the d
 test('active arrows match the highlighted configuration origin and reset on navigation', () => {
   const page = browser();
   for (const [id, origin, names] of [
-    ['base-rhel', 'base', ['Certificate config v1', 'Firewall Config v1']],
     ['base-aap', 'base', ['AAP Logging Config v1', 'AAP EDA Config v1']],
     ['base', 'base', ['VMWare Inventory', 'AAP Config-as-Code Git']],
     ['project', 'git', ['Satellite Inventory', 'Application automation playbooks', 'Regional servers', 'Regional automation']],
@@ -514,9 +532,9 @@ test('active arrows match the highlighted configuration origin and reset on navi
     assert.ok(highlighted.length > 0, `${id}: highlighted configuration`);
     for (const line of highlighted) assert.equal(line.dataset.origin, origin, `${id}: configuration origin`);
     for (const name of names) assert.ok(highlighted.some(line => line.textContent.includes(name)), `${id}: ${name}`);
-    if (['base-rhel', 'base-aap', 'base'].includes(id)) {
+    if (['base-aap', 'base'].includes(id)) {
       const categories = {
-        'base-rhel': ['Certificate config v1', 'Firewall Config v1'],
+        infrastructure: ['Certificate config v1', 'Firewall Config v1'],
         'base-aap': ['AAP Logging Config v1', 'AAP EDA Config v1'],
         base: ['VMWare Inventory', 'AAP Config-as-Code Git', 'Server access key', 'AAP Config-as-Code jobs'],
       };
@@ -545,7 +563,7 @@ test('base AAP configuration is deployed and Git updates replace logging without
   const names = id => objectNames(nodes[id]);
   assert.deepEqual(names('source-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
   assert.equal(nodes['target-configuration-panel'].hidden, true);
-  for (const id of ['vm', 'infrastructure', 'installation', 'base-rhel']) {
+  for (const id of ['vm', 'infrastructure', 'installation']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-configuration-panel'].hidden, true);
     assert.deepEqual(names('target-configuration'), []);
@@ -753,7 +771,7 @@ test('infrastructure configuration updates certificates while retaining firewall
     assert.equal(nodes['target-infrastructure-panel'].hidden, ['separation', 'vm'].includes(id), id);
     assert.deepEqual(names('target-infrastructure'), ['separation', 'vm'].includes(id) ? [] : original, id);
   }
-  for (const id of ['base-rhel', 'base-aap', 'base', 'project', 'git-change']) {
+  for (const id of ['base-aap', 'base', 'project', 'git-change']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-infrastructure-panel'].hidden, false, id);
     assert.deepEqual(names('target-infrastructure'), original, id);
@@ -800,7 +818,6 @@ test('the RHEL foundation follows deployment without implying a guest OS upgrade
     ['vm', '1', ['complete', 'current', 'pending']],
     ['infrastructure', '2', ['complete', 'current', 'pending']],
     ['installation', '3', ['complete', 'complete', 'complete']],
-    ['base-rhel', '4', ['complete', 'complete', 'complete']],
     ['base-aap', '4', ['complete', 'complete', 'complete']],
     ['base', '4', ['complete', 'complete', 'complete']],
   ]) {
@@ -859,7 +876,7 @@ test('RHEL profiles keep one renderer, order and placement through setup, base a
   const check = (id, index) => {
     const step = story.steps[index];
     const changed = index >= story.steps.findIndex(item => item.id === 'infra-change');
-    const landing = ['infrastructure', 'base-rhel', 'infra-change'].includes(id);
+    const landing = ['infrastructure', 'infra-change'].includes(id);
     for (const prefix of ['source', 'target', 'successor']) {
       const visible = prefix === 'source' || (prefix === 'target' ? step.stage >= 2 : id === 'rebuild');
       const items = withClass(nodes[`${prefix}-infrastructure`], 'configuration-item');
