@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       source_present: ${{ steps.source.outputs.present }}
+      light_sha: ${{ steps.light_check.outputs.sha }}
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -43,6 +44,22 @@ jobs:
           node --check demo/src/scenario.js
           node --check demo/src/app.js
           node --test demo/tests/*.test.cjs
+      - name: Check out the light preview source
+        if: steps.source.outputs.present == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: visualization-light
+          path: light-source
+          persist-credentials: false
+      - name: Check the light preview and capture its revision
+        if: steps.source.outputs.present == 'true'
+        id: light_check
+        working-directory: light-source
+        run: |
+          node --check demo/src/scenario.js
+          node --check demo/src/app.js
+          node --test demo/tests/*.test.cjs
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   publish:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.check.outputs.source_present == 'true'
@@ -58,13 +75,22 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+      # Publish the tested revision even if the preview branch moves meanwhile.
+      - name: Check out the tested light preview
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.check.outputs.light_sha }}
+          path: light-source
+          persist-credentials: false
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Prepare only the public walkthrough assets
         run: |
-          mkdir -p "${RUNNER_TEMP}/aap-cac-demo/src"
+          mkdir -p "${RUNNER_TEMP}/aap-cac-demo/src" "${RUNNER_TEMP}/aap-cac-demo/light/src"
           cp demo/index.html demo/icon.svg demo/sysadmin.png "${RUNNER_TEMP}/aap-cac-demo/"
           cp demo/src/scenario.js demo/src/app.js demo/src/styles.css "${RUNNER_TEMP}/aap-cac-demo/src/"
+          cp light-source/demo/index.html light-source/demo/icon.svg light-source/demo/sysadmin.png "${RUNNER_TEMP}/aap-cac-demo/light/"
+          cp light-source/demo/src/scenario.js light-source/demo/src/app.js light-source/demo/src/styles.css "${RUNNER_TEMP}/aap-cac-demo/light/src/"
           touch "${RUNNER_TEMP}/aap-cac-demo/.nojekyll"
       - name: Upload the walkthrough
         uses: actions/upload-pages-artifact@v4

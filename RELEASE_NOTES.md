@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.61.21
+
+Publish the separately tested visualization-light branch under /light/ alongside
+the existing root demo. Pin the tested preview SHA and preserve the six-asset
+allowlist, source-presence guard and main-only Pages deployment permissions.
+The original demo assets are unchanged.
+
 ## 0.61.20
 
 Document central legend and left-aligned stack implementation `fc27f4b`, its

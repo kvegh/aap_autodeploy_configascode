@@ -154,6 +154,28 @@ The object names used throughout the cards and private YAML are:
 
 Names are illustrative; changing these fixtures does not rename live AAP objects.
 
+
+## Presentation comparison
+
+The [original demo](https://kvegh.github.io/aap_autodeploy_configascode/) comes
+from `main`. The [light comparison](https://kvegh.github.io/aap_autodeploy_configascode/light/)
+comes from `visualization-light`, with softer styling and the same story.
+The existing main Pages workflow tests each checkout independently and publishes
+only their six public assets, with the light version under `/light/`. It pins
+the preview revision that passed the checks. Main-only deployment permissions
+and the existing Pages environment are retained.
+
+After pushing a preview branch update, trigger the existing publisher on main:
+
+```bash
+gh workflow run deploy-demo.yml --repo kvegh/aap_autodeploy_configascode --ref main
+```
+
+Use the existing live-check command from the matching branch checkout: the root
+URL for main, or the `/light/` URL for the preview. Exact asset matching ensures
+a passing check identifies the version being tested.
+
+
 ## Sysadmin illustration
 
 The owner requested a simple, expressive image with familiar Linux-admin cues

@@ -295,6 +295,11 @@ do not establish live migration or complete end-to-end acceptance.
 
 ## AAP Configuration as Code visualization
 
+A separate [light-style comparison](https://kvegh.github.io/aap_autodeploy_configascode/light/)
+is maintained on the `visualization-light` branch. The existing presentation
+remains at the site root. The main Pages workflow checks both versions, pins
+the tested preview revision and publishes their six public assets separately.
+
 [Open the interactive story](https://kvegh.github.io/aap_autodeploy_configascode/)
 to follow an original AAP, its first destination and another AAP rebuilt from
 Git, keeping private encrypted YAML separate from public execution playbooks.
