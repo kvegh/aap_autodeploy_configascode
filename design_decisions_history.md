@@ -4869,3 +4869,23 @@ The same 23 interaction checks passed against the downloaded deployed assets.
 Scroll-selection tests use simulated offsets; actual browser geometry was not
 measured. Version 0.63.1 documents the implementation and these verification
 limits without changing the deployed assets.
+
+
+## 2026-11-13 — Apply purple changes in the same layer order as blue
+
+Implementation `adb598bf6f0219f7f32e99bdf142e9b99b49b05a` (0.63.2)
+reorders the three purple stages to OS/RHEL configuration, AAP configuration,
+then additional AAP objects, following the owner's requested layer order.
+The certificate changes to v2 while Logging remains v1 and only the four blue
+base objects are present. Logging then changes to v2; the six purple objects
+arrive last. Earlier changes remain applied at each later stage. Change in Git
+now precedes Apply objects in chapter navigation, while existing direct links
+and the thirteen-stop story are preserved. The purple route colour begins at
+the OS update independently of the later object import.
+
+All 23 regression checks passed, including incremental state and backwards
+navigation. Pages run `43445905286` succeeded for this implementation; all six
+published assets matched and the same 23 interaction checks passed against the
+downloaded deployed assets. Browser geometry remains unmeasured. Runtime AAP
+automation is unchanged. Version 0.63.3 documents this result without changing
+the deployed assets.

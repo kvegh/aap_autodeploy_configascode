@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.3
+
+Document purple layer-order implementation `adb598b` (0.63.2). Pages deployment
+succeeded; six published assets matched and all 23 deployed-asset interaction
+checks passed, including forward and reverse layer transitions. Browser geometry
+remains unmeasured. Deployed assets are unchanged by this documentation commit.
+
 ## 0.63.2
 
 Apply purple Git-defined changes in the same layer order as the blue setup:
