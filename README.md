@@ -302,8 +302,11 @@ do not establish live migration or complete end-to-end acceptance.
 
 Both repository windows keep one complete, scrollable presentation file. The
 private file includes readable configuration labels, quoted Jinja variables for
-VM inputs and synthetic encrypted secret examples; the public file combines the relevant source-pinned playbook
-excerpts. Each step scrolls both panes to the matching section and colours only
+VM inputs and synthetic encrypted secret examples; the public file combines
+source-pinned playbook excerpts. RHEL setup shows the certificate task and firewall
+role with matching private inputs; a later certificate update highlights only its
+section. Travelling blocks use the same light fills as their configuration objects.
+Each step scrolls both panes to the matching section and colours only
 the active definitions/code, while all other sections remain available.
 
 The [decision history](design_decisions_history.md) records the original

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.6
+
+Show source-pinned certificate and firewall tasks with matching private mockup
+inputs. Focus both at initial OS setup and only certificate code at its later
+update. Explain local execution versus the remote AAP API target. Travelling
+blocks now share the light configuration-object fills, including manual/replay.
+
 ## 0.63.5
 
 Document the quoted mockup-variable change in `7f4979f` (0.63.4), successful

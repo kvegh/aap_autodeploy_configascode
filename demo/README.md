@@ -114,14 +114,22 @@ One shared renderer and a top-aligned stack prevent a placement/style switch
 between early OS preparation and full configuration. Redundant group,
 host-networking and top-right status captions are deleted, including presenter
 rendering code; sections keep concise direct accessibility labels. The redundant status text is removed from the presenter code, not retained
-as hidden content. The firewall example preserves its existing saved Job Template inputs;
-Certificate config represents the TLS configuration in
-`02-infra-config.yml`. The private YAML keeps stable template names with synthetic
-`extra_vars.config_revision` inputs and shows the supported
-`aap_upstream_hostname` input with generic before/after placeholders for nginx.
-These are illustrative revisions; full runtime definitions and dependent TLS
-settings are omitted. No new infrastructure playbook or runtime operation is
-introduced by the visualization.
+as hidden content. The public pane shows the actual Certbot certificate task
+from `02-infra-config.yml` and the firewall role from
+`tasks/aap-hypervisor-access.yml`, with separate source labels. Initial OS setup
+focuses both sections; the later Certificate v2 change focuses only certificate
+code, retaining Firewall v1 and excluding unrelated Job Template imports.
+The private examples show the matching subdomain/domain inputs and an illustrative
+binding from the synthetic encrypted firewall rule to the role's rich-rule input.
+The real access plan is computed by the existing automation; these examples are
+not a ready-to-run inventory. Both source excerpts act on the hypervisor; their
+placement inside the diagram's RHEL foundation is illustrative and does not claim
+that `02-infra-config.yml` configures guest firewalld. Full runtime prerequisites
+are omitted. No infrastructure playbook or runtime operation is added.
+
+Travelling packets use the same light blue, purple and yellow fills as the objects
+they represent. Arrows retain their stronger colours; packet chevrons stay dark
+for readability. The manual packet and mixed replay packets follow the same rule.
 
 The lower AAP rectangle stays hidden during the main story. **Room for another AAP**
 appears only in the brief **Ready for another AAP** preparation stop immediately
@@ -228,7 +236,7 @@ the operation, rather than inventing new deployed Job Templates.
 | VM, infrastructure, installer and shared base | `01-linux-vm-setup.yml` through `04-aap-config.yml` |
 | Project objects | `deploy-cac-project.yml`, `tasks/cac-resource-definitions.yml` |
 | Later Git-defined settings and object updates | `04-aap-config.yml`, `tasks/cac-resource-definitions.yml` |
-| Infrastructure configuration Job Template inputs | `deploy-cac-project.yml`, `tasks/cac-resource-definitions.yml` |
+| Certificate and firewall execution | `02-infra-config.yml`, `tasks/aap-hypervisor-access.yml` |
 | Manual changes returning to configuration | `capture-aap-cac.yml`, `docs/cac-reconciliation.md` |
 | Complete saved configuration on another AAP | `01-linux-vm-setup.yml` through `04-aap-config.yml`, `deploy-cac-project.yml`, `tasks/cac-resource-definitions.yml` |
 
@@ -236,7 +244,11 @@ The logging example uses the supported Controller setting
 `LOG_AGGREGATOR_ACTION_QUEUE_SIZE`, with synthetic 10000-to-20000 values.
 `controller_settings_base.settings` follows the shared/base configuration path;
 the generic project importer excludes Controller settings. The Git-change code
-preview cites both the existing base reapply and object-import paths. AAP EDA Config
+preview cites the existing base reapply and object-import paths in separate sections.
+The base play's `hosts: localhost` and `connection: local` mean execution inside
+the job's execution environment; the selected `aap_hostname` is the remote HTTPS
+API destination, not localhost. The displayed comment makes that distinction.
+AAP EDA Config
 v1 represents a retained decision-environment/rulebook-activation bundle using
 supported EDA CaC variables, not a generic EDA global-settings API. Its YAML is
 an excerpt, with other required activation fields omitted. Highlighted code is

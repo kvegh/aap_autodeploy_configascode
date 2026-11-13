@@ -147,8 +147,28 @@ test('the seven chapters cover deployment, capture and replay with existing sour
   for (const name of ['Regional servers', 'Regional automation']) assert.ok(initialConfiguration.includes(name), `${name}: project definition is already in Git`);
 
   assert.match(story.sourceRevision, /^[a-f0-9]{40}$/);
-  const publicSections = ['vm', 'infrastructure', 'installation', 'aap-settings', 'base-content', 'project-resources', 'job-templates', 'capture-implementation', 'capture-inputs'];
-  const completePublicText = story.executionLines(story.stateAt(0)).map(line => line.text).join('\n');
+  const publicSections = ['vm', 'certificate', 'firewall', 'installation', 'aap-settings', 'base-content', 'project-resources', 'job-templates', 'capture-implementation', 'capture-inputs'];
+  const publicEntries = story.executionLines(story.stateAt(0));
+  const completePublicText = publicEntries.map(line => line.text).join('\n');
+  const sectionText = section => publicEntries.filter(line => line.section === section).map(line => line.text).join('\n');
+  const certificate = sectionText('certificate');
+  assert.match(certificate, /ansible\.builtin\.command:/);
+  assert.match(certificate, /certbot certonly --nginx/);
+  assert.match(certificate, /-d \{\{ aap_test_subdomain \}\}\.\{\{ vault_domain \}\}/);
+  assert.match(certificate, /creates:.*fullchain\.pem/);
+  const firewall = sectionText('firewall');
+  assert.match(firewall, /ansible\.builtin\.include_role:/);
+  assert.match(firewall, /name: redhat\.rhel_system_roles\.firewall/);
+  assert.match(firewall, /rich_rule:.*\{\{ aap_management_native_plan\.rich_rule \}\}/);
+  for (const setting of ['state: enabled', 'runtime: true', 'permanent: true', 'no_log: true']) assert.ok(firewall.includes(setting));
+  for (const [section, reference] of [['certificate', '02-infra-config.yml'], ['firewall', 'tasks/aap-hypervisor-access.yml']]) {
+    assert.ok(publicEntries.filter(line => line.section === section).every(line => line.source === reference), `${section}: the actual implementation source is cited`);
+  }
+  const baseContent = sectionText('base-content');
+  assert.match(baseContent, /#.*localhost/i);
+  assert.match(baseContent, /#.*(?:execution environment|job EE)/i);
+  assert.match(baseContent, /#.*aap_hostname/);
+
   const sourceTexts = new Map();
   const readReference = reference => {
     assert.ok(existsSync(path.resolve(repository, reference)), reference);
@@ -451,11 +471,11 @@ test('complete local files retain pinned sources and scroll each pane to its cur
   assert.equal(story.stateAt(story.steps.findIndex(step => step.id === 'manual')).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 0);
   assert.throws(() => story.stateAt('capture'), TypeError);
   const publicFocus = {
-    separation: ['project-resources', 'job-templates'], vm: ['vm'], infrastructure: ['infrastructure'], installation: ['installation'],
+    separation: ['project-resources', 'job-templates'], vm: ['vm'], infrastructure: ['certificate', 'firewall'], installation: ['installation'],
     'base-aap': ['aap-settings'], base: ['base-content'], project: ['project-resources', 'job-templates'],
-    'git-change': ['aap-settings'], 'infra-change': ['infrastructure', 'job-templates'],
+    'git-change': ['aap-settings'], 'infra-change': ['certificate'],
     manual: ['capture-implementation'], capture: ['capture-implementation', 'capture-inputs'], 'next-aap': ['vm'],
-    rebuild: ['vm', 'infrastructure', 'installation', 'aap-settings', 'base-content', 'project-resources', 'job-templates'],
+    rebuild: ['vm', 'certificate', 'firewall', 'installation', 'aap-settings', 'base-content', 'project-resources', 'job-templates'],
   };
   const privateFocus = {
     separation: ['vm'], vm: ['vm'], infrastructure: ['certificate', 'firewall'], installation: ['installation'],
@@ -499,6 +519,15 @@ test('complete local files retain pinned sources and scroll each pane to its cur
         assert.match(text, /!vault\s*\|/);
         assert.match(text, /\$ANSIBLE_VAULT;1\.1;AES256/);
         assert.match(text, /fake|illustrative/i);
+        const certificateInputs = entries.filter(entry => entry.section === 'certificate').map(entry => entry.text).join('\n');
+        assert.match(certificateInputs, /aap_test_subdomain:\s*["']?\{\{/);
+        assert.match(certificateInputs, /vault_domain:\s*!vault\s*\|/);
+        const firewallInputs = entries.filter(entry => entry.section === 'firewall').map(entry => entry.text).join('\n');
+        assert.match(firewallInputs, /firewall_rule_encrypted:\s*!vault\s*\|/);
+        assert.match(firewallInputs, /aap_management_native_plan:/);
+        assert.match(firewallInputs, /rich_rule:\s*["']?\{\{\s*firewall_rule_encrypted\s*\}\}/);
+        assert.doesNotMatch(text, /certificate_config_encrypted|firewall_job_inputs/, 'Private RHEL examples bind to the shown implementation');
+
         for (const section of ['vm', 'certificate', 'firewall', 'installation', 'aap-secrets']) {
           assert.ok(entries.some(entry => entry.section === section && entry.text.includes('!vault')), `${step.id}: ${section} includes an illustrative encrypted input`);
         }
@@ -624,7 +653,7 @@ test('active arrows match the highlighted configuration origin and reset on navi
     ['infra-change', 'git', ['Certificate config v2']],
     ['capture', 'manual', ['Emergency servers', 'Quick-fix automation']],
     ['vm', 'base', ['!vault']],
-    ['infrastructure', 'base', ['firewall_rule_encrypted', 'certificate_config_encrypted']],
+    ['infrastructure', 'base', ['firewall_rule_encrypted', 'vault_domain', 'aap_test_subdomain']],
     ['installation', 'base', ['!vault']],
   ]) {
     page.hash(`#${id}`);
