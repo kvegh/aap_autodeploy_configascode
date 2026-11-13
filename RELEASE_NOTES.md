@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.61.15
+
+Scale receiving-AAP bars and their three equal gutters with each AAP using the
+Deploy application screenshot proportions. Use two equal flexible columns for
+objects, AAP configuration and RHEL profiles, without a fixed pixel bar width.
+Increase only coloured-bar text by two sizes using relative font units. Preserve
+anchored settings, regional-object timing, generated sysadmin and existing flows.
+
 ## 0.61.14
 
 Document width correction `512a2e5`, the inherited flex-alignment cause and the

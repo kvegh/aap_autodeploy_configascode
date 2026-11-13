@@ -529,20 +529,32 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   const styles = source('src/styles.css');
   assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/, 'Receiving content declares independent vertical layout');
   assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*align-items:\s*stretch;/, 'Receiving catalogues and settings must stretch across the body instead of inheriting shrink-to-content alignment');
-  assert.match(styles, /\.receiving-column\s*\{[^}]*--aap-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/, 'Receiving bars share two equal tracks');
-  assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*padding:\s*\d+px var\(--aap-gutter\);/, 'Outer body gutters use the common spacing');
+  const receivingLayout = styles.match(/(?:^|\n)\.receiving-column\s*\{([^}]+)}/)[1];
+  assert.match(receivingLayout, /--aap-gutter:\s*4\.7cqw;/, 'Receiving gutters scale with the card container');
+  assert.match(receivingLayout, /--aap-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/, 'Receiving bars share two equal proportional tracks');
+  assert.doesNotMatch(receivingLayout, /--aap-bar-width\s*:/, 'The rejected fixed bar width is removed');
+  assert.match(styles, /\.receiving-column \.receiving-slot\s*\{[^}]*container-type:\s*inline-size;/, 'Each receiving slot supplies its own proportional width context');
+  assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*padding:\s*[^;]+ var\(--aap-gutter\);/, 'Outer body gutters use the common proportional spacing');
   assert.match(styles, /\.object-list\.receiving-catalog\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*var\(--aap-gutter\);/, 'The object middle gap matches its outer gutters');
   assert.match(styles, /\.receiving-column \.aap-settings-panel\s*\{[^}]*margin:\s*auto\s+0\s+0;/, 'Settings keep bottom anchoring without narrowing their bars');
-  assert.match(styles, /\.aap-settings-panel \.configuration-list\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*\d+px var\(--aap-gutter\);/, 'AAP configuration uses the same track widths and middle gap');
+  assert.match(styles, /\.aap-settings-panel \.configuration-list\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*[^;]+ var\(--aap-gutter\);/, 'AAP configuration uses the same track widths and middle gap');
   assert.match(styles, /\.receiving-column \.rhel-foundation\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*column-gap:\s*var\(--aap-gutter\);/, 'RHEL profiles use the same tracks and gap');
-  const gutter = Number(styles.match(/--aap-gutter:\s*(\d+)px/)[1]);
-  const rhelBase = styles.match(/(?:^|\n)\.rhel-foundation\s*\{([^}]+)}/)[1];
+  for (const [label, rule] of [
+    ['Object catalogue', /\.object-list\.receiving-catalog\s*\{([^}]+)}/],
+    ['AAP settings', /\.aap-settings-panel \.configuration-list\s*\{([^}]+)}/],
+    ['RHEL settings', /\.receiving-column \.rhel-foundation\s*\{([^}]+)}/],
+  ]) assert.doesNotMatch(styles.match(rule)[1], /justify-content:\s*space-evenly;/, `${label}: shared gutters provide spacing without a fixed-width distribution`);
   const rhelReceiving = styles.match(/\.receiving-column \.rhel-foundation\s*\{([^}]+)}/)[1];
-  const border = Number(rhelBase.match(/\bborder:\s*(\d+)px/)[1]);
-  const leftBorder = Number(rhelBase.match(/border-left:\s*(\d+)px/)[1]);
-  const margin = Number(rhelReceiving.match(/margin:\s*0\s+(\d+)px\s+\d+px/)[1]);
-  const padding = rhelReceiving.match(/padding:\s*\d+px\s+(\d+)px\s+\d+px\s+(\d+)px/).slice(1).map(Number);
-  assert.equal(2 * margin + border + leftBorder + padding[0] + padding[1], 2 * gutter, 'Declared RHEL horizontal insets leave the same bar width as the AAP body');
+  assert.match(rhelReceiving, /border-width:\s*\.125rem;/);
+  assert.match(rhelReceiving, /border-left-width:\s*\.25rem;/);
+  assert.match(rhelReceiving, /margin:\s*0\s+\.25rem\s+\.5rem;/);
+  assert.match(rhelReceiving, /padding:\s*\.375rem\s+calc\(var\(--aap-gutter\) - \.375rem\)\s+\.375rem\s+calc\(var\(--aap-gutter\) - \.5rem\);/, 'RHEL padding compensates its margins and borders to preserve the same proportional rails');
+  assert.match(styles, /(?:^|\n)\.object-name\s*\{[^}]*font-size:\s*\.9375rem;/, 'Object names use the larger bar-only text size');
+  assert.match(styles, /\.rhel-foundation \.object-name\s*\{[^}]*font-size:\s*\.875rem;/, 'RHEL names use the larger bar-only text size');
+  assert.match(styles, /(?:^|\n)\.origin-label\s*\{[^}]*font-size:\s*\.625rem;/, 'Origin badges remain readable inside coloured bars');
+  assert.match(styles, /(?:^|\n)\.git-badge\s*\{[^}]*font-size:\s*\.625rem;/, 'Captured-origin badges use the larger coloured-bar text size');
+  assert.match(styles, /(?:^|\n)\.rhel-config\s*\{[^}]*font-size:\s*\.8125rem;/, 'Early RHEL configuration bars use the larger scoped text size');
+  assert.match(styles, /(?:^|\n)\.rhel-config-origin\s*\{[^}]*font-size:\s*\.625rem;/, 'Early RHEL origin badges use the larger scoped text size');
   assert.match(styles, /\.aap-settings-panel::before\s*\{[^}]*border-top:\s*1px solid/, 'The category has one thin separator');
   assert.equal(successorItems.filter(item => item.dataset.origin === 'base').length, 4);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'git').length, 6);

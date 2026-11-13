@@ -32,14 +32,17 @@ as a full-width bottom category, separated by one light horizontal line inset fr
 the card borders. Its two settings share a compact row, with RHEL beneath. The category is anchored
 at the bottom of the receiving AAP body from initial setup, reserving empty
 space for objects above so the divider does not follow their growing count.
-All component bars share the same column width, including AAP Logging/EDA and
-RHEL Certificate/Firewall. A shared gutter gives the object columns equal left,
-middle and right spacing; the RHEL boxes retain their compact right-hand stack.
-The receiving flex body explicitly stretches the catalogue and settings to its
-full inner width, overriding the original grid alignment. This prevents names
-and object counts from shrink-wrapping either panel between story stages. Compact
-22px bars retain 13px names without row-synchronised empty space or an internal
-receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
+All component bars follow the Deploy application reference proportions from the
+supplied screenshot, including AAP Logging/EDA and RHEL Certificate/Firewall.
+Each receiving slot provides its own width reference: the left, middle and right
+gutters each use 4.7 percent of that slot's width, with two equal flexible tracks
+between them. Bars and gutters scale together without a fixed bar width. The
+RHEL boxes retain their compact right-hand stack, aligned with the object and
+AAP-setting columns. Text and object counts do not change bar length between
+stages. Coloured bar names are two sizes larger (15px-equivalent automation/AAP
+names and 14px-equivalent RHEL names, expressed in relative rem units); their
+origin badges also increase by two sizes. Category headings, sidebar and code
+text are unchanged. Text wraps without an internal receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
 available canvas height, centred with balanced top/bottom spacing rather than a
 fixed 860px maximum. Major card borders are dark 3px and Git previews use 14px text;
 the repository-type headings use 17px text. If a short viewport still requires scrolling,
