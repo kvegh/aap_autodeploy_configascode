@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Explain origins once below the original AAP — 2026-11-13
+
+Implementation `fc27f4bfc952255f1bae14dddd5ffccaee0c00ae` (source 0.61.19)
+replaces repeated Base, From Git, Manual, Captured and In Git badges with one
+blue/purple/yellow legend beneath the original middle AAP. This gives the object
+names more room while retaining one explicit explanation of base deployment,
+Git-defined configuration and manual changes captured back into Git. Badge
+markup and styles are deleted; named accessible groups retain origin and whether
+manual changes have been saved. The underlying capture and replay states remain.
+
+The owner's subsequent alignment choice supersedes the previous equal-gutter
+layout: each stack now starts just inside its own half, with a small relative
+left inset and tiny vertical gaps. Automation, AAP settings and RHEL profiles
+keep one responsive width. The legend participates in the middle column's layout
+rather than covering another panel; narrow layouts include its natural height.
+
+All twenty-three existing walkthrough tests passed, including each story stop's
+badge-free names, origin/capture state, accessible descriptions, central legend
+placement and the relative left-alignment declarations. Syntax and whitespace
+checks passed. Browser-rendered measurements remain unverified. No dependency,
+AAP runtime or recovery-export changes are involved.
+
 ## Remove redundant deployment navigation — 2026-11-13
 
 Implementation `e65e534eee3e103c45f46c2d7e926ca6ea6d8a6f` (source 0.61.17)

@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.61.20
+
+Document central legend and left-aligned stack implementation `fc27f4b`, its
+responsive component geometry, badge deletion and twenty-three passing checks.
+
 ## 0.61.19
 
 Replace repeated object origin/capture badges with one explanatory colour legend
