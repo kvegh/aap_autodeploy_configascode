@@ -55,7 +55,7 @@ labels, a persistent current-step heading and distinct completed/current chapter
 chapter changes keep the active navigation item in view. There is no marketing hero
 or explanatory scene header above the diagram. Stage 02 is labelled **Prepare OS
 for AAP installation**. Strong fills, borders and the central legend distinguish the origins. Active connectors use a bold directional line, brief travelling markers
-and normal HTML action labels, avoiding stretched SVG text. Arrow strokes,
+and larger HTML action labels that wrap between words, avoiding stretched SVG text. Arrow strokes,
 markers and labels share the highlighted code/object-origin colour: deployment
 and base configuration remain blue, Git-defined additions use violet, and
 captured manual definitions use amber. The highlighted YAML identifies the
@@ -153,27 +153,6 @@ The object names used throughout the cards and private YAML are:
 | Base Job Template | AAP Config-as-Code jobs |
 
 Names are illustrative; changing these fixtures does not rename live AAP objects.
-
-
-## Presentation comparison
-
-The [original demo](https://kvegh.github.io/aap_autodeploy_configascode/) comes
-from `main`. The [light comparison](https://kvegh.github.io/aap_autodeploy_configascode/light/)
-comes from `visualization-light`, with softer styling and the same story.
-The existing main Pages workflow tests each checkout independently and publishes
-only their six public assets, with the light version under `/light/`. It pins
-the preview revision that passed the checks. Main-only deployment permissions
-and the existing Pages environment are retained.
-
-After pushing a preview branch update, trigger the existing publisher on main:
-
-```bash
-gh workflow run deploy-demo.yml --repo kvegh/aap_autodeploy_configascode --ref main
-```
-
-Use the existing live-check command from the matching branch checkout: the root
-URL for main, or the `/light/` URL for the preview. Exact asset matching ensures
-a passing check identifies the version being tested.
 
 
 ## Sysadmin illustration

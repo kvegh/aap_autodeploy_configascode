@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.61.24
+
+Remove the rejected light preview from Pages publication and restore the
+original-only six-asset publisher. Remove active preview documentation. Enlarge
+all arrow captions and descriptions, wrapping between words without splitting
+words; retain the original styling and story.
+
 ## 0.61.23
 
 Document the previously missing `31dab22` component-width and project-import
