@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.61.18
+
+Document sidebar removal `e65e534`, preserved main-story navigation and the
+twenty-three passing interaction checks.
+
 ## 0.61.17
 
 Remove the AAP Deployment section and its four sidebar buttons, including unused

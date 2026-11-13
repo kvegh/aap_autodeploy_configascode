@@ -1,5 +1,18 @@
 # Design decisions history
 
+## Remove redundant deployment navigation — 2026-11-13
+
+Implementation `e65e534eee3e103c45f46c2d7e926ca6ea6d8a6f` (source 0.61.17)
+removes the AAP Deployment heading and four stage buttons from the sidebar at
+the owner's request. The markup, event handlers, stage-button state rendering
+and desktop/mobile styles are deleted. The story keeps all twelve stops and
+seven chapters, with Next/Previous, keyboard and direct hash navigation.
+
+The existing deployment test now advances through all four setup stops using
+Next and confirms that the separate sidebar controls are absent. All twenty-three
+local checks passed (577.7 ms); script syntax and whitespace checks passed.
+No dependency, AAP runtime or recovery-export changes are involved.
+
 ## Scale component bars with the receiving AAP — 2026-11-13
 
 Implementation `e2fb2425530f64476975d2df5758cbb7885dc568` (source 0.61.15)
