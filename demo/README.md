@@ -15,10 +15,13 @@ before the four shared inventories/projects/credentials/jobs. `#base-aap` opens
 the settings stop and the existing `#base` link opens completed base content.
 Chapter positions follow the stops. These are visual stops explaining existing
 configuration paths, not new AAP Job Templates or runtime deployment stages.
-Later project imports and revisions follow.
-Regional servers and Regional automation are part of the same project import as
-Satellite Inventory and Application automation playbooks. The Change in Git stop
-updates AAP Logging Config only; it retains the already imported objects.
+Purple Git-defined changes then follow the same layer order: **OS/RHEL
+configuration**, **AAP configuration**, then **AAP objects**. Change in Git first
+updates Certificate config to v2 while retaining Logging v1 and the four blue
+base objects, then updates AAP Logging Config to v2 while retaining the OS
+change. Apply objects finally imports the six additional purple objects.
+Regional servers and Regional automation are part of that same project import
+as Satellite Inventory and Application automation playbooks.
 Backwards navigation, restart and direct links restore the corresponding state.
 
 The interface uses a light canvas and labelled origin colours: blue for base

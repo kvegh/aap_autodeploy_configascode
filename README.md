@@ -377,6 +377,10 @@ replaces Certificate config v1 with purple v2 there, retaining blue Firewall v1;
 rebuilt instance receives the resulting configuration. Dark 3px card borders and
 larger Git text make the diagram easier to read.
 
+Purple Git-defined changes follow the same layer order as the blue setup:
+OS/RHEL Certificate configuration, AAP Logging configuration, then additional
+AAP objects. Earlier changes remain applied as the story advances.
+
 The new VM appears in Stage 01, receiving AAP in Stage 03 and base definitions
 in Stage 04. Trigger choices and detailed scan/review mechanics are abstracted.
 Implementation links, repeatable interaction checks and local preview instructions

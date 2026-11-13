@@ -125,7 +125,8 @@ const manualItems = node => withClass(node, 'object-item').filter(item => item.d
 test('the seven chapters cover deployment, capture and replay with existing source links', () => {
   assert.equal(story.chapters.length, 7);
   assert.equal(story.steps.length, 13);
-  assert.deepEqual(story.steps.slice(0, 6).map(step => step.id), ['separation', 'vm', 'infrastructure', 'installation', 'base-aap', 'base']);
+  assert.deepEqual(story.steps.map(step => step.id), ['separation', 'vm', 'infrastructure', 'installation', 'base-aap', 'base', 'infra-change', 'git-change', 'project', 'manual', 'capture', 'next-aap', 'rebuild']);
+  assert.deepEqual(story.chapters.map(chapter => chapter.id), ['separation', 'deployment', 'git-change', 'project', 'manual', 'capture', 'rebuild']);
   assert.ok(story.steps.every(step => step.id !== 'base-rhel'), 'OS preparation already applies RHEL configuration; no duplicate apply stop remains');
   assert.deepEqual(story.steps.slice(1, 6).map(step => step.stage), [1, 2, 3, 4, 4]);
   assert.ok(story.steps.slice(1, 6).every(step => step.chapter === 'deployment'));
@@ -262,16 +263,30 @@ test('the source job reads both repositories and applies project objects', () =>
   assert.equal(nodes['flow-apply'].hidden, false);
 });
 
-test('the CaC logging edit updates settings without adding project objects or altering the source AAP', () => {
-  const page = browser('#project');
+test('purple Git changes apply RHEL, AAP settings and additional objects in layer order', () => {
+  const page = browser('#base');
   const { nodes } = page;
   const original = objectNames(nodes['source-objects']);
-  const projectObjects = objectNames(nodes['target-objects']);
-  assert.equal(projectObjects.length, 10);
-  for (const name of ['Regional servers', 'Regional automation']) assert.ok(projectObjects.includes(name));
-  page.chapter('git-change');
-  assert.deepEqual(objectNames(nodes['target-objects']), projectObjects, 'All six project objects were deployed in the preceding stop');
-  assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
+  const baseObjects = objectNames(nodes['target-objects']);
+  assert.equal(baseObjects.length, 4);
+  for (const [id, logging, objectCount] of [
+    ['infra-change', 'AAP Logging Config v1', 4],
+    ['git-change', 'AAP Logging Config v2', 4],
+    ['project', 'AAP Logging Config v2', 10],
+  ]) {
+    nodes.next.click();
+    assert.equal(nodes['scene-title'].textContent, story.steps.find(step => step.id === id).title);
+    assert.deepEqual(objectNames(nodes['target-infrastructure']), ['Certificate config v2', 'Firewall Config v1'], `${id}: RHEL changes land first`);
+    assert.deepEqual(objectNames(nodes['target-configuration']), [logging, 'AAP EDA Config v1'], `${id}: AAP settings change second`);
+    assert.equal(objectNames(nodes['target-objects']).length, objectCount, `${id}: additional objects land last`);
+    if (objectCount === 4) assert.deepEqual(objectNames(nodes['target-objects']), baseObjects);
+    for (const name of ['Regional servers', 'Regional automation']) {
+      assert.equal(objectNames(nodes['target-objects']).includes(name), id === 'project', `${id}: ${name} is added only at the objects stop`);
+    }
+    for (const route of ['flow-config', 'flow-code', 'flow-apply']) assert.equal(nodes[route].dataset.origin, 'git', `${id}: purple apply route`);
+    assert.deepEqual(objectNames(nodes['source-objects']), original, `${id}: original AAP objects are preserved`);
+  }
+  page.hash('#git-change');
   assert.equal(withClass(nodes['config-lines'], 'line-added').length, 0, 'The settings edit does not introduce new inventory or project definitions');
   const highlighted = withClass(nodes['config-lines'], 'line-active').map(line => line.textContent);
   assert.ok(highlighted.some(line => line.includes('AAP Logging Config v2')));
@@ -281,7 +296,6 @@ test('the CaC logging edit updates settings without adding project objects or al
   }
   assert.match(nodes['code-lines'].textContent, /Import ordinary configuration resources/, 'The full public file retains imports at the settings stop');
   assert.doesNotMatch(withClass(nodes['code-lines'], 'line-active').map(line => line.textContent).join('\n'), /Import ordinary configuration resources/, 'Only settings application is highlighted at this stop');
-  assert.deepEqual(objectNames(nodes['source-objects']), original);
   assert.equal(nodes.actor.hidden, false);
   assert.equal(nodes['actor-title'].textContent, 'Configuration author');
 });
@@ -322,13 +336,16 @@ test('backwards navigation and restart reverse capture, manual additions and set
   assert.equal(manualItems(nodes['target-objects']).length, 0);
   assert.ok(nodes['config-lines'].textContent.includes('Regional servers'));
   nodes.previous.click();
-  assert.ok(objectNames(nodes['target-objects']).includes('Regional servers'), 'Project objects remain while backing up before the infrastructure update');
+  assert.equal(objectNames(nodes['target-objects']).length, 4, 'Backing up from project removes its additional objects');
   assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v2', 'AAP EDA Config v1']);
+  assert.deepEqual(objectNames(nodes['target-infrastructure']), ['Certificate config v2', 'Firewall Config v1']);
   nodes.previous.click();
-  assert.ok(objectNames(nodes['target-objects']).includes('Regional servers'), 'The project stop already contains the regional inventory');
+  assert.equal(objectNames(nodes['target-objects']).length, 4, 'The RHEL update precedes additional project objects');
   assert.deepEqual(objectNames(nodes['target-configuration']), ['AAP Logging Config v1', 'AAP EDA Config v1'], 'Backing up before the logging update restores its v1 settings');
+  assert.deepEqual(objectNames(nodes['target-infrastructure']), ['Certificate config v2', 'Firewall Config v1'], 'The preceding RHEL update is retained');
   nodes.previous.click();
   assert.ok(!objectNames(nodes['target-objects']).includes('Regional servers'), 'Base AAP does not yet contain the additional project inventory');
+  assert.deepEqual(objectNames(nodes['target-infrastructure']), ['Certificate config v1', 'Firewall Config v1'], 'Backing up before the RHEL update restores its v1 settings');
   assert.ok(nodes['config-lines'].textContent.includes('Regional servers'), 'Its desired definition remains in Git before deployment');
   nodes.restart.click();
   assert.equal(nodes['step-count'].textContent, `1 / ${story.steps.length}`);
@@ -500,9 +517,9 @@ test('active routes remain visible and deployment actions name the current stage
     ['installation', 'Install AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['base-aap', 'Apply AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['base', 'Apply content', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['git-change', 'Apply changes', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['infra-change', 'Apply infra', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['git-change', 'Apply changes', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['manual', null, null, []],
     ['capture', null, null, ['flow-scan', 'flow-return']],
     ['next-aap', null, null, []],
@@ -654,13 +671,13 @@ test('base AAP configuration is deployed and Git updates replace logging without
     assert.equal(nodes['target-configuration-panel'].hidden, true);
     assert.deepEqual(names('target-configuration'), []);
   }
-  for (const id of ['base-aap', 'base', 'project']) {
+  for (const id of ['base-aap', 'base', 'infra-change']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-configuration-panel'].hidden, false);
     assert.deepEqual(names('target-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
     for (const item of withClass(nodes['target-configuration'], 'configuration-item')) assert.equal(item.dataset.origin, 'base');
   }
-  for (const id of ['git-change', 'infra-change', 'manual', 'capture', 'rebuild']) {
+  for (const id of ['git-change', 'project', 'manual', 'capture', 'next-aap', 'rebuild']) {
     page.hash(`#${id}`);
     assert.deepEqual(names('target-configuration'), ['AAP Logging Config v2', 'AAP EDA Config v1']);
     const configs = withClass(nodes['target-configuration'], 'configuration-item');
@@ -838,8 +855,8 @@ test('the sidebar marks completed chapters and follows only a changed current ch
   const gitChapter = buttons.find(button => button.dataset.chapter === 'git-change');
   const gitRequests = gitChapter.scrollRequests.length;
   page.nodes.next.click();
-  assert.equal(page.nodes['job-label'].textContent, 'Apply infrastructure configuration');
-  assert.equal(gitChapter.scrollRequests.length, gitRequests, 'The infrastructure substep retains the current Git chapter');
+  assert.equal(page.nodes['job-label'].textContent, 'Apply configuration');
+  assert.equal(gitChapter.scrollRequests.length, gitRequests, 'The logging substep retains the current Git chapter');
   assert.equal(gitChapter.attributes['aria-current'], 'step');
 });
 
@@ -857,13 +874,13 @@ test('infrastructure configuration updates certificates while retaining firewall
     assert.equal(nodes['target-infrastructure-panel'].hidden, ['separation', 'vm'].includes(id), id);
     assert.deepEqual(names('target-infrastructure'), ['separation', 'vm'].includes(id) ? [] : original, id);
   }
-  for (const id of ['base-aap', 'base', 'project', 'git-change']) {
+  for (const id of ['base-aap', 'base']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-infrastructure-panel'].hidden, false, id);
     assert.deepEqual(names('target-infrastructure'), original, id);
     for (const item of withClass(nodes['target-infrastructure'], 'configuration-item')) assert.equal(item.dataset.origin, 'base');
   }
-  for (const id of ['infra-change', 'manual', 'capture', 'next-aap', 'rebuild']) {
+  for (const id of ['infra-change', 'git-change', 'project', 'manual', 'capture', 'next-aap', 'rebuild']) {
     page.hash(`#${id}`);
     assert.deepEqual(names('target-infrastructure'), updated, id);
     assert.deepEqual(names('source-infrastructure'), original, id);
@@ -882,7 +899,7 @@ test('infrastructure configuration updates certificates while retaining firewall
   for (const line of highlighted) assert.equal(line.dataset.origin, 'git');
   nodes.previous.click();
   assert.deepEqual(names('target-infrastructure'), original, 'Backing up restores the previous infrastructure revision');
-  assert.deepEqual(names('target-configuration'), ['AAP Logging Config v2', 'AAP EDA Config v1'], 'The earlier logging update is retained');
+  assert.deepEqual(names('target-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1'], 'The logging update follows the RHEL update');
   page.hash('#rebuild');
   assert.deepEqual(names('successor-infrastructure'), updated);
   nodes.restart.click();

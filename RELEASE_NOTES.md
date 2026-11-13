@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.2
+
+Apply purple Git-defined changes in the same layer order as the blue setup:
+OS/RHEL Certificate configuration, AAP Logging configuration, then additional
+AAP objects. Keep chapter navigation, incremental state, colours and repository
+section focus aligned with that order.
+
 ## 0.63.1
 
 Document complete repository previews and stable original-AAP placement from
