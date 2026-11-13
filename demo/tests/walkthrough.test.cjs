@@ -528,6 +528,7 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   }
   const styles = source('src/styles.css');
   assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*display:\s*flex;[^}]*flex-direction:\s*column;/, 'Receiving content declares independent vertical layout');
+  assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*align-items:\s*stretch;/, 'Receiving catalogues and settings must stretch across the body instead of inheriting shrink-to-content alignment');
   assert.match(styles, /\.receiving-column\s*\{[^}]*--aap-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/, 'Receiving bars share two equal tracks');
   assert.match(styles, /\.receiving-column \.aap-content\s*\{[^}]*padding:\s*\d+px var\(--aap-gutter\);/, 'Outer body gutters use the common spacing');
   assert.match(styles, /\.object-list\.receiving-catalog\s*\{[^}]*grid-template-columns:\s*var\(--aap-columns\);[^}]*gap:\s*var\(--aap-gutter\);/, 'The object middle gap matches its outer gutters');

@@ -134,7 +134,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .receiving-column { --aap-gutter:10px; --aap-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(min-content,1fr)); }
 .receiving-column .receiving-slot { min-height:min-content; }
 .receiving-column .aap-card { min-height:min-content; overflow:visible; }
-.receiving-column .aap-content { display:flex; flex-direction:column; gap:8px; flex:1 0 auto; min-height:min-content; padding:6px var(--aap-gutter); overflow:visible; }
+.receiving-column .aap-content { display:flex; flex-direction:column; align-items:stretch; gap:8px; flex:1 0 auto; min-height:min-content; padding:6px var(--aap-gutter); overflow:visible; }
 .object-list.receiving-catalog { display:grid; grid-template-columns:var(--aap-columns); align-items:start; gap:var(--aap-gutter); }
 .aap-object-column { display:flex; flex-direction:column; gap:6px; min-width:0; }
 .receiving-catalog .object-type,.aap-settings-panel .configuration-heading { margin:0 0 4px; font-size:11px; line-height:1.3; }

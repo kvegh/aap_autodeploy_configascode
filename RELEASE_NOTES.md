@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.61.13
+
+Stretch the receiving AAP catalogue and settings across the content width. The
+flex body previously inherited grid-style start alignment, allowing those panels
+to shrink around their text and vary between stages despite equal grid tracks.
+Retain the shared object/AAP/RHEL bar widths and equal outer/middle gutters.
+The focused regression fails on the old rule; rendered browser measurements
+remain outside the existing-tool verification scope.
+
 ## 0.61.12
 
 Integrate the tested Orchestrator selector binding with current visualization changes. Preserve both histories. Document successful fresh-receiver base configuration and actual Core 2.20 runtime acceptance; normal Orchestrator import acceptance remains pending.

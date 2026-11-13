@@ -34,7 +34,10 @@ at the bottom of the receiving AAP body from initial setup, reserving empty
 space for objects above so the divider does not follow their growing count.
 All component bars share the same column width, including AAP Logging/EDA and
 RHEL Certificate/Firewall. A shared gutter gives the object columns equal left,
-middle and right spacing; the RHEL boxes retain their compact right-hand stack. Compact
+middle and right spacing; the RHEL boxes retain their compact right-hand stack.
+The receiving flex body explicitly stretches the catalogue and settings to its
+full inner width, overriding the original grid alignment. This prevents names
+and object counts from shrink-wrapping either panel between story stages. Compact
 22px bars retain 13px names without row-synchronised empty space or an internal
 receiving scroll pane. On desktop, the receiving/code rows use 95 percent of the
 available canvas height, centred with balanced top/bottom spacing rather than a
