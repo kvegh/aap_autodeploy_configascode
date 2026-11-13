@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.1
+
+Document complete repository previews and stable original-AAP placement from
+`2027412` (0.63.0). Pages publication succeeded; six deployed assets matched and
+all 23 deployed-asset interaction checks passed. Browser geometry remains
+unmeasured. This documentation update does not change the deployed assets.
+
 ## 0.63.0
 
 Keep both repository panes as complete scrollable files with relevant section

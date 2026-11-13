@@ -4844,3 +4844,28 @@ fields and seven refusal cases. Both complete playbooks passed syntax checks.
 Source route IDs are not copied into new receivers. The firewall decision for
 new receivers reaching the protected Source Hub remains separate. Version
 0.59.4 records this implementation and its verification limits.
+
+
+## 2026-11-13 — Keep complete repository previews and reserve sysadmin space
+
+Implementation `202741292f577ebfa152aa74f9f288d1cb8545d7` (0.63.0)
+keeps one continuous scrollable presentation file in each repository pane.
+The private pane already retained the complete configuration; its existing
+behavior is preserved and extended with explicitly synthetic Vault-style inputs.
+The public pane now combines the pinned playbook excerpts rather than replacing
+them at every step. Each step focuses and scrolls within its relevant sections;
+all other sections remain available. Focus and execution highlighting are
+separate so merely showing capture code does not imply running it.
+
+These are presentation examples. Runtime playbooks and the whole-file Vault
+storage architecture are unchanged. Certificate settings are illustrative;
+Certbot-managed private keys are not moved into Git. The existing sysadmin figure
+also has permanent reserved space above the original AAP, keeping that AAP in
+its lower position throughout the story instead of moving it at the outage step.
+
+The 23-case local regression suite passed. Pages run `43444124218` succeeded for
+the implementation commit, and all six deployed assets matched the checkout.
+The same 23 interaction checks passed against the downloaded deployed assets.
+Scroll-selection tests use simulated offsets; actual browser geometry was not
+measured. Version 0.63.1 documents the implementation and these verification
+limits without changing the deployed assets.
