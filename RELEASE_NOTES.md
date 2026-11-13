@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.4
+
+Use quoted Jinja variable references for the mockup VM name, network and golden
+image path. These remain illustrative input names; runtime automation is unchanged.
+
 ## 0.63.3
 
 Document purple layer-order implementation `adb598b` (0.63.2). Pages deployment

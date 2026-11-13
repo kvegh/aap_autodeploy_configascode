@@ -117,9 +117,9 @@
     ]);
     append('vm', [
       '', '# VM creation · illustrative encrypted inputs',
-      'vm_name: <reserved-vm-name>',
-      'vm_network: <guest-network>',
-      'aap_golden_image_path: <verified-golden-image-path>',
+      'vm_name: "{{ reserved_vm_name }}"',
+      'vm_network: "{{ guest_network }}"',
+      'aap_golden_image_path: "{{ verified_golden_image_path }}"',
       ...encryptedExample('vault_ansible_password'),
     ], { active: replaying || id === 'vm', focus: replaying || ['separation', 'vm', 'next-aap'].includes(id) });
 

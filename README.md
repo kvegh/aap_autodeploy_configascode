@@ -301,8 +301,8 @@ do not establish live migration or complete end-to-end acceptance.
 ## AAP Configuration as Code visualization
 
 Both repository windows keep one complete, scrollable presentation file. The
-private file includes readable configuration labels and synthetic encrypted
-secret examples; the public file combines the relevant source-pinned playbook
+private file includes readable configuration labels, quoted Jinja variables for
+VM inputs and synthetic encrypted secret examples; the public file combines the relevant source-pinned playbook
 excerpts. Each step scrolls both panes to the matching section and colours only
 the active definitions/code, while all other sections remain available.
 
