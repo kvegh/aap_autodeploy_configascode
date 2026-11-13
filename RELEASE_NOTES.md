@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.62.5
+
+Document duplicate-step/status-summary removal and navigation stabilization from
+`38a61b5`, with preserved early RHEL configuration and passing walkthrough checks.
+
 ## 0.62.4
 
 Remove the duplicate Apply RHEL stop; OS preparation already applies those

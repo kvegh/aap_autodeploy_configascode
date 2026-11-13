@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Remove the duplicate RHEL action and stabilize navigation — 2026-11-13
+
+Implementation `38a61b5dded16553d21588cb35c04b27130057a8` (source 0.62.4)
+removes the later Apply RHEL stop at the owner's request. Certificate and Firewall
+already apply during OS preparation; repeating the same action in the base push
+adds no useful distinction. The thirteen-stop story retains separate AAP
+configuration and AAP content stops, and RHEL state follows the earlier setup.
+The canonical Certificate-above-Firewall stack and larger arrow text remain.
+This supersedes the RHEL portion of the earlier three-category base sequence.
+
+The owner also removed the bottom object/profile count summary. Its markup,
+render assignment and styles are deleted rather than hidden. Navigation lives
+in a separate nonshrinking footer with an automatic top margin. Stable grid
+tracks and relative button dimensions keep the Next/Complete frame consistent;
+narrow layouts give the controls a full footer row. Changing step content and
+summary wrapping no longer determine the navigation row's height.
+
+All twenty-three existing walkthrough tests, script syntax and whitespace checks
+passed. They cover the removed step, early RHEL state, settings/content sequence,
+summary absence and footer/control structure while retaining prior replay and
+ordering checks. No browser binary was available, so pixel-position measurements
+were not performed; no browser or dependency was installed. No runtime automation
+or recovery-export changes are part of this work.
+
 ## Allow a bounded wait for longer shared native transactions — 2026-11-13
 
 Implementation `2c3f56800aeceab9ea9a4bf05aa44b934b90dc0c` (source 0.62.2)
