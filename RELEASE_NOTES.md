@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.61.16
+
+Document responsive component sizing and coloured-bar text implementation
+`e2fb242`. Pages run 43398234088 succeeded; all six live assets matched and
+twenty-three deployed checks passed. Browser-rendered geometry remains unverified.
+
 ## 0.61.15
 
 Scale receiving-AAP bars and their three equal gutters with each AAP using the

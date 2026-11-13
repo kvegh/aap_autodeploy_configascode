@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Scale component bars with the receiving AAP — 2026-11-13
+
+Implementation `e2fb2425530f64476975d2df5758cbb7885dc568` (source 0.61.15)
+uses the supplied Deploy application screenshot as a proportion reference.
+The owner rejected both expanding bars into the available half-width and a
+fixed-pixel interpretation. The fixed-width draft was replaced before publication.
+Each receiving slot now supplies a width reference for three equal proportional
+gutters and two equal flexible columns. Object, AAP-setting and RHEL bars share
+those columns; RHEL padding compensates its border and margin to retain alignment.
+The settings divider stays anchored and the story's object timing is unchanged.
+
+Only coloured-bar text grows by two sizes, expressed in relative font units.
+Headings, sidebar and code text keep their existing sizes. Existing native CSS
+and the current test runner suffice; no dependency or framework was added.
+
+All twenty-three local checks, script syntax and whitespace checks passed.
+No red run was observed for this iteration: the CSS update completed before the
+revised tests ran. Pages run 43398234088 succeeded; six deployed assets matched
+and twenty-three live interaction checks passed (615.0 ms). Browser-rendered
+measurements remain unverified. Recovery/export bookkeeping remains owned by
+the original AutoDeploy conversation and was not executed here.
+
 ## Stretch receiving panels instead of sizing them around their text — 2026-11-13
 
 Implementation `512a2e51f56c04f5f44c68e9f81c9091427a44ef` (source 0.61.13)
