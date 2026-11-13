@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.61.22
+
+Document dual-preview publisher `26a34d2`, its exact tested-revision pin, existing
+Pages permission boundary and preservation of the original demo assets.
+
 ## 0.61.21
 
 Publish the separately tested visualization-light branch under /light/ alongside

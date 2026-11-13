@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Publish both presentation variants through the existing Pages site — 2026-11-13
+
+Implementation `26a34d2395eb8d83b2f5e7ee6363d328dc7d903f` (source 0.61.21)
+adds the owner-selected `/light/` preview from `visualization-light` while keeping
+the original demo at the site root. Each source checkout is checked separately;
+the publisher pins the exact preview revision that passed. Only the six existing
+public assets from each version are copied into the artifact.
+
+The existing main-only Pages job, environment, permissions and missing-source
+guard remain. Preview refreshes use the existing manual workflow dispatch on
+main, so no new repository, hosting service, credential or branch-environment
+permission is required. The original demo's six assets are unchanged.
+
+Local workflow validation covered YAML structure, shell syntax, checkout/ref
+pinning and the exact asset allowlists. Script syntax and the existing main
+walkthrough test command passed. Actual Pages execution and live asset checks
+remain the publication acceptance steps, not outcomes implied by local checks.
+
 ## Explain origins once below the original AAP — 2026-11-13
 
 Implementation `fc27f4bfc952255f1bae14dddd5ffccaee0c00ae` (source 0.61.19)
