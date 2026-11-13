@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.5
+
+Document the quoted mockup-variable change in `7f4979f` (0.63.4), successful
+Pages publication and 23 passing deployed-asset interaction checks.
+
 ## 0.63.4
 
 Use quoted Jinja variable references for the mockup VM name, network and golden

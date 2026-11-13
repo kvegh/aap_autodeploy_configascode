@@ -4889,3 +4889,15 @@ published assets matched and the same 23 interaction checks passed against the
 downloaded deployed assets. Browser geometry remains unmeasured. Runtime AAP
 automation is unchanged. Version 0.63.3 documents this result without changing
 the deployed assets.
+
+
+## 2026-11-13 — Show quoted Jinja variables in mockup VM inputs
+
+Implementation `7f4979f3f995f2ef82be5db1707850a115b4f0f7` (0.63.4)
+replaces the three VM input angle-bracket placeholders with quoted Jinja
+variable references, following the owner's request for realistic mockup syntax.
+The names are illustrative; runtime automation and protected values are unchanged.
+The existing 23 checks passed locally and against the downloaded live assets.
+Pages run `43515673878` succeeded, and all six published assets matched the
+implementation checkout. Browser geometry was not measured. Version 0.63.5
+adds this history only and does not alter deployed assets.
