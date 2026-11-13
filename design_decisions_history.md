@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Stretch receiving panels instead of sizing them around their text — 2026-11-13
+
+Implementation `512a2e51f56c04f5f44c68e9f81c9091427a44ef` (source 0.61.13)
+corrects the unequal bar widths demonstrated in the owner's base/project/settings
+screenshots. The shared two-column tracks from `31dab22` were insufficient:
+the receiving body switched from grid to flex but retained start alignment,
+so its catalogue and settings panels shrank around their text. Explicit stretch
+alignment fills the available width, keeping the common outer/middle gutter
+and object/AAP/RHEL column geometry independent of text and object count.
+
+The focused assertion failed on the old CSS and passed after the correction;
+all twenty-three local checks, script syntax and whitespace checks passed.
+Pages run 43388731327 succeeded. All six live assets matched the corrected
+checkout and twenty-three deployed interaction checks passed (632.4 ms).
+Rendered browser measurements remain unverified; the prior source-only checks
+must not be described as proof of equal rendered widths.
+
+At the owner's instruction, recovery/export bookkeeping is handed back to the
+original AutoDeploy conversation in task `bead-wd-kb27`. This visualization fix
+uses a clean isolated checkout and does not touch those unfinished files or run
+the snapshot/export helpers.
+
 ## Preserve Orchestrator's reviewed build access in the normal selector — 2026-11-12
 
 Implementation `719812a8058a5d05a20877e5f42f33da78efdd45` aligns the existing

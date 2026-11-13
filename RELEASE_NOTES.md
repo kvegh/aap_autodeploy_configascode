@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.61.14
+
+Document width correction `512a2e5`, the inherited flex-alignment cause and the
+regression that failed before the fix. Pages run 43388731327 succeeded; six live
+assets matched and twenty-three deployed checks passed. Keep browser-measurement
+limits explicit and recovery bookkeeping assigned to the original AutoDeploy chat.
+
 ## 0.61.13
 
 Stretch the receiving AAP catalogue and settings across the content width. The
