@@ -280,7 +280,12 @@ effective nft access, but does not prove physical ordinary-rule cleanup. See
 
 Separate AAP jobs serialize their native checks, firewall changes and rollback
 using atomic `mkdir` of `/run/hactar-recovery-policy.lock`, with five one-second
-retries. `always` releases it with `rmdir` only after this invocation acquired
+retries by default. A caller whose concurrent jobs share a longer transaction
+can set `aap_isolation_lock_retries` to an integer from zero to 1800, with the
+same one-second retry delay. Windows setup must allow for the other queued VM
+transactions, including guarded network preparation and clone creation.
+The retry budget does not establish progress or authorize removing another
+job's lock. `always` releases it with `rmdir` only after this invocation acquired
 it. Check-mode observations use the same temporary lock without applying policy.
 A killed controller may leave the directory behind: later jobs fail closed.
 Confirm that no policy-writing job is active before manually removing an abandoned

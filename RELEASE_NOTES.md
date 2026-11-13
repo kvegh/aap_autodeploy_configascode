@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.62.2
+
+Allow a caller to set a bounded native policy-lock retry budget for longer
+concurrent transactions. Keep the existing five one-second retries by default;
+reject Boolean, text, negative and excessive budgets before resource changes.
+The same atomic lock and invocation-owned cleanup remain. Actual Core 2.20
+fixtures reproduce the old timeout and verify longer waits, bounded contention,
+invalid-input refusal and preservation of another transaction's lock.
+
 ## 0.62.1
 
 Document split-base and canonical RHEL renderer implementation `c4822ee`, its

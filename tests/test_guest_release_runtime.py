@@ -167,12 +167,21 @@ class RuntimeReleaseTests(unittest.TestCase):
     def test_native_mkdir_waits_for_transient_contention_then_releases_its_own_lock(self):
         self.native_role_failure(False, contended=True)
 
+    def test_native_mkdir_extended_budget_waits_for_a_longer_transaction(self):
+        self.native_role_failure(False, contended=True, release_delay=15, lock_retries=25)
+
+    def test_native_mkdir_rejects_invalid_retry_budgets_before_resource_changes(self):
+        for value in (True, -1, 1801, '25'):
+            with self.subTest(value=value):
+                self.native_role_failure(False, lock_retries=value, invalid_retries=True)
+
     def test_application_permissions_remain_native_only_through_failed_base_publication(self):
         app = [{'bridge': 'virbr0', 'ipv4': '192.168.10.17', 'mac': '52:54:00:00:00:17',
                 'destinations': ['192.168.10.1'], 'ports': [443]}]
         self.native_role_failure(False, app_clients=app)
 
-    def native_role_failure(self, durable, resource_failure=False, busy=False, contended=False, app_clients=None):
+    def native_role_failure(self, durable, resource_failure=False, busy=False, contended=False,
+                            app_clients=None, release_delay=2.5, lock_retries=None, invalid_retries=False):
         request, _ = fixture()
         with tempfile.TemporaryDirectory(prefix='guest-release-native-') as directory:
             root = Path(directory)
@@ -234,7 +243,8 @@ class RuntimeReleaseTests(unittest.TestCase):
             prepare=[{'name':'Initialize isolated native transaction fixture','ansible.builtin.set_fact':{
                 'aap_isolation_lock_acquired':False,'aap_isolation_source_workspace':{},'aap_isolation_app_clients':app_clients or [],
                 'hactar_firewall_source_root':str(root/'hactar')}}]
-            prepare += [task for task in actual_prepare if task['name'].startswith(('Acquire the approved','Retain this invocation'))]
+            prepare += [task for task in actual_prepare if task['name'].startswith(
+                ('Require a bounded native policy lock', 'Acquire the approved', 'Retain this invocation'))]
             localize(prepare)
             (source / 'tasks/aap-isolation-prepare.yml').write_text(yaml.safe_dump(prepare,sort_keys=False))
             for name in ('aap-isolation-observe.yml','aap-isolation-finish.yml'):
@@ -245,25 +255,30 @@ class RuntimeReleaseTests(unittest.TestCase):
             thread=None
             if contended:
                 def release_competitor():
-                    time.sleep(2.5)
+                    time.sleep(release_delay)
                     lock.rmdir()
                 thread=threading.Thread(target=release_competitor)
                 thread.start()
             play=root/'play.yml'
+            extra_vars = {} if lock_retries is None else {'aap_isolation_lock_retries': lock_retries}
             play.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,
                 'vars':{'recovery_release_guest':request['guest'],'recovery_release_hypervisor':request['hypervisor'],
                         'recovery_release_trust_file':'/tmp/synthetic-trust','fixture_durable':durable,
-                        'fixture_transition':request['transition']},
+                        'fixture_transition':request['transition'], **extra_vars},
                 'tasks':[{'ansible.builtin.include_role':{'name':str(role)}}]}],sort_keys=False))
             env=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(root/'local'),ANSIBLE_REMOTE_TEMP=str(root/'remote'),
                      ANSIBLE_HOME=str(root/'home'),ANSIBLE_NOCOLOR='1')
             started=time.monotonic()
             result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(play)],
                 cwd=ROOT,env=env,text=True,capture_output=True,timeout=45)
-            if thread:thread.join(timeout=5)
+            if thread:thread.join(timeout=max(5, release_delay + 2))
             self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
             self.assertNotIn('secret-resource-canary',result.stdout+result.stderr)
-            if busy:
+            if invalid_retries:
+                self.assertFalse(trace.exists(), result.stdout + result.stderr)
+                self.assertFalse(lock.exists(), result.stdout + result.stderr)
+                self.assertEqual(json.loads(native.read_text()), request['transition']['previous_policy'])
+            elif busy:
                 self.assertFalse(trace.exists(),result.stdout+result.stderr)
                 self.assertTrue(lock.is_dir())
                 self.assertGreaterEqual(time.monotonic()-started,5)

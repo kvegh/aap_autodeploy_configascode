@@ -21,6 +21,16 @@
     fail_msg: Supply the reviewed Hactar revision, encrypted source reader, protected source identity and existing pinned route.
   no_log: true
 
+- name: Require a bounded native policy lock retry budget
+  ansible.builtin.assert:
+    that:
+      - aap_isolation_lock_retries | default(5) is integer
+      - aap_isolation_lock_retries | default(5) >= 0
+      - aap_isolation_lock_retries | default(5) <= 1800
+    quiet: true
+    fail_msg: Supply an integer native policy lock retry budget between zero and 1800.
+  no_log: true
+
 - name: Initialize only this invocation's temporary lock ownership
   ansible.builtin.set_fact:
     aap_isolation_lock_acquired: false
@@ -85,7 +95,7 @@
     argv: [mkdir, '--mode=0700', '--', /run/hactar-recovery-policy.lock]
   register: aap_isolation_lock_attempt
   until: aap_isolation_lock_attempt.rc == 0
-  retries: 5
+  retries: '{{ aap_isolation_lock_retries | default(5) }}'
   delay: 1
   changed_when: false
   check_mode: false
