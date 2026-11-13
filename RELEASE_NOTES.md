@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.61.25
+
+Document original-only publication and larger arrow text from `9428f68`. Pages
+succeeded; the former light preview returns404 and its branch is deleted. Six
+live assets matched and twenty-three deployed walkthrough checks passed.
+
 ## 0.61.24
 
 Remove the rejected light preview from Pages publication and restore the

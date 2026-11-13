@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Withdraw the light comparison and enlarge arrow descriptions — 2026-11-13
+
+Implementation `9428f68c3a1d2d978f86833f6ae672dad2b7bdee` (source 0.61.24)
+follows the owner's rejection of the light preview. The publisher is restored
+exactly to the original single-site workflow; active preview links and branch
+dependencies are removed. The original palette, card borders and story remain.
+This supersedes the earlier light-preview design and hosting choice.
+
+The owner also requested larger text for every arrow description, with wrapping
+between words. Captions now use 15px-equivalent relative sizing, details 12px,
+manual labels 14px and activity text 10px. Normal word wrapping and disabled
+hyphenation keep words intact. These are the only changes to the six public
+assets; the other five assets are unchanged.
+
+All twenty-three local walkthrough tests, four script syntax checks and whitespace
+checks passed. Independent read-only review confirmed the original publisher,
+retained protections and absence of current preview dependencies. Pages run
+43411778902 succeeded. Six live assets matched the source and twenty-three
+deployed interaction checks passed (617.6 ms). The former preview directory,
+index and stylesheet each returned HTTP 404. The remote preview branch and its
+clean local checkout/branch were then deleted at the owner's explicit request.
+Browser-rendered text placement remains unmeasured.
+
 ## Document the original shared-width and project-import decision — 2026-11-13
 
 Implementation `31dab22dc9fa821f6b858c321214ec2c45f99da0` (source 0.61.10)
