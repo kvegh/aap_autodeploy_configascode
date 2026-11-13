@@ -4901,3 +4901,29 @@ The existing 23 checks passed locally and against the downloaded live assets.
 Pages run `43515673878` succeeded, and all six published assets matched the
 implementation checkout. Browser geometry was not measured. Version 0.63.5
 adds this history only and does not alter deployed assets.
+
+
+## 2026-11-13 — Show the RHEL implementation and match travelling block fills
+
+Implementation `77b2d16566bbe0d2436b2c36c7e6d88335c85a5b` (0.63.6)
+replaces the header-only infrastructure preview with the actual certificate task
+and firewall role. Independent inspection confirmed both source files match the
+existing pinned revision. Each excerpt has its own source label; initial OS
+setup focuses both, while the later certificate update focuses only its section.
+Private mockup inputs now show the corresponding protected domain and rich-rule
+bindings instead of disconnected saved Job Template inputs. The bindings remain
+illustrative, and the actual firewall plan is computed by existing automation.
+Both source excerpts operate on the hypervisor; diagram placement is not a claim
+that the infrastructure play configures firewalld inside the guest. A comment
+also distinguishes local job execution from the remote AAP HTTPS API target.
+
+The owner additionally requested that travelling blocks match the configuration
+objects' light fills. Ordinary, manual and replay packets now use the same soft
+origin colours. Strong arrow colours remain, with dark packet chevrons for
+readability; dimensions, motion, reduced-motion behavior and object layout are
+unchanged. Runtime automation and protected configuration are unchanged.
+
+The 23-case regression suite passed locally and against the downloaded deployed
+assets. Pages run `43517173937` succeeded, and all six public assets matched the
+implementation checkout. Browser geometry and pixel colours were not measured.
+Version 0.63.7 documents these outcomes without changing the deployed assets.

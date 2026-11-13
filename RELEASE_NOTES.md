@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.7
+
+Document RHEL-preview and travelling-block fixes from `77b2d16` (0.63.6).
+Pages publication succeeded, six deployed assets matched and all 23 interaction
+checks passed against them. Browser geometry and pixel colours remain unmeasured.
+
 ## 0.63.6
 
 Show source-pinned certificate and firewall tasks with matching private mockup
