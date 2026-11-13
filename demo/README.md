@@ -70,8 +70,8 @@ captured manual definitions use amber. The highlighted YAML identifies the
 definitions in focus; execution-code highlighting means code being read, not a
 change to the public playbook. Reduced motion keeps the strong static activity cue.
 Captured manual objects keep their yellow origin; the returned definitions show
-that they are saved in Git. The private repository carries a lock; its YAML is an illustrative decrypted view,
-not ciphertext rendered as readable text. The repository-type headings read
+that they are saved in Git. The private repository carries a lock; readable configuration labels and synthetic
+encrypted secret blocks explain what the current step consumes. The repository-type headings read
 **Private Git Repository** and **Public Git Repository**, using larger dark text
 at every breakpoint. All examples are synthetic.
 
@@ -128,7 +128,9 @@ replay. Backwards navigation and restart restore the corresponding visibility.
 This presentation-only preparation does not add a runtime job or host operation.
 
 During **Change in AAP**, an unframed Linux sysadmin appears above the small
-original AAP. The owner-selected figure wears a plain hoodie with its hood down
+original AAP. A permanent empty actor slot reserves that space from the first
+scene. The original AAP and its legend therefore keep the same lower placement
+whether the sysadmin is visible or hidden, including narrow layouts. The owner-selected figure wears a plain hoodie with its hood down
 and glasses, seated in an office chair with a slight forward lean and hands on
 the laptop keyboard. One coffee mug and a small amber outage alert provide
 restrained role and incident cues. An amber directional
@@ -184,6 +186,26 @@ Use case: illustration-story. Asset type: one small transparent-background chara
 </details>
 
 ## Code and data
+
+Each repository window holds one continuous file throughout the story. The
+private `configuration.yml` keeps all configuration/input sections, with
+readable field names and clearly synthetic Vault-style secret values. The
+public `playbooks.yml` is a combined excerpt view of the pinned source files,
+not a new executable deployment file. Neither window swaps out the rest of its
+file as steps change. Matching sections receive focus/highlights and each pane
+scrolls internally to the first focused row; horizontal scrolling resets so
+field names remain visible. Users can scroll through other sections at any time.
+Focus alone does not claim code execution: manual/capture preparation can show
+relevant sections while the corresponding code-read route stays inactive.
+
+Pseudo-encrypted values demonstrate protected VM, OS and AAP inputs; they are
+not usable ciphertext or real credentials. Actual protected deployment files
+remain whole-file Vault-encrypted under the existing storage architecture.
+The certificate itself is public; private keys and related credentials require
+secrecy. The displayed encrypted certificate settings are illustrative and do
+not move Certbot-managed private keys into Git. See the official
+[Ansible Vault format](https://docs.ansible.com/projects/ansible/latest/vault_guide/vault_encrypting_content.html)
+and [Let’s Encrypt private-key explanation](https://letsencrypt.org/docs/faq/).
 
 `src/scenario.js` contains the story, object fixtures and source links. `src/app.js`
 renders the state and navigation. Native browser DOM APIs are sufficient for this

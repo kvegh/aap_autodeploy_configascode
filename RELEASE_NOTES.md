@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.0
+
+Keep both repository panes as complete scrollable files with relevant section
+focus, coloured active rows and synthetic encrypted secret inputs. Combine all
+public playbook excerpts without swapping files between steps; preserve actual
+source citations and existing runtime architecture. Reserve the sysadmin area
+so the original AAP keeps its lower placement throughout the story.
+
 ## 0.62.5
 
 Document duplicate-step/status-summary removal and navigation stabilization from

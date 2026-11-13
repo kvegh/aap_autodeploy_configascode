@@ -22,6 +22,7 @@ class Element {
     this.style = {};
     this.handlers = {};
     this.scrollRequests = [];
+    this.offsetTop = 0;
     this.hidden = false;
     this.disabled = false;
     this.classes = new Set();
@@ -46,7 +47,14 @@ class Element {
     if (name === 'hidden') this.hidden = false;
     if (name === 'disabled') this.disabled = false;
   }
-  append(...nodes) { nodes.forEach(node => { node.parentElement = this; this.children.push(node); }); }
+  append(...nodes) {
+    nodes.forEach(node => {
+      node.parentElement = this;
+      // Deterministic offsets verify scroll selection without simulating browser geometry.
+      if (['config-lines', 'code-lines'].includes(this.attributes.id)) node.offsetTop = this.offsetTop + this.children.length * 24;
+      this.children.push(node);
+    });
+  }
   replaceChildren(...nodes) { this.children = []; this.ownText = ''; this.append(...nodes); }
   addEventListener(name, callback) { (this.handlers[name] ||= []).push(callback); }
   scrollIntoView(options) { this.scrollRequests.push(options); }
@@ -81,6 +89,11 @@ function browser(hash = '') {
   for (const match of html.matchAll(/<([a-z][\w:-]*)\b([^>]*\bid="([^"]+)"[^>]*)>/gi)) {
     assert.equal(nodes[match[3]], undefined, `Duplicate HTML ID ${match[3]}`);
     nodes[match[3]] = attributes(new Element(match[1]), match[2]);
+  }
+  for (const id of ['config-lines', 'code-lines']) {
+    const viewport = new Element('pre');
+    viewport.append(nodes[id]);
+    nodes[id].offsetTop = 120;
   }
   const document = {
     handlers: {},
@@ -133,27 +146,41 @@ test('the seven chapters cover deployment, capture and replay with existing sour
   for (const name of ['Regional servers', 'Regional automation']) assert.ok(initialConfiguration.includes(name), `${name}: project definition is already in Git`);
 
   assert.match(story.sourceRevision, /^[a-f0-9]{40}$/);
-  for (const step of story.steps) {
-    for (const reference of step.sources) assert.ok(existsSync(path.resolve(repository, reference)), reference);
-    const code = step.sources.map(reference => readFileSync(path.resolve(repository, reference), 'utf8')).join('\n');
-    const actualLines = new Set(code.split('\n').map(line => line.trim()));
-    const excerpt = story.executionLines(story.stateAt(story.steps.indexOf(step)));
-    if (step.id === 'capture') {
-      const inputs = excerpt.filter(line => line.trim() && !line.trim().startsWith('#'));
-      for (const line of inputs) {
-        const match = line.match(/^(aap_cac_capture_(?:scope|mode|commit|push)):\s+(.+)$/);
-        assert.ok(match, `Unknown illustrative capture input: ${line}`);
+  const publicSections = ['vm', 'infrastructure', 'installation', 'aap-settings', 'base-content', 'project-resources', 'job-templates', 'capture-implementation', 'capture-inputs'];
+  const completePublicText = story.executionLines(story.stateAt(0)).map(line => line.text).join('\n');
+  const sourceTexts = new Map();
+  const readReference = reference => {
+    assert.ok(existsSync(path.resolve(repository, reference)), reference);
+    if (!sourceTexts.has(reference)) sourceTexts.set(reference, readFileSync(path.resolve(repository, reference), 'utf8'));
+    return sourceTexts.get(reference);
+  };
+  for (const [index, step] of story.steps.entries()) {
+    for (const reference of step.sources) readReference(reference);
+    const entries = story.executionLines(story.stateAt(index));
+    assert.equal(entries.map(line => line.text).join('\n'), completePublicText, `${step.id}: the public pane retains the complete file`);
+    assert.deepEqual([...new Set(entries.map(line => line.section))], publicSections, `${step.id}: all public workflow sections remain present`);
+    for (const entry of entries) {
+      assert.equal(typeof entry.text, 'string');
+      assert.equal(typeof entry.active, 'boolean');
+      assert.equal(typeof entry.focus, 'boolean');
+      assert.equal(entry.illustrative, entry.section === 'capture-inputs');
+      assert.ok(Array.isArray(entry.sources) && entry.sources.length, `${entry.section}: pinned source metadata`);
+      assert.equal(entry.source, entry.sources[0]);
+      const code = entry.sources.map(readReference).join('\n');
+      if (!entry.text.trim() || entry.text.trimStart().startsWith('#')) continue;
+      if (entry.illustrative) {
+        const match = entry.text.match(/^(aap_cac_capture_(?:scope|mode|commit|push)):\s+(.+)$/);
+        assert.ok(match, `Unknown illustrative capture input: ${entry.text}`);
         assert.ok(code.includes(match[1]), `Capture implementation does not accept ${match[1]}`);
-      }
-      assert.ok(inputs.includes('aap_cac_capture_mode: update'));
-      assert.ok(inputs.includes('aap_cac_capture_commit: true'));
-      assert.ok(inputs.includes('aap_cac_capture_push: true'));
-    } else {
-      for (const line of excerpt) {
-        if (line.trim() && !line.trim().startsWith('#')) assert.ok(actualLines.has(line.trim()), `Unmapped execution excerpt in ${step.id}: ${line}`);
+      } else {
+        const actualLines = new Set(code.split('\n').map(line => line.trim()));
+        assert.ok(actualLines.has(entry.text.trim()), `Unmapped ${entry.section} execution excerpt: ${entry.text}`);
       }
     }
+    const inputs = entries.filter(line => line.section === 'capture-inputs').map(line => line.text);
+    for (const input of ['aap_cac_capture_mode: update', 'aap_cac_capture_commit: true', 'aap_cac_capture_push: true']) assert.ok(inputs.includes(input));
   }
+
 });
 
 test('the actual HTML hides future objects before scripts run and uses local assets', () => {
@@ -252,7 +279,8 @@ test('the CaC logging edit updates settings without adding project objects or al
     assert.ok(nodes['config-lines'].textContent.includes(name));
     assert.ok(!highlighted.some(line => line.includes(name)), `${name}: not part of the settings update`);
   }
-  assert.doesNotMatch(nodes['code-lines'].textContent, /Import ordinary configuration resources/, 'The public excerpt shows settings application only');
+  assert.match(nodes['code-lines'].textContent, /Import ordinary configuration resources/, 'The full public file retains imports at the settings stop');
+  assert.doesNotMatch(withClass(nodes['code-lines'], 'line-active').map(line => line.textContent).join('\n'), /Import ordinary configuration resources/, 'Only settings application is highlighted at this stop');
   assert.deepEqual(objectNames(nodes['source-objects']), original);
   assert.equal(nodes.actor.hidden, false);
   assert.equal(nodes['actor-title'].textContent, 'Configuration author');
@@ -391,7 +419,7 @@ test('direct links and later hash changes restore the complete scene state', () 
   assert.equal(page.nodes['target-card'].hidden, true);
 });
 
-test('source links stay pinned and the presentation performs no network operations', () => {
+test('complete local files retain pinned sources and scroll each pane to its current section', () => {
   const page = browser('#project');
   for (const link of page.nodes['source-links'].children) {
     assert.ok(link.href.startsWith(story.sourceRoot));
@@ -405,6 +433,62 @@ test('source links stay pinned and the presentation performs no network operatio
   assert.equal(story.stateAt(story.steps.findIndex(step => step.id === 'capture')).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 3);
   assert.equal(story.stateAt(story.steps.findIndex(step => step.id === 'manual')).targetObjects.filter(item => item.origin === 'manual' && item.inGit).length, 0);
   assert.throws(() => story.stateAt('capture'), TypeError);
+  const publicFocus = {
+    separation: ['project-resources', 'job-templates'], vm: ['vm'], infrastructure: ['infrastructure'], installation: ['installation'],
+    'base-aap': ['aap-settings'], base: ['base-content'], project: ['project-resources', 'job-templates'],
+    'git-change': ['aap-settings'], 'infra-change': ['infrastructure', 'job-templates'],
+    manual: ['capture-implementation'], capture: ['capture-implementation', 'capture-inputs'], 'next-aap': ['vm'],
+    rebuild: ['vm', 'infrastructure', 'installation', 'aap-settings', 'base-content', 'project-resources', 'job-templates'],
+  };
+  const privateFocus = {
+    separation: ['vm'], vm: ['vm'], infrastructure: ['certificate', 'firewall'], installation: ['installation'],
+    'base-aap': ['logging', 'eda', 'aap-secrets'], 'git-change': ['logging'], 'infra-change': ['certificate'],
+    manual: ['manual-note'], 'next-aap': ['vm'],
+  };
+  const privateSections = ['preamble', 'vm', 'certificate', 'firewall', 'installation', 'logging', 'eda', 'aap-secrets', 'inventories', 'inventory-sources', 'projects', 'credentials', 'job-templates', 'manual-note'];
+  for (const [index, step] of story.steps.entries()) {
+    for (const id of ['config-lines', 'code-lines']) {
+      page.nodes[id].parentElement.scrollTop = 9999;
+      page.nodes[id].parentElement.scrollLeft = 9999;
+    }
+    page.hash(`#${step.id}`);
+    const state = story.stateAt(index);
+    assert.equal(page.nodes['execution-file-name'].textContent, 'playbooks.yml · combined excerpts');
+    for (const [id, entries] of [['config-lines', story.configurationLines(state)], ['code-lines', story.executionLines(state)]]) {
+      const container = page.nodes[id];
+      assert.equal(container.children.length, entries.length, `${step.id}: ${id} retains every line`);
+      for (const [position, entry] of entries.entries()) {
+        const rendered = container.children[position];
+        assert.equal(rendered.children.slice(1).map(child => child.textContent).join(''), entry.text, `${step.id}: ${id} line text`);
+        assert.equal(rendered.dataset.section, entry.section, `${step.id}: ${id} section metadata`);
+        assert.equal(rendered.dataset.focus === 'true', Boolean(entry.focus), `${step.id}: ${id} focus metadata`);
+        assert.equal(rendered.classList.contains('line-active'), Boolean(entry.active), `${step.id}: ${id} highlights only declared active lines`);
+      }
+      const focusedSections = [...new Set(entries.filter(entry => entry.focus).map(entry => entry.section))];
+      const expectedFocus = id === 'code-lines' ? publicFocus[step.id] : privateFocus[step.id];
+      if (expectedFocus) assert.deepEqual(focusedSections, expectedFocus, `${step.id}: ${id} focuses the matching workflow sections`);
+      const firstFocus = entries.findIndex(entry => entry.focus);
+      assert.ok(firstFocus >= 0, `${step.id}: ${id} has a scroll focus`);
+      assert.equal(container.parentElement.scrollTop, Math.max(0, firstFocus * 24 - 6), `${step.id}: ${id} scrolls to its first focus using explicit simulated offsets`);
+      assert.equal(container.parentElement.scrollLeft, 0, `${step.id}: ${id} starts at the left edge`);
+      if (id === 'code-lines') {
+        const activeSections = [...new Set(entries.filter(entry => entry.active).map(entry => entry.section))];
+        assert.deepEqual(activeSections, step.routes.includes('flow-code') ? publicFocus[step.id] : [], `${step.id}: viewing a public section does not imply executing it`);
+      } else {
+        assert.deepEqual([...new Set(entries.map(entry => entry.section))], privateSections, `${step.id}: the private pane retains all input and object categories`);
+        assert.ok(entries.every(entry => entry.illustrative), 'Private configuration remains an illustrative decrypted view');
+        assert.ok(entries.every(entry => !entry.source && !entry.sources?.length), 'Private examples do not claim to be exact public source code');
+        const text = entries.map(entry => entry.text).join('\n');
+        assert.match(text, /!vault\s*\|/);
+        assert.match(text, /\$ANSIBLE_VAULT;1\.1;AES256/);
+        assert.match(text, /fake|illustrative/i);
+        for (const section of ['vm', 'certificate', 'firewall', 'installation', 'aap-secrets']) {
+          assert.ok(entries.some(entry => entry.section === section && entry.text.includes('!vault')), `${step.id}: ${section} includes an illustrative encrypted input`);
+        }
+      }
+    }
+  }
+
 });
 
 test('active routes remain visible and deployment actions name the current stage', () => {
@@ -412,8 +496,8 @@ test('active routes remain visible and deployment actions name the current stage
   const expected = [
     ['separation', null, null, []],
     ['vm', 'Create VM', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
-    ['infrastructure', 'Prepare OS', 'New VM', ['flow-code', 'flow-apply']],
-    ['installation', 'Install AAP', 'New AAP', ['flow-code', 'flow-apply']],
+    ['infrastructure', 'Prepare OS', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
+    ['installation', 'Install AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['base-aap', 'Apply AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['base', 'Apply content', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
@@ -522,7 +606,9 @@ test('active arrows match the highlighted configuration origin and reset on navi
     ['git-change', 'git', ['AAP Logging Config v2']],
     ['infra-change', 'git', ['Certificate config v2']],
     ['capture', 'manual', ['Emergency servers', 'Quick-fix automation']],
-    ['vm', 'base', ['VMWare Inventory']],
+    ['vm', 'base', ['!vault']],
+    ['infrastructure', 'base', ['firewall_rule_encrypted', 'certificate_config_encrypted']],
+    ['installation', 'base', ['!vault']],
   ]) {
     page.hash(`#${id}`);
     const activeRoutes = ['flow-config', 'flow-code', ...futureRoutes].map(route => page.nodes[route]).filter(route => route.classList.contains('active'));
@@ -960,6 +1046,24 @@ test('the incident-response sysadmin appears only for direct manual AAP changes'
   const opening = html.match(/<[^>]*\bid="manual-operator"[^>]*>/);
   assert.ok(opening);
   const figure = html.slice(opening.index, html.indexOf('</figure>', opening.index) + '</figure>'.length);
+  const slot = htmlRegion(html, 'manual-operator-slot');
+  const sourceColumn = htmlRegion(html, 'source-column');
+  const slotOpening = slot.slice(0, slot.indexOf('>') + 1);
+  assert.match(slotOpening, /class="[^"]*\bmanual-operator-slot\b/);
+  assert.doesNotMatch(slotOpening, /\shidden(?:\s|=|>)|aria-hidden="true"/, 'The reserved operator space remains visible before the sysadmin appears');
+  assert.ok(slot.includes(figure), 'The conditional sysadmin figure sits inside the persistent slot');
+  assert.ok(sourceColumn.includes(slot), 'The operator slot belongs to the original AAP column');
+  assert.ok(sourceColumn.indexOf(slot) + slot.length < sourceColumn.indexOf('id="source-card"'), 'The persistent slot reserves space above the original AAP');
+  const styles = source('src/styles.css');
+  const slotRule = styles.match(/(?:^|\n)\.manual-operator-slot\s*\{([^}]+)}/);
+  assert.ok(slotRule, 'The reserved operator slot declares its own layout');
+  assert.match(slotRule[1], /height:\s*11\.25rem;/);
+  assert.match(slotRule[1], /flex:\s*none;/);
+  assert.match(slotRule[1], /min-width:\s*0;/);
+  assert.match(styles, /(?:^|\n)\.manual-operator\s*\{[^}]*height:\s*100%;/, 'The conditional figure fills the already reserved slot');
+  for (const [file, text] of [['presenter', source('src/app.js')], ['styles', styles]]) {
+    assert.doesNotMatch(text, /manual-active/, `${file}: the manual scene does not switch the source layout`);
+  }
   const image = figure.match(/<img\b([^>]*\bclass="[^"]*\bsysadmin-illustration\b[^"]*"[^>]*)>/);
   assert.ok(image, 'The sysadmin uses its generated local image');
   const imageAttributes = attributes(new Element('img'), image[1]).attributes;
@@ -975,12 +1079,25 @@ test('the incident-response sysadmin appears only for direct manual AAP changes'
   assert.match(opening[0], /aria-hidden="true"/);
   const page = browser();
   const { nodes } = page;
+  const sourceCard = nodes['source-card'];
+  const reservedSlot = nodes['manual-operator-slot'];
+  const checkReservedLayout = () => {
+    assert.equal(nodes['source-card'], sourceCard, 'Navigation preserves the original AAP card');
+    assert.equal(nodes['manual-operator-slot'], reservedSlot, 'Navigation preserves the reserved operator wrapper');
+    assert.equal(reservedSlot.hidden, false, 'The empty operator slot remains in the layout');
+    assert.notEqual(reservedSlot.attributes['aria-hidden'], 'true');
+    assert.equal(sourceCard.hidden, false);
+    assert.equal(nodes['source-column'].classList.contains('manual-active'), false);
+  };
+  checkReservedLayout();
   for (const step of story.steps.filter(step => step.id !== 'manual')) {
     page.hash(`#${step.id}`);
+    checkReservedLayout();
     assert.equal(nodes['manual-operator'].hidden, true, step.id);
     assert.equal(nodes['manual-operator'].attributes['aria-hidden'], 'true', step.id);
   }
   page.chapter('manual');
+  checkReservedLayout();
   assert.equal(nodes['manual-operator'].hidden, false);
   assert.equal(nodes['manual-operator'].attributes['aria-hidden'], 'false');
   assert.equal(nodes['manual-operator-title'].textContent, 'Sysadmin · incident response');
@@ -993,12 +1110,15 @@ test('the incident-response sysadmin appears only for direct manual AAP changes'
     assert.ok(!nodes['config-lines'].textContent.includes(name), 'Direct UI changes have not reached Git');
   }
   nodes.next.click();
+  checkReservedLayout();
   assert.equal(nodes['manual-operator'].hidden, true, 'The scan is a separate action after the operator changes');
   assert.match(nodes['config-lines'].textContent, /Emergency servers/);
   nodes.previous.click();
+  checkReservedLayout();
   assert.equal(nodes['manual-operator'].hidden, false, 'Reversal returns to incident response');
   assert.doesNotMatch(nodes['config-lines'].textContent, /Emergency servers/);
   nodes.restart.click();
+  checkReservedLayout();
   assert.equal(nodes['manual-operator'].hidden, true);
   assert.equal(nodes['manual-operator'].attributes['aria-hidden'], 'true');
 });

@@ -33,8 +33,8 @@
   const steps = [
     { id: 'separation', chapter: 'separation', title: 'Data & code', description: 'Private configuration and public playbooks feed the original AAP.', stage: 0, job: 'Ready to deploy', status: 'Source AAP', routes: [], sources: ['tasks/cac-project-checkout.yml', 'tasks/cac-resource-definitions.yml'] },
     { id: 'vm', chapter: 'deployment', title: '01 / Create a new home.', description: 'The original AAP creates a RHEL VM on the prepared host. It is a new guest, with no AAP content yet.', stage: 1, job: '01 · Create VM', status: 'VM created', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['01-linux-vm-setup.yml'] },
-    { id: 'infrastructure', chapter: 'deployment', title: 'Prepare OS for AAP installation', description: 'DNS, TLS certificates and nginx connect that same guest to its reserved address. The VM is ready for AAP installation.', stage: 2, job: '02 · Prepare OS for AAP installation', status: 'OS prepared for AAP installation', routes: ['flow-code', 'flow-apply'], sources: ['02-infra-config.yml'] },
-    { id: 'installation', chapter: 'deployment', title: '03 / Install AAP inside the VM.', description: 'The platform is installed in the new guest. A second AAP now exists; its automation catalogue comes next.', stage: 3, job: '03 · Install AAP', status: 'AAP installed', routes: ['flow-code', 'flow-apply'], sources: ['03-aap-install.yml'] },
+    { id: 'infrastructure', chapter: 'deployment', title: 'Prepare OS for AAP installation', description: 'DNS, TLS certificates and nginx connect that same guest to its reserved address. The VM is ready for AAP installation.', stage: 2, job: '02 · Prepare OS for AAP installation', status: 'OS prepared for AAP installation', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['02-infra-config.yml'] },
+    { id: 'installation', chapter: 'deployment', title: '03 / Install AAP inside the VM.', description: 'The platform is installed in the new guest. A second AAP now exists; its automation catalogue comes next.', stage: 3, job: '03 · Install AAP', status: 'AAP installed', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['03-aap-install.yml'] },
     { id: 'base-aap', chapter: 'deployment', title: 'AAP configuration', description: 'Apply AAP Logging Config v1 and AAP EDA Config v1. RHEL configuration is retained; shared automation objects come next.', stage: 4, baseFocus: 'aap', job: 'Apply AAP configuration', status: 'AAP configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['04-aap-config.yml'] },
     { id: 'base', chapter: 'deployment', title: 'AAP content', description: 'Import the shared inventories, projects, credentials and Job Templates. The initial RHEL configuration, AAP settings and base automation content are now applied.', stage: 4, baseFocus: 'content', job: 'Import base AAP content', status: 'Base configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['04-aap-config.yml'] },
     { id: 'project', chapter: 'project', title: 'Turn definitions into more automation.', description: 'A configuration Job Template on the original AAP combines the private YAML with the public playbooks. Additional objects appear on the receiving AAP.', stage: 4, job: 'Deploy objects', status: 'Project objects applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['deploy-cac-project.yml', 'tasks/cac-resource-definitions.yml'] },
@@ -92,23 +92,71 @@
       targetVisible: step.stage > 0, captured: position >= stepPositions.capture,
     };
   }
+  // Presentation-only ciphertext: synthetic hex, with no key or decryptable payload.
+  // Scope and the mixed encrypted/decrypted view: ../README.md#code-and-data.
+  const illustrativeVaultHex = [
+    '65643332636439633532376631383636656538653761346339333363373937663838613762636533373061',
+    '31613831326138393435306432303163386361306630376466383336643162383964373565663162653365',
+    '30346230353866313862363334653364613864323734616234353265626133643765653430386634313461',
+  ];
+  function encryptedExample(key) {
+    return [`${key}: !vault |`, '  $ANSIBLE_VAULT;1.1;AES256', ...illustrativeVaultHex.map(line => `  ${line}`)];
+  }
   function configurationLines(state) {
-    const fields = [['Inventories', 'controller_inventories'], ['Projects', 'controller_projects'], ['Credentials', 'controller_credentials'], ['Job Templates', 'controller_templates']];
-    const lines = [{ text: '# Illustrative decrypted view · stored encrypted', origin: 'base' }];
+    const lines = [];
+    const id = state.step.id;
+    const replaying = state.rebuilding;
+    function append(section, texts, options = {}) {
+      const { origin = 'base', active = false, focus = active, added = false } = options;
+      for (const text of texts) lines.push({ text, origin, active, section, focus, added, illustrative: true });
+    }
+    append('preamble', [
+      '# Illustrative private YAML · encrypted inputs and decrypted object examples',
+      '# All !vault blocks below are synthetic, non-decryptable demonstration data.',
+      '# Input groups are explanatory examples, not a ready-to-run inventory.',
+    ]);
+    append('vm', [
+      '', '# VM creation · illustrative encrypted inputs',
+      'vm_name: <reserved-vm-name>',
+      'vm_network: <guest-network>',
+      'aap_golden_image_path: <verified-golden-image-path>',
+      ...encryptedExample('vault_ansible_password'),
+    ], { active: replaying || id === 'vm', focus: replaying || ['separation', 'vm', 'next-aap'].includes(id) });
+
+    const certificate = state.desiredInfrastructure.find(config => config.id === 'certificate');
+    const rhelActive = replaying || id === 'infrastructure';
+    append('certificate', [
+      '', `# RHEL infrastructure · ${certificate.name}`,
+      `aap_upstream_hostname: ${certificate.version === 1 ? '<automation-service-name>' : '<updated-automation-service-name>'}`,
+      '# Encrypted certificate settings; this does not store a TLS private key.',
+      ...encryptedExample('certificate_config_encrypted'),
+    ], { origin: certificate.origin, active: rhelActive || id === 'infra-change' });
+    const firewall = state.desiredInfrastructure.find(config => config.id === 'firewall');
+    append('firewall', [
+      '', `# ${firewall.name} · illustrative encrypted rule inputs`,
+      ...encryptedExample('firewall_rule_encrypted'),
+      '# Saved job inputs; importing a definition does not execute it.',
+      'firewall_job_inputs:',
+      `  - name: ${firewall.template}`,
+      '    extra_vars:',
+      `      config_revision: v${firewall.version}`,
+    ], { origin: firewall.origin, active: rhelActive });
+
+    append('installation', [
+      '', '# AAP installation · illustrative encrypted credentials',
+      'installer_extract_dir: <installer-working-directory>',
+      'installer_dir_name: <selected-installer-directory>',
+      ...encryptedExample('installer_credentials_encrypted'),
+    ], { active: replaying || id === 'installation' });
     const logging = state.desiredConfiguration.find(config => config.id === 'logging');
-    const readingConfiguration = state.step.routes.includes('flow-config');
-    const baseFocus = state.step.baseFocus;
-    const readingAapConfiguration = readingConfiguration && (!baseFocus || baseFocus === 'aap');
-    const readingRhelConfiguration = readingConfiguration && !baseFocus;
-    const loggingActive = readingAapConfiguration && state.step.id !== 'infra-change' && (state.rebuilding || logging.origin === state.flowOrigin);
-    const edaActive = readingAapConfiguration && (state.rebuilding || state.flowOrigin === 'base');
-    for (const text of [
-      `# ${logging.name}`,
+    const aapActive = replaying || id === 'base-aap';
+    append('logging', [
+      '', `# ${logging.name}`,
       'controller_settings_base:',
       '  settings:',
       `    LOG_AGGREGATOR_ACTION_QUEUE_SIZE: ${logging.version === 1 ? 10000 : 20000}`,
-    ]) lines.push({ text, origin: logging.origin, active: loggingActive });
-    for (const text of [
+    ], { origin: logging.origin, active: aapActive || id === 'git-change' });
+    append('eda', [
       '# AAP EDA Config v1 · illustrative configuration excerpt',
       'eda_decision_environments_base:',
       '  - name: Event runtime',
@@ -117,63 +165,115 @@
       '  - name: Event policy',
       '    decision_environment: Event runtime',
       '    log_level: info',
-    ]) lines.push({ text, origin: 'base', active: edaActive });
+    ], { active: aapActive });
+    append('aap-secrets', [
+      '# AAP configuration · illustrative encrypted API and service inputs',
+      ...encryptedExample('aap_secrets_encrypted'),
+    ], { active: aapActive });
 
-    const certificate = state.desiredInfrastructure.find(config => config.id === 'certificate');
-    const certificateActive = readingRhelConfiguration && (state.rebuilding || state.step.id === 'infra-change' || state.flowOrigin === 'base');
-    for (const text of [
-      `# RHEL infrastructure · ${certificate.name}`,
-      `aap_upstream_hostname: ${certificate.version === 1 ? '<automation-service-name>' : '<updated-automation-service-name>'}`,
-    ]) lines.push({ text, origin: certificate.origin, active: certificateActive });
-
-    for (const [type, key] of fields) {
-      lines.push({ text: `${key}:`, origin: 'base' });
-      if (type === 'Job Templates') {
-        // These are saved job inputs; importing them does not run infrastructure changes.
-        for (const config of state.desiredInfrastructure.filter(config => config.template)) {
-          const active = readingRhelConfiguration && (state.rebuilding || state.step.id === 'infra-change' && config.id === 'certificate' || state.flowOrigin === 'base');
-          for (const text of [
-            `  # ${config.name} · illustrative job inputs`,
-            `  - name: ${config.template}`,
-            '    extra_vars:',
-            `      config_revision: v${config.version}`,
-          ]) lines.push({ text, origin: config.origin, active });
-        }
-      }
+    const fields = [
+      ['Inventories', 'controller_inventories', 'inventories'],
+      ['Projects', 'controller_projects', 'projects'],
+      ['Credentials', 'controller_credentials', 'credentials'],
+      ['Job Templates', 'controller_templates', 'job-templates'],
+    ];
+    for (const [type, key, section] of fields) {
+      append(section, ['', `${key}:`]);
       for (const object of state.configObjects.filter(item => item.type === type)) {
         const added = object.origin === 'manual';
-        const readingConfiguration = state.step.routes.includes('flow-config') || state.step.routes.includes('flow-return');
-        const focusedObject = (!baseFocus || baseFocus === 'content') && state.step.id !== 'infra-change' && state.step.id !== 'git-change' && (state.rebuilding || object.origin === state.flowOrigin);
-        const active = readingConfiguration && focusedObject;
-        lines.push({ text: `  - name: ${object.name}`, origin: object.origin, added, active });
-        if (type === 'Projects') lines.push({ text: '    scm_url: <automation-repository>', origin: object.origin, added, active });
+        const active = replaying || id === 'base' && object.origin === 'base'
+          || id === 'project' && object.origin === 'git' || id === 'capture' && added;
+        const texts = [`  - name: ${object.name}`];
+        if (type === 'Projects') texts.push('    scm_url: <automation-repository>');
+        append(section, texts, { origin: object.origin, added, active });
       }
-      if (type === 'Inventories') lines.push(
-        { text: 'controller_inventory_sources:', origin: 'base' },
-        { text: '  - name: VMWare Inventory source', origin: 'base' },
-        { text: '    inventory: VMWare Inventory', origin: 'base' },
-        { text: '    source: scm', origin: 'base' },
-      );
+      if (type === 'Inventories') append('inventory-sources', [
+        'controller_inventory_sources:',
+        '  - name: VMWare Inventory source',
+        '    inventory: VMWare Inventory',
+        '    source: scm',
+      ], { active: replaying || id === 'base' });
     }
-    lines.push({ text: '# API access uses verified HTTPS', origin: 'base' });
+    append('manual-note', [
+      '', '# Manual additions enter this Git file only after the accepted capture.',
+      '# API access uses verified HTTPS',
+    ], { focus: id === 'manual' });
     return lines;
   }
+  // One continuous presentation file combines exact excerpts from separate sources.
+  // The real playbooks remain separate; see ../README.md#code-and-data.
+  const executionSections = [
+    { id: 'vm', source: '01-linux-vm-setup.yml', lines: [
+      '# 01-linux-vm-setup.yml · excerpt',
+      '- name: Create a test VM only after shared name reservation and pinned rebuild preflight',
+      '  hosts: hypervisor', '  become: true', '  gather_facts: false',
+    ] },
+    { id: 'infrastructure', source: '02-infra-config.yml', lines: [
+      '', '# 02-infra-config.yml · excerpt',
+      '- name: "Configure DNS, certificate, and nginx reverse proxy"',
+      '  hosts: hypervisor', '  become: true', '  gather_facts: false',
+    ] },
+    { id: 'installation', source: '03-aap-install.yml', lines: [
+      '', '# 03-aap-install.yml · excerpt', '- name: Run AAP installer',
+      '  ansible.builtin.command:',
+      '    cmd: ansible-playbook -i inventory ansible.containerized_installer.install',
+      '    chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"',
+      '  async: 7200', '  poll: 30',
+    ] },
+    { id: 'aap-settings', source: '04-aap-config.yml', lines: [
+      '', '# Platform settings · 04-aap-config.yml',
+      '- name: Apply shared AAP configuration', '  ansible.builtin.include_role:',
+      '    name: infra.aap_configuration.dispatch', '  vars:',
+      '    dispatch_include_wildcard_vars: false',
+    ] },
+    { id: 'base-content', source: '04-aap-config.yml', lines: [
+      '', '# 04-aap-config.yml · excerpt',
+      '- name: Configure new AAP instance (config-as-code)',
+      '  hosts: localhost', '  connection: local', '  gather_facts: false',
+      '', '  # Verified target API', '  # aap_validate_certs: true',
+    ] },
+    { id: 'project-resources', source: 'tasks/cac-resource-definitions.yml', lines: [
+      '', '# Inventories, projects and credentials · tasks/cac-resource-definitions.yml',
+      '- name: Import ordinary configuration resources without wildcard merging or workload execution',
+      '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch',
+    ] },
+    { id: 'job-templates', source: 'tasks/cac-resource-definitions.yml', lines: [
+      '', '# Job Templates, after their dependencies · tasks/cac-resource-definitions.yml',
+      '- name: Import job templates after their persistent credential dependencies',
+      '  ansible.builtin.include_role:', '    name: infra.aap_configuration.controller_job_templates',
+    ] },
+    { id: 'capture-implementation', source: 'capture-aap-cac.yml', lines: [
+      '', '# capture-aap-cac.yml · excerpt',
+      '- name: Extract and compare through protected Vault API and Git inputs',
+      '  aap_cac_capture:', '    scope: "{{ aap_cac_capture_scope }}"',
+    ] },
+    { id: 'capture-inputs', source: 'capture-aap-cac.yml', illustrative: true, lines: [
+      '', '# Accepted update · illustrative job inputs, not executable role lines',
+      'aap_cac_capture_mode: update', 'aap_cac_capture_commit: true', 'aap_cac_capture_push: true',
+      '# Implementation: capture-aap-cac.yml',
+    ] },
+  ];
+  const executionFocus = {
+    separation: ['project-resources', 'job-templates'],
+    vm: ['vm'], infrastructure: ['infrastructure'], installation: ['installation'],
+    'base-aap': ['aap-settings'], base: ['base-content'],
+    project: ['project-resources', 'job-templates'], 'git-change': ['aap-settings'],
+    'infra-change': ['infrastructure', 'job-templates'],
+    manual: ['capture-implementation'], capture: ['capture-implementation', 'capture-inputs'],
+    'next-aap': ['vm'],
+    rebuild: ['vm', 'infrastructure', 'installation', 'aap-settings', 'base-content', 'project-resources', 'job-templates'],
+  };
   function executionLines(state) {
-    const stage = state.step.stage;
-    if (state.step.id === 'capture') return ['# Accepted update · illustrative job inputs', 'aap_cac_capture_mode: update', 'aap_cac_capture_commit: true', 'aap_cac_capture_push: true', '', '# Implementation: capture-aap-cac.yml'];
-    if (state.step.id === 'manual') return ['# capture-aap-cac.yml · excerpt', '- name: Extract and compare through protected Vault API and Git inputs', '  aap_cac_capture:', '    scope: "{{ aap_cac_capture_scope }}"'];
-    if (state.step.baseFocus === 'aap' || state.step.id === 'git-change' || state.rebuilding) {
-      const lines = ['# Platform settings · 04-aap-config.yml', '- name: Apply shared AAP configuration', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch', '  vars:', '    dispatch_include_wildcard_vars: false'];
-      // Only the final replay combines platform settings with project imports.
-      if (state.rebuilding) lines.push('', '# Project objects · tasks/cac-resource-definitions.yml', '- name: Import ordinary configuration resources without wildcard merging or workload execution', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch');
-      return lines;
-    }
-    if (state.step.id === 'infra-change') return ['# Certificate configuration · 02-infra-config.yml', '- name: "Configure DNS, certificate, and nginx reverse proxy"', '  hosts: hypervisor', '  become: true', '  gather_facts: false', '', '# Infrastructure Job Template definitions · excerpt', '- name: Import job templates after their persistent credential dependencies', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.controller_job_templates'];
-    if (stage === 1 || state.step.id === 'next-aap') return ['# 01-linux-vm-setup.yml · excerpt', '- name: Create a test VM only after shared name reservation and pinned rebuild preflight', '  hosts: hypervisor', '  become: true', '  gather_facts: false'];
-    if (state.index >= stepPositions.project || state.step.id === 'separation') return ['# Inventories, projects and credentials · excerpt', '- name: Import ordinary configuration resources without wildcard merging or workload execution', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch', '', '# Job Templates, after their dependencies', '- name: Import job templates after their persistent credential dependencies', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.controller_job_templates'];
-    if (stage === 2) return ['# 02-infra-config.yml · excerpt', '- name: "Configure DNS, certificate, and nginx reverse proxy"', '  hosts: hypervisor', '  become: true', '  gather_facts: false'];
-    if (stage === 3) return ['# 03-aap-install.yml · excerpt', '- name: Run AAP installer', '  ansible.builtin.command:', '    cmd: ansible-playbook -i inventory ansible.containerized_installer.install', '    chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"', '  async: 7200', '  poll: 30'];
-    return ['# 04-aap-config.yml · excerpt', '- name: Configure new AAP instance (config-as-code)', '  hosts: localhost', '  connection: local', '  gather_facts: false', '', '  # Verified target API', '  # aap_validate_certs: true'];
+    const focusedSections = executionFocus[state.step.id];
+    return executionSections.flatMap(section => {
+      const focus = focusedSections.includes(section.id);
+      const active = focus && state.step.routes.includes('flow-code');
+      const origin = active ? (state.rebuilding ? 'git' : state.flowOrigin) : 'base';
+      return section.lines.map(text => ({
+        text, origin, active, section: section.id, focus,
+        source: section.source, sources: [section.source], illustrative: Boolean(section.illustrative),
+      }));
+    });
   }
   const api = { sourceRevision, sourceRoot, chapters, steps, stateAt, configurationLines, executionLines };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

@@ -74,12 +74,14 @@
     }) : []));
 
   }
-  function drawCode(container, lines, activeOrigin) {
+  function drawCode(container, lines) {
     container.replaceChildren(...lines.map((value, position) => {
       const entry = typeof value === 'string' ? { text: value } : value;
-      const active = entry.active || (activeOrigin && entry.text.trim() && !entry.text.trimStart().startsWith('#'));
+      const active = Boolean(entry.active);
       const line = element('span', `yaml-line${entry.added ? ' line-added' : ''}${active ? ' line-active' : ''}`);
-      if (entry.origin || activeOrigin) line.dataset.origin = entry.origin || activeOrigin;
+      if (entry.origin) line.dataset.origin = entry.origin;
+      if (entry.section) line.dataset.section = entry.section;
+      if (entry.focus) line.dataset.focus = 'true';
       const number = element('span', 'line-number', String(position + 1).padStart(2, '0'));
       number.setAttribute('aria-hidden', 'true');
       line.append(number);
@@ -89,10 +91,14 @@
       else line.append(element('span', 'yaml-value', entry.text));
       return line;
     }));
-    // Keep the matching YAML section visible without scrolling the whole page.
-    const activeLine = [...container.children].find(line => line.classList.contains('line-active'));
-    if (container.parentElement) container.parentElement.scrollTop = activeLine
-      ? Math.max(0, activeLine.offsetTop - container.offsetTop - 6) : 0;
+    // Jump within this complete file; navigation must not scroll the whole page.
+    const focusLine = [...container.children].find(line => line.dataset.focus === 'true')
+      || [...container.children].find(line => line.classList.contains('line-active'));
+    if (container.parentElement) {
+      container.parentElement.scrollTop = focusLine
+        ? Math.max(0, focusLine.offsetTop - container.offsetTop - 6) : 0;
+      container.parentElement.scrollLeft = 0;
+    }
   }
   const chapterButtons = story.chapters.map(chapter => {
     const button = element('button', 'chapter-button', chapter.title);
@@ -127,7 +133,6 @@
     byId('target-card').setAttribute('aria-hidden', String(!state.targetVisible));
     const manualChange = step.id === 'manual';
     byId('manual-operator').hidden = !manualChange;
-    byId('source-column').classList.toggle('manual-active', manualChange);
     byId('manual-operator').setAttribute('aria-hidden', String(!manualChange));
     byId('manual-operator-title').textContent = manualChange ? 'Sysadmin · incident response' : '';
     byId('manual-operator-description').textContent = manualChange
@@ -183,13 +188,8 @@
     drawObjects(byId('source-objects'), state.sourceObjects);
     drawObjects(byId('target-objects'), state.targetObjects, true);
     drawCode(byId('config-lines'), story.configurationLines(state));
-    drawCode(byId('code-lines'), story.executionLines(state), step.routes.includes('flow-code') ? (state.rebuilding ? 'git' : state.flowOrigin) : undefined);
-    let executionFile = step.sources[0];
-    if (step.id === 'git-change' || state.rebuilding) executionFile = '04-aap-config.yml + imports';
-    else if (step.id === 'manual' || step.id === 'capture') executionFile = 'capture-aap-cac.yml';
-    else if (step.id === 'infra-change') executionFile = '02-infra-config.yml + imports';
-    else if (['separation', 'project'].includes(step.id)) executionFile = 'cac-resource-definitions.yml';
-    byId('execution-file-name').textContent = executionFile;
+    drawCode(byId('code-lines'), story.executionLines(state));
+    byId('execution-file-name').textContent = 'playbooks.yml · combined excerpts';
     byId('job-label').textContent = step.job;
     byId('job-status').textContent = step.job;
     byId('actor').hidden = !step.actor;

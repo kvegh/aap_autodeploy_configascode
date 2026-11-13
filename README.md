@@ -300,6 +300,12 @@ do not establish live migration or complete end-to-end acceptance.
 
 ## AAP Configuration as Code visualization
 
+Both repository windows keep one complete, scrollable presentation file. The
+private file includes readable configuration labels and synthetic encrypted
+secret examples; the public file combines the relevant source-pinned playbook
+excerpts. Each step scrolls both panes to the matching section and colours only
+the active definitions/code, while all other sections remain available.
+
 The [decision history](design_decisions_history.md) records the original
 component-width and project-import choices separately from later layout fixes
 and their verification limits.
@@ -329,9 +335,10 @@ bars are shown; redundant infrastructure/networking captions are omitted. Bars s
 right beside the RHEL label and preparation indicators to save vertical space. The page performs no host configuration
 or live AAP operation.
 Captured manual-origin definitions remain amber when replayed to the next AAP. During the manual-change stop, a
-seated Linux sysadmin above the small original AAP wears a plain hoodie and glasses,
+seated Linux sysadmin in permanently reserved space above the small original AAP wears a plain hoodie and glasses,
 leaning toward a laptop with hands on the keyboard. A small amber outage alert
-and one coffee mug establish the incident-response scene. The illustration is a
+and one coffee mug establish the incident-response scene. The original AAP stays
+in its lower position from the beginning; showing the figure does not move it. The illustration is a
 locally stored generated PNG; its prompt is documented in the demo guide. An amber arrow shows their
 configuration entering the first receiving AAP directly; the figure disappears
 when the scan brings those definitions into Git.
