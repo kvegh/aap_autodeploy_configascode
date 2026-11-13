@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Allow a bounded wait for longer shared native transactions — 2026-11-13
+
+Implementation `2c3f56800aeceab9ea9a4bf05aa44b934b90dc0c` (source 0.62.2)
+allows `aap_isolation_lock_retries` from zero to 1800 with the existing one-second
+delay. The default remains five retries. Parallel Windows creation jobs had
+exhausted that short wait while another job legitimately held the same native
+lock through network preparation and clone creation.
+
+This uses the existing atomic directory lock and keeps its ownership, rollback
+and cleanup rules. An invalid retry budget fails before source preparation or
+resource changes. No additional registry, wrapper, service, credential or job
+template is introduced, and no lock is removed on another invocation's behalf.
+
+An actual Core 2.20 regression first reproduced the default-budget failure while
+a synthetic competing transaction held the lock. Four focused native-runtime
+tests then passed in 47.761 seconds, covering the longer wait, four invalid
+budgets, bounded default contention and successful transient contention with
+invocation-owned cleanup. Offline production lint passed for the changed task.
+The fixtures use local temporary resources and forced publication failure to
+check preservation and cleanup; they do not establish a new parallel deployment
+on the real host. Windows consumer selection and its immutable dependency pin
+remain a separately coordinated step after active sequential recovery jobs.
+
 ## Present the first base push as three distinct categories — 2026-11-13
 
 Implementation `c4822ee6335512a6f2eaf1d4e712c74359f965d4` (source 0.62.0)

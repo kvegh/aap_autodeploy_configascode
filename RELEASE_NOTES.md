@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.62.3
+
+Document native lock-wait implementation `2c3f568`, its observed parallel Windows
+failure, retained ownership rules, actual Core 2.20 fixtures and deployment limits.
+
 ## 0.62.2
 
 Allow a caller to set a bounded native policy-lock retry budget for longer
