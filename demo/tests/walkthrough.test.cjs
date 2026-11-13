@@ -111,9 +111,11 @@ const manualItems = node => withClass(node, 'object-item').filter(item => item.d
 
 test('the seven chapters cover deployment, capture and replay with existing source links', () => {
   assert.equal(story.chapters.length, 7);
-  assert.equal(story.steps.length, 12);
-  assert.deepEqual(story.steps.slice(1, 5).map(step => step.stage), [1, 2, 3, 4]);
-  assert.equal(new Set(story.steps.map(step => step.id)).size, 12);
+  assert.equal(story.steps.length, 14);
+  assert.deepEqual(story.steps.slice(0, 7).map(step => step.id), ['separation', 'vm', 'infrastructure', 'installation', 'base-rhel', 'base-aap', 'base']);
+  assert.deepEqual(story.steps.slice(1, 7).map(step => step.stage), [1, 2, 3, 4, 4, 4]);
+  assert.ok(story.steps.slice(1, 7).every(step => step.chapter === 'deployment'));
+  assert.equal(new Set(story.steps.map(step => step.id)).size, 14);
   assert.equal(story.steps.find(step => step.id === 'infra-change').chapter, 'git-change');
   assert.equal(story.steps.at(-1).id, 'rebuild');
   assert.deepEqual(story.stateAt(0).sourceObjects.map(object => object.name), [
@@ -171,24 +173,48 @@ test('the actual HTML hides future objects before scripts run and uses local ass
   assert.match(source('src/styles.css'), /\[hidden\][\s\S]{0,100}display\s*:\s*none/);
 });
 
-test('Next reveals all four deployment stops without separate sidebar stage controls', () => {
-  const { nodes } = browser();
+test('Next and Previous separate RHEL, AAP settings and base content within deployment', () => {
+  const page = browser();
+  const { nodes } = page;
   const sourceNames = objectNames(nodes['source-objects']);
   assert.equal(nodes['target-card'].hidden, true);
   assert.equal(nodes['target-placeholder'].hidden, false);
   assert.equal(nodes['previous'].disabled, true);
   assert.equal(nodes['stage-list'], undefined, 'The redundant stage section is deleted');
   assert.doesNotMatch(source('index.html'), /AAP DEPLOYMENT|<button\b[^>]*data-stage=/);
-  for (const [index, step] of ['vm', 'infrastructure', 'installation', 'base'].entries()) {
-    nodes.next.click();
-    assert.equal(nodes['target-card'].dataset.stage, String(index + 1));
-    assert.equal(nodes['scene-title'].textContent, story.steps.find(item => item.id === step).title);
+  const stops = [
+    ['vm', 1, false, false, false],
+    ['infrastructure', 2, false, false, false],
+    ['installation', 3, false, false, false],
+    ['base-rhel', 4, true, false, false],
+    ['base-aap', 4, true, true, false],
+    ['base', 4, true, true, true],
+  ];
+  const check = ([id, stage, rhel, settings, content]) => {
+    const state = story.stateAt(story.steps.findIndex(step => step.id === id));
+    assert.equal(state.rhelConfigurationApplied, rhel, `${id}: RHEL apply state`);
+    assert.equal(state.aapConfigurationApplied, settings, `${id}: AAP settings apply state`);
+    assert.equal(state.baseContentApplied, content, `${id}: base content apply state`);
+    assert.equal(nodes['target-card'].dataset.stage, String(stage));
+    assert.equal(nodes['scene-title'].textContent, state.step.title);
     assert.equal(nodes['target-card'].hidden, false);
     assert.equal(nodes['target-placeholder'].hidden, true);
     assert.equal(nodes['target-card'].attributes['aria-hidden'], 'false');
-    assert.equal(nodes['target-title'].textContent, index < 2 ? 'New RHEL VM' : 'New AAP');
-    assert.equal(nodes['target-objects'].hidden, index < 3);
-    assert.deepEqual(objectNames(nodes['target-objects']).sort(), index < 3 ? [] : [...sourceNames].sort());
+    assert.equal(nodes['target-title'].textContent, stage < 3 ? 'New RHEL VM' : 'New AAP');
+    assert.equal(nodes['target-objects'].hidden, !content, `${id}: content visibility`);
+    assert.equal(nodes['target-configuration-panel'].hidden, !settings, `${id}: settings visibility`);
+    assert.deepEqual(objectNames(nodes['target-objects']).sort(), content ? [...sourceNames].sort() : [], `${id}: base objects`);
+    assert.deepEqual(objectNames(nodes['target-configuration']), settings ? ['AAP Logging Config v1', 'AAP EDA Config v1'] : [], `${id}: AAP settings`);
+    assert.deepEqual(objectNames(nodes['target-infrastructure']), stage >= 2 ? ['Certificate config v1', 'Firewall Config v1'] : [], `${id}: canonical RHEL profiles`);
+    assert.deepEqual(objectNames(nodes['source-objects']), sourceNames, `${id}: original AAP is preserved`);
+  };
+  for (const stop of stops) {
+    nodes.next.click();
+    check(stop);
+  }
+  for (const stop of stops.slice(0, -1).reverse()) {
+    nodes.previous.click();
+    check(stop);
   }
 });
 
@@ -318,9 +344,15 @@ test('direct links and later hash changes restore the complete scene state', () 
     assert.equal(page.nodes['step-count'].textContent, `${index + 1} / ${story.steps.length}`);
     assert.equal(page.nodes['scene-title'].textContent, step.title);
     const state = story.stateAt(index);
+    assert.equal(state.rhelConfigurationApplied, index >= 4, `${step.id}: direct-link RHEL state`);
+    assert.equal(state.aapConfigurationApplied, index >= 5, `${step.id}: direct-link AAP settings state`);
+    assert.equal(state.baseContentApplied, index >= 6, `${step.id}: direct-link content state`);
+    assert.equal(page.nodes['target-objects'].hidden, !state.baseContentApplied, `${step.id}: direct-link content visibility`);
+    assert.equal(page.nodes['target-configuration-panel'].hidden, !state.aapConfigurationApplied, `${step.id}: direct-link settings visibility`);
     assert.equal(objectNames(page.nodes['target-objects']).length, state.targetObjects.length);
     for (const prefix of ['source', 'target', 'successor']) {
       const expectedObjects = state[`${prefix}Objects`];
+      assert.equal(automationItems(page.nodes[`${prefix}-objects`]).length, expectedObjects.length, `${step.id}: ${prefix} object count`);
       for (const item of automationItems(page.nodes[`${prefix}-objects`])) {
         const name = withClass(item, 'object-name')[0].textContent;
         const expected = expectedObjects.find(object => object.name === name);
@@ -335,16 +367,13 @@ test('direct links and later hash changes restore the complete scene state', () 
           if (expected.inGit) assert.doesNotMatch(accessibleLabel, /not.*saved/i);
         }
       }
-      const roots = ['objects', 'configuration', 'infrastructure'];
-      if (prefix !== 'source') roots.push('rhel-configs');
-      for (const suffix of roots) {
+      for (const suffix of ['objects', 'configuration', 'infrastructure']) {
         const root = page.nodes[`${prefix}-${suffix}`];
         for (const className of ['origin-label', 'git-badge', 'rhel-config-origin']) {
           assert.equal(withClass(root, className).length, 0, `${step.id}: ${prefix}-${suffix} has no repeated ${className} badges`);
         }
-        const items = [...withClass(root, 'object-item'), ...withClass(root, 'rhel-config')];
-        for (const item of items) {
-          const name = [...withClass(item, 'object-name'), ...withClass(item, 'rhel-config-name')][0];
+        for (const item of withClass(root, 'object-item')) {
+          const name = withClass(item, 'object-name')[0];
           assert.ok(name, `${step.id}: each coloured bar has a name`);
           assert.equal(item.textContent, name.textContent, `${step.id}: coloured bars show their name without repeated badges`);
         }
@@ -385,7 +414,9 @@ test('active routes remain visible and deployment actions name the current stage
     ['vm', 'Create VM', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
     ['infrastructure', 'Prepare OS', 'New VM', ['flow-code', 'flow-apply']],
     ['installation', 'Install AAP', 'New AAP', ['flow-code', 'flow-apply']],
-    ['base', 'Apply base', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['base-rhel', 'Apply RHEL', 'RHEL', ['flow-config', 'flow-code', 'flow-apply']],
+    ['base-aap', 'Apply AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['base', 'Apply content', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['git-change', 'Apply changes', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['infra-change', 'Apply infra', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
@@ -466,6 +497,8 @@ test('the sidebar owns controls and status while three content columns own the d
 test('active arrows match the highlighted configuration origin and reset on navigation', () => {
   const page = browser();
   for (const [id, origin, names] of [
+    ['base-rhel', 'base', ['Certificate config v1', 'Firewall Config v1']],
+    ['base-aap', 'base', ['AAP Logging Config v1', 'AAP EDA Config v1']],
     ['base', 'base', ['VMWare Inventory', 'AAP Config-as-Code Git']],
     ['project', 'git', ['Satellite Inventory', 'Application automation playbooks', 'Regional servers', 'Regional automation']],
     ['git-change', 'git', ['AAP Logging Config v2']],
@@ -481,6 +514,18 @@ test('active arrows match the highlighted configuration origin and reset on navi
     assert.ok(highlighted.length > 0, `${id}: highlighted configuration`);
     for (const line of highlighted) assert.equal(line.dataset.origin, origin, `${id}: configuration origin`);
     for (const name of names) assert.ok(highlighted.some(line => line.textContent.includes(name)), `${id}: ${name}`);
+    if (['base-rhel', 'base-aap', 'base'].includes(id)) {
+      const categories = {
+        'base-rhel': ['Certificate config v1', 'Firewall Config v1'],
+        'base-aap': ['AAP Logging Config v1', 'AAP EDA Config v1'],
+        base: ['VMWare Inventory', 'AAP Config-as-Code Git', 'Server access key', 'AAP Config-as-Code jobs'],
+      };
+      for (const [category, categoryNames] of Object.entries(categories)) {
+        if (category !== id) {
+          for (const name of categoryNames) assert.ok(!highlighted.some(line => line.textContent.includes(name)), `${id}: ${name} is outside the current apply category`);
+        }
+      }
+    }
     const execution = withClass(page.nodes['code-lines'], 'line-active');
     if (id === 'capture') assert.equal(execution.length, 0, 'Capture writes CaC without claiming to read code');
     else {
@@ -500,12 +545,12 @@ test('base AAP configuration is deployed and Git updates replace logging without
   const names = id => objectNames(nodes[id]);
   assert.deepEqual(names('source-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
   assert.equal(nodes['target-configuration-panel'].hidden, true);
-  for (const id of ['vm', 'infrastructure', 'installation']) {
+  for (const id of ['vm', 'infrastructure', 'installation', 'base-rhel']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-configuration-panel'].hidden, true);
     assert.deepEqual(names('target-configuration'), []);
   }
-  for (const id of ['base', 'project']) {
+  for (const id of ['base-aap', 'base', 'project']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-configuration-panel'].hidden, false);
     assert.deepEqual(names('target-configuration'), ['AAP Logging Config v1', 'AAP EDA Config v1']);
@@ -613,7 +658,6 @@ test('another AAP receives the complete Git snapshot only after capture and reve
   assert.match(rhelReceiving, /padding:\s*\.375rem\s+0;/);
   assert.match(styles, /(?:^|\n)\.object-name\s*\{[^}]*font-size:\s*\.9375rem;/, 'Object names use the larger bar-only text size');
   assert.match(styles, /\.rhel-foundation \.object-name\s*\{[^}]*font-size:\s*\.875rem;/, 'RHEL names use the larger bar-only text size');
-  assert.match(styles, /(?:^|\n)\.rhel-config\s*\{[^}]*font-size:\s*\.8125rem;/, 'Early RHEL configuration bars use the larger scoped text size');
   assert.match(styles, /\.aap-settings-panel::before\s*\{[^}]*border-top:\s*1px solid/, 'The category has one thin separator');
   assert.equal(successorItems.filter(item => item.dataset.origin === 'base').length, 4);
   assert.equal(successorItems.filter(item => item.dataset.origin === 'git').length, 6);
@@ -707,9 +751,9 @@ test('infrastructure configuration updates certificates while retaining firewall
   for (const id of ['separation', 'vm', 'infrastructure', 'installation']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-infrastructure-panel'].hidden, ['separation', 'vm'].includes(id), id);
-    assert.deepEqual(names('target-infrastructure'), [], id);
+    assert.deepEqual(names('target-infrastructure'), ['separation', 'vm'].includes(id) ? [] : original, id);
   }
-  for (const id of ['base', 'project', 'git-change']) {
+  for (const id of ['base-rhel', 'base-aap', 'base', 'project', 'git-change']) {
     page.hash(`#${id}`);
     assert.equal(nodes['target-infrastructure-panel'].hidden, false, id);
     assert.deepEqual(names('target-infrastructure'), original, id);
@@ -756,6 +800,8 @@ test('the RHEL foundation follows deployment without implying a guest OS upgrade
     ['vm', '1', ['complete', 'current', 'pending']],
     ['infrastructure', '2', ['complete', 'current', 'pending']],
     ['installation', '3', ['complete', 'complete', 'complete']],
+    ['base-rhel', '4', ['complete', 'complete', 'complete']],
+    ['base-aap', '4', ['complete', 'complete', 'complete']],
     ['base', '4', ['complete', 'complete', 'complete']],
   ]) {
     page.hash(`#${id}`);
@@ -798,44 +844,51 @@ test('the RHEL foundation persists under AAP changes and replays into the third 
 });
 
 
-test('OS configuration lands in RHEL before the full infrastructure group takes its place', () => {
+test('RHEL profiles keep one renderer, order and placement through setup, base apply and replay', () => {
+  const html = source('index.html');
+  const app = source('src/app.js');
+  const styles = source('src/styles.css');
+  for (const [name, text] of [['HTML', html], ['presenter', app], ['styles', styles]]) {
+    assert.doesNotMatch(text, /rhel-config(?:s|-name|-origin)\b/, `${name}: the duplicate early RHEL renderer is removed`);
+  }
+  assert.match(styles, /\.rhel-foundation > \.configuration-panel\s*\{[^}]*align-self:\s*start;/, 'The shared RHEL stack keeps a stable top anchor');
   const page = browser();
   const { nodes } = page;
-  const configs = prefix => withClass(nodes[`${prefix}-rhel-configs`], 'rhel-config');
-  const names = prefix => configs(prefix).map(item => withClass(item, 'rhel-config-name')[0].textContent);
-  const temporary = ['Certificate config v1', 'Firewall Config v1'];
+  const original = ['Certificate config v1', 'Firewall Config v1'];
   const updated = ['Certificate config v2', 'Firewall Config v1'];
-  for (const step of story.steps) {
+  const check = (id, index) => {
+    const step = story.steps[index];
+    const changed = index >= story.steps.findIndex(item => item.id === 'infra-change');
+    const landing = ['infrastructure', 'base-rhel', 'infra-change'].includes(id);
+    for (const prefix of ['source', 'target', 'successor']) {
+      const visible = prefix === 'source' || (prefix === 'target' ? step.stage >= 2 : id === 'rebuild');
+      const items = withClass(nodes[`${prefix}-infrastructure`], 'configuration-item');
+      const expected = prefix === 'source' || !changed ? original : updated;
+      assert.deepEqual(items.map(item => item.dataset.configId), visible ? ['certificate', 'firewall'] : [], `${id}: ${prefix} keeps certificate above firewall`);
+      assert.deepEqual(objectNames(nodes[`${prefix}-infrastructure`]), visible ? expected : [], `${id}: ${prefix} canonical profile names`);
+      if (visible) {
+        assert.equal(items[0].dataset.origin, prefix !== 'source' && changed ? 'git' : 'base', `${id}: ${prefix} certificate colour`);
+        assert.equal(items[1].dataset.origin, 'base', `${id}: ${prefix} firewall remains blue`);
+        assert.ok(items.every(item => item.classList.contains('object-item')), `${id}: ${prefix} uses the same profile bar style`);
+      }
+    }
+    assert.equal(nodes['target-infrastructure-panel'].hidden, step.stage < 2, `${id}: shared RHEL panel visibility`);
+    assert.equal(nodes['target-rhel'].classList.contains('landing'), landing, `${id}: RHEL apply cue`);
+    assert.equal(nodes['flow-apply'].dataset.destination, landing ? 'rhel' : 'aap', `${id}: apply destination`);
+    assert.equal(nodes['successor-rhel'].classList.contains('landing'), false, `${id}: replay does not retain a first-target apply cue`);
+  };
+  for (const [index, step] of story.steps.entries()) {
     page.hash(`#${step.id}`);
-    const preparing = step.stage >= 2 && step.stage < 4;
-    const landing = ['infrastructure', 'infra-change'].includes(step.id);
-    assert.deepEqual(names('target'), preparing ? temporary : [], step.id);
-    assert.ok(configs('target').every(item => item.dataset.origin === 'base'), `${step.id}: temporary OS configuration is blue`);
-    assert.equal(nodes['target-rhel'].classList.contains('landing'), landing, `${step.id}: RHEL receives current infrastructure configuration`);
-    assert.equal(nodes['flow-apply'].dataset.destination, landing ? 'rhel' : 'aap', `${step.id}: flow destination`);
-    assert.deepEqual(names('successor'), [], `${step.id}: final replay uses the full infrastructure group without duplicate tiles`);
-    assert.equal(nodes['successor-rhel'].classList.contains('landing'), false, `${step.id}: replay does not retain a first-target landing cue`);
+    check(step.id, index);
   }
-  assert.deepEqual(objectNames(nodes['successor-infrastructure']), updated, 'Replay preserves the complete updated infrastructure group');
-  nodes.previous.click();
-  assert.deepEqual(names('successor'), []);
-  assert.deepEqual(names('target'), [], 'Completed RHEL uses its full infrastructure group');
-  assert.deepEqual(objectNames(nodes['target-infrastructure']), updated);
-  page.hash('#vm');
-  assert.deepEqual(names('target'), [], 'Before OS preparation there are no configuration tiles');
-  assert.equal(nodes['target-rhel'].classList.contains('landing'), false);
-  page.hash('#infrastructure');
-  assert.deepEqual(names('target'), temporary);
-  assert.equal(nodes['target-rhel'].classList.contains('landing'), true);
+  for (let index = story.steps.length - 2; index >= 0; index--) {
+    nodes.previous.click();
+    check(story.steps[index].id, index);
+  }
   page.hash('#infra-change');
-  assert.deepEqual(names('target'), [], 'Updating infrastructure does not duplicate the completed group');
   assert.equal(nodes['flow-apply'].dataset.origin, 'git', 'The infrastructure update uses the purple Git route');
-  assert.equal(nodes['target-rhel'].classList.contains('landing'), true);
   nodes.restart.click();
-  assert.deepEqual(names('target'), []);
-  assert.deepEqual(names('successor'), []);
-  assert.equal(nodes['target-rhel'].classList.contains('landing'), false);
-  assert.equal(nodes['flow-apply'].dataset.destination, 'aap');
+  check('separation', 0);
 });
 
 

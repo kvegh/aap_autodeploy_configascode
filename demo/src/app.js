@@ -72,16 +72,7 @@
       item.setAttribute('aria-label', `${milestone.title}: ${milestone.complete ? 'complete' : current ? 'next preparation' : 'pending'}`);
       return item;
     }) : []));
-    // These are the host-side configurations that provide access to this RHEL guest.
-    const hostConfigurations = visible && stage >= 2 && stage < 4 ? ['Certificate config v1', 'Firewall Config v1'] : [];
-    byId(`${prefix}-rhel-configs`).replaceChildren(...hostConfigurations.map(name => {
-      const item = element('div', 'rhel-config');
-      item.dataset.origin = 'base';
-      item.append(element('span', 'rhel-config-name', name));
-      item.setAttribute('role', 'group');
-      item.setAttribute('aria-label', `${name}. ${originDescriptions.base}`);
-      return item;
-    }));
+
   }
   function drawCode(container, lines, activeOrigin) {
     container.replaceChildren(...lines.map((value, position) => {
@@ -146,17 +137,19 @@
     byId('successor-card').hidden = !state.successorVisible;
     byId('successor-card').setAttribute('aria-hidden', String(!state.successorVisible));
     byId('successor-card').dataset.stage = '4';
-    drawRhel('target', step.stage, state.targetVisible, ['infrastructure', 'infra-change'].includes(step.id), state.flowOrigin);
+    drawRhel('target', step.stage, state.targetVisible, ['infrastructure', 'base-rhel', 'infra-change'].includes(step.id), state.flowOrigin);
     drawRhel('successor', 4, state.successorVisible);
     byId('successor-card').classList.toggle('captured', state.successorVisible);
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
     const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
-    byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : step.id === 'base' ? 'Apply base' : step.id === 'git-change' ? 'Apply changes' : step.id === 'infra-change' ? 'Apply infra' : 'Apply objects';
-    byId('flow-apply').dataset.destination = ['infrastructure', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
-    byId('apply-detail').textContent = step.stage < 3 ? 'New VM' : 'New AAP';
-    byId('target-objects').hidden = step.stage < 4;
-    byId('target-configuration-panel').hidden = step.stage < 4;
+    const baseCaptions = { 'base-rhel': 'Apply RHEL', 'base-aap': 'Apply AAP', base: 'Apply content' };
+    byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : baseCaptions[step.id] || (step.id === 'git-change' ? 'Apply changes' : step.id === 'infra-change' ? 'Apply infra' : 'Apply objects');
+    // The base categories arrive independently; later steps keep prior categories.
+    byId('flow-apply').dataset.destination = ['infrastructure', 'base-rhel', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
+    byId('apply-detail').textContent = step.id === 'base-rhel' ? 'RHEL' : step.stage < 3 ? 'New VM' : 'New AAP';
+    byId('target-objects').hidden = !state.baseContentApplied;
+    byId('target-configuration-panel').hidden = !state.aapConfigurationApplied;
     byId('target-infrastructure-panel').hidden = step.stage < 2;
     byId('target-card').dataset.stage = String(step.stage);
     byId('target-card').classList.toggle('captured', state.captured);

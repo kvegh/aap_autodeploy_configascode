@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.62.0
+
+Split the first visual base push into RHEL configuration, AAP configuration and
+AAP content, with separate reveals, highlights and arrow actions. Derive chapter
+positions from fourteen story stops and preserve the completed #base link. Use
+one top-aligned Certificate/Firewall renderer throughout OS preparation and
+configuration, keeping their order and placement consistent.
+
 ## 0.61.25
 
 Document original-only publication and larger arrow text from `9428f68`. Pages

@@ -3,11 +3,6 @@
   'use strict';
   const sourceRevision = 'f52546d3456614869aa254d220de4a786b96c31f';
   const sourceRoot = `https://github.com/kvegh/aap_autodeploy_configascode/blob/${sourceRevision}/`;
-  const chapters = [
-    ['separation', 'Data & code', 0], ['deployment', 'A new AAP', 1],
-    ['project', 'Apply objects', 5], ['git-change', 'Change in Git', 6],
-    ['manual', 'Change in AAP', 8], ['capture', 'Back to Git', 9], ['rebuild', 'Deploy again', 10],
-  ].map(([id, title, index]) => ({ id, title, index }));
   const baseObjects = [
     { id: 'platform', type: 'Inventories', name: 'VMWare Inventory', origin: 'base' },
     { id: 'platform-code', type: 'Projects', name: 'AAP Config-as-Code Git', origin: 'base' },
@@ -40,7 +35,9 @@
     { id: 'vm', chapter: 'deployment', title: '01 / Create a new home.', description: 'The original AAP creates a RHEL VM on the prepared host. It is a new guest, with no AAP content yet.', stage: 1, job: '01 · Create VM', status: 'VM created', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['01-linux-vm-setup.yml'] },
     { id: 'infrastructure', chapter: 'deployment', title: 'Prepare OS for AAP installation', description: 'DNS, TLS certificates and nginx connect that same guest to its reserved address. The VM is ready for AAP installation.', stage: 2, job: '02 · Prepare OS for AAP installation', status: 'OS prepared for AAP installation', routes: ['flow-code', 'flow-apply'], sources: ['02-infra-config.yml'] },
     { id: 'installation', chapter: 'deployment', title: '03 / Install AAP inside the VM.', description: 'The platform is installed in the new guest. A second AAP now exists; its automation catalogue comes next.', stage: 3, job: '03 · Install AAP', status: 'AAP installed', routes: ['flow-code', 'flow-apply'], sources: ['03-aap-install.yml'] },
-    { id: 'base', chapter: 'deployment', title: '04 / Apply the shared foundation.', description: 'Base CaC creates the shared objects, AAP Logging Config v1, AAP EDA Config v1 and Certificate config v1 and Firewall Config v1 on the new AAP.', stage: 4, job: '04 · Configure Base AAP', status: 'Base configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['04-aap-config.yml'] },
+    { id: 'base-rhel', chapter: 'deployment', title: 'RHEL configuration', description: 'Apply the initial RHEL configuration profiles: Certificate config v1 and Firewall Config v1. The installed AAP has no shared settings or imported automation objects yet.', stage: 4, baseFocus: 'rhel', job: 'Apply RHEL configuration', status: 'RHEL configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['02-infra-config.yml'] },
+    { id: 'base-aap', chapter: 'deployment', title: 'AAP configuration', description: 'Apply AAP Logging Config v1 and AAP EDA Config v1. RHEL configuration is retained; shared automation objects come next.', stage: 4, baseFocus: 'aap', job: 'Apply AAP configuration', status: 'AAP configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['04-aap-config.yml'] },
+    { id: 'base', chapter: 'deployment', title: 'AAP content', description: 'Import the shared inventories, projects, credentials and Job Templates. The initial RHEL configuration, AAP settings and base automation content are now applied.', stage: 4, baseFocus: 'content', job: 'Import base AAP content', status: 'Base configuration applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['04-aap-config.yml'] },
     { id: 'project', chapter: 'project', title: 'Turn definitions into more automation.', description: 'A configuration Job Template on the original AAP combines the private YAML with the public playbooks. Additional objects appear on the receiving AAP.', stage: 4, job: 'Deploy objects', status: 'Project objects applied', routes: ['flow-config', 'flow-code', 'flow-apply'], sources: ['deploy-cac-project.yml', 'tasks/cac-resource-definitions.yml'] },
     { id: 'git-change', chapter: 'git-change', title: 'New requirements? Change the YAML.', description: 'Your team updates AAP Logging Config v1 to v2 in CaC. The original AAP applies the settings change; AAP EDA Config v1 and the imported automation objects stay unchanged.', stage: 4, job: 'Apply configuration', status: 'AAP Logging Config v2 applied; AAP EDA Config v1 unchanged', routes: ['flow-config', 'flow-code', 'flow-apply'], actor: ['Configuration author', 'Updates AAP Logging Config to v2. AAP EDA Config v1 and the imported objects are retained.'], sources: ['04-aap-config.yml'] },
     { id: 'infra-change', chapter: 'git-change', title: 'Apply infrastructure configuration.', description: 'CaC updates the RHEL infrastructure configuration: Certificate config becomes purple v2, while Firewall Config stays blue v1.', stage: 4, job: 'Apply infrastructure configuration', status: 'Certificate v2 applied; firewall v1 unchanged', routes: ['flow-config', 'flow-code', 'flow-apply'], actor: ['Infrastructure author', 'Updates Certificate config to v2 and retains Firewall Config v1.'], sources: ['02-infra-config.yml', 'deploy-cac-project.yml', 'tasks/cac-resource-definitions.yml'] },
@@ -50,12 +47,20 @@
     { id: 'rebuild', chapter: 'rebuild', title: 'Deploy the complete configuration again.', description: 'The original AAP creates another AAP from the configuration now kept in Git: base definitions, Git changes and captured manual additions, with AAP Logging Config v2, AAP EDA Config v1, Certificate config v2 and Firewall Config v1.', stage: 4, job: 'Rebuild from Git', status: 'Another AAP restored from Git', routes: ['flow-config', 'flow-code', 'flow-rebuild'], sources: ['01-linux-vm-setup.yml', '02-infra-config.yml', '03-aap-install.yml', '04-aap-config.yml', 'deploy-cac-project.yml', 'tasks/cac-resource-definitions.yml'] },
   ];
   const stepPositions = Object.fromEntries(steps.map((step, position) => [step.id, position]));
+  const chapters = [
+    ['separation', 'Data & code'], ['deployment', 'A new AAP'],
+    ['project', 'Apply objects'], ['git-change', 'Change in Git'],
+    ['manual', 'Change in AAP'], ['capture', 'Back to Git'], ['rebuild', 'Deploy again'],
+  ].map(([id, title]) => ({ id, title, index: steps.findIndex(step => step.chapter === id) }));
   function stateAt(index) {
     if (!Number.isInteger(index)) throw new TypeError('Step index must be an integer.');
     const position = Math.max(0, Math.min(steps.length - 1, index));
     const step = steps[position];
+    const rhelConfigurationApplied = position >= stepPositions['base-rhel'];
+    const aapConfigurationApplied = position >= stepPositions['base-aap'];
+    const baseContentApplied = position >= stepPositions.base;
     const targetObjects = [
-      ...(step.stage >= 4 ? baseObjects : []), ...(position >= stepPositions.project ? projectObjects : []),
+      ...(baseContentApplied ? baseObjects : []), ...(position >= stepPositions.project ? projectObjects : []),
       ...(position >= stepPositions.manual ? manualObjects : []),
     ].map(object => ({ ...object, inGit: object.origin !== 'manual' || position >= stepPositions.capture }));
     const configObjects = [...baseObjects, ...projectObjects, ...(position >= stepPositions.capture ? manualObjects : [])];
@@ -64,12 +69,12 @@
       ? { ...config, name: 'AAP Logging Config v2', origin: 'git', version: 2 }
       : { ...config });
     const sourceConfiguration = baseConfiguration.map(config => ({ ...config }));
-    const targetConfiguration = step.stage >= 4 ? desiredConfiguration.map(config => ({ ...config })) : [];
+    const targetConfiguration = aapConfigurationApplied ? desiredConfiguration.map(config => ({ ...config })) : [];
     const desiredInfrastructure = baseInfrastructure.map(config => config.id === 'certificate' && position >= stepPositions['infra-change']
       ? { ...config, name: 'Certificate config v2', origin: 'git', version: 2 }
       : { ...config });
     const sourceInfrastructure = baseInfrastructure.map(config => ({ ...config }));
-    const targetInfrastructure = step.stage >= 4 ? desiredInfrastructure.map(config => ({ ...config })) : [];
+    const targetInfrastructure = step.stage >= 2 ? desiredInfrastructure.map(config => ({ ...config })) : [];
     const rebuilding = step.id === 'rebuild';
     // Replay the saved definitions, including captured manual origins, into a fresh platform.
     const successorObjects = rebuilding ? configObjects.map(object => ({ ...object, inGit: true })) : [];
@@ -78,6 +83,7 @@
     const flowOrigin = rebuilding ? 'mixed' : position >= stepPositions.manual ? 'manual' : position >= stepPositions.project ? 'git' : 'base';
     return {
       index: position, step, flowOrigin, rebuilding,
+      rhelConfigurationApplied, aapConfigurationApplied, baseContentApplied,
       successorPlaceholderVisible: step.id === 'next-aap',
       successorVisible: rebuilding, successorObjects, successorConfiguration, successorInfrastructure,
       desiredConfiguration, sourceConfiguration, targetConfiguration,
@@ -92,8 +98,11 @@
     const lines = [{ text: '# Illustrative decrypted view · stored encrypted', origin: 'base' }];
     const logging = state.desiredConfiguration.find(config => config.id === 'logging');
     const readingConfiguration = state.step.routes.includes('flow-config');
-    const loggingActive = readingConfiguration && state.step.id !== 'infra-change' && (state.rebuilding || logging.origin === state.flowOrigin);
-    const edaActive = readingConfiguration && (state.rebuilding || state.flowOrigin === 'base');
+    const baseFocus = state.step.baseFocus;
+    const readingAapConfiguration = readingConfiguration && (!baseFocus || baseFocus === 'aap');
+    const readingRhelConfiguration = readingConfiguration && (!baseFocus || baseFocus === 'rhel');
+    const loggingActive = readingAapConfiguration && state.step.id !== 'infra-change' && (state.rebuilding || logging.origin === state.flowOrigin);
+    const edaActive = readingAapConfiguration && (state.rebuilding || state.flowOrigin === 'base');
     for (const text of [
       `# ${logging.name}`,
       'controller_settings_base:',
@@ -112,7 +121,7 @@
     ]) lines.push({ text, origin: 'base', active: edaActive });
 
     const certificate = state.desiredInfrastructure.find(config => config.id === 'certificate');
-    const certificateActive = readingConfiguration && (state.rebuilding || state.step.id === 'infra-change' || state.flowOrigin === 'base');
+    const certificateActive = readingRhelConfiguration && (state.rebuilding || state.step.id === 'infra-change' || state.flowOrigin === 'base');
     for (const text of [
       `# RHEL infrastructure · ${certificate.name}`,
       `aap_upstream_hostname: ${certificate.version === 1 ? '<automation-service-name>' : '<updated-automation-service-name>'}`,
@@ -123,7 +132,7 @@
       if (type === 'Job Templates') {
         // These are saved job inputs; importing them does not run infrastructure changes.
         for (const config of state.desiredInfrastructure.filter(config => config.template)) {
-          const active = readingConfiguration && (state.rebuilding || state.step.id === 'infra-change' && config.id === 'certificate' || state.flowOrigin === 'base');
+          const active = readingRhelConfiguration && (state.rebuilding || state.step.id === 'infra-change' && config.id === 'certificate' || state.flowOrigin === 'base');
           for (const text of [
             `  # ${config.name} · illustrative job inputs`,
             `  - name: ${config.template}`,
@@ -135,7 +144,7 @@
       for (const object of state.configObjects.filter(item => item.type === type)) {
         const added = object.origin === 'manual';
         const readingConfiguration = state.step.routes.includes('flow-config') || state.step.routes.includes('flow-return');
-        const focusedObject = state.step.id !== 'infra-change' && state.step.id !== 'git-change' && (state.rebuilding || object.origin === state.flowOrigin);
+        const focusedObject = (!baseFocus || baseFocus === 'content') && state.step.id !== 'infra-change' && state.step.id !== 'git-change' && (state.rebuilding || object.origin === state.flowOrigin);
         const active = readingConfiguration && focusedObject;
         lines.push({ text: `  - name: ${object.name}`, origin: object.origin, added, active });
         if (type === 'Projects') lines.push({ text: '    scm_url: <automation-repository>', origin: object.origin, added, active });
@@ -154,7 +163,7 @@
     const stage = state.step.stage;
     if (state.step.id === 'capture') return ['# Accepted update · illustrative job inputs', 'aap_cac_capture_mode: update', 'aap_cac_capture_commit: true', 'aap_cac_capture_push: true', '', '# Implementation: capture-aap-cac.yml'];
     if (state.step.id === 'manual') return ['# capture-aap-cac.yml · excerpt', '- name: Extract and compare through protected Vault API and Git inputs', '  aap_cac_capture:', '    scope: "{{ aap_cac_capture_scope }}"'];
-    if (state.step.id === 'git-change' || state.rebuilding) {
+    if (state.step.baseFocus === 'aap' || state.step.id === 'git-change' || state.rebuilding) {
       const lines = ['# Platform settings · 04-aap-config.yml', '- name: Apply shared AAP configuration', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch', '  vars:', '    dispatch_include_wildcard_vars: false'];
       // Only the final replay combines platform settings with project imports.
       if (state.rebuilding) lines.push('', '# Project objects · tasks/cac-resource-definitions.yml', '- name: Import ordinary configuration resources without wildcard merging or workload execution', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch');
@@ -162,8 +171,8 @@
     }
     if (state.step.id === 'infra-change') return ['# Certificate configuration · 02-infra-config.yml', '- name: "Configure DNS, certificate, and nginx reverse proxy"', '  hosts: hypervisor', '  become: true', '  gather_facts: false', '', '# Infrastructure Job Template definitions · excerpt', '- name: Import job templates after their persistent credential dependencies', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.controller_job_templates'];
     if (stage === 1 || state.step.id === 'next-aap') return ['# 01-linux-vm-setup.yml · excerpt', '- name: Create a test VM only after shared name reservation and pinned rebuild preflight', '  hosts: hypervisor', '  become: true', '  gather_facts: false'];
-    if (state.index >= 5 || state.index === 0) return ['# Inventories, projects and credentials · excerpt', '- name: Import ordinary configuration resources without wildcard merging or workload execution', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch', '', '# Job Templates, after their dependencies', '- name: Import job templates after their persistent credential dependencies', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.controller_job_templates'];
-    if (stage === 2) return ['# 02-infra-config.yml · excerpt', '- name: "Configure DNS, certificate, and nginx reverse proxy"', '  hosts: hypervisor', '  become: true', '  gather_facts: false'];
+    if (state.index >= stepPositions.project || state.step.id === 'separation') return ['# Inventories, projects and credentials · excerpt', '- name: Import ordinary configuration resources without wildcard merging or workload execution', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.dispatch', '', '# Job Templates, after their dependencies', '- name: Import job templates after their persistent credential dependencies', '  ansible.builtin.include_role:', '    name: infra.aap_configuration.controller_job_templates'];
+    if (stage === 2 || state.step.baseFocus === 'rhel') return ['# 02-infra-config.yml · excerpt', '- name: "Configure DNS, certificate, and nginx reverse proxy"', '  hosts: hypervisor', '  become: true', '  gather_facts: false'];
     if (stage === 3) return ['# 03-aap-install.yml · excerpt', '- name: Run AAP installer', '  ansible.builtin.command:', '    cmd: ansible-playbook -i inventory ansible.containerized_installer.install', '    chdir: "{{ installer_extract_dir }}/{{ installer_dir_name }}"', '  async: 7200', '  poll: 30'];
     return ['# 04-aap-config.yml · excerpt', '- name: Configure new AAP instance (config-as-code)', '  hosts: localhost', '  connection: local', '  gather_facts: false', '', '  # Verified target API', '  # aap_validate_certs: true'];
   }

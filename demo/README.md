@@ -6,11 +6,15 @@ execution code and follows an original AAP, its first destination and a later
 fresh AAP through deployment, project imports, Git-authored additions, manual UI
 additions, capture and replay of the complete saved configuration.
 
-Seven chapters contain twelve presenter-controlled stops because the deployment
-chapter gives all four stages their own view. The receiving platform is genuinely
-hidden initially; Stage 01 reveals a RHEL VM, Stage 03 reveals AAP, and Stage 04
-reveals the shared base objects and configuration profiles. Additional project
-definitions and configuration revisions follow.
+Seven chapters contain fourteen presenter-controlled stops. VM creation, OS
+preparation and AAP installation have their own views. The first base push then
+advances through **RHEL configuration**, **AAP configuration** and **AAP content**
+separately: each stop highlights only its definitions and shows its application.
+AAP settings appear before the four shared inventories/projects/credentials/jobs.
+The existing `#base` link opens completed base content; `#base-rhel` and
+`#base-aap` open the earlier base categories. Chapter positions follow the stops.
+These are visual stops explaining existing configuration paths, not new AAP Job
+Templates or runtime deployment stages. Later project imports and revisions follow.
 Regional servers and Regional automation are part of the same project import as
 Satellite Inventory and Application automation playbooks. The Change in Git stop
 updates AAP Logging Config only; it retains the already imported objects.
@@ -81,7 +85,7 @@ no new runtime deployment operation is added. Blue **Firewall config** and
 **Certificate config** bars land inside that rectangle from Stage 02 onward.
 The Stage 02 connector points into the RHEL foundation, which briefly highlights
 on receipt; reduced motion keeps the static configurations and strong boundary.
-From base configuration onward, the RHEL group contains Certificate and Firewall
+From OS preparation onward, the RHEL group contains Certificate and Firewall
 profiles. The infrastructure CaC stop replaces Certificate config with violet v2,
 retaining blue Firewall v1. Both replay
 to the third instance, while the original retains its blue v1 baseline. The
@@ -89,15 +93,19 @@ host-networking scope is explained in this guide; the strip represents the
 infrastructure associated with AAP, not a claim that host nginx runs inside its VM.
 
 AAP configuration is a distinct full-width category below inventories, projects,
-credentials and Job Templates, separated by a light inset rule. Stage 04 creates blue **AAP Logging Config v1** and **AAP EDA Config
-v1**. Change in Git replaces the same logging entry with violet **AAP Logging Config
+credentials and Job Templates, separated by a light inset rule. The AAP configuration
+base stop creates blue **AAP Logging Config v1** and **AAP EDA Config v1**; the
+following AAP content stop imports the four shared automation objects. Change in Git replaces the same logging entry with violet **AAP Logging Config
 v2**; EDA v1 and the original AAP's own configuration remain unchanged. Backwards
 navigation restores v1. These are illustrative configuration revisions, not AAP
 product versions.
 
 The **Infrastructure configuration** group is inside RHEL, outside the AAP
 object catalogue. The strip keeps the RHEL label, three preparation indicators
-on the left, and two configuration boxes stacked on the right. Redundant group,
+on the left, and two configuration boxes stacked on the right. Certificate stays above
+Firewall across preparation, the three base stops, later changes and replay.
+One shared renderer and a top-aligned stack prevent a placement/style switch
+between early OS preparation and full configuration. Redundant group,
 host-networking and top-right status captions are deleted, including presenter
 rendering code; sections keep concise direct accessibility labels. The redundant status text is removed from the presenter code, not retained
 as hidden content. The firewall example preserves its existing saved Job Template inputs;
@@ -230,7 +238,7 @@ python3 -m http.server 8765 --directory demo --bind 127.0.0.1
 Open the local URL only on the host running the server, or through an existing
 supported forwarding mechanism. Next/Previous, the seven chapter buttons,
 arrow keys, R and restart navigate the same state. The separate deployment-stage
-sidebar controls are removed; the four deployment stops remain in the story. Source
+sidebar controls are removed; the deployment chapter now has six story stops. Source
 links open the real implementation. Motion honours reduced-motion preferences.
 
 The Node tests exercise the real scripts against a disposable DOM and check

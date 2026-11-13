@@ -197,7 +197,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 /* Offset the inset RHEL border so its right half starts at the AAP midpoint. */
 .receiving-column .rhel-foundation { grid-template-columns:minmax(0,calc(50cqw - .5rem)) minmax(0,1fr); column-gap:0; border-width:.125rem; border-left-width:.25rem; margin:0 .25rem .5rem; padding:.375rem 0; }
 .receiving-column .rhel-foundation > .configuration-panel { width:var(--aap-bar-width); margin-inline-start:var(--aap-inset); }
-.rhel-foundation > .configuration-panel { grid-area:configs; align-self:center; }
+.rhel-foundation > .configuration-panel { grid-area:configs; align-self:start; }
 .source-rhel { grid-template-columns:40px minmax(0,1fr); grid-template-areas:"heading configs"; }
 .source-rhel .rhel-heading { align-self:center; }
 .rhel-foundation.landing { border-color:var(--origin-base); box-shadow:0 0 0 2px var(--origin-base-soft); }
@@ -205,10 +205,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .rhel-foundation .configuration-list { grid-template-columns:minmax(0,1fr); }
 .rhel-foundation .object-item { display:flex; align-items:center; gap:4px; min-height:22px; padding:2px 5px; font-size:.875rem; }
 .rhel-foundation .object-name { font-size:.875rem; }
-.rhel-configs { display:grid; grid-template-columns:minmax(0,1fr); gap:3px; }
-.rhel-config { display:flex; align-items:center; gap:6px; min-width:0; margin:0; padding:3px 6px; border:1px solid var(--origin-base); border-left:3px solid var(--origin-base); border-radius:4px; color:#153f7e; background:var(--origin-base-soft); font-size:.8125rem; line-height:1.4; }
-.rhel-config-name { overflow-wrap:anywhere; }
-.landing[data-origin="base"] .rhel-config,.landing[data-origin="git"] .configuration-item[data-origin="git"] { animation:configuration-landing 480ms ease-out both; }
+.landing[data-origin="base"] .configuration-item[data-origin="base"],.landing[data-origin="git"] .configuration-item[data-origin="git"] { animation:configuration-landing 480ms ease-out both; }
 @keyframes configuration-landing { from { transform:translateX(-12px); opacity:.4; } to { transform:translateX(0); opacity:1; } }
 .rhel-heading { grid-area:heading; display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-width:0; }
 .rhel-label { color:#a32630; font-size:12px; font-weight:800; letter-spacing:.4px; }
