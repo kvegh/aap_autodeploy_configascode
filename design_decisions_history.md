@@ -1,5 +1,31 @@
 # Design decisions history
 
+## Present the first base push as three distinct categories — 2026-11-13
+
+Implementation `c4822ee6335512a6f2eaf1d4e712c74359f965d4` (source 0.62.0)
+splits the initial base push into RHEL configuration, AAP configuration and AAP
+content at the owner's request. Each stop highlights its own definitions and
+names the matching arrow action; AAP settings appear before shared automation
+objects. The existing `#base` link opens completed base content, while the new
+`#base-rhel` and `#base-aap` links expose the earlier categories. Seven chapter
+positions are derived from fourteen stops so later navigation remains aligned.
+These are presentation stops for existing configuration paths, not new runtime
+Job Templates or changes to actual AAP deployment automation.
+
+The owner also reported Certificate/Firewall movement around the base transition.
+Early preparation and full configuration used different renderer nodes and
+styles. All phases now use one canonical configuration stack, Certificate first
+and Firewall second, anchored at the top. Obsolete early renderer markup/code
+and styles are deleted. Later certificate v2 updates retain firewall v1 and the
+same order; reversal and the third-AAP replay use the same rendering path.
+
+All twenty-three existing walkthrough checks passed, including separate category
+reveals, exclusive definition highlights, direct links, reverse navigation and
+consistent RHEL IDs/order across all stops. Model sanity, script syntax and
+whitespace checks passed. Browser-rendered coordinates remain unmeasured.
+The original styling, larger arrow descriptions, legend and rejected-preview
+removal remain intact; no dependency, runtime job or recovery export was added.
+
 ## Withdraw the light comparison and enlarge arrow descriptions — 2026-11-13
 
 Implementation `9428f68c3a1d2d978f86833f6ae672dad2b7bdee` (source 0.61.24)

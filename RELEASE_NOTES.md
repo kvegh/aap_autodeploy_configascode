@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.62.1
+
+Document split-base and canonical RHEL renderer implementation `c4822ee`, its
+preserved navigation/source scope and twenty-three passing interaction checks.
+
 ## 0.62.0
 
 Split the first visual base push into RHEL configuration, AAP configuration and
