@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.46
+
+Document the owner's feature freeze for the clean platform, Windows and AIOps
+deployment/acceptance path. Defer feature extensions and broad refactors while
+preserving native decisions and active jobs. Independently verify all seven
+selected worker SHA-256/size inputs against existing encrypted CaC and preserve
+all eight pre-reinstall references. Refresh the protected task checkpoint.
+
 ## 0.63.45
 
 Document the running seven-image recovery download with independently observed

@@ -28,16 +28,16 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | open | P1 | feature | bead-wd-72f.31 |
-| bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | open | P1 | feature | bead-wd-72f.31.2 |
-| bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | open | P1 | task | bead-wd-72f.31.2 |
-| bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
-| bead-wd-72f.42 | Complete CaC and scanner coverage across AAP components | in_progress | P1 | feature | bead-wd-72f |
+| bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | deferred | P1 | feature | bead-wd-72f.31.2 |
+| bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | deferred | P1 | task | bead-wd-72f.31.2 |
+| bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | deferred | P1 | task | bead-wd-72f |
+| bead-wd-72f.42 | Complete CaC and scanner coverage across AAP components | deferred | P1 | feature | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | open | P1 | task | bead-wd-mcr.1 |
 | bead-wd-1rl.40.6 | Add separate CCNG infrastructure playbook and CaC job | deferred | P2 | task | bead-wd-1rl.40 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
 | bead-wd-72f.24 | Review legacy project settings in shared AutoDeploy inventory | open | P2 | task | bead-wd-72f |
-| bead-wd-72f.31.12 | Track Command Center and MCP DNS and nginx configuration in CaC | open | P2 | task | bead-wd-72f.31 |
+| bead-wd-72f.31.12 | Track Command Center and MCP DNS and nginx configuration in CaC | deferred | P2 | task | bead-wd-72f.31 |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |

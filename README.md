@@ -1,5 +1,19 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Feature freeze for clean deployment
+
+The owner has frozen new features and refactors while the clean platform build,
+Windows deployment and AIOps deployment and demonstration tests are completed.
+Continue the existing deployment path, verification and targeted fixes needed
+for acceptance. Scanner extensions, new user-configuration capture and broad
+cleanup remain held. Preserve current jobs, native decisions and other holds.
+
+Saved image SHA-256 digests and sizes already live in the encrypted Hactar
+capture. All seven selected worker inputs were independently compared with those
+pins, and all eight saved references match the pre-reinstall record. Verification
+must finish before image publication; recording a checksum after a download does
+not replace comparison with the saved reference.
+
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
 at that failure; credentials remain protected in its normal logs.

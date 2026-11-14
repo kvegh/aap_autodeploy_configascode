@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Document the owner’s feature freeze and checksum verification — 2026-11-14
+
+The owner explicitly froze new features and refactors to prioritize a clean
+platform build and Windows/AIOps deployment and demonstration acceptance.
+Existing deployment stages, verification and required focused fixes remain in
+scope. Feature tasks are deferred; existing native decisions and holds remain.
+Shared VM-creator implementation belongs to the acknowledged other-chat owner;
+this checkpoint introduces no competing refactor or deployment-path change.
+
+The requested SHA-256 references were already in the existing encrypted image
+capture. All eight references match the pre-reinstall evidence. An independent
+strict current-host read compared all seven selected worker paths, digests and
+sizes to CaC, reproduced its stable identity and verified hash checks precede
+publication. The running worker and saved references did not change. This is
+an execution verification record, with no new deployment implementation or
+architecture.
+
 ## Document the running native recovery-image transfer — 2026-11-14
 
 Execution evidence only; no deployment implementation or architecture changed.
