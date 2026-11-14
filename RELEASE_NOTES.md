@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.28
+
+Accept Zabbix appliance ownership through native VM and authenticated API
+provenance instead of guest SSH identities. Remove obsolete guest connection
+inputs from generated deployment settings and retain exact VM identity checks
+for metadata-only inventory and retirement. Ordinary Linux guest checks remain
+unchanged. The appliance boots under verified network isolation and remains
+blocked from Internet forwarding. Live deployment acceptance remains separate.
+
 ## 0.63.27
 
 Document completion of the saved-task export refresh in the generated overview

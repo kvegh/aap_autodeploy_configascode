@@ -97,7 +97,10 @@ def retirement_fixture():
         "disk": retirement["disk"], "address": route["vm_ip"], "mac": "52:54:00:12:34:56",
         "bridge": "vmbr0", "network": "isolated", "verified": True,
         "hypervisor_machine_id": route["hypervisor"]["machine_id"]}
-    resources["zabbix"].update(machine_id="b" * 32, host_keys=["ssh-ed25519 BBBB"])
+    for field in ("machine_id", "host_keys", "guest_host_keys", "user", "port"):
+        resources["zabbix"].pop(field, None)
+    resources["zabbix"].update(schema_version=2, api_version="7.4.12",
+        api_url="http://" + resources["zabbix"]["address"] + "/api_jsonrpc.php")
     for number, role in enumerate(("testserver1", "tra"), 4):
         resources[role] = {"vm_name": role + "-v07", "uuid": "%08d-2222-3333-4444-555555555555" % number,
             "disk": "/opt/vms/" + role + "-v07.disk.qcow2", "address": "192.168.70.%d" % (number * 10),
@@ -129,10 +132,14 @@ def retirement_fixture():
                   "vm_uuid": guest["metadata"]["uuid"], "aap_instance_number": 7}
         if guest["role"] == "aap":
             values.update(ansible_fqdn=urlsplit(route["aap_hostname"]).hostname, host_keys=route["guest_host_keys"])
+        elif guest["role"] == "zabbix":
+            values.pop("ansible_host")
+            values.update(zabbix_api_url=guest["metadata"]["api_url"], vm_resource=guest["metadata"])
         else:
             values.update(machine_id=guest["metadata"]["machine_id"], host_keys=guest["metadata"]["host_keys"],
                           vm_resource=guest["metadata"])
-        shared["host_inventory_configuration"]["hosts"].append({"name": guest["name"], "inventory": "Shared", "variables": values})
+        shared["host_inventory_configuration"]["hosts"].append({"name": guest["name"], "inventory": "Shared",
+            "enabled": guest["role"] != "zabbix", "variables": values})
         shared["host_inventory_configuration"]["groups"][0]["hosts"].append(guest["name"])
     other_resource = {"vm_name": "other-v08", "address": "192.168.70.30",
         "uuid": "88888888-2222-3333-4444-555555555555", "disk": "/opt/vms/other-v08.disk.qcow2",
@@ -212,6 +219,43 @@ class FakeRetirementSource(FakeSource):
 
 
 class InstanceKeyTests(unittest.TestCase):
+    def test_appliance_ownership_refuses_ssh_enabled_rows_and_native_identity_conflicts(self):
+        context, _, main, shared, hactar, allocation = retirement_fixture()
+        capture = application_capture(context)
+        for field, value in (("enabled", True), ("ansible_host", "192.168.70.20"),
+                             ("ansible_ssh_private_key_file", "/tmp/obsolete-appliance-key"),
+                             ("api_version", "7.0.0"), ("uuid", "foreign"), ("disk", "/opt/vms/foreign.qcow2")):
+            client = FakeRetirementSource(main, shared, hactar)
+            row = next(row for row in client.hosts.values() if row["name"] == "zabbix-v07")
+            values = keys.inventory_variables(row)
+            if field == "enabled":
+                row[field] = value
+            elif field.startswith("ansible_"):
+                values[field] = value
+            else:
+                values['vm_resource'][field] = value
+            row['variables'] = json.dumps(values)
+            with self.subTest(field=field), self.assertRaises(keys.StoreError):
+                keys.source_related_resources(client, shared, allocation["aap_vm_allocation"],
+                                              context["route"]["vm_name"], capture)
+            self.assertEqual(client.calls, [])
+
+    def test_appliance_retirement_refuses_enabled_ssh_or_changed_native_ownership(self):
+        context, _, _, shared, _, _ = retirement_fixture()
+        guest = next(guest for guest in context['guests'] if guest['role'] == 'zabbix')
+        row = next(row for row in shared['host_inventory_configuration']['hosts'] if row['name'] == guest['name'])
+        keys.retirement_host_matches(row, guest, context['route'], 'fixture-hypervisor')
+        for field, value in (('enabled', True), ('ansible_connection', 'ssh'), ('uuid', 'foreign')):
+            candidate = deepcopy(row)
+            if field == 'enabled':
+                candidate[field] = value
+            elif field == 'uuid':
+                candidate['variables']['vm_resource'][field] = value
+            else:
+                candidate['variables'][field] = value
+            with self.subTest(field=field), self.assertRaises(keys.StoreError):
+                keys.retirement_host_matches(candidate, guest, context['route'], 'fixture-hypervisor')
+
     def test_source_ownership_uses_exact_inventory_pin_and_verified_vm_resource(self):
         context, transition, main, shared, hactar, allocation = retirement_fixture()
         client = FakeRetirementSource(main, shared, hactar)
@@ -298,7 +342,11 @@ class InstanceKeyTests(unittest.TestCase):
             resource = deepcopy(resource)
             resource.update(vm_name=role + "-v17", disk="/opt/vms/" + role + "-v17.disk.qcow2",
                 address="192.168.70.%d" % counter, mac="52:54:00:12:34:%02d" % counter,
-                uuid="%08d-bbbb-cccc-dddd-eeeeeeeeeeee" % counter, machine_id="%032d" % counter)
+                uuid="%08d-bbbb-cccc-dddd-eeeeeeeeeeee" % counter)
+            if role == "zabbix":
+                resource['api_url'] = 'http://' + resource['address'] + '/api_jsonrpc.php'
+            else:
+                resource['machine_id'] = "%032d" % counter
             successor_vms[role] = resource
         capture["aiops_instances"]["aap27-test-17"] = successor_vms
         client = FakeRetirementSource(main, shared, hactar)

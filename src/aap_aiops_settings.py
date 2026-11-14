@@ -199,6 +199,8 @@ def prepare_zabbix_configuration(capture, context, binding=None, new_owners=()):
         deployment = row.get("variables", {}).get("demo_zabbix_deployment")
         if not isinstance(deployment, dict):
             continue
+        deployment.pop("guest_user", None)
+        deployment.pop("guest_authorized_public_key", None)
         deployment["cac_import"] = trust_as_template(
             "{{ aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name].zabbix.configuration.cac_import }}")
         policy = deployment.get("isolation_policy")
@@ -222,7 +224,7 @@ def prepare_zabbix_configuration(capture, context, binding=None, new_owners=()):
 
 def zabbix_resource(value, context, source_sha256):
     """Validate Zabbix's native clone provenance without imposing a Linux image schema."""
-    require(isinstance(value, dict) and value.get("schema_version") == 1
+    require(isinstance(value, dict) and value.get("schema_version") == 2
             and (isinstance(value["schema_version"], int) and not isinstance(value["schema_version"], bool))
             and value.get("instance_name") == context["instance_name"]
             and identity.inventory_counter(value.get("instance_number")) == context["instance_number"]
@@ -246,15 +248,12 @@ def zabbix_resource(value, context, source_sha256):
                 and re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,62}", value["network"])
                 and value.get("bridge") in context["hypervisor"]["isolation_bridges"]
                 and re.fullmatch(r"(?:[0-9a-f]{2}:){5}[0-9a-f]{2}", value.get("mac", ""))
-                and not int(value["mac"][:2], 16) & 1 and value["mac"] != "00:00:00:00:00:00"
-                and re.fullmatch(r"[a-f0-9]{32}", value.get("machine_id", ""))
-                and value["machine_id"] != context["hypervisor"]["machine_id"],
-                "Keep Zabbix's exact native disk, network, bridge and machine identity.")
-        routing.host_keys(value.get("host_keys"))
-        require(value.get("guest_host_keys") == value["host_keys"]
-                and isinstance(value.get("user"), str) and re.fullmatch(r"[a-z_][a-z0-9_-]*", value["user"])
-                and value["user"] != "root" and (isinstance(value.get("port"), int) and not isinstance(value.get("port"), bool)) and 1 <= value["port"] <= 65535,
-                "Keep Zabbix's generated SSH public keys and existing management account.")
+                and not int(value["mac"][:2], 16) & 1 and value["mac"] != "00:00:00:00:00:00",
+                "Keep Zabbix's exact native disk, network, bridge and MAC identity.")
+        require(not {"machine_id", "host_keys", "guest_host_keys", "user", "port"}.intersection(value)
+                and isinstance(value.get("api_version"), str)
+                and re.fullmatch(r"7\.4\.[0-9]+", value["api_version"]),
+                "Zabbix appliance ownership requires authenticated API evidence and no guest SSH metadata.")
         version = context["version"]
         require(value.get("public_hostname") == context["zabbix_fqdn"]
                 and value.get("certificate") == context["zabbix_fqdn"]
@@ -290,9 +289,15 @@ def merge_source_guest(instances, context, role, source, zabbix_source_sha256=No
             "A guest must belong to this allocation and selected hypervisor.")
     resource = (zabbix_resource(resource, context, zabbix_source_sha256) if role == "zabbix"
                 else keys.released_guest_resource(resource, context["hypervisor"]))
-    for field, resource_field in (("ansible_host", "address"), ("vm_uuid", "uuid"),
-                                  ("machine_id", "machine_id"), ("host_keys", "host_keys"),
-                                  ("ansible_user", "user"), ("ansible_port", "port")):
+    connections = (("zabbix_api_url", "api_url"), ("vm_uuid", "uuid")) if role == "zabbix" else (
+        ("ansible_host", "address"), ("vm_uuid", "uuid"), ("machine_id", "machine_id"),
+        ("host_keys", "host_keys"), ("ansible_user", "user"), ("ansible_port", "port"))
+    if role == "zabbix":
+        require(not {"ansible_host", "ansible_user", "ansible_port", "ansible_connection",
+                     "ansible_ssh_common_args", "ansible_ssh_private_key_file", "ansible_python_interpreter",
+                     "machine_id", "host_keys"}.intersection(source),
+                "The Zabbix appliance source row must contain API metadata, not a guest SSH connection.")
+    for field, resource_field in connections:
         require(source.get(field) == resource.get(resource_field),
                 "The source guest inventory and its verified native provenance disagree.")
     for owner, row in instances.items():
@@ -300,22 +305,25 @@ def merge_source_guest(instances, context, role, source, zabbix_source_sha256=No
             other = row.get(other_role, {})
             if owner == name and other_role == role:
                 continue
-            require(not any(resource.get(field) == other.get(field)
+            require(not any(field in resource and resource[field] == other.get(field)
                             for field in ("uuid", "mac", "machine_id"))
                     and not (resource["address"] == other.get("address")
                              and resource["hypervisor_machine_id"] == other.get("hypervisor_machine_id"))
-                    and not set(resource["host_keys"]) & set(other.get("host_keys", [])),
+                    and not set(resource.get("host_keys", [])) & set(other.get("host_keys", [])),
                     "Another allocation or role already owns this guest identity.")
     result = deepcopy(instances)
     current = result[name].get(role)
     if role == "zabbix" and isinstance(current, dict) and set(current) == {"configuration"}:
         current = None
     if current is not None:
-        require(isinstance(current, dict) and all(current.get(field) == resource[field]
-                for field in ("vm_name", "uuid", "disk", "network", "address", "mac", "machine_id",
-                              "host_keys", "hypervisor_machine_id", "user", "port", "verified")),
+        immutable = ("vm_name", "uuid", "disk", "network", "address", "mac", "hypervisor_machine_id", "verified")
+        if role != "zabbix":
+            immutable += ("machine_id", "host_keys", "user", "port")
+        require(isinstance(current, dict) and all(current.get(field) == resource[field] for field in immutable),
                 "An existing saved guest differs from native ownership; do not replace it.")
         if role == "zabbix":
+            require(not {"machine_id", "host_keys", "guest_host_keys", "user", "port"}.intersection(current),
+                    "Remove obsolete appliance SSH metadata through an explicitly verified ownership migration.")
             require(all(resource.get(field) == value for field, value in current.items() if field in resource),
                     "Existing Zabbix provenance changed; preserve its native records for review.")
         result[name][role] = dict(deepcopy(current), **deepcopy(resource))

@@ -266,6 +266,14 @@ Fresh Zabbix deployment publishes its authenticated VM row in the existing
 native source inventory, then invokes the existing AIOps importer. That importer
 keeps the VM's firewall and importer settings inside its own `configuration`
 mapping, seals the existing Vault files and renders the updated consumer inputs.
+The pending API-only appliance changes require schema 2 native VM/API ownership
+and a disabled metadata-only source row. They reject appliance SSH connection
+fields while retaining the UUID, disk, MAC, address and physical-owner checks
+used for guarded retirement. Linux guest management remains unchanged. These
+source changes still require live verification. The owner selected booting
+under verified hypervisor network isolation and configuring through the internal
+API, while keeping appliance Internet access blocked; no separate baseline
+image is required.
 See [native monitoring record publication](docs/aiops-instance-preparation.md#native-monitoring-record-publication).
 
 Decommission keeps the selected AIOps CaC owner/tuples until exact native rich

@@ -32,7 +32,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | open | P1 | feature | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | open | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.7 | Deploy and functionally verify AIOps on v20 | in_progress | P1 | task | bead-wd-3ix.1.23, bead-wd-72f.31.2 |
-| bead-wd-72f.31.2.7.4 | Remove every SSH dependency from the Zabbix appliance deployment | blocked | P1 | bug | bead-wd-72f.31.2.7 |
+| bead-wd-72f.31.2.7.4 | Remove every SSH dependency from the Zabbix appliance deployment | in_progress | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.42 | Complete CaC and scanner coverage across AAP components | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | open | P1 | task | bead-wd-mcr.1 |

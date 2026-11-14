@@ -64,16 +64,20 @@ def guest(context, role="testserver1"):
 def zabbix_guest(context):
     source = guest(context, "zabbix")
     resource = source["vm_resource"]
-    for field in ("vcpus", "memory_mb", "disk_gb", "source_image_sha256", "packages_updated"):
+    for field in ("vcpus", "memory_mb", "disk_gb", "source_image_sha256", "packages_updated",
+                  "machine_id", "host_keys", "user", "port"):
         resource.pop(field)
-    resource.update(schema_version=1, instance_name=context["instance_name"], instance_number=context["instance_number"],
+    for field in ("ansible_host", "ansible_user", "ansible_port", "machine_id", "host_keys"):
+        source.pop(field)
+    resource.update(schema_version=2, api_version="7.4.12", instance_name=context["instance_name"], instance_number=context["instance_number"],
         gateway="192.168.70.1",
-        source_sha256="c" * 64, guest_host_keys=deepcopy(resource["host_keys"]), ip=resource["address"],
+        source_sha256="c" * 64, ip=resource["address"],
         public_hostname=context["zabbix_fqdn"], certificate=context["zabbix_fqdn"],
         api_url="http://" + resource["address"] + "/api_jsonrpc.php",
         nginx_file="/etc/nginx/conf.d/demo-zabbix-" + context["version"] + ".conf",
         auth_file="/etc/nginx/demo-zabbix-" + context["version"] + ".htpasswd",
         host_id="10", item_id="20", trigger_id="30")
+    source["zabbix_api_url"] = resource["api_url"]
     return source
 
 
@@ -161,7 +165,7 @@ class InstancePreparationTests(unittest.TestCase):
         vm = second['aiops_instances'][context['instance_name']]['zabbix']
         self.assertEqual(vm['uuid'], source['vm_resource']['uuid'])
         grant = vm['configuration']['firewall']['guest_host_clients'][0]
-        self.assertEqual(grant, {'bridge': 'vmbr0', 'ipv4': source['ansible_host'],
+        self.assertEqual(grant, {'bridge': 'vmbr0', 'ipv4': source['vm_resource']['address'],
             'mac': source['vm_resource']['mac'], 'destinations': [source['vm_resource']['gateway']], 'ports': [443]})
         vm['configuration']['firewall']['guest_host_clients'] = []
         third, _ = self.prepare(second, protected, source_hosts={'zabbix-v07': source}, source_bindings=bindings)
@@ -428,7 +432,8 @@ class InstancePreparationTests(unittest.TestCase):
         self.assertNotIn("source_image_sha256", after["aiops_instances"][context["instance_name"]]["zabbix"])
         for field, bad in [("schema_version", True), ("source_sha256", "d" * 64),
                            ("api_url", "http://192.168.70.99/api_jsonrpc.php"), ("public_hostname", "foreign.example.invalid"),
-                           ("guest_host_keys", ["ssh-ed25519 CCCC"]), ("trigger_id", "-3")]:
+                           ("guest_host_keys", ["ssh-ed25519 CCCC"]), ("api_version", "7.0.0"),
+                           ("trigger_id", "-3")]:
             candidate = deepcopy(source)
             candidate["vm_resource"][field] = bad
             with self.subTest(field=field), self.assertRaises(Exception):

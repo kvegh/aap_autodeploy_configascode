@@ -320,8 +320,8 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
                    if row.get("instance_route", {}).get("hypervisor") == pin}
     # Keep all surviving same-hypervisor owners visible even when the external
     # controller has never imported their inventory. Deletion remains selected-only.
-    fields = {"vm_name", "address", "uuid", "disk", "mac", "network", "bridge", "machine_id",
-              "host_keys", "hypervisor_machine_id", "verified"}
+    common_fields = {"vm_name", "address", "uuid", "disk", "mac", "network", "bridge",
+                     "hypervisor_machine_id", "verified"}
     cac_resources, cac_numbers, cac_names = {}, {}, set(names)
     for instance_name, entry in aap_records.items():
         instance = aiops_capture["aiops_instances"].get(instance_name, {})
@@ -333,6 +333,8 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
                 and entry.get("hypervisor_id") == pin["machine_id"],
                 "Application owners must belong to registered numbered test instances on the pinned hypervisor.")
         for role in ("zabbix", "testserver1", "tra"):
+            fields = common_fields | ({"api_url", "api_version", "schema_version"}
+                                      if role == "zabbix" else {"machine_id", "host_keys"})
             name = role + "-v%02d" % instance_number
             cac_names.add(name)
             resource = instance.get(role)
@@ -347,11 +349,20 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
                     and (isinstance(resource.get("instance_number", instance_number), int) and not isinstance(resource.get("instance_number", instance_number), bool))
                     and resource.get("instance_number", instance_number) == instance_number,
                     "Application CaC requires complete same-instance VM ownership.")
+            if role == "zabbix":
+                require(resource.get("schema_version") == 2
+                        and not {"ansible_host", "ansible_user", "ansible_port", "ansible_connection",
+                                 "ansible_ssh_common_args", "ansible_ssh_private_key_file", "ansible_python_interpreter",
+                                 "machine_id", "host_keys", "guest_host_keys", "user", "port"}.intersection(resource)
+                        and isinstance(resource.get("api_version"), str)
+                        and re.fullmatch(r"7\.4\.[0-9]+", resource["api_version"])
+                        and resource.get("api_url") == "http://" + resource["address"] + "/api_jsonrpc.php",
+                        "Zabbix ownership requires native VM and authenticated API evidence without guest SSH fields.")
             # Never copy runtime configuration or credentials into ownership proof.
             cac_resources[name] = {key: deepcopy(resource[key]) for key in fields}
             cac_numbers[name] = instance_number
     for field in ("uuid", "disk", "address", "mac", "machine_id"):
-        identities = [resource[field] for resource in cac_resources.values()]
+        identities = [resource[field] for resource in cac_resources.values() if field in resource]
         require(all(isinstance(value, str) for value in identities) and len(set(identities)) == len(identities),
                 "Application VM ownership identities must be distinct.")
     for row in rows:
@@ -359,21 +370,33 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
             continue
         values = inventory_variables(row)
         resource = values.get("vm_resource")
+        resource_map = resource if isinstance(resource, dict) else {}
+        appliance = row["name"].startswith("zabbix-v")
+        connection_matches = (
+            row.get("enabled") is False
+            and values.get("zabbix_api_url") == resource_map.get("api_url")
+            and not {"ansible_host", "ansible_user", "ansible_port", "ansible_connection",
+                     "ansible_ssh_common_args", "ansible_ssh_private_key_file", "ansible_python_interpreter",
+                     "host_keys", "machine_id", "guest_host_keys", "user", "port"}.intersection(values)
+        ) if appliance else (
+            values.get("ansible_host") == resource_map.get("address")
+            and values.get("machine_id") == resource_map.get("machine_id")
+            and values.get("host_keys") == resource_map.get("host_keys")
+        )
         require(row["name"] in cac_resources and isinstance(resource, dict)
                 and "supplemental_interfaces" not in resource and resource.get("kind") != "windows"
                 and all(resource.get(key) == value for key, value in cac_resources[row["name"]].items())
                 and values.get("hypervisor_host") == hypervisor["name"]
                 and (isinstance(values.get("aap_instance_number"), int) and not isinstance(values.get("aap_instance_number"), bool))
                 and values["aap_instance_number"] == cac_numbers[row["name"]]
-                and values.get("ansible_host") == resource["address"]
                 and values.get("vm_uuid") == resource["uuid"]
-                and values.get("machine_id") == resource["machine_id"]
-                and values.get("host_keys") == resource["host_keys"],
+                and connection_matches,
                 "Existing inventory ownership disagrees with authoritative application CaC.")
-    cac_rows = [{"name": name, "variables": {
+    cac_rows = [{"name": name, "enabled": not name.startswith("zabbix-v"), "variables": {
         "hypervisor_host": hypervisor["name"], "aap_instance_number": cac_numbers[name],
-        "ansible_host": resource["address"], "vm_uuid": resource["uuid"],
-        "machine_id": resource["machine_id"], "host_keys": resource["host_keys"],
+        "vm_uuid": resource["uuid"],
+        **({"zabbix_api_url": resource["api_url"]} if name.startswith("zabbix-v") else {
+            "ansible_host": resource["address"], "machine_id": resource["machine_id"], "host_keys": resource["host_keys"]}),
         "vm_resource": resource}} for name, resource in cac_resources.items()]
     rows = [row for row in rows if row.get("name") not in cac_names] + cac_rows
     related, owners = {}, []
@@ -442,8 +465,11 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
             for nic in resource['interfaces']:
                 add_owner(nic)
             continue
-        required = {"vm_name", "address", "uuid", "disk", "mac", "network", "bridge", "machine_id",
-                    "host_keys", "hypervisor_machine_id", "verified"}
+        appliance = name.startswith("zabbix-v")
+        require(not appliance or name in cac_resources,
+                "Appliance ownership must be present in its authoritative API configuration.")
+        required = common_fields | ({"api_url", "api_version", "schema_version"}
+                                    if appliance else {"machine_id", "host_keys"})
         require(isinstance(resource, dict) and required <= set(resource),
                 "Source vm_resource must contain the complete verified guest artifact.")
         match = re.fullmatch(r"[a-z][a-z0-9-]*-v([0-9]{2,})", name or "")
@@ -461,8 +487,9 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
                 and isinstance(resource["mac"], str)
                 and re.fullmatch(r"(?:[0-9a-f]{2}:){5}[0-9a-f]{2}", resource["mac"])
                 and not int(resource["mac"][:2], 16) & 1 and resource["mac"] != "00:00:00:00:00:00"
-                and isinstance(resource["machine_id"], str) and re.fullmatch(r"[a-f0-9]{32}", resource["machine_id"])
-                and resource["machine_id"] != pin["machine_id"]
+                and (appliance or isinstance(resource["machine_id"], str)
+                     and re.fullmatch(r"[a-f0-9]{32}", resource["machine_id"])
+                     and resource["machine_id"] != pin["machine_id"])
                 and (isinstance(values.get("aap_instance_number"), int) and not isinstance(values.get("aap_instance_number"), bool))
                 and values["aap_instance_number"] == int(match[1])
                 and resource.get("aap_instance_number", int(match[1])) == int(match[1]),
@@ -471,10 +498,16 @@ def source_related_resources(client, shared, allocation, selected, aiops_capture
         address = IPv4Address(resource["address"])
         require(not (address.is_unspecified or address.is_loopback or address.is_multicast or address.is_reserved),
                 "Verified VM ownership requires a normalized unicast guest IPv4 address.")
-        _routing.host_keys(resource["host_keys"])
-        require(values.get("ansible_host") == resource["address"] and values.get("vm_uuid") == resource["uuid"]
-                and values.get("machine_id") == resource["machine_id"] and values.get("host_keys") == resource["host_keys"],
-                "Source host variables disagree with their verified vm_resource identity.")
+        if appliance:
+            require(resource == cac_resources[name] and row.get("enabled") is False
+                    and values.get("vm_uuid") == resource["uuid"]
+                    and values.get("zabbix_api_url") == resource["api_url"],
+                    "Appliance retirement must retain exact authoritative VM/API ownership without guest execution.")
+        else:
+            _routing.host_keys(resource["host_keys"])
+            require(values.get("ansible_host") == resource["address"] and values.get("vm_uuid") == resource["uuid"]
+                    and values.get("machine_id") == resource["machine_id"] and values.get("host_keys") == resource["host_keys"],
+                    "Source host variables disagree with their verified vm_resource identity.")
         add_owner(resource)
         if name in names:
             require(values["aap_instance_number"] == number, "Selected related VM counter differs from the AAP instance.")
@@ -700,10 +733,14 @@ def source_retirement_variables(values, context, pinned=False):
 
 def retirement_host_matches(row, guest, route, hypervisor_name):
     values = inventory_variables(row)
-    require(values.get("ansible_host") == guest["address"]
+    appliance = guest["role"] == "zabbix"
+    metadata = guest["metadata"]
+    address_matches = (values.get("zabbix_api_url") == metadata.get("api_url")
+                       and metadata.get("address") == guest["address"]) if appliance else (
+                           values.get("ansible_host") == guest["address"])
+    require(address_matches
             and values.get("hypervisor_host", hypervisor_name) == hypervisor_name,
             "A selected inventory guest has conflicting address or placement data.")
-    metadata = guest["metadata"]
     if guest["role"] == "aap":
         require(values.get('vm_resource', {}).get('supplemental_interfaces') == metadata.get('supplemental_interfaces'),
                 'Do not retire an AAP inventory row with conflicting supplemental ownership.')
@@ -716,6 +753,17 @@ def retirement_host_matches(row, guest, route, hypervisor_name):
     else:
         require(metadata and metadata.get("uuid") and values.get("vm_uuid") == metadata["uuid"],
                 "Related inventory retirement requires its exact recorded UUID.")
+        if appliance:
+            forbidden = {"ansible_host", "ansible_user", "ansible_port", "ansible_connection",
+                         "ansible_ssh_common_args", "ansible_ssh_private_key_file", "ansible_python_interpreter",
+                         "machine_id", "host_keys", "guest_host_keys", "user", "port"}
+            resource = values.get("vm_resource", {})
+            require(row.get("enabled") is False and metadata.get("schema_version") == 2
+                    and not forbidden.intersection(values) and isinstance(resource, dict)
+                    and not forbidden.intersection(resource)
+                    and all(resource.get(field) == value for field, value in metadata.items()),
+                    "Appliance retirement requires disabled metadata-only inventory with exact native/API ownership.")
+            return
         for field in ("machine_id", "host_keys"):
             require(field not in metadata or values.get(field) == metadata[field],
                     "Related inventory retirement requires its exact recorded machine identity.")
