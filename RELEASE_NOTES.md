@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.64.4
+
+Document the final generated task checkpoint after publication of the qualified
+existing-owner repair. Preserve the encrypted full-record export in the existing
+private companion checkpoint branch and keep Beads authoritative while other
+work continues. Executable source and active deployment bindings are unchanged.
+
 ## 0.64.3
 
 Document the paired shared/AAP existing-owner repair commits and the completed
