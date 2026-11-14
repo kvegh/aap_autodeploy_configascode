@@ -4959,3 +4959,21 @@ README are aligned; other labels and behavior are unchanged.
 All 23 local and downloaded deployed-asset checks passed. Pages run
 `43557407229` succeeded and all six public assets matched the implementation.
 Browser geometry was not measured. Version 0.63.9 documents this result only.
+
+
+## 2026-11-14 — Delete all underneath-arrow text
+
+Implementation `00f843a920da67807d9d6ad49840773b96c6fa4a` (0.63.12)
+deletes ACTIVE cues from all six arrows and the New VM/New AAP, Scan job and
+Another AAP subtitles. Their HTML, presenter write and unused CSS are removed
+rather than hidden. Action captions above the arrows, card titles, travelling
+blocks and route activity remain. The change follows the owner's explicit
+request to remove the secondary text everywhere.
+
+A normal push encountered concurrent source changes. The visual commit was
+rebased onto them, preserving both updates and reconciling only version/release
+metadata. All 23 walkthrough checks passed after integration. Pages run
+`43558753956` succeeded; all six deployed assets matched and the same 23 checks
+passed against them, including absence of secondary-label markup and rendering
+references. Browser geometry was not measured. Version 0.63.13 documents this
+result without changing deployed assets.

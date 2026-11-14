@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.13
+
+Document underneath-arrow text deletion in `00f843a` (0.63.12), preserved
+concurrent changes, successful Pages publication and all 23 passing checks
+against six matching deployed assets.
+
 ## 0.63.12
 
 Delete underneath-arrow ACTIVE cues and destination subtitles from all six
