@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.60
+
+Document fourteen successful Windows stages, hashed Chocolatey package/export
+artifacts, and the original AD call continuing a verified post-reboot servicing
+pass. Normal import, WSUS synchronization and complete functional demonstrations
+remain unfinished. Refresh normal task mirrors and the encrypted recovery
+checkpoint; runtime code is unchanged.
+
 ## 0.63.59
 
 Document actual Windows caller adoption and completed protected private Git read

@@ -39,9 +39,17 @@ and an incomplete private Git transfer. Focused stage recoveries created all fiv
 guests, and server basics passed on all four regular guests. AD updates continue
 with measured servicing activity. The qualified Windows caller update is
 published. Its next normal activation stage adopted the exact reviewed source
-and completed the protected private Git read. The read-recovery tasks are closed;
-activation, AD updates and both full functional demonstrations remain unfinished.
-Original failures remain recorded.
+and completed the protected private Git read. At the next checkpoint, all four
+regular Windows activations, repository preparation, WSUS/Chocolatey setup and
+WSUS prerequisite checks had passed. Chocolatey synchronization then produced
+four unique hashed package/version artifacts, bringing the checkpoint to
+fourteen of twenty-nine stages after the package export also passed. The export
+retains archive/manifest SHA-256 values and the exact producer artifact. Its
+normal import and WSUS synchronization were still pending completion. AD had
+rebooted into a newer build with a valid license and no pending reboot; fresh
+workers and logs then proved another servicing pass in the original update call.
+The read-recovery tasks are closed; complete Windows and AIOps demonstrations remain
+unfinished. Original failures remain recorded.
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
