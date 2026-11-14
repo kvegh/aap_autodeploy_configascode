@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.20
+
+Document the agreed union of existing scanner and CoP exporter capabilities.
+Retain capabilities unique to either, compare overlapping fields and
+relationships, and preserve existing review and protected-value guarantees.
+Runtime integration remains unfinished; this changes its documented direction.
+
 ## 0.63.19
 
 Document responsive content-arrow alignment and the base-caption change in

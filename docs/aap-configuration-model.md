@@ -58,8 +58,9 @@ No guarantee of every AAP field, relationship and component was verified.
 The role already documents schedules, notification associations, inline approval
 nodes, instance groups, RBAC options and settings. Several unsupported Controller
 features in this project's current extractor are therefore integration gaps;
-they are not established omissions from CoP. Check the pinned CoP release and its
-serializers before implementing another representation.
+they are not established omissions from CoP. This does not make CoP a superset
+of this project's scanner. Compare the actual capabilities of both implementations
+before choosing what to reuse.
 
 The role's documented settings overrides also show why an export needs review:
 some omitted or empty settings require explicit preservation. API-hidden
@@ -75,6 +76,25 @@ the separation between `infra.aap_configuration` configuration roles and the
 extended collection's export and comparison helpers.
 
 ## Applying this to extraction and comparison
+
+The agreed target is the union of both implementations' capabilities. Preserve
+working scanner behavior and add useful CoP coverage. Compare at component,
+object, field and relationship level: an object type appearing in both tools
+does not establish equivalent fields, value handling or associations.
+
+| Where a capability exists | Required treatment |
+| --- | --- |
+| Only in this scanner | Retain it and its verification |
+| Only in CoP | Reuse or integrate it after checking its actual behavior |
+| In both | Compare semantics and preserve the required behavior from each |
+| In neither | Report the remaining gap against AAP's configuration APIs |
+
+In particular, preserve accepted baselines, conflict detection, review digests,
+complete-visibility and deletion checks, named references, literal values,
+protected secret preservation and code-owned workflow checks. Exporting an
+object alone does not replace these extraction and comparison guarantees.
+Deduplicating a capability list must not silently select between conflicting
+configuration values or treat an omitted field as an explicit empty value.
 
 Use one review process: discover live configuration, extract supported objects,
 compare against the owning encrypted Git configuration, then capture reviewed

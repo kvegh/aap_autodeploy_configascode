@@ -1548,9 +1548,11 @@ resources and have not been tested as populated demo configurations against AAP.
 
 [AAP configuration models and export coverage](docs/aap-configuration-model.md)
 explains the component API schemas, CoP export capabilities and remaining scanner
-integration work. CoP's export-all selection does not establish complete AAP
-coverage; masked secrets and unreadable or unsupported configuration need explicit
-handling before a comparison can be considered complete.
+integration work. Extend the scanner with the union of its existing capabilities
+and useful CoP capabilities; compare overlapping fields and relationships before
+selecting an implementation. CoP's export-all selection does not establish
+complete AAP coverage; masked secrets and unreadable or unsupported configuration
+need explicit handling before a comparison can be considered complete.
 
 ## Version maintenance
 

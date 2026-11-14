@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Combine scanner and CoP capabilities — 2026-11-14
+
+The owner explicitly corrected the extension approach: take the union of the
+existing scanner and CoP exporter capabilities rather than assuming CoP covers
+everything already handled locally. The research in
+`e032374681d6145efae5b828e0891458eaf80345` establishes useful CoP coverage but does
+not establish semantic equivalence or a complete superset.
+
+Keep locally implemented capabilities, verify CoP-only additions, and compare
+overlapping fields and relationships before selecting their implementation.
+Preserve review, conflict, deletion, visibility, reference and protected-value
+guarantees across the combined coverage. Conflicting values require review;
+removing duplicate capability descriptions must not choose a configuration value.
+The README-linked model guide now states this requirement explicitly. Runtime
+integration remains unfinished; this documents the agreed direction without
+claiming an implemented union or changing deployed configuration.
+
 ## Assess configuration coverage against component models — 2026-11-14
 
 Documentation `e032374681d6145efae5b828e0891458eaf80345` (0.63.16) identifies the
