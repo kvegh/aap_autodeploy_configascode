@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-220 tasks: 29 outstanding; 191 closed.
+222 tasks: 29 outstanding; 193 closed.
 
 ## Outstanding tasks
 
@@ -83,6 +83,8 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1.8 | Derive first AAP installation protection from canonical base CaC | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.9 | Resolve Let’s Encrypt registration consent for rebuilt test host | closed | P1 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.2.1 | Retire v20 configuration and DNS after both demo tests | closed | P1 | task | bead-wd-3ix.1.23, bead-wd-3ix.2, bead-wd-72f.31.2.7 |
+| bead-wd-3ix.2.2.1 | Diagnose Hub artifact checksum failure and complete pending host checks | closed | P1 | task | bead-wd-3ix.2.2 |
+| bead-wd-3ix.2.2.2 | Remove all numbered DNS names below v21 | closed | P1 | task | bead-wd-3ix.2.2 |
 | bead-wd-3ix.2.3.1 | Carry existing shared AIOps runtime inputs into fresh instance settings | closed | P1 | bug | bead-wd-3ix.2.3 |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |

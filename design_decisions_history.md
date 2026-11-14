@@ -1,5 +1,30 @@
 # Design decisions history
 
+## Record the explicit DNS cutoff and recovered host checks — 2026-11-14
+
+This is an execution record; deployment source code and workflow guards are
+unchanged. The first host workflow stopped on a collection artifact checksum
+mismatch before its verification job started. The same artifact URL subsequently
+passed two independent size/SHA checks and an unchanged native synchronization.
+Existing host verification, managed reboot and post-reboot verification passed.
+The original failure is preserved; its exact transfer cause is unproved and the
+attempt is not counted as uninterrupted acceptance.
+
+I launched the automatic retirement template outside its workflow. Its genuine
+workflow-ID/proof guard correctly refused before DNS deletion. The owner then
+explicitly expanded the request to every numbered DNS name below the next
+platform generation. Full provider inventory selected only two A recordsets;
+per-group comparison, recorded deletion intent and absence checks passed. Final
+readback retained all fourteen other records exactly and found no old numbered
+namespace remaining. Full values and rollback evidence remain protected.
+
+The explicit selection included the current numbered host DNS name. No OS
+hostname, counter, VM, credential, security control or production unversioned
+record was changed. Further host-DNS creation must respect that cutoff; a new
+naming decision must not be inferred from this one-time operation. Complete
+platform/deployment/demo acceptance remains unfinished. Completed earlier
+candidate results are kept in history and omitted from active reports.
+
 ## Fill existing shared AIOps runtime defaults during import — 2026-11-14
 
 Implementation `b7fef1bcf77a0150eaf67fd109fa5c91dc282b07` adds eight lines to the

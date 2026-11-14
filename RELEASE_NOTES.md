@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.44
+
+Record the failed collection prerequisite and subsequently verified host checks,
+without claiming uninterrupted acceptance. Document the owner's expanded DNS
+cutoff: two old numbered A recordsets removed, all fourteen unrelated records
+preserved by complete provider readback. Refresh durable task/recovery records;
+new platform allocation and complete demonstrations remain pending.
+
 ## 0.63.43
 
 Refresh task overviews and encrypted recovery records after the shared AIOps

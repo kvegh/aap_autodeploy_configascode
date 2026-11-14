@@ -469,19 +469,22 @@ their history remains in Beads and the encrypted recovery export. Their owning
 chats track subsequent implementation.
 
 The generated overview and protected export reflect the current Beads records.
-They include completed API-only Zabbix and Claude/MCP deployment, the verified
-website recovery loop and the original full Claude investigation, automatic
-agent repair, verification and report. The owner-directed turn-cap removal
-passed the live retry; earlier failures remain historical evidence. No
-verification handoff was applied. Both v20 demo gates and selected active
-configuration/DNS retirement are verified. Fresh off-host image/artifact metadata
-and encrypted-manifest access passed after the provider rate limit cleared.
-The single authorized replacement reinstall passed provider fingerprint matching,
-strict authenticated operating-system and hardware checks, and empty guest-directory
-checks. Existing encrypted trust records and Controller aliases are refreshed
-and published; conversion and host setup are running through the existing workflow
-with standing legal consent and protected logging. A fresh complete installation
-and both demos remain unverified; no new user decision is established.
+The replacement host is reinstalled, converted and configured; managed reboot
+and post-reboot checks passed. The first host workflow stopped when a prerequisite
+collection download failed checksum verification, before host verification ran.
+Two independent artifact downloads and an unchanged native project synchronization
+then passed, followed by the existing standalone host checks. The original failed
+workflow remains recorded and is not uninterrupted acceptance.
+
+An explicitly requested DNS cutoff removed the two remaining numbered A records
+below the next platform generation. Full provider readback preserved all fourteen
+other records and found no old numbered namespace remaining. This included the
+current separately numbered host DNS name; OS hostname, counters and pinned-IP
+management were preserved. Existing automatic host-DNS workflow guards remain
+unchanged. Do not recreate below-cutoff names while continuing the deployment.
+No new AAP generation has been allocated. Complete fresh platform installation
+and both demonstration tests remain unverified. Earlier completed candidate
+results are retained as history rather than repeated in active task reports.
 In the earlier Core 2.20 migration, the source runtime passed an authenticated forced image pull, normal
 preflight and zero-error CaC preview. The approved physical reinstall then passed
 provider host-key matching and strict authenticated OS, machine-ID and hardware
