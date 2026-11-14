@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.31
+
+Document native disabled-appliance inventory capture from `fe49d8d` (0.63.30).
+Nine focused tests passed on Core 2.20, including real encrypted publication
+without appliance hostvars and refusal of enabled appliance rows. Live
+deployment acceptance remains pending.
+
 ## 0.63.30
 
 Read the appliance's disabled metadata-only inventory row through the existing

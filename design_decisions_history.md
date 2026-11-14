@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Read disabled appliance metadata through the existing API — 2026-11-14
+
+Implementation `fe49d8d` (0.63.30) reads the selected disabled appliance row
+from the native inventory response already used by pre-import preparation.
+Metadata-only appliances need not be exposed as Ansible targets or appear in
+hostvars. The row must be unique, disabled and belong to the selected importer's
+existing inventory; the same complete native/API provenance validation follows.
+Linux guest handling and all credentials remain unchanged.
+
+A real encrypted-Git regression reproduced missing appliance publication before
+the correction, then passed with no appliance hostvars. It also proves an enabled
+appliance row cannot publish. That regression and eight related native ownership,
+retirement and preparation tests passed on Core 2.20. No live deployment result
+is inferred from those fixtures.
+
 ## Retain native ownership for an API-only monitoring appliance — 2026-11-14
 
 Implementation `9c75987` (0.63.28) accepts the Zabbix appliance's schema 2
