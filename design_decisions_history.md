@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Render and publish generated monitoring projections on Core 2.20 — 2026-11-14
+
+Implementation `e74b38ac09c78a04581c68cbf0f78a7bfd6c33b1` (0.63.10) gives the existing AIOps preparer's
+code-generated importer and firewall-owner expressions, and its reviewed policy
+rewrite, explicit template trust. Core 2.20 otherwise retains newly constructed
+strings as data, leaving an unevaluated expression in published inventory where
+Zabbix deployment requires a native mapping. Runtime credentials and unrelated
+literal input remain data; target, ownership and source guards are retained.
+
+The existing writer now compares literal-template paths as well as values. This
+ensures a correction to template meaning is published even when its text has not
+changed. A real local encrypted-Git regression failed on the old equality-only
+writer and passed with the correction, preserving runtime ciphertext and
+unrelated literal values. Three additional focused Core 2.20 tests passed for
+rendering through YAML serialization/reload and existing importer/guest identity
+refusals. The broader baseline suite already had obsolete proxy-type assertions
+and synthetic publication fixture failures; a full-suite pass is not claimed.
+Normal selected-instance CaC refresh and live monitoring acceptance remain
+separate operations; no new wrapper, job, credential type or secret store was
+added by this fix.
+
 ## Remove the duplicate RHEL action and stabilize navigation — 2026-11-13
 
 Implementation `38a61b5dded16553d21588cb35c04b27130057a8` (source 0.62.4)

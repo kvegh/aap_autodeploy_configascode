@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.11
+
+Document generated-monitoring projection and publication fixes from `e74b38ac09c78a04581c68cbf0f78a7bfd6c33b1`
+(0.63.10), with four passing focused native Core 2.20 regressions and explicit
+broader-suite limitations. Live configuration refresh remains pending.
+
 ## 0.63.10
 
 Render the AIOps preparer's generated monitoring importer, firewall-owner and
