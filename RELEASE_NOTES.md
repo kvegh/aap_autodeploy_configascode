@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.16
+
+Document authoritative component configuration models, observed API schema
+boundaries and CoP exporter coverage. Distinguish existing CoP capabilities from
+unfinished scanner integration and explain why export-all, hidden secrets and
+an accessible API do not establish complete, replayable configuration coverage.
+No scanner, dependency or deployed configuration changes are included.
+
 ## 0.63.15
 
 Document the three purple push captions from `4d3974d` (0.63.14), successful
