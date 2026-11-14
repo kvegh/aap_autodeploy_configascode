@@ -37,4 +37,25 @@
     validate_certs: true
     follow_redirects: none
     status_code: 200
+  register: cac_bearer_probe
+  failed_when: false
   no_log: true
+
+- name: Require authenticated HTTPS and report only a safe failure category
+  ansible.builtin.assert:
+    that: cac_bearer_probe.status | default(-1) | int == 200
+    fail_msg: >-
+      Selected AAP HTTPS authentication failed
+      (HTTP {{ cac_bearer_probe.status | default(-1) | int }};
+      {{ 'API authorization rejected' if cac_bearer_probe.status | default(-1) | int in [401, 403]
+         else 'TLS certificate validation' if ('certificate' in cac_bearer_error_message or 'ssl' in cac_bearer_error_message)
+         else 'DNS resolution' if ('name resolution' in cac_bearer_error_message or 'name or service' in cac_bearer_error_message
+                                  or 'nodename' in cac_bearer_error_message or 'resolve' in cac_bearer_error_message)
+         else 'connection timeout' if ('timed out' in cac_bearer_error_message or 'timeout' in cac_bearer_error_message)
+         else 'network connection' if ('connection refused' in cac_bearer_error_message or 'no route' in cac_bearer_error_message
+                                      or 'unreachable' in cac_bearer_error_message)
+         else 'request failed' }}).
+      Protected response details remain hidden.
+    quiet: true
+  vars:
+    cac_bearer_error_message: "{{ cac_bearer_probe.msg | default('') | lower }}"

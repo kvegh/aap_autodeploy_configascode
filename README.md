@@ -622,6 +622,9 @@ The saved **AAP API/MCP Auth Token Store** selects its bearer and binds its URL 
 `ansible_fqdn`; TLS verification is required. There is no SSH or installer-password
 fallback. Manual native API credentials remain usable separately and must set a
 Request Timeout; the generic importer sets its own numeric request timeout.
+An import authentication failure reports only its HTTP status and a fixed
+TLS, DNS, network, timeout or authorization category. The request, bearer and
+response stay protected; this diagnostic changes no authentication or trust.
 
 Future deployments use `<role>.vNN.<zone>` public names, with the same allocated
 number for AAP and its demo website. Existing allocation/libvirt/inventory keys

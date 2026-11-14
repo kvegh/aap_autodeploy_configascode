@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.10
+
+Report only a numeric HTTP status and fixed error category when the shared
+importer's protected HTTPS authentication probe fails. Bearer, request and
+response details remain hidden; TLS verification and redirect refusal stay
+enabled. Nine synthetic result cases passed in Core 2.20.10 with verbose-output
+canary checks; the changed task passed offline production lint. This adds
+diagnostic evidence and does not establish the cause of a live connection failure.
+
 ## 0.63.9
 
 Document the “Push AAP config” caption change in `a7694b4` (0.63.8), successful

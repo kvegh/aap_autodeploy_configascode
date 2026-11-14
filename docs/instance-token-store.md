@@ -19,6 +19,10 @@ contains its filename. Selection refuses unknown instances, expired or invalid
 records, inventory/FQDN mismatches and additional native AAP credential injectors
 that could override authentication. Secret data stays protected during debugging.
 Each project keeps its separate private Git reader and CaC Vault credential.
+The initial HTTPS authentication probe retains protected logging. On failure,
+the importer reports only its numeric HTTP status and a fixed authorization,
+TLS, DNS, network, timeout or generic category. It does not print the bearer,
+URL, response body or raw exception, and does not relax trust or change credentials.
 
 ## Who fills it
 
