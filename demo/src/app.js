@@ -152,7 +152,6 @@
     byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : baseCaptions[step.id] || (step.id === 'git-change' ? 'Apply changes' : step.id === 'infra-change' ? 'Apply infra' : 'Apply objects');
     // The base categories arrive independently; later steps keep prior categories.
     byId('flow-apply').dataset.destination = ['infrastructure', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
-    byId('apply-detail').textContent = step.stage < 3 ? 'New VM' : 'New AAP';
     byId('target-objects').hidden = !state.baseContentApplied;
     byId('target-configuration-panel').hidden = !state.aapConfigurationApplied;
     byId('target-infrastructure-panel').hidden = step.stage < 2;

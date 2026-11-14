@@ -308,7 +308,8 @@ role with matching private inputs; a later certificate update highlights only it
 section. Travelling blocks use the same light fills as their configuration objects.
 Each step scrolls both panes to the matching section and colours only
 the active definitions/code, while all other sections remain available.
-The AAP-settings arrow reads “Push AAP config”.
+The AAP-settings arrow reads “Push AAP config”. Arrows show only their action captions
+above the line; destination subtitles and ACTIVE text underneath are deleted.
 
 The [decision history](design_decisions_history.md) records the original
 component-width and project-import choices separately from later layout fixes

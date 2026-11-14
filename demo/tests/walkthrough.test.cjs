@@ -538,27 +538,36 @@ test('complete local files retain pinned sources and scroll each pane to its cur
 });
 
 test('active routes remain visible and deployment actions name the current stage', () => {
+  const html = source('index.html');
+  for (const [name, contents] of [['HTML', html], ['presenter', source('src/app.js')], ['styles', source('src/styles.css')]]) {
+    assert.doesNotMatch(contents, /active-cue|connection-detail|apply-detail|\bACTIVE\b/, `${name}: below-arrow labels are deleted rather than hidden`);
+  }
+  for (const routeId of ['flow-config', 'flow-code', ...futureRoutes]) {
+    const markup = htmlRegion(html, routeId);
+    assert.match(markup, /class="connection-caption"/, `${routeId}: its action caption remains`);
+    assert.match(markup, /class="flow-packets"/, `${routeId}: travelling packet markup remains`);
+    assert.ok(markup.indexOf('class="connection-caption"') < markup.indexOf('class="flow-packets"'), `${routeId}: action text precedes its arrow`);
+  }
   const page = browser();
   const expected = [
-    ['separation', null, null, []],
-    ['vm', 'Create VM', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
-    ['infrastructure', 'Prepare OS', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
-    ['installation', 'Install AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['base-aap', 'Push AAP config', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['base', 'Apply content', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['infra-change', 'Apply infra', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['git-change', 'Apply changes', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['project', 'Apply objects', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['manual', null, null, []],
-    ['capture', null, null, ['flow-scan', 'flow-return']],
-    ['next-aap', null, null, []],
-    ['rebuild', null, null, ['flow-config', 'flow-code', 'flow-rebuild']],
+    ['separation', null, []],
+    ['vm', 'Create VM', ['flow-config', 'flow-code', 'flow-apply']],
+    ['infrastructure', 'Prepare OS', ['flow-config', 'flow-code', 'flow-apply']],
+    ['installation', 'Install AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['base-aap', 'Push AAP config', ['flow-config', 'flow-code', 'flow-apply']],
+    ['base', 'Apply content', ['flow-config', 'flow-code', 'flow-apply']],
+    ['infra-change', 'Apply infra', ['flow-config', 'flow-code', 'flow-apply']],
+    ['git-change', 'Apply changes', ['flow-config', 'flow-code', 'flow-apply']],
+    ['project', 'Apply objects', ['flow-config', 'flow-code', 'flow-apply']],
+    ['manual', null, []],
+    ['capture', null, ['flow-scan', 'flow-return']],
+    ['next-aap', null, []],
+    ['rebuild', null, ['flow-config', 'flow-code', 'flow-rebuild']],
   ];
-  for (const [id, caption, detail, activeRoutes] of expected) {
+  for (const [id, caption, activeRoutes] of expected) {
     page.hash(`#${id}`);
     if (caption) {
       assert.equal(page.nodes['apply-caption'].textContent, caption, id);
-      assert.equal(page.nodes['apply-detail'].textContent, detail, id);
     }
     for (const routeId of ['flow-config', 'flow-code', ...futureRoutes]) {
       const route = page.nodes[routeId];

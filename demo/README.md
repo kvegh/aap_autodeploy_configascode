@@ -71,7 +71,10 @@ markers and labels share the highlighted code/object-origin colour: deployment
 and base configuration remain blue, Git-defined additions use violet, and
 captured manual definitions use amber. The highlighted YAML identifies the
 definitions in focus; execution-code highlighting means code being read, not a
-change to the public playbook. Reduced motion keeps the strong static activity cue.
+change to the public playbook. All underneath-arrow destination labels and ACTIVE
+text are deleted, including their HTML, presenter writes and unused styles.
+Only the action captions above arrows remain. Reduced motion retains bold
+coloured arrows and stationary packets.
 Captured manual objects keep their yellow origin; the returned definitions show
 that they are saved in Git. The private repository carries a lock; readable configuration labels and synthetic
 encrypted secret blocks explain what the current step consumes. The repository-type headings read

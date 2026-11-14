@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.12
+
+Delete underneath-arrow ACTIVE cues and destination subtitles from all six
+arrows, together with their presenter writes and unused styles. Preserve action
+captions above arrows, packet colours, route activity and animation.
+
 ## 0.63.11
 
 Document generated-monitoring projection and publication fixes from `e74b38ac09c78a04581c68cbf0f78a7bfd6c33b1`
