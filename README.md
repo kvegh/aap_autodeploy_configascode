@@ -324,8 +324,9 @@ Arrows show only their action captions
 above the line; destination subtitles and ACTIVE text underneath are deleted.
 Purple change arrows read “Push OS changes”, “Push AAP config changes”, and
 “Push AAP content changes”, in that order.
-The purple content-push arrow aligns with the original AAP’s top edge, entering
-the receiving content area; its position follows the rendered card on resize.
+Both blue and purple content-push arrows align with the original AAP’s top edge,
+entering the receiving content area at the same height; their position follows
+the rendered card on resize.
 
 The [decision history](design_decisions_history.md) records the original
 component-width and project-import choices separately from later layout fixes

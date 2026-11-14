@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.32
+
+Align the blue “Push AAP content” arrow with the purple “Push AAP content
+changes” arrow using the existing responsive placement at the original AAP’s
+top edge. Cover both stages and resize recalculation in the existing checks.
+
 ## 0.63.31
 
 Document native disabled-appliance inventory capture from `fe49d8d` (0.63.30).

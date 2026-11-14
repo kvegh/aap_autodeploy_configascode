@@ -151,7 +151,7 @@
     const baseCaptions = { 'base-aap': 'Push AAP config', base: 'Push AAP content' };
     byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : baseCaptions[step.id] || (step.id === 'git-change' ? 'Push AAP config changes' : step.id === 'infra-change' ? 'Push OS changes' : 'Push AAP content changes');
     // The base categories arrive independently; later steps keep prior categories.
-    byId('flow-apply').dataset.destination = step.id === 'project' ? 'content'
+    byId('flow-apply').dataset.destination = ['base', 'project'].includes(step.id) ? 'content'
       : ['infrastructure', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
     byId('target-objects').hidden = !state.baseContentApplied;
     byId('target-configuration-panel').hidden = !state.aapConfigurationApplied;

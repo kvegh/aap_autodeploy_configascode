@@ -581,19 +581,22 @@ test('active routes remain visible and deployment actions name the current stage
   }
   // These dimensions test positioning arithmetic, not actual browser geometry.
   const { nodes, context } = page;
-  nodes['source-card'].offsetTop = 300;
-  nodes['apply-caption'].offsetHeight = 40;
-  nodes['apply-track'].offsetHeight = 28;
-  page.hash('#project');
-  assert.equal(nodes['flow-apply'].dataset.destination, 'content');
-  assert.equal(nodes['flow-apply'].style.top, '246px', 'The content arrow starts at the original AAP top, allowing for its caption and half the track');
-  nodes['source-card'].offsetTop = 450;
-  nodes['apply-caption'].offsetHeight = 60;
-  nodes['apply-track'].offsetHeight = 32;
-  assert.equal(typeof context.resize, 'function', 'Content alignment follows viewport changes');
-  context.resize();
-  assert.equal(nodes['flow-apply'].style.top, '374px', 'Resize recalculates alignment from the current card position and wrapped caption');
-  for (const step of story.steps.filter(step => step.id !== 'project')) {
+  const contentStages = ['base', 'project'];
+  for (const id of contentStages) {
+    nodes['source-card'].offsetTop = 300;
+    nodes['apply-caption'].offsetHeight = 40;
+    nodes['apply-track'].offsetHeight = 28;
+    page.hash(`#${id}`);
+    assert.equal(nodes['flow-apply'].dataset.destination, 'content', id);
+    assert.equal(nodes['flow-apply'].style.top, '246px', `${id}: the content arrow starts at the original AAP top, allowing for its caption and half the track`);
+    nodes['source-card'].offsetTop = 450;
+    nodes['apply-caption'].offsetHeight = 60;
+    nodes['apply-track'].offsetHeight = 32;
+    assert.equal(typeof context.resize, 'function', 'Content alignment follows viewport changes');
+    context.resize();
+    assert.equal(nodes['flow-apply'].style.top, '374px', `${id}: resize recalculates alignment from the current card position and wrapped caption`);
+  }
+  for (const step of story.steps.filter(step => !contentStages.includes(step.id))) {
     page.hash(`#${step.id}`);
     assert.equal(nodes['flow-apply'].style.top, '', `${step.id}: content positioning does not leak into other stages`);
   }
@@ -1052,7 +1055,7 @@ test('RHEL profiles keep one renderer, order and placement through setup, base a
     }
     assert.equal(nodes['target-infrastructure-panel'].hidden, step.stage < 2, `${id}: shared RHEL panel visibility`);
     assert.equal(nodes['target-rhel'].classList.contains('landing'), landing, `${id}: RHEL apply cue`);
-    assert.equal(nodes['flow-apply'].dataset.destination, landing ? 'rhel' : id === 'project' ? 'content' : 'aap', `${id}: apply destination`);
+    assert.equal(nodes['flow-apply'].dataset.destination, landing ? 'rhel' : ['base', 'project'].includes(id) ? 'content' : 'aap', `${id}: apply destination`);
     assert.equal(nodes['successor-rhel'].classList.contains('landing'), false, `${id}: replay does not retain a first-target apply cue`);
   };
   for (const [index, step] of story.steps.entries()) {
