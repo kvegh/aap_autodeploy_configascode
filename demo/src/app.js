@@ -148,10 +148,11 @@
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
     const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
-    const baseCaptions = { 'base-aap': 'Push AAP config', base: 'Apply content' };
+    const baseCaptions = { 'base-aap': 'Push AAP config', base: 'Push AAP config' };
     byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : baseCaptions[step.id] || (step.id === 'git-change' ? 'Push AAP config changes' : step.id === 'infra-change' ? 'Push OS changes' : 'Push AAP content changes');
     // The base categories arrive independently; later steps keep prior categories.
-    byId('flow-apply').dataset.destination = ['infrastructure', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
+    byId('flow-apply').dataset.destination = step.id === 'project' ? 'content'
+      : ['infrastructure', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';
     byId('target-objects').hidden = !state.baseContentApplied;
     byId('target-configuration-panel').hidden = !state.aapConfigurationApplied;
     byId('target-infrastructure-panel').hidden = step.stage < 2;
@@ -203,6 +204,15 @@
       link.rel = 'noopener noreferrer';
       return link;
     }));
+    positionContentPush();
+  }
+  function positionContentPush() {
+    const route = byId('flow-apply');
+    // Desktop columns share a top edge; align the line centre with the source card.
+    // Narrow layouts retain their existing CSS top:auto override.
+    route.style.top = route.dataset.destination === 'content'
+      ? `${byId('source-card').offsetTop - byId('apply-caption').offsetHeight - byId('apply-track').offsetHeight / 2}px`
+      : '';
   }
   function navigate(nextIndex, updateHash = true) {
     index = story.stateAt(nextIndex).index;
@@ -218,6 +228,7 @@
     if (event.key === 'ArrowLeft') { event.preventDefault(); navigate(index - 1); }
     if (event.key.toLowerCase() === 'r') { event.preventDefault(); navigate(0); }
   });
+  window.addEventListener('resize', positionContentPush);
   window.addEventListener('hashchange', () => {
     const nextIndex = story.steps.findIndex(step => `#${step.id}` === window.location.hash);
     navigate(nextIndex < 0 ? 0 : nextIndex, false);

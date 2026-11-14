@@ -73,8 +73,12 @@ captured manual definitions use amber. The highlighted YAML identifies the
 definitions in focus; execution-code highlighting means code being read, not a
 change to the public playbook. All underneath-arrow destination labels and ACTIVE
 text are deleted, including their HTML, presenter writes and unused styles.
-Only the action captions above arrows remain. Reduced motion retains bold
-coloured arrows and stationary packets.
+Only the action captions above arrows remain. The purple content-push arrow
+aligns with the top edge of the original AAP and enters the receiving content
+area. Its line position uses the actual source-card offset and caption/track
+heights after rendering and on window resize, with no fixed coordinate for this
+stage. The narrow stacked layout retains its existing vertical connectors.
+Reduced motion retains bold coloured arrows and stationary packets.
 Captured manual objects keep their yellow origin; the returned definitions show
 that they are saved in Git. The private repository carries a lock; readable configuration labels and synthetic
 encrypted secret blocks explain what the current step consumes. The repository-type headings read

@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.18
+
+Rename the base-content arrow from “Apply content” to “Push AAP config”.
+Position the purple content-push arrow at the original AAP’s top edge using
+its rendered geometry, updating it on scene changes and window resize.
+
 ## 0.63.17
 
 Document the configuration-model research decision and source commit
