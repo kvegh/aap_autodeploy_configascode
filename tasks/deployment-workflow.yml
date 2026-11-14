@@ -11,6 +11,19 @@
     fail_msg: Supply the workflow organization and shared base configuration repository URL.
   no_log: true
 
+- name: Require explicit existing launch bindings for the shared VM node
+  ansible.builtin.assert:
+    that:
+      - cac_workflow.generic_vm is mapping
+      - cac_workflow.generic_vm.inventory is string
+      - cac_workflow.generic_vm.inventory | trim | length > 0
+      - cac_workflow.generic_vm.credentials is sequence
+      - cac_workflow.generic_vm.credentials is not string
+      - cac_workflow.generic_vm.credentials | length > 0
+      - cac_workflow.generic_vm.credentials | select('string') | list | length == cac_workflow.generic_vm.credentials | length
+    fail_msg: Supply the existing hypervisor inventory and protected Machine/configuration-file/Vault credential names for the shared VM workflow node.
+  no_log: true
+
 - name: Reject repository URLs containing credentials or redirects through query parameters
   ansible.builtin.assert:
     that:
@@ -46,7 +59,7 @@
     survey_enabled: true
     survey_spec:
       name: Deployment diagnostics
-      description: The VM name and internal target address are handed over automatically from Stage 01.
+      description: The reserved VM inputs flow from AAP preconfiguration through shared creation and verified infrastructure registration.
       spec:
         - question_name: Enable diagnostic logging
           question_description: Credential and token tasks remain protected.

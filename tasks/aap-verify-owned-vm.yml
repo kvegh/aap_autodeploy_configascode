@@ -1,0 +1,34 @@
+---
+- name: Require existing registry ownership on the already pinned hypervisor
+  ansible.builtin.assert:
+    that:
+      - aap_existing_owner.instance_route.hypervisor == aap_hypervisor_pin
+      - aap_existing_owner.instance_route.vm_name == vm_name
+      - aap_existing_owner.instance_resources.aap is mapping
+      - aap_existing_owner.instance_resources.aap.verified is sameas true
+    fail_msg: Select an existing completed AAP primary owner; names and disk presence alone never authorize reuse.
+  no_log: true
+- name: Read existing AAP identity and resources without guest changes
+  ansible.builtin.include_tasks: aap-read-primary-vm.yml
+  vars:
+    aap_primary_expected_host_keys: '{{ aap_existing_owner.instance_route.guest_host_keys }}'
+    aap_primary_read_resources: true
+- name: Match actual existing identity to the protected AAP ownership record
+  ansible.builtin.assert:
+    that:
+      - aap_instance_route == aap_existing_owner.instance_route
+      - (aap_instance_route | aap_primary_instance_resources(aap_primary_domain_ownership.stdout, aap_primary_network_ownership.stdout,
+        vm_network)) == aap_existing_owner.instance_resources.aap
+    fail_msg: The existing domain, disk, UUID, MAC, bridge, address and authenticated guest must match its registered owner.
+  no_log: true
+- name: Publish only owner-proved operational facts and explicit unknown legacy image provenance
+  ansible.builtin.set_stats:
+    data:
+      generic_linux_vm_create: false
+      generic_linux_vm: '{{ aap_existing_owner.instance_resources.aap | combine({''vm_name'': vm_name, ''host_keys'': aap_existing_owner.instance_route.guest_host_keys,
+        ''machine_id'': aap_primary_guest_machine_id.stdout | trim, ''hostname'': aap_primary_guest_hostname.stdout | trim,
+        ''verified'': true, ''verification_source'': ''aap_resource_owner'', ''vcpus'': aap_primary_live_vcpus | int, ''memory_mb'':
+        aap_primary_live_memory_mb | int, ''disk_gb'': aap_primary_live_disk_gb | int, ''source_image_sha256'': none, ''source_image_status'':
+        ''unknown_legacy'', ''packages_updated'': none}) }}'
+    aggregate: false
+    per_host: false

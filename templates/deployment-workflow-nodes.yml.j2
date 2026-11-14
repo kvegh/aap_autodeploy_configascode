@@ -1,11 +1,33 @@
 ---
-- identifier: create_vm
+- identifier: prepare_aap_resources
   unified_job_template:
-    name: Deploy Test AAP - 01 Linux VM Setup
+    name: Deploy Test AAP - 01 AAP Resource Preconfigure
     type: job_template
     organization:
       name: {{ cac_workflow.organization | to_json }}
   related:
+    success_nodes:
+      - identifier: create_vm
+    failure_nodes: []
+    always_nodes: []
+
+- identifier: create_vm
+  job_tags: ''
+  skip_tags: ''
+  unified_job_template:
+    name: Generic RHEL VM Deployment
+    type: job_template
+    organization:
+      name: {{ cac_workflow.organization | to_json }}
+  inventory:
+    name: {{ cac_workflow.generic_vm.inventory | to_json }}
+    organization:
+      name: {{ cac_workflow.organization | to_json }}
+  related:
+    credentials:
+{% for credential in cac_workflow.generic_vm.credentials %}
+      - name: {{ credential | to_json }}
+{% endfor %}
     success_nodes:
       - identifier: configure_infrastructure
     failure_nodes: []

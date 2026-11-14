@@ -10,6 +10,10 @@
     aap_test_subdomain: "{{ (aap_hostname | ansible.builtin.urlsplit('hostname')) | regex_replace('\\.' + (vault_domain | regex_escape) + '$', '') }}"
 
   pre_tasks:
+    - name: Register the verified shared VM and its AAP installation access first
+      ansible.builtin.include_tasks: tasks/aap-register-shared-vm.yml
+      when: generic_linux_vm is defined
+
     - name: Select the registered instance before any infrastructure connection
       ansible.builtin.include_tasks: tasks/aap-instance-select.yml
 

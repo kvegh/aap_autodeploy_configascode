@@ -1,5 +1,14 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Five-step source candidate
+
+Working version **0.64.0** prepares the owner-requested shared VM deployment
+refactor on a separate integration branch. It has passed focused Core 2.20
+checks and bounded independent source review. It has not been merged into the
+active deployment source or applied to a running workflow. Preserve the current
+clean-deployment path and its existing jobs until the transition is coordinated.
+Final AAP end-to-end acceptance of this candidate remains unperformed.
+
 ## Feature freeze for clean deployment
 
 Complete and test the current candidate even when it needs fixes. Then retire
@@ -429,7 +438,7 @@ Purple Git-defined changes follow the same layer order as the blue setup:
 OS/RHEL Certificate configuration, AAP Logging configuration, then additional
 AAP objects. Earlier changes remain applied as the story advances.
 
-The new VM appears in Stage 01, receiving AAP in Stage 03 and base definitions
+The new VM appears in the shared VM step, receiving AAP in Stage 03 and base definitions
 in Stage 04. Trigger choices and detailed scan/review mechanics are abstracted.
 Implementation links, repeatable interaction checks and local preview instructions
 are in [demo/README.md](demo/README.md). Existing-tool checks cover story behaviour
@@ -602,7 +611,8 @@ The repository contains the deployment stages and separate use-case imports:
 
 | Stage | Playbook | Purpose |
 |---|---|---|
-| 01 | `01-linux-vm-setup.yml` | Clone a prepared golden image and discover the VM address. |
+| 01 | `01-aap-resource-preconfigure.yml` | Reserve and validate AAP resources before shared VM creation. |
+| Shared | `playbooks/deploy_generic_linux_vm.yml` in the umbrella | Create the prepared AAP VM through the common engine. |
 | 02 | `02-infra-config.yml` | Configure DNS, certificates, and the reverse proxy. |
 | 03 | `03-aap-install.yml` | Prepare the VM and run the pre-staged AAP installer. |
 | 04 | `04-aap-config.yml` | Apply the subscription, PAH and shared CaC, verify MCP/API publication, then release only the completed AAP guest after cleanup. |
@@ -670,8 +680,46 @@ and reset acceptance.
 
 ### Base deployment and explicitly selected use cases
 
-The `Deploy Complete AAP` workflow runs stages 01–04 on success only and stops
-after shared base configuration. It creates no use-case projects or imports.
+The `Deploy Complete AAP` workflow runs five success-only steps and stops
+after shared base configuration. Base can declare the shared **AAP Shared VM
+Deployment** Project and **Generic RHEL VM Deployment** Job Template from the
+[base CaC example](cac/base_CaC_vault.yml.example). That platform utility reads
+`playbooks/deploy_generic_linux_vm.yml` from the public AAP-advanced-features
+umbrella, using the existing common Core 2.20 execution environment. The public
+example uses `main`; populated operational CaC must pin its selected reviewed
+source reference and verify the actual synchronized revision.
+Its Project update waits before the Job Template is configured. Base imports
+its definitions; VM creation requires a separate explicit launch.
+
+The generic template asks for inventory, credentials and variables. Supply the
+existing hypervisor Machine credential and existing encrypted environment-file
+and Vault bindings. Base declares the approved one-field **Generic Linux VM
+encrypted configuration** credential type; consumers keep their populated
+whole-file Vault payload in their existing private CaC. Its native temporary
+file injector supplies `generic_linux_vm_config_file`, and the existing runtime
+Vault credential decrypts it. Type 35 and its unrelated snapshots are unchanged.
+The canonical loader accepts an explicit `generic_linux_vm_config_file` or the
+existing injected `AC_AGENTS_ENVIRONMENT_VAULT_FILE`. It does not search an
+assistant-team companion checkout. The shared deployment defaults to the
+original RHEL 9.8 image; Sniper clients explicitly select RHEL 9.4 with package
+updates disabled. Their protected VM inputs belong to their consuming CaC.
+
+AAP deployment retains its separate prepared golden image containing the AAP
+installer. `01-aap-resource-preconfigure.yml` reserves its name and passes its
+explicit image, resource and hostname overrides to the shared VM job. Existing
+`02-infra-config.yml` first verifies and registers the result and installation
+access, then keeps its DNS/TLS/proxy work. `03-aap-install.yml` remains the actual
+AAP installation stage. The Zabbix appliance uses its separate image and current
+deployment process; this shared RHEL migration does not change it.
+
+The shared job runs its full entrypoint: job/skip tags are empty and tag prompts
+are disabled. Before reusing an existing workflow node, verify its saved tags
+are empty too: the inspected Controller workflow modules omit empty strings on
+updates, so empty YAML alone does not clear a previous node selection. Keep the
+current deployment workflow on its existing source until that staged transition
+is qualified; publishing an additive shared utility does not migrate callers.
+
+Base creates no use-case projects or imports.
 The separate [use-case selector](docs/selected-use-cases.md) installs only the
 operator's selected umbrella submodules and their reviewed saved CaC. Application,
 deployment and demo jobs are not launched by configuration selection.
@@ -699,14 +747,18 @@ are preserved. See [shared allocation](docs/shared-instance-allocation.md) and
 
 ```mermaid
 flowchart LR
-    VM[01 Create VM] --> Infra[02 Infrastructure]
+    Prepare[01 AAP resource preconfiguration] --> VM[Shared generic VM deployment]
+    VM --> Infra[02 Register AAP and configure infrastructure]
     Infra --> Install[03 Install AAP]
     Install --> Base[04 Shared base]
 ```
 
-Stage 01 consumes the shared encrypted counter and publishes `vm_name`, `vm_ip`,
-`aap_hostname` and the public-key-only `aap_instance_route` through `set_stats`
-workflow artifacts. The API URL uses this reserved VM's unique public hostname.
+Stage 01 consumes the shared encrypted counter and publishes only the reserved
+name, prepared-image route, hostname and resource sizes. The shared job publishes
+`generic_linux_vm` provenance after guest verification. Stage 02 independently
+matches it to the pinned live domain and guest before registering ownership and
+publishing `vm_name`, `vm_ip`, `aap_hostname` and the public-key-only
+`aap_instance_route`. The API URL keeps this reserved VM's unique public hostname.
 Stages 02–04 reread the completed registry entry, reject conflicting inputs and
 route private guest SSH through its exact hypervisor with both host keys checked.
 Attach the existing AutoDeploy secrets repository read token and CaC Vault to those
@@ -719,11 +771,20 @@ certificate for this hostname or a separately approved ACME registration; it
 never accepts new certificate terms. No credentials, passwords or tokens are put
 in workflow artifacts.
 The workflow's only survey question is `debug_logging`; saved repository URLs
-are supplied on each appropriate node, and each existing Job Template keeps its
-own credentials. Concurrent runs of this workflow are disabled.
+are supplied on each appropriate node. `cac_workflow.generic_vm` supplies existing
+inventory and credential names to the shared node's native prompts; target
+passwords never enter node data. Also attach the existing allocation writer and
+source reader/CA bindings to Stage 02 with its registration/access tasks; Stage 01
+retains its original reservation/isolation access. Concurrent runs of this workflow are disabled.
 Failure stops downstream success nodes. Stages 02–04 can be rerun with the same
-registered instance input. If Stage 01 has already created its guest, preserve
-that guest and consumed reservation: rerunning Stage 01 allocates another name.
+registered instance input. Select `aap_instance_key` for an already registered
+AAP primary: Stage 01 independently proves its stored/live identity and resources,
+then supplies `generic_linux_vm_create: false`. The shared job only emits a skip
+marker and does not claim verification or touch the guest. Stage 02 rechecks the
+owner result before continuing. Legacy source-image hashes remain explicitly
+unknown; the current declared golden image is never labeled as their baseline.
+Without an existing owner selection, a new workflow reserves a fresh name.
+An unregistered or uncertain existing VM/disk stops for reconciliation.
 Inspect the failure before a bounded manual continuation of its remaining tasks;
 a repaired partial run does not prove fresh unattended provisioning.
 
@@ -753,7 +814,7 @@ strict SSH trust, target Python selection and native transaction guards remain.
 The earlier Core 2.16 repair and its live result remain historical evidence in
 Git; they do not establish acceptance of this new engine or a rebuilt instance.
 
-The Stage 01 readiness probe temporarily binds the new guest's SSH connection
+The AAP registration readiness probe temporarily binds the new guest's SSH connection
 facts, checks its pinned route, then restores the hypervisor's original connection
 facts even on failure. This prevents the earlier hypervisor port and user facts
 from overriding the delegated guest connection. Both SSH server keys remain

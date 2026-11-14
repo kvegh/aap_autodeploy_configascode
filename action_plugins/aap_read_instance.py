@@ -128,8 +128,11 @@ class ActionModule(ActionBase):
                     ownership = dict(ownership, **proof["related_resources"])
                 except Exception:
                     raise AnsibleActionFail("Source related-VM ownership could not be verified; no target connection was attempted.") from None
+            allocation_request_id = next(key for key, record in
+                configuration["aap_vm_allocation"]["reservations"].items()
+                if record.get("vm_name") == route["vm_name"] and record.get("instance_route") == route)
             result.update(changed=False, instance_route=route, registry_repository=repository,
-                          instance_resources=ownership)
+                          instance_resources=ownership, allocation_request_id=allocation_request_id)
             if proof is not None:
                 result["related_resource_proof"] = proof
             return result

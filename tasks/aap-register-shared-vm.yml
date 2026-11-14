@@ -1,0 +1,108 @@
+---
+- name: Register only the completed shared AAP VM before infrastructure configuration
+  no_log: true
+  block:
+    - name: Require the completed shared VM result before AAP registration
+      ansible.builtin.assert:
+        that:
+          - generic_linux_vm_create | default(true) is boolean
+          - generic_linux_vm is mapping
+          - generic_linux_vm.verified is sameas true
+          - generic_linux_vm.vm_name == vm_name
+          - aap_allocation_request_id is match('^[a-f0-9-]{36}$')
+          - not (generic_linux_vm_create | default(true)) or linux_vm_upstream is mapping
+          - not (generic_linux_vm_create | default(true)) or linux_vm_upstream.vm_name == vm_name
+          - not (generic_linux_vm_create | default(true)) or linux_vm_upstream.generic_image is sameas false
+          - not (generic_linux_vm_create | default(true)) or linux_vm_upstream.update_packages is sameas false
+          - not (generic_linux_vm_create | default(true)) or linux_vm_upstream.hypervisor_pin == aap_hypervisor_pin
+          - generic_linux_vm.hypervisor_machine_id == aap_hypervisor_pin.machine_id
+          - generic_linux_vm.network == vm_network
+          - generic_linux_vm.disk == vm_dir ~ '/' ~ vm_name ~ '.disk.qcow2'
+          - not (generic_linux_vm_create | default(true)) or generic_linux_vm.source_image_sha256 == linux_vm_upstream.source_image_sha256
+          - not (generic_linux_vm_create | default(true)) or generic_linux_vm.vcpus | int == aap_vcpus | int
+          - not (generic_linux_vm_create | default(true)) or generic_linux_vm.memory_mb | int == aap_memory_mb | int
+          - not (generic_linux_vm_create | default(true)) or generic_linux_vm.disk_gb | int == (aap_disk_size | human_to_bytes
+            | int) // 1073741824
+          - generic_linux_vm_create | default(true) or generic_linux_vm.verification_source == "aap_resource_owner"
+          - generic_linux_vm_create | default(true) or generic_linux_vm.source_image_sha256 is none
+          - generic_linux_vm_create | default(true) or generic_linux_vm.source_image_status == "unknown_legacy"
+        fail_msg: Finish the exact reserved shared VM job before registering AAP resources.
+    - name: Reverify the protected hypervisor and isolation before registration
+      ansible.builtin.include_tasks: aap-hypervisor-pin.yml
+    - name: Bind the consumed AAP reservation without allocating another VM
+      ansible.builtin.set_fact:
+        aap_vm_reservation:
+          vm_name: '{{ vm_name }}'
+          request_id: '{{ aap_allocation_request_id }}'
+    - name: Independently inspect the reserved shared guest and primary ownership
+      ansible.builtin.include_tasks: aap-read-primary-vm.yml
+      vars:
+        aap_primary_expected_host_keys: '{{ generic_linux_vm.host_keys }}'
+        aap_primary_read_resources: '{{ not (generic_linux_vm_create | default(true) | bool) }}'
+    - name: Match the shared result to the actual primary domain and authenticated guest
+      ansible.builtin.assert:
+        that:
+          - generic_linux_vm.address == new_vm_ip
+          - generic_linux_vm.machine_id == aap_primary_guest_machine_id.stdout | trim
+          - >-
+            (aap_instance_route | aap_primary_instance_resources(
+              aap_primary_domain_ownership.stdout, aap_primary_network_ownership.stdout, vm_network)) ==
+            {'uuid': generic_linux_vm.uuid, 'disk': generic_linux_vm.disk,
+             'address': generic_linux_vm.address, 'mac': generic_linux_vm.mac,
+             'network': generic_linux_vm.network, 'bridge': generic_linux_vm.bridge,
+             'verified': true, 'hypervisor_machine_id': generic_linux_vm.hypervisor_machine_id}
+          - generic_linux_vm_create | default(true) or generic_linux_vm.vcpus | int == aap_primary_live_vcpus | int
+          - generic_linux_vm_create | default(true) or generic_linux_vm.memory_mb | int == aap_primary_live_memory_mb | int
+          - generic_linux_vm_create | default(true) or generic_linux_vm.disk_gb | int == aap_primary_live_disk_gb | int
+        fail_msg: The shared VM artifact must match the exact live AAP resource before publication.
+      no_log: true
+    - name: Retain the verified AAP public trust handoff
+      ansible.builtin.set_stats:
+        data:
+          aap_instance_trust:
+            vm_name: '{{ vm_name }}'
+            allocation_request_id: '{{ aap_allocation_request_id }}'
+            hypervisor: '{{ aap_hypervisor_pin }}'
+            guest_host_keys: '{{ aap_fresh_guest_keys }}'
+        aggregate: false
+        per_host: false
+    - name: Publish the verified route into the shared encrypted instance registry
+      aap_reserve_vm_name:
+        prefix: '{{ vm_name.rsplit(''-'', 1)[0] }}'
+        hypervisor_id: '{{ aap_hypervisor_pin.machine_id }}'
+        request_id: '{{ aap_vm_reservation.request_id }}'
+        instance_route: '{{ aap_instance_route | aap_instance_route }}'
+        instance_resources:
+          aap: >-
+            {{ aap_instance_route | aap_primary_instance_resources(aap_primary_domain_ownership.stdout,
+                 aap_primary_network_ownership.stdout, vm_network) }}
+      delegate_to: localhost
+      become: false
+      no_log: true
+    - name: Grant and persist only the verified new AAP installation connections
+      ansible.builtin.include_tasks: aap-installation-access.yml
+      vars:
+        aap_installation_primary: >-
+          {{ aap_instance_route | aap_primary_instance_resources(aap_primary_domain_ownership.stdout,
+               aap_primary_network_ownership.stdout, vm_network) }}
+    - name: Pass only the verified new instance handoff to downstream jobs
+      ansible.builtin.set_stats:
+        data:
+          vm_name: '{{ vm_name }}'
+          vm_ip: '{{ new_vm_ip }}'
+          aap_hostname: '{{ aap_instance_route.aap_hostname }}'
+          aap_instance_route: '{{ aap_instance_route }}'
+        per_host: false
+        aggregate: false
+      no_log: false
+  always:
+    - name: Remove only this registration's temporary public SSH trust
+      ansible.builtin.file:
+        path: '{{ aap_hypervisor_trust.path }}'
+        state: absent
+      delegate_to: localhost
+      become: false
+      when:
+        - aap_hypervisor_trust.path is defined
+        - aap_hypervisor_trust.path is match('^/tmp/aap-hypervisor-known-hosts-[A-Za-z0-9_-]+$')
+      no_log: true

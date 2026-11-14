@@ -28,13 +28,15 @@ class DeploymentWorkflowTests(unittest.TestCase):
         mapping = {key: "https://example.invalid/config/" + key + ".git" for key in (
             "base", "aiops", "windows_disconnected", "orchestrator", "assistant_team")}
         return yaml.safe_load(template.render(cac_workflow={"organization": "Synthetic organization",
-                                                           "repositories": mapping})), mapping
+                                                           "repositories": mapping,
+                                                           "generic_vm": {"inventory": "Synthetic hypervisor inventory",
+                                                                          "credentials": ["Synthetic machine", "Synthetic VM file", "Synthetic Vault"]}})), mapping
 
     def test_base_deployment_stops_after_shared_configuration(self):
         nodes, mapping = self.graph()
         by_id = {node["identifier"]: node for node in nodes}
         self.assertEqual(len(nodes), len(by_id))
-        self.assertEqual(len(nodes), 4)
+        self.assertEqual(len(nodes), 5)
         parents = {identifier: [] for identifier in by_id}
         for node in nodes:
             self.assertEqual(node["related"]["always_nodes"], [])
@@ -43,7 +45,7 @@ class DeploymentWorkflowTests(unittest.TestCase):
             for child in node["related"]["success_nodes"]:
                 self.assertIn(child["identifier"], by_id)
                 parents[child["identifier"]].append(node["identifier"])
-        expected_chain = ["create_vm", "configure_infrastructure", "install_aap", "configure_base"]
+        expected_chain = ["prepare_aap_resources", "create_vm", "configure_infrastructure", "install_aap", "configure_base"]
         self.assertEqual(parents[expected_chain[0]], [])
         for parent, child in zip(expected_chain, expected_chain[1:]):
             self.assertEqual(parents[child], [parent])
@@ -54,9 +56,28 @@ class DeploymentWorkflowTests(unittest.TestCase):
         nodes, _ = self.graph()
         for node in nodes:
             self.assertLessEqual(set(node.get("extra_data", {})), {"aap_config_repo_url"})
-            self.assertNotIn("credentials", node["related"])
-        provision = yaml.safe_load((ROOT / "01-linux-vm-setup.yml").read_text())[0]
-        artifact = next(task["ansible.builtin.set_stats"] for task in provision["tasks"]
+            if node["identifier"] == "create_vm":
+                self.assertEqual(node["unified_job_template"]["name"], "Generic RHEL VM Deployment")
+                self.assertEqual(node["job_tags"], "")
+                self.assertEqual(node["skip_tags"], "")
+                self.assertEqual(node["inventory"]["name"], "Synthetic hypervisor inventory")
+                self.assertEqual([c["name"] for c in node["related"]["credentials"]],
+                                 ["Synthetic machine", "Synthetic VM file", "Synthetic Vault"])
+            else:
+                self.assertNotIn("credentials", node["related"])
+        provision = yaml.safe_load((ROOT / "01-aap-resource-preconfigure.yml").read_text())[0]
+        shared = next(task["ansible.builtin.set_stats"] for task in provision["tasks"]
+                      if task.get("name") == "Hand off only the reserved AAP image route and resource sizes")
+        self.assertEqual(set(shared["data"]), {"vm_name", "aap_allocation_request_id", "vm_hostname",
+                         "vm_vcpus", "vm_memory_mb", "vm_disk_gb", "generic_linux_vm_create"})
+        image = next(task["ansible.builtin.set_stats"] for task in provision["tasks"]
+                     if task.get("name") == "Publish the actual prepared-image route only for fresh creation")
+        self.assertIs(image["data"]["linux_vm_upstream"]["generic_image"], False)
+        self.assertIs(image["data"]["linux_vm_upstream"]["update_packages"], False)
+        self.assertNotRegex((ROOT / "01-aap-resource-preconfigure.yml").read_text(),
+                            r"virt-install|virt-customize|qemu-img|ssh-keygen")
+        post = yaml.safe_load((ROOT / "tasks/aap-register-shared-vm.yml").read_text())[0]["block"]
+        artifact = next(task["ansible.builtin.set_stats"] for task in post
                         if task.get("name") == "Pass only the verified new instance handoff to downstream jobs")
         self.assertEqual(set(artifact["data"]), {"vm_name", "vm_ip", "aap_hostname", "aap_instance_route"})
         self.assertEqual(artifact["data"]["aap_hostname"], "{{ aap_instance_route.aap_hostname }}")

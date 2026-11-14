@@ -1,5 +1,20 @@
 # Release notes
 
+## 0.64.0
+
+Prepare a five-step AAP deployment through the shared umbrella VM job. Retain
+AAP resource reservation, registered-owner verification and the existing
+prepared installer image; begin infrastructure with verified ownership and
+installation-access publication. Keep DNS/TLS/proxy and actual AAP installation
+separate. Existing-owner no-op facts retain unknown historical image provenance.
+
+Add the shared Project/Job Template and approved VM-only encrypted-file credential
+type to the base recipe. Preserve existing Machine escalation by leaving absent
+sudo overrides inherited; no new login or secret store is introduced. Full
+entrypoint defaults reject partial deployment selection. Core 2.20 focused
+ownership, graph, native merge/secret-literal and pinned-route fixtures passed;
+changed playbook syntax passed. This source is not live migration or VM acceptance.
+
 ## 0.63.48
 
 Document seven-image checksum/publication success, managed safeguards, fresh AAP

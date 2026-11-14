@@ -18,6 +18,25 @@ aap_teams_base: []
 aap_user_accounts_base: []
 # Platform content-source credentials may belong here; machine credentials do not.
 controller_credentials_base: []
+# Approved VM-only file injector. Populated ciphertext belongs to each consumer's
+# private CaC; attach its existing runtime Vault credential separately.
+# Literal tags must survive serialization: these are Controller injector templates.
+controller_credential_types_base:
+  - name: Generic Linux VM encrypted configuration
+    kind: cloud
+    inputs:
+      fields:
+        - id: configuration_vault
+          label: Encrypted VM configuration
+          type: string
+          secret: true
+          multiline: true
+      required: [configuration_vault]
+    injectors:
+      file:
+        template: !unsafe '{{ configuration_vault }}'
+      extra_vars:
+        generic_linux_vm_config_file: !unsafe '{{ tower.filename }}'
 # Authenticated official EE pulls need a native registry credential before job
 # startup. In the populated, encrypted copy, declare its owning organization:
 # aap_organizations_base:
@@ -41,6 +60,38 @@ controller_execution_environments_base:
     # Enable after declaring the credential above in the encrypted copy:
     # credential: Red Hat registry
 aap_default_execution_environment: AAP AutoDeploy EE
+
+# Shared platform utility, separate from the prepared-image AAP deployment.
+# Set the existing organization in the encrypted populated configuration.
+# Operators/consumers supply inventory, Machine and existing environment-file
+# plus Vault credentials at launch. Base does not create or borrow those logins.
+controller_projects_base:
+  - name: AAP Shared VM Deployment
+    organization: ORGANIZATION_PLACEHOLDER
+    scm_type: git
+    scm_url: https://github.com/kvegh/AAP-advanced-features.git
+    scm_branch: main
+    scm_track_submodules: false
+    scm_update_on_launch: true
+    wait: true
+controller_templates_base:
+  - name: Generic RHEL VM Deployment
+    organization: ORGANIZATION_PLACEHOLDER
+    project: AAP Shared VM Deployment
+    playbook: playbooks/deploy_generic_linux_vm.yml
+    execution_environment: "{{ aap_default_execution_environment }}"
+    job_type: run
+    become_enabled: true
+    allow_simultaneous: false
+    ask_inventory_on_launch: true
+    ask_credential_on_launch: true
+    ask_variables_on_launch: true
+    ask_tags_on_launch: false
+    ask_skip_tags_on_launch: false
+    job_tags: ''
+    skip_tags: ''
+    credentials: []
+    extra_vars: {}
 # Containerized installations using remote Podman need the generated platform CA
 # in project-update execution environments. Preserve existing isolation mounts
 # and use the installer service account's HOST trust path for the additional mount.

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import tempfile
 import subprocess
+import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
@@ -25,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -126,24 +128,28 @@ class AllocationTests(unittest.TestCase):
 
     def test_stage_one_publishes_only_actual_xml_resource_after_pinned_guest_probe(self):
         from ansible.parsing.dataloader import DataLoader
-        from ansible.template import Templar
-        source = yaml.safe_load((ROOT / "01-linux-vm-setup.yml").read_text())[0]["tasks"]
+        from ansible.template import Templar, trust_as_template
+        source = yaml.safe_load((ROOT / "tasks/aap-register-shared-vm.yml").read_text())[0]["block"]
         publication = next(task for task in source if "aap_reserve_vm_name" in task)
         probe = next(index for index, task in enumerate(source) if task["name"] ==
-                     "Verify the fresh guest through its exact pinned hypervisor route")
+                     "Independently inspect the reserved shared guest and primary ownership")
         self.assertLess(probe, source.index(publication))
-        self.assertTrue(source[probe]["no_log"])
+        checks = yaml.safe_load((ROOT / "tasks/aap-read-primary-vm.yml").read_text())
+        guest_probe = next(task for task in checks if task["name"] ==
+                           "Verify the fresh guest through its exact pinned hypervisor route")
+        self.assertTrue(guest_probe["no_log"])
         route, domain, network, resource = primary_fixture()
         variables = {"aap_instance_route": route, "aap_primary_domain_ownership": {"stdout": domain},
             "aap_primary_network_ownership": {"stdout": network}, "vm_network": "isolated",
             "instance_resources": {"aap": {"uuid": "caller-supplied"}}, "aap_primary_resource": {"uuid": "caller-supplied"}}
         templar = Templar(loader=DataLoader(), variables=variables)
         templar.environment.filters["aap_primary_instance_resources"] = routing.primary_resources
-        self.assertEqual(templar.template(publication["aap_reserve_vm_name"]["instance_resources"]), {"aap": resource})
+        expression = {"aap": trust_as_template(publication["aap_reserve_vm_name"]["instance_resources"]["aap"])}
+        self.assertEqual(templar.template(expression), {"aap": resource})
 
     def test_native_primary_probe_uses_original_host_route_and_pinned_jump_without_direct_ssh(self):
         import sys
-        source = yaml.safe_load((ROOT / "01-linux-vm-setup.yml").read_text())[0]["tasks"]
+        source = yaml.safe_load((ROOT / "tasks/aap-read-primary-vm.yml").read_text())
         block = copy.deepcopy(next(task for task in source if task["name"] ==
                                    "Verify the fresh guest through its exact pinned hypervisor route"))
         block["block"] = [task for task in block["block"]

@@ -10,6 +10,14 @@ autodeploy_capture_readiness:
 cac_workflow:
   name: Deploy Complete AAP
   organization: ORGANIZATION_PLACEHOLDER
+  # Native workflow-node prompts; names only, never credential values.
+  # Create/reconcile the shared base Project/JT before this workflow.
+  generic_vm:
+    inventory: EXISTING_HYPERVISOR_INVENTORY_PLACEHOLDER
+    credentials:
+      - EXISTING_HYPERVISOR_MACHINE_CREDENTIAL_PLACEHOLDER
+      - APPROVED_ENCRYPTED_VM_CONFIGURATION_CREDENTIAL_PLACEHOLDER
+      - EXISTING_RUNTIME_VAULT_CREDENTIAL_PLACEHOLDER
   repositories:
     base: https://git.example.invalid/CONFIGURATION_OWNER/base-config.git
     aiops: https://git.example.invalid/CONFIGURATION_OWNER/aiops-config.git

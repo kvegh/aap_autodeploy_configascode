@@ -5,7 +5,7 @@ and their history. Future configuration bundles exclude those four, the older
 destroy template, their workflow, the original provisioning inventory and its
 Machine key. This changes what future installations receive; it neither deletes
 production objects nor changes the four shared playbook files. The newer
-four-stage templates remain the deployment implementation. The separate
+numbered AAP stages plus the shared VM node remain the deployment implementation. The separate
 use-case prerequisite template remains because selected setup still uses it.
 
 ## Source and destination access
@@ -51,7 +51,7 @@ identity checks, and the canonical encrypted Hactar policy copy is still updated
 
 ## Installation access before the vendor installer
 
-After Stage 01 authenticates the newly created guest, reads its native libvirt
+After the shared VM job and Stage 02 authenticate the guest and read its native libvirt
 ownership and publishes its consumed reservation, it preflights the existing
 source job and three maintained encrypted policy captures. It then adds only:
 

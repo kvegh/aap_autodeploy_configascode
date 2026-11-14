@@ -68,7 +68,7 @@ stored in the encrypted registry and passed as an AAP artifact. It binds VM name
 private IP, fresh public host keys, the verified hypervisor and the VM's unique
 public HTTPS hostname. Passwords, private keys and tokens are excluded.
 
-Before publishing the route, new Stage 01 runs wait for authenticated guest
+Before publishing the route, Stage 02 registration waits for authenticated guest
 readiness through the already pinned hypervisor jump. They use the generated
 guest public keys, the existing environment Vault login and a read-only machine-ID
 check; another account, direct private-network route or host-key exception is
@@ -84,7 +84,7 @@ bridge. The allocator revalidates every field against the consumed route,
 preserves unrelated AAP allocation history, accepts an unchanged retry and refuses replacement
 of known primary ownership. Decommissioned reservations cannot publish a fresh
 active route. Legacy callers without ownership metadata remain compatible;
-new Stage 01 always supplies it. This retains proof after a failed partial
+the shared creation/Stage 02 registration flow always supplies it. This retains proof after a failed partial
 decommission has already removed the VM definition, without a new state store.
 
 The Windows infrastructure job may later add one optional
@@ -182,3 +182,19 @@ other hosts, variables and members. The hypervisor's verified management identit
 and declared isolation policy are preserved alongside placement. This callback
 uses the existing writer, source API and Vault credentials; it creates no extra
 job and places no API tokens in inventory variables.
+
+## Shared VM engine and existing-owner resume
+
+AAP resource preconfiguration reserves the name before the shared VM job. It
+passes the prepared-image override and public resource inputs through native
+workflow artifacts. Stage 02 independently rechecks the actual primary and
+publishes the same existing ownership/route contract before its DNS work.
+
+An explicit registered `aap_instance_key` selects reuse. The resource owner first
+reads the actual domain/disk/network identity and authenticates its guest, then
+emits `generic_linux_vm_create: false` and owner-proved operational facts. The
+shared job only skips creation; its skip marker is not identity evidence. Old
+registry records lack original image hashes, so their owner artifact uses
+`source_image_sha256: null` and `source_image_status: unknown_legacy`. This does
+not relabel the currently declared image as their historical baseline. Unowned
+collisions and incomplete prior creation stop for reconciliation.

@@ -1,0 +1,181 @@
+---
+- name: Create a test VM only after shared name reservation and pinned rebuild preflight
+  hosts: hypervisor
+  become: true
+  gather_facts: false
+  vars_files:
+    - myvars
+    - vars/main.yml
+  vars:
+    vm_suffix: test
+    vmcounter_file: /opt/vms/vmcounter
+  pre_tasks:
+    - name: Prove the selected rebuild hypervisor and persistent isolation
+      ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
+    - name: Read an explicitly selected existing AAP owner without allocating a name
+      aap_read_instance:
+        instance_key: '{{ aap_instance_key | aap_inventory_instance_name((hostvars[aap_instance_key] if aap_instance_key in
+          hostvars else {})) }}'
+        expected_route: '{{ aap_instance_route | default(omit) }}'
+      register: aap_existing_owner
+      delegate_to: localhost
+      become: false
+      when: aap_instance_key | default('') | length > 0
+      no_log: true
+    - name: Require the managed disk directory and existing protected guest login
+      ansible.builtin.assert:
+        that:
+          - vm_dir == '/opt/vms'
+          - vault_ansible_user is string and vault_ansible_user | trim | length > 0
+          - vault_ansible_password is string and vault_ansible_password | length > 0
+      no_log: true
+    - name: Read existing domain names without changing them
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - list
+          - --all
+          - --name
+      register: aap_existing_domains
+      changed_when: false
+      check_mode: false
+      no_log: true
+    - name: Inspect the preserved local migration counter
+      ansible.builtin.stat:
+        path: '{{ vmcounter_file }}'
+      register: aap_legacy_counter
+      no_log: true
+    - name: Read but never rewrite the old per-hypervisor counter
+      ansible.builtin.slurp:
+        src: '{{ vmcounter_file }}'
+      when: aap_legacy_counter.stat.exists
+      register: aap_legacy_counter_value
+      no_log: true
+    - name: Require the selected guest network to use an enforced bridge
+      ansible.builtin.command:
+        argv:
+          - virsh
+          - -c
+          - qemu:///system
+          - net-dumpxml
+          - '{{ vm_network }}'
+      register: aap_guest_network
+      changed_when: false
+      check_mode: false
+      failed_when: aap_guest_network.stdout | aap_network_bridge not in aap_hypervisor_pin.isolation_bridges
+      no_log: true
+    - name: Inspect the already published golden image before reservation
+      ansible.builtin.stat:
+        path: '{{ aap_golden_image_path }}'
+        follow: false
+        get_checksum: true
+        checksum_algorithm: sha256
+      register: aap_golden_source
+      no_log: true
+      when: aap_existing_owner.instance_route is not defined
+    - name: Require the verified golden image before reserving a name
+      ansible.builtin.assert:
+        that: aap_golden_source.stat.isreg | default(false) and not (aap_golden_source.stat.islnk | default(false))
+        fail_msg: Publish and verify the selected golden image before reserving a VM name.
+      no_log: true
+      when: aap_existing_owner.instance_route is not defined
+    - name: Reserve and publish one global encrypted name before any image write
+      aap_reserve_vm_name:
+        prefix: aap{{ aap_version_short }}-{{ vm_suffix }}
+        request_id: '{{ aap_allocation_request_id | default(omit) }}'
+        hypervisor_id: '{{ aap_hypervisor_pin.machine_id }}'
+        observed_floor: >-
+          {{ aap_existing_domains.stdout_lines | aap_observed_allocation_floor(
+               aap_legacy_counter_value.content | default('') | b64decode) }}
+      delegate_to: localhost
+      become: false
+      register: aap_vm_reservation
+      no_log: true
+      when: aap_existing_owner.instance_route is not defined
+    - name: Bind only the existing registered reservation on explicit owner reuse
+      ansible.builtin.set_fact:
+        aap_vm_reservation:
+          reserved: true
+          vm_name: '{{ aap_existing_owner.instance_route.vm_name }}'
+          request_id: '{{ aap_existing_owner.allocation_request_id }}'
+      when: aap_existing_owner.instance_route is defined
+      no_log: true
+    - name: Stop check mode without provisioning or consuming a name
+      ansible.builtin.meta: end_play
+      when: ansible_check_mode
+    - name: Use only the published reservation
+      ansible.builtin.set_fact:
+        vm_name: '{{ aap_vm_reservation.vm_name }}'
+      no_log: true
+    - name: Refuse stale caller overrides of the globally reserved name
+      ansible.builtin.assert:
+        that:
+          - aap_vm_reservation.reserved
+          - vm_name == aap_vm_reservation.vm_name
+        fail_msg: The provisioning name must be the just-published shared reservation.
+      no_log: true
+    - name: Preserve the consumed reservation even if provisioning later fails
+      ansible.builtin.set_stats:
+        data:
+          aap_allocation_request_id: '{{ aap_vm_reservation.request_id }}'
+          vm_name: '{{ vm_name }}'
+        aggregate: false
+        per_host: false
+      no_log: false
+    - name: Inspect the destination before copying
+      ansible.builtin.stat:
+        path: '{{ vm_dir }}/{{ vm_name }}.disk.qcow2'
+      register: aap_new_disk
+      no_log: true
+    - name: Refuse existing domain or disk collisions without replacement
+      ansible.builtin.assert:
+        that:
+          - (vm_name not in aap_existing_domains.stdout_lines and not aap_new_disk.stat.exists) or aap_existing_owner.instance_route
+            is defined
+          - aap_existing_owner.instance_route is not defined or (vm_name in aap_existing_domains.stdout_lines and aap_new_disk.stat.isreg
+            | default(false))
+        fail_msg: Preserve unowned or incomplete VM/disk collisions; reuse requires the registered owner and actual identity
+          proof.
+      no_log: true
+  tasks:
+    - name: Prove explicit existing AAP ownership before the shared no-op
+      ansible.builtin.include_tasks: tasks/aap-verify-owned-vm.yml
+      when: aap_existing_owner.instance_route is defined
+    - name: Require whole-GiB AAP disk input for the shared creator
+      ansible.builtin.assert:
+        that:
+          - aap_disk_size | human_to_bytes | int > 0
+          - aap_disk_size | human_to_bytes | int % 1073741824 == 0
+        fail_msg: Use the existing whole-GiB AAP disk size before the shared VM job.
+    - name: Publish the actual prepared-image route only for fresh creation
+      ansible.builtin.set_stats:
+        data:
+          linux_vm_upstream:
+            vm_name: '{{ vm_name }}'
+            generic_image: false
+            update_packages: false
+            golden_image_path: '{{ aap_golden_image_path }}'
+            source_image_sha256: '{{ aap_golden_source.stat.checksum }}'
+            vm_dir: '{{ vm_dir }}'
+            vm_domain: '{{ vault_domain }}'
+            vm_network: '{{ vm_network }}'
+            network_bridge: '{{ aap_guest_network.stdout | aap_network_bridge }}'
+            hypervisor_pin: '{{ aap_hypervisor_pin }}'
+        aggregate: false
+        per_host: false
+      when: aap_existing_owner.instance_route is not defined
+    - name: Hand off only the reserved AAP image route and resource sizes
+      ansible.builtin.set_stats:
+        data:
+          vm_name: '{{ vm_name }}'
+          aap_allocation_request_id: '{{ aap_vm_reservation.request_id }}'
+          vm_hostname: '{{ aap_primary_guest_hostname.stdout | default(vm_name | aap_instance_public_name(vault_domain)) |
+            trim }}'
+          vm_vcpus: '{{ aap_primary_live_vcpus | default(aap_vcpus) | int }}'
+          vm_memory_mb: '{{ aap_primary_live_memory_mb | default(aap_memory_mb) | int }}'
+          vm_disk_gb: '{{ aap_primary_live_disk_gb | default((aap_disk_size | human_to_bytes | int) // 1073741824) | int }}'
+          generic_linux_vm_create: '{{ aap_existing_owner.instance_route is not defined }}'
+        aggregate: false
+        per_host: false

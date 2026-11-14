@@ -68,13 +68,14 @@ separate execution steps after their prerequisites are verified.
 
 Keep the four older AAP deployment Job Templates on the existing production AAP
 for now. Exclude those four from the CaC bundle used for future installations.
-Future environments use the newer four-stage templates. Both sets reference the
-same four files in the same public automation project:
+Future environments use the five-step shared-VM workflow. The new flow uses four
+AAP-specific files plus the shared entrypoint in the umbrella:
 
-1. `01-linux-vm-setup.yml`
-2. `02-infra-config.yml`
-3. `03-aap-install.yml`
-4. `04-aap-config.yml`
+1. `01-aap-resource-preconfigure.yml`
+2. Shared `playbooks/deploy_generic_linux_vm.yml` job from the umbrella
+3. `02-infra-config.yml` (register the owner-verified VM before DNS/TLS/proxy)
+4. `03-aap-install.yml`
+5. `04-aap-config.yml`
 
 The newer templates must support both the hypervisor hosting their source AAP
 and a selected remote replacement hypervisor. They do not need to deploy onto
@@ -82,7 +83,7 @@ the current original production hypervisor. Keeping the older set is not a
 reason to transfer its production Machine key to future installations.
 
 The older workflow, destroy template, inventory and credential references must
-be reviewed consistently when excluding the four stages. This does not authorize
+be reviewed consistently when excluding the AAP stages and shared creation step. This does not authorize
 deleting their existing production objects. A normal configuration import has
 now verified fourteen future AutoDeploy templates and the older family's
 absence on the receiving AAP, preserving all fifty-five existing templates.
