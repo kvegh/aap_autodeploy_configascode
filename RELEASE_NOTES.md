@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.58
+
+Document qualified Windows dependency publication, completed regular-server
+baselines and the next queued native activation stage. AD updates still show
+servicing progress; live caller use and both complete demonstration results
+remain pending. Refresh the existing task recovery checkpoint.
+
 ## 0.63.57
 
 Document test correction `1cee2ac`, native trust-tag and encrypted-roundtrip

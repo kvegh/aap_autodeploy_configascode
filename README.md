@@ -36,8 +36,10 @@ Chocolatey survey answer missing from captured node data; its encrypted fix is
 published, applied through the normal configuration importer and verified by
 actual node/launch readback. The Windows workflow then failed on AD activation
 and an incomplete private Git transfer. Focused stage recoveries created all five
-guests; server basics and AD updates continue. Original failures remain recorded,
-and functional acceptance is still pending.
+guests, and server basics passed on all four regular guests. AD updates continue
+with measured servicing activity. The qualified Windows caller update is
+published and the next normal activation stage is queued; actual use and
+functional acceptance remain pending. Original failures remain recorded.
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
