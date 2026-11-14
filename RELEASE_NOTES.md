@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.35
+
+Document the README screenshot implementation `722f575`
+(0.63.34) and its focused documentation/image checks. The original PNG and
+first-step destination are unchanged; publication remains a separate step.
+
 ## 0.63.34
 
 Document the interactive story with the owner-supplied screenshot in the

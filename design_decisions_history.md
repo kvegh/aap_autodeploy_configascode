@@ -5173,5 +5173,9 @@ This documentation-only change advances the project patch version to
 the README link, local image path, exact screenshot hash and whitespace.
 It does not establish a new runtime or deployment result.
 
-Implementation commit: pending; the coordinating agent will create the
-documentation commit and add its identifier after publication.
+Implementation `722f5758dc9d5d54fcf5822f5e1365250c920f6e` (0.63.34) adds the README
+preview and original screenshot. Its local rebase preserves the concurrent
+content-arrow implementation and documentation. Focused checks confirm the
+first-step link, local image path, display width, original PNG byte equality
+and whitespace. Version 0.63.35 documents this implementation identifier;
+publication and deployed verification remain separate.
