@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.64.5
+
+Document the current task checkpoint: shared source qualification is complete,
+while remaining caller qualification and independent VM verification await
+existing native requests. Preserve those controls, live source pins and active
+deployment jobs. This update changes only generated task/documentation metadata.
+
 ## 0.64.4
 
 Document the final generated task checkpoint after publication of the qualified
