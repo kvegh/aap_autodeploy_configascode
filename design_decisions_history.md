@@ -5377,3 +5377,40 @@ content-arrow implementation and documentation. Focused checks confirm the
 first-step link, local image path, display width, original PNG byte equality
 and whitespace. Version 0.63.35 documents this implementation identifier;
 publication and deployed verification remain separate.
+
+
+## 2026-11-14 — Prepare shared VM creation as a separate AAP step
+
+Implementation `7475a15a065432b7013c037d4b18d22c70b8d410` (candidate 0.64.0) implements the
+owner-requested five-stage split: AAP resource/name preparation, the umbrella
+generic RHEL VM creator, registration/access plus existing infrastructure,
+AAP installation, then base CaC. The AAP-specific prepared image keeps its
+installer. Ordinary VM creation belongs to the shared umbrella source. General
+RHEL uses the original9.8 image; Sniper patch-test clients explicitly select9.4
+without deployment updates. Zabbix appliance cloning is unchanged.
+
+Registered-owner reuse verifies its protected route, native identity/resources
+and guest access without allocating or creating another guest. Legacy original
+image hashes remain null/unknown. The explicit shared skip produces no existing
+VM proof. Registration begins Stage02 and retains the existing source/CA/writer
+access; the shared creator receives only its Machine, encrypted VM-file and
+runtime Vault bindings. Missing sudo overrides stay inherited from the existing
+Machine credential, with no password inference or new login.
+
+Eleven distinct focused fixtures and changed01/02 syntax passed on actual
+Core2.20.10. The cached fixture EE image ID was
+`aa2271dfe657c40be13af265724a98989e7cd4b87613c29047ceaaa86c86c89f`,
+with local manifest digest
+`939ef340a1fdac0bfc561bafb144d93068fba721e963711e7e1952addfc85fb5`.
+An independent bounded source review found no significant new issues. All
+reviewed executable/test hashes were preserved when integrating onto current
+main; conflicts affected only release notes/version, and current operation
+history and the feature freeze were retained. Complete review/APME and final
+AAP end-to-end acceptance remain unfinished.
+
+The candidate is prepared on a separate branch and is not the active deployment
+source. Do not merge or rewire the current clean deployment without a coordinated
+transition. Verify actual existing workflow-node tags: inspected certified
+workflow modules omit falsey update values, so empty YAML cannot prove old tags
+were cleared. Populated base CaC pins the selected shared source instead of
+assuming a mutable branch was tested. Version0.64.1 documents this implementation.

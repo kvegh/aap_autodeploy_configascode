@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.64.1
+
+Document the five-step candidate implementation, exact fixture baseline and
+bounded independent review. Preserve current-main deployment history and its
+feature freeze. The candidate remains separate from the active source/workflow;
+shared base objects and populated caller bindings are distinct verification steps.
+
 ## 0.64.0
 
 Prepare a five-step AAP deployment through the shared umbrella VM job. Retain
