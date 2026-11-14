@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Document completed base and validated workload configuration — 2026-11-14
+
+Existing base configuration completed without failed or unreachable tasks. Its
+published access and inventory were independently read back, and a normal job
+passed on the receiving own-Hub default execution environment. The Windows
+configuration adds only the next profile/runtime entries after actual Core 2.20
+schema and full resource rendering, current native network reservations and a
+pinned guest route check. Prior profiles, credentials and literal tags remain
+preserved. Normal prerequisite preparation and imports were launched for only
+the selected Windows and AIOps cases; workload deployments and tests remain open.
+
+This is an execution/task-record checkpoint, with no implementation or architecture
+change. Native reads establish that the existing four AAP stages are standalone
+Job Templates with no workflow-node associations; their encrypted capture remains
+authoritative. The other owner's shared-creator branch is not adopted mid-run.
+The next iteration's naming decision is still awaiting the owner.
+
 ## Document successful installation and the active base stage — 2026-11-14
 
 The existing installer completed with a zero return code and no failed or

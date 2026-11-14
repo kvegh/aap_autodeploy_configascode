@@ -22,10 +22,12 @@ pins, and all eight saved references match the pre-reinstall record. Verificatio
 must finish before image publication; recording a checksum after a download does
 not replace comparison with the saved reference.
 
-The current receiving AAP installation passed its native installer and trusted
-Gateway/Controller checks. Normal base configuration is running. Receiving
-execution-environment and access publication, both workload imports/deployments
-and their functional demonstration tests still require actual verification.
+The current receiving AAP passed installation, base configuration and published
+access checks. Its normal demonstration job passed on the receiving own-Hub
+default execution environment. The new encrypted Windows profile passed native
+Core 2.20 rendering and current identity, network and route checks. Normal
+Windows/AIOps prerequisite preparation and imports have been launched; workload
+deployment and both functional demonstration tests still require verification.
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops

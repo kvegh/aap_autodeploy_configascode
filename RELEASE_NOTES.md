@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.50
+
+Document successful base configuration, exact published access/inventory and the
+receiving default-EE demonstration. The encrypted Windows profile is published
+after Core 2.20 full rendering and fresh identity, network and route checks.
+Refresh current task records and shared-workflow ownership facts. Normal selected
+Windows/AIOps preparation/import is launched; deployment/demo acceptance remains
+unfinished. Preserve the feature freeze and unresolved next-iteration decision.
+
 ## 0.63.49
 
 Document successful native AAP installation and trusted public Gateway/Controller
