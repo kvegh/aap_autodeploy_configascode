@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.63.48
+
+Document seven-image checksum/publication success, managed safeguards, fresh AAP
+VM creation and matching registry, guest verification and DNS/TLS/proxy success.
+The installer has actual process/log progress. The encrypted Windows candidate
+passed existing Core 2.20 schema and live/persistent network checks; its receiving
+EE/render/publication and both workload/demo acceptances remain unfinished.
+Refresh durable task records while preserving the original failed host workflow
+and the feature freeze. No deployment implementation or architecture changes.
+
 ## 0.63.47
 
 Document the owner's iterative clean-deployment goal: finish and test the current

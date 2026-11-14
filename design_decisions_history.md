@@ -1,5 +1,30 @@
 # Design decisions history
 
+## Document verified images and the active platform installation — 2026-11-14
+
+Execution checkpoint only; existing deployment stages and security gates are
+unchanged. All seven images passed saved SHA-256/size checks before publication.
+The managed safeguard job passed, then normal VM creation consumed the next
+shared name and published its exact completed route and primary ownership.
+Independent registered guest login/sudo/machine checks and normal infrastructure
+DNS, certificate and proxy configuration passed with no failed/unreachable events.
+The four current selectors were published in their existing encrypted capture
+and Source metadata; inverse/Vault checks and cached Core 2.20.10 loading passed.
+
+The AAP installer is active. A strict guest read verified its machine and public
+keys, actual installer PID/start time and recently updated declared log, without
+emitting process arguments, environment or raw logs. The Windows profile candidate
+has five guests and six permanent NICs plus the existing supplemental AAP link.
+Live/persistent network checks found no reservation, lease, subnet or pool conflict;
+Core 2.20.10 loaded its encrypted runtime/management schemas and thirty-five
+saved template profiles. Receiving-EE route checks, complete resource rendering,
+publication, imports and both actual workload/demo acceptances remain pending.
+
+The original failed host workflow remains failed and is not uninterrupted
+acceptance. Preserve the feature freeze and finish the current candidate before
+its reviewed retirement and the next full attempt. Exact jobs, timestamps,
+source revisions, selected identities and outcomes remain in the protected export.
+
 ## Repeat complete candidates until one run is clean — 2026-11-14
 
 The owner explicitly authorized finishing and testing the current candidate,
