@@ -1,5 +1,14 @@
 # Design decisions history
 
+## Refresh the task checkpoint after appliance deployment — 2026-11-14
+
+Refresh the existing generated task overview and encrypted full recovery
+records after the native API-only appliance deployment passed. The remaining
+Claude/MCP deployment correction stays in progress, and full AIOps functional
+acceptance still gates the next physical reinstall. Broad helper cleanup
+requires joint review with the owner. Both existing mirror freshness checks
+passed; no tracker authority, encryption key, deployment or architecture changes.
+
 ## Align both AAP content pushes at the content section — 2026-11-14
 
 Implementation `f95ff2168e1d0000b23687772393969c1d37047e` (0.63.32) applies the

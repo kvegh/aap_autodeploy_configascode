@@ -447,7 +447,8 @@ waste. These reports propose improvements without changing runtime settings.
 
 Queued cleanup `bead-wd-72f.34` replaces unnecessary standalone helpers, custom
 plugins/modules, embedded scripts and custom server-side state files across the
-related demos. The bounded source inventory `bead-wd-72f.34.1` is complete;
+related demos and requires joint review with the owner before changes. The
+bounded source inventory `bead-wd-72f.34.1` is complete;
 the firewall portion is already in progress separately. Use readable Ansible and certified collections
 or vendor roles. Keep desired configuration, ownership and validation in existing
 encrypted project CaC, separated by instance, and migrate consumers before
@@ -468,6 +469,9 @@ their history remains in Beads and the encrypted recovery export. Their owning
 chats track subsequent implementation.
 
 The generated overview and protected export reflect the current Beads records.
+They include completed API-only Zabbix deployment and the current Claude/MCP
+deployment correction. Full AIOps functional acceptance remains outstanding;
+the next physical reinstall is still gated by it.
 The source Core 2.20 runtime passed an authenticated forced image pull, normal
 preflight and zero-error CaC preview. The approved physical reinstall then passed
 provider host-key matching and strict authenticated OS, machine-ID and hardware

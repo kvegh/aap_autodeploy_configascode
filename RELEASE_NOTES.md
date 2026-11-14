@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.36
+
+Document the current task checkpoint after API-only Zabbix deployment and the
+Claude/MCP validation correction. The generated overview and encrypted full
+records passed their existing freshness checks. Preserve joint owner review
+for broad helper cleanup and the AIOps acceptance gate before reinstalling.
+This bookkeeping does not launch or establish a new deployment result.
+
 ## 0.63.35
 
 Document the README screenshot implementation `722f575`

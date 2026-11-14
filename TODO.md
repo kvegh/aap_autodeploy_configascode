@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-216 tasks: 32 outstanding; 184 closed.
+218 tasks: 32 outstanding; 186 closed.
 
 ## Outstanding tasks
 
@@ -32,7 +32,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | open | P1 | feature | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | open | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.7 | Deploy and functionally verify AIOps on v20 | in_progress | P1 | task | bead-wd-3ix.1.23, bead-wd-72f.31.2 |
-| bead-wd-72f.31.2.7.4 | Remove every SSH dependency from the Zabbix appliance deployment | in_progress | P1 | bug | bead-wd-72f.31.2.7 |
+| bead-wd-72f.31.2.7.5 | Diagnose and fix the v20 Claude and MCP deployment failure | in_progress | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.42 | Complete CaC and scanner coverage across AAP components | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | open | P1 | task | bead-wd-mcr.1 |
@@ -119,6 +119,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2.7.1 | Use the Core 2.20-compatible dependency for Linux guest publication | closed | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.31.2.7.2 | Diagnose website runtime validation before AIOps deployment | closed | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.31.2.7.3 | Render generated AIOps CaC projections on Core 2.20 | closed | P1 | bug | bead-wd-72f.31.2.7 |
+| bead-wd-72f.31.2.7.4 | Remove every SSH dependency from the Zabbix appliance deployment | closed | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.31.3 | Prepare and verify Assistant Team on the selected test environment | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | closed | P1 | task | bead-wd-72f.31.4 |
@@ -221,6 +222,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-j2wh | Unify receiving AAP component widths and spacing | closed | P2 | task | — |
 | bead-wd-jjzm | Build the new two-instance AAP CaC visualization | closed | P2 | feature | — |
 | bead-wd-kb27 | Refresh saved task lists and encrypted recovery backup | closed | P2 | task | — |
+| bead-wd-l725 | Align both AAP content push arrows at the same height | closed | P2 | bug | — |
 | bead-wd-msyw | Research professional sysadmin illustration ideas | closed | P2 | task | — |
 | bead-wd-nsjo | Illustrate a professional seated Linux sysadmin | closed | P2 | task | — |
 | bead-wd-opqw | Use Jinja variables for mockup VM inputs | closed | P2 | task | — |
