@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.15
+
+Document the three purple push captions from `4d3974d` (0.63.14), successful
+Pages deployment and 23 passing checks against six matching published assets.
+
 ## 0.63.14
 
 Rename the purple-stage arrow captions to “Push OS changes”, “Push AAP config

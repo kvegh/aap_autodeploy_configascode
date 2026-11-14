@@ -4977,3 +4977,15 @@ metadata. All 23 walkthrough checks passed after integration. Pages run
 passed against them, including absence of secondary-label markup and rendering
 references. Browser geometry was not measured. Version 0.63.13 documents this
 result without changing deployed assets.
+
+
+## 2026-11-14 — Name purple pushes by their configuration layer
+
+Implementation `4d3974df5808262dbc20d9ea6d06d8620557485c` (0.63.14)
+uses the owner-requested purple-stage arrow captions: “Push OS changes”,
+“Push AAP config changes” and “Push AAP content changes”. Existing expectations
+and README use the same labels. Blue-stage captions, chapter names, routing and
+the deletion of underneath-arrow text are preserved.
+All 23 local and downloaded deployed-asset checks passed. Pages run
+`43560037080` succeeded, with all six public assets matching the implementation.
+Browser geometry was not measured. Version 0.63.15 documents this result only.
