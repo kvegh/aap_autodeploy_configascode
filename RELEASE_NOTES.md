@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.23
+
+Document the distinct blue configuration/content captions from `3ce55f2`
+(0.63.22), successful Pages publication and all 23 passing deployed-asset checks.
+
 ## 0.63.22
 
 Correct the blue base-content arrow to “Push AAP content”, keeping the preceding

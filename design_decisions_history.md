@@ -1,5 +1,17 @@
 # Design decisions history
 
+## Distinguish AAP configuration from AAP content pushes — 2026-11-14
+
+Implementation `3ce55f2734cfd94921adb7e1cb80a122a56ab982` (0.63.22) labels the
+blue AAP-settings action “Push AAP config” and the following base-content action
+“Push AAP content”. Distinct captions identify what each stage sends. The purple
+change captions and responsive content-arrow placement remain unchanged.
+
+All 23 existing walkthrough checks, JavaScript syntax and whitespace checks
+passed. Pages run `43562549560` published the implementation successfully; all six
+published assets matched the checkout and all 23 deployed-asset checks passed.
+The interaction checks use a simulated DOM; browser layout was not measured.
+
 ## Combine scanner and CoP capabilities — 2026-11-14
 
 The owner explicitly corrected the extension approach: take the union of the
