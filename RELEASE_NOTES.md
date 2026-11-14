@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.63.54
+
+Retry only a failed job-local private Hactar Git read twice before the existing
+exact-SHA guard and policy lock. Retain source/authentication/TLS/logging inputs
+and fail before policy or VM work if all three reads fail. No launch or mutation
+retry. Four native control-flow cases and the existing real local Git
+authentication/cleanup regression passed on Core 2.20.10 and 2.21.5. The original
+incomplete-transfer cause is not claimed fixed. Current stage recoveries and
+downstream caller qualification remain distinct from clean-run acceptance.
+
 ## 0.63.53
 
 Document verified Windows and AIOps imports, actual successful selector child-ID

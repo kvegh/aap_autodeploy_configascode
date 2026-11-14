@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-230 tasks: 29 outstanding; 201 closed.
+233 tasks: 32 outstanding; 201 closed.
 
 ## Outstanding tasks
 
@@ -23,6 +23,9 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2 | Achieve one clean &#91;HOST&#93; installation with tested Windows and AIOps | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-72f.31.2.7 |
 | bead-wd-3ix.2.4 | Run Windows and AIOps demos on v21 | in_progress | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.3 |
 | bead-wd-3ix.2.4.1 | Deploy and verify the current Windows demonstration | in_progress | P1 | task | bead-wd-3ix.2.4 |
+| bead-wd-3ix.2.4.1.2 | Verify focused recovery after AD evaluation activation reported failure | in_progress | P1 | bug | bead-wd-3ix.2.4.1 |
+| bead-wd-3ix.2.4.1.3 | Recover isolated private Git read failure before internal repository creation | in_progress | P1 | bug | bead-wd-3ix.2.4.1 |
+| bead-wd-3ix.2.4.1.3.1 | Retry incomplete private source reads before policy changes | in_progress | P1 | bug | bead-wd-3ix.2.4.1.3 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
@@ -31,7 +34,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | deferred | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | deferred | P1 | task | bead-wd-72f |
 | bead-wd-72f.42 | Complete CaC and scanner coverage across AAP components | deferred | P1 | feature | bead-wd-72f |
-| bead-wd-87w5.12 | Move generic RHEL VM deployment into umbrella and expose shared AAP base job | in_progress | P1 | task | bead-wd-87w5 |
+| bead-wd-87w5.12 | Move generic RHEL VM deployment into umbrella and expose shared AAP base job | blocked | P1 | task | bead-wd-87w5 |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | open | P1 | task | bead-wd-mcr.1 |
 | bead-wd-1rl.40.6 | Add separate CCNG infrastructure playbook and CaC job | deferred | P2 | task | bead-wd-1rl.40 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |

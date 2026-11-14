@@ -34,8 +34,10 @@ jobs remain part of this candidate's record. Both workloads and demonstrations
 still require execution. Windows launch preflight found a required protected
 Chocolatey survey answer missing from captured node data; its encrypted fix is
 published, applied through the normal configuration importer and verified by
-actual node/launch readback. The existing Windows workflow is now running; its
-functional result remains pending.
+actual node/launch readback. The Windows workflow then failed on AD activation
+and an incomplete private Git transfer. Focused stage recoveries created all five
+guests; server basics and AD updates continue. Original failures remain recorded,
+and functional acceptance is still pending.
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
@@ -340,6 +342,19 @@ Deleting the source tuple/owner first can leave an unattributable ordinary rule:
 stop for manual reconciliation, not a broad purge. Plain omission still removes
 effective nft access, but does not prove physical ordinary-rule cleanup. See
 [decommission ordering](docs/decommission.md#retire-only-the-selected-guests-permissions).
+
+The job-local private Hactar source read retries a failed transfer twice, for at
+most three reads with a three-second delay. A real preparation stopped on Git
+`early EOF`/invalid pack output; the same pinned read then succeeded in a focused
+recovery. The underlying transfer interruption remains unexplained. The native
+read retry keeps the same exact revision, scoped authentication, TLS verification,
+redirect restriction and protected logging. Every successful read still passes
+the existing exact-SHA assertion before lock acquisition or policy/VM work.
+Persistent read failure stops there; no job launch or mutation is retried by this
+change. Native Core 2.20.10 and 2.21.5 fixtures verify all three attempts, early
+success, wrong-SHA rejection and protected canaries. Existing real local Git
+authentication/cleanup checks also pass. Pinned downstream callers need the
+qualified source revision before they consume this change.
 
 Separate AAP jobs serialize their native checks, firewall changes and rollback
 using atomic `mkdir` of `/run/hactar-recovery-policy.lock`, with five one-second
