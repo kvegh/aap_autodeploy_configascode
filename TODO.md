@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-219 tasks: 30 outstanding; 189 closed.
+219 tasks: 29 outstanding; 190 closed.
 
 ## Outstanding tasks
 
@@ -21,8 +21,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1 | Complete Core 2.20 migration and rebuild bare metal for v20 | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.2 | Reinstall &#91;HOST&#93; and prove both demos on v21 after v20 acceptance | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-72f.31.2.7 |
-| bead-wd-3ix.2.1 | Retire v20 configuration and DNS after both demo tests | in_progress | P1 | task | bead-wd-3ix.1.23, bead-wd-3ix.2, bead-wd-72f.31.2.7 |
-| bead-wd-3ix.2.2 | Reinstall only the verified &#91;HOST&#93; replacement server for v21 | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.1 |
+| bead-wd-3ix.2.2 | Reinstall only the verified &#91;HOST&#93; replacement server for v21 | blocked | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.1 |
 | bead-wd-3ix.2.3 | Deploy AAP v21 and import Windows and AIOps projects | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.2 |
 | bead-wd-3ix.2.4 | Run Windows and AIOps demos on v21 | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.3 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
@@ -83,6 +82,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1.7 | Prepare VM isolation after host-only recovery before AAP creation | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.8 | Derive first AAP installation protection from canonical base CaC | closed | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.1.9 | Resolve Let’s Encrypt registration consent for rebuilt test host | closed | P1 | task | bead-wd-3ix.1 |
+| bead-wd-3ix.2.1 | Retire v20 configuration and DNS after both demo tests | closed | P1 | task | bead-wd-3ix.1.23, bead-wd-3ix.2, bead-wd-72f.31.2.7 |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
 | bead-wd-72f.1 | Split per-repository CaC Vault credentials and rename all CaC Git readers | closed | P1 | feature | bead-wd-72f |

@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.63.39
+
+Document verified retirement of the accepted demonstration's active private
+configuration, Source inventory/selectors/token entry and three DNS record
+groups, preserving unrelated records and counters. Refresh task recovery
+records with successful replacement-host discovery and hardware/ownership
+checks. The existing Drive restore API is rate limited, so no server reset or
+fresh installation is claimed. Preserve deferred work and the requirement for
+one uninterrupted installation and both demonstrations without a failed stage.
+
 ## 0.63.38
 
 Document the successful original complete Claude recovery after the owner's

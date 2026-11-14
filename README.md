@@ -473,9 +473,11 @@ They include completed API-only Zabbix and Claude/MCP deployment, the verified
 website recovery loop and the original full Claude investigation, automatic
 agent repair, verification and report. The owner-directed turn-cap removal
 passed the live retry; earlier failures remain historical evidence. No
-verification handoff was applied. Both v20 demo gates are complete, and selected
-v20 configuration/DNS retirement is active before the authorized replacement-host
-reinstall. A fresh uninterrupted installation and both demos remain required.
+verification handoff was applied. Both v20 demo gates and selected active
+configuration/DNS retirement are verified. Replacement-host discovery and
+hardware preflight passed. Reinstall remains held while the existing Drive
+restore path returns a provider rate-limit error. A fresh uninterrupted
+installation and both demos remain required; no new user decision is established.
 The source Core 2.20 runtime passed an authenticated forced image pull, normal
 preflight and zero-error CaC preview. The approved physical reinstall then passed
 provider host-key matching and strict authenticated OS, machine-ID and hardware

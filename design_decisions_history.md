@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Retire accepted external configuration and preserve restore readiness — 2026-11-14
+
+After both demonstration gates passed, exact existing ownership helpers and
+typed inverse/Vault checks prepared the selected active-record retirement.
+Private implementations `7794385` (central), `02add2f` (Orchestrator),
+`ca75e48` (Windows) and `d969677` (AIOps) are published with their respective
+decision histories. Source API readback verified the intended inventory,
+selector and canonical token-store changes. Complete DNS readback verified
+exactly three selected groups removed and every other record preserved.
+No individual guest teardown was performed before the planned whole-host wipe.
+
+Normal provider discovery succeeded, and independent native hardware, domain
+ownership and transfer checks passed. The saved catalog includes the clean
+Linux source used by both accepted application guests. Fresh Drive restore
+metadata access returned an explicit API rate limit on two bounded reads, so
+reinstallation remains blocked by that external dependency, with no new user
+decision established. Historical backup verification is preserved without
+claiming current provider access. Hactar implementation `54d5def` aligns its
+older saved inventory-policy cache with the already agreeing canonical and
+live Source records, without applying a host firewall; the updated protected
+input also passed native loading in the existing Core 2.20.10 image. The fresh uninterrupted
+installation and both demonstration runs remain unverified.
+
 ## Follow the owner's removal of the unrequested turn cap — 2026-11-14
 
 The owner confirmed that the agent turn limit was not their decision and
