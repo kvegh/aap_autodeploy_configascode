@@ -456,7 +456,7 @@ class InstanceKeyTests(unittest.TestCase):
                          [("fixture-hypervisor", "Shared"), ("other-v08", "Shared"), (context["route"]["vm_name"], "Other")])
         self.assertEqual(retired_shared["host_inventory_configuration"]["groups"][0]["hosts"], ["other-v08"])
         self.assertEqual(retired_shared["host_inventory_configuration"]["groups"][1], shared["host_inventory_configuration"]["groups"][1])
-        self.assertTrue(getattr(hosts[0]["variables"], "__UNSAFE__", False))
+        self.assertTrue(vault_yaml.literal_template(hosts[0]["variables"]))
         values = keys.inventory_variables(hosts[0])
         self.assertEqual(values["isolation_policy"], transition["desired_policy"])
         self.assertEqual(values["hactar_isolation_policy"], transition["desired_policy"])
@@ -715,7 +715,7 @@ class InstanceKeyTests(unittest.TestCase):
         updated = keys.merge_inventory(configuration, route["vm_name"], route, {})
         restored = AnsibleLoader(yaml.dump(updated, Dumper=vault_yaml.VaultDumper).encode()).get_single_data()
         row = restored["host_inventory_configuration"]["hosts"][0]
-        self.assertTrue(getattr(row["variables"], "__UNSAFE__", False))
+        self.assertTrue(vault_yaml.literal_template(row["variables"]))
         self.assertEqual(keys.inventory_variables(row)["ansible_python_interpreter"],
                          "{{ ansible_playbook_python }}")
         self.assertEqual(keys.merge_inventory(restored, route["vm_name"], route, {}), restored)

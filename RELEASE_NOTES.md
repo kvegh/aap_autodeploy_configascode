@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.56
+
+Use the existing literal-template predicate in two instance-ownership assertions
+instead of the legacy `__UNSAFE__` marker removed by Core 2.20. Production code is
+unchanged. Old/new native comparison and two real Vault roundtrips establish
+preserved literal protection. All 22 instance-key checks and 34 protected-YAML,
+Windows lifecycle and supplemental-interface checks pass on Core 2.20.10.
+
 ## 0.63.55
 
 Document implementation `ad39bbe`, the observed incomplete private Git transfer,

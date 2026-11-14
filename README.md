@@ -356,6 +356,14 @@ success, wrong-SHA rejection and protected canaries. Existing real local Git
 authentication/cleanup checks also pass. Pinned downstream callers need the
 qualified source revision before they consume this change.
 
+Native Core 2.20 instance-ownership checks use the existing literal-template
+predicate rather than the removed legacy `__UNSAFE__` marker. Old and current
+pins reproduce the same obsolete marker assertions. Two encrypted roundtrips
+and actual templating preserve literal JSON while evaluating an ordinary trusted
+control. Only the two test assertions changed; production serialization and
+ownership logic are unchanged. The corrected 22 instance-key tests and 34
+protected-YAML/Windows-lifecycle/supplemental-interface checks pass on Core 2.20.10.
+
 Separate AAP jobs serialize their native checks, firewall changes and rollback
 using atomic `mkdir` of `/run/hactar-recovery-policy.lock`, with five one-second
 retries by default. A caller whose concurrent jobs share a longer transaction
