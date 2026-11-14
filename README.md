@@ -474,11 +474,15 @@ website recovery loop and the original full Claude investigation, automatic
 agent repair, verification and report. The owner-directed turn-cap removal
 passed the live retry; earlier failures remain historical evidence. No
 verification handoff was applied. Both v20 demo gates and selected active
-configuration/DNS retirement are verified. Replacement-host discovery and
-hardware preflight passed. Reinstall remains held while the existing Drive
-restore path returns a provider rate-limit error. A fresh uninterrupted
-installation and both demos remain required; no new user decision is established.
-The source Core 2.20 runtime passed an authenticated forced image pull, normal
+configuration/DNS retirement are verified. Fresh off-host image/artifact metadata
+and encrypted-manifest access passed after the provider rate limit cleared.
+The single authorized replacement reinstall passed provider fingerprint matching,
+strict authenticated operating-system and hardware checks, and empty guest-directory
+checks. Existing encrypted trust records and Controller aliases are refreshed
+and published; conversion and host setup are running through the existing workflow
+with standing legal consent and protected logging. A fresh complete installation
+and both demos remain unverified; no new user decision is established.
+In the earlier Core 2.20 migration, the source runtime passed an authenticated forced image pull, normal
 preflight and zero-error CaC preview. The approved physical reinstall then passed
 provider host-key matching and strict authenticated OS, machine-ID and hardware
 checks. Encrypted trust and existing deployment source pins contain that verified

@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Record verified reinstall and the running host workflow — 2026-11-14
+
+Actual fresh off-host metadata and encrypted-manifest access passed after the
+external rate limit cleared. One guarded provider request reinstalled the
+selected replacement. Native ready status matched all three SSH keys to the
+provider fingerprints; a strict authenticated read verified a new Rocky Linux 9
+identity, unchanged hardware pins and empty guest directories. Historical
+not-ready observations and prior demo failures are preserved.
+
+Existing encrypted trust updates are Hactar implementation `48504f7`, documented
+and published at `6314823`, and central implementation `50e90f9`, documented and
+published at `fe91bd5`. Typed inverse, Vault-header/roundtrip and cached Core
+2.20.10 loading checks passed; two existing Controller aliases agree. A native
+readback normalization check was reconciled without a duplicate provider request.
+The existing conversion/host workflow is running with standing Red Hat consent
+and protected logging. This documentation/task-record checkpoint introduces no
+new deployment architecture, permission, dependency or unverified completion.
+
 ## Retire accepted external configuration and preserve restore readiness — 2026-11-14
 
 After both demonstration gates passed, exact existing ownership helpers and

@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.40
+
+Record recovered off-host restore access and the successful single replacement
+reinstall, provider fingerprint matching and authenticated fresh operating-system,
+hardware and empty-guest checks. The five existing encrypted trust inputs and two
+Controller aliases are verified and published. Refresh task recovery records for
+the running conversion/host workflow with standing consent and protected logging.
+Complete fresh platform deployment and both demonstrations remain unverified.
+
 ## 0.63.39
 
 Document verified retirement of the accepted demonstration's active private
