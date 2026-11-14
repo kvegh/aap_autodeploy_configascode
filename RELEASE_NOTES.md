@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.14
+
+Rename the purple-stage arrow captions to “Push OS changes”, “Push AAP config
+changes” and “Push AAP content changes”.
+
 ## 0.63.13
 
 Document underneath-arrow text deletion in `00f843a` (0.63.12), preserved

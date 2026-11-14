@@ -556,9 +556,9 @@ test('active routes remain visible and deployment actions name the current stage
     ['installation', 'Install AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['base-aap', 'Push AAP config', ['flow-config', 'flow-code', 'flow-apply']],
     ['base', 'Apply content', ['flow-config', 'flow-code', 'flow-apply']],
-    ['infra-change', 'Apply infra', ['flow-config', 'flow-code', 'flow-apply']],
-    ['git-change', 'Apply changes', ['flow-config', 'flow-code', 'flow-apply']],
-    ['project', 'Apply objects', ['flow-config', 'flow-code', 'flow-apply']],
+    ['infra-change', 'Push OS changes', ['flow-config', 'flow-code', 'flow-apply']],
+    ['git-change', 'Push AAP config changes', ['flow-config', 'flow-code', 'flow-apply']],
+    ['project', 'Push AAP content changes', ['flow-config', 'flow-code', 'flow-apply']],
     ['manual', null, []],
     ['capture', null, ['flow-scan', 'flow-return']],
     ['next-aap', null, []],
@@ -931,7 +931,7 @@ test('infrastructure configuration updates certificates while retaining firewall
   }
   page.hash('#infra-change');
   assert.equal(nodes['job-label'].textContent, 'Apply infrastructure configuration');
-  assert.equal(nodes['apply-caption'].textContent, 'Apply infra');
+  assert.equal(nodes['apply-caption'].textContent, 'Push OS changes');
   const highlighted = withClass(nodes['config-lines'], 'line-active');
   assert.ok(highlighted.some(line => /Certificate config v2/.test(line.textContent)), 'The updated certificate definition is highlighted');
   for (const line of highlighted) assert.equal(line.dataset.origin, 'git');
