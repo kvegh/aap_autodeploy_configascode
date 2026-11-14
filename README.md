@@ -308,7 +308,10 @@ role with matching private inputs; a later certificate update highlights only it
 section. Travelling blocks use the same light fills as their configuration objects.
 Each step scrolls both panes to the matching section and colours only
 the active definitions/code, while all other sections remain available.
-The AAP-settings arrow reads “Push AAP config”.
+The AAP-settings arrow reads “Push AAP config”. Arrows show only their action captions
+above the line; destination subtitles and ACTIVE text underneath are deleted.
+Purple change arrows read “Push OS changes”, “Push AAP config changes”, and
+“Push AAP content changes”, in that order.
 
 The [decision history](design_decisions_history.md) records the original
 component-width and project-import choices separately from later layout fixes
@@ -1291,6 +1294,12 @@ existing secrets on retries. Missing auxiliary VMs stay absent and disabled;
 their actual ownership comes only from existing native deployment evidence.
 Native inventory SSH ports may be decimal text; preparation normalizes that
 representation before applying the same strict hypervisor pin validation.
+Preparation marks its generated monitoring importer, firewall-owner and policy
+projections as templates for Core 2.20. They render into native configuration
+before AAP saves inventory variables; literal runtime and credential values
+retain their data semantics.
+The writer also detects changes between literal data and executable templates,
+including when the underlying text is unchanged.
 Application deployment and successor-environment acceptance remain separate.
 
 Normal preparation job 3320 succeeded on published revision `5728dfe` (0.41.1)

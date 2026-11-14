@@ -149,6 +149,18 @@ The importer does not invent Vertex ADC, account or project settings. Prepare
 provider inputs only from an operator-approved source for the selected demo;
 storing a value does not itself authorize additional provider or model activity.
 
+Core 2.20 requires explicit template trust for code-generated expressions. The
+existing preparer marks only its generated importer binding, firewall-owner
+projection and reviewed policy rewrite accordingly. These resolve to native
+configuration before inventory publication. Credential text and unrelated
+literal values are not granted template trust. The projection regression also
+serializes and reloads the prepared capture through the existing preserving YAML
+codec, verifying that native mappings and literal values survive publication.
+Publication compares literal-template paths as well as values, so correcting a
+previously literal projection is saved even when its text stays identical. An
+encrypted Git regression verifies that upgrade without changing runtime
+ciphertext or unrelated literal data.
+
 Local tests use synthetic API responses and real local encrypted Git repositories,
 including concurrent writers, lost acknowledgements, different Vault keys,
 native Ansible rendering in both modes, refusal cases and literal preservation:

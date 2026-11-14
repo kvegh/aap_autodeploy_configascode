@@ -1,19 +1,53 @@
 # Release notes
 
+## 0.63.16
+
+Integrate the protected import authentication diagnostic from f3deca3.
+The URI request and response remain hidden; failures expose only a numeric
+HTTP status and fixed authorization/TLS/DNS/network/timeout category. TLS,
+redirect refusal and credential selection remain unchanged. Nine native
+Core 2.20.10 canary cases and offline production lint passed. Concurrent
+published work is preserved. Live diagnosis and acceptance remain separate.
+
+## 0.63.15
+
+Document the three purple push captions from `4d3974d` (0.63.14), successful
+Pages deployment and 23 passing checks against six matching published assets.
+
+## 0.63.14
+
+Rename the purple-stage arrow captions to “Push OS changes”, “Push AAP config
+changes” and “Push AAP content changes”.
+
+## 0.63.13
+
+Document underneath-arrow text deletion in `00f843a` (0.63.12), preserved
+concurrent changes, successful Pages publication and all 23 passing checks
+against six matching deployed assets.
+
+## 0.63.12
+
+Delete underneath-arrow ACTIVE cues and destination subtitles from all six
+arrows, together with their presenter writes and unused styles. Preserve action
+captions above arrows, packet colours, route activity and animation.
+
 ## 0.63.11
 
-Document secret-safe authentication diagnostic implementation `f3deca3` (0.63.10)
-and its nine native Core 2.20.10 cases with protected-output canary checks.
-Offline production lint passed. A live diagnostic rerun remains separate.
+Document generated-monitoring projection and publication fixes from `e74b38ac09c78a04581c68cbf0f78a7bfd6c33b1`
+(0.63.10), with four passing focused native Core 2.20 regressions and explicit
+broader-suite limitations. Live configuration refresh remains pending.
 
 ## 0.63.10
 
-Report only a numeric HTTP status and fixed error category when the shared
-importer's protected HTTPS authentication probe fails. Bearer, request and
-response details remain hidden; TLS verification and redirect refusal stay
-enabled. Nine synthetic result cases passed in Core 2.20.10 with verbose-output
-canary checks; the changed task passed offline production lint. This adds
-diagnostic evidence and does not establish the cause of a live connection failure.
+Render the AIOps preparer's generated monitoring importer, firewall-owner and
+reviewed policy projections on Core 2.20 before inventory publication. Preserve
+literal runtime and credential values. Publish changes to literal-template
+meaning even when the text is unchanged, preserving runtime ciphertext. Four
+focused native tests pass, including encrypted Git/YAML publication/reload and
+unchanged importer/guest identity refusals. The
+pre-existing broader suite has proxy-type assertions and synthetic publication
+fixtures that fail on Core 2.20; no complete-suite pass is claimed. Actual
+configuration refresh and monitoring deployment remain separate verification.
 
 ## 0.63.9
 

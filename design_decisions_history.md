@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Render and publish generated monitoring projections on Core 2.20 — 2026-11-14
+
+Implementation `e74b38ac09c78a04581c68cbf0f78a7bfd6c33b1` (0.63.10) gives the existing AIOps preparer's
+code-generated importer and firewall-owner expressions, and its reviewed policy
+rewrite, explicit template trust. Core 2.20 otherwise retains newly constructed
+strings as data, leaving an unevaluated expression in published inventory where
+Zabbix deployment requires a native mapping. Runtime credentials and unrelated
+literal input remain data; target, ownership and source guards are retained.
+
+The existing writer now compares literal-template paths as well as values. This
+ensures a correction to template meaning is published even when its text has not
+changed. A real local encrypted-Git regression failed on the old equality-only
+writer and passed with the correction, preserving runtime ciphertext and
+unrelated literal values. Three additional focused Core 2.20 tests passed for
+rendering through YAML serialization/reload and existing importer/guest identity
+refusals. The broader baseline suite already had obsolete proxy-type assertions
+and synthetic publication fixture failures; a full-suite pass is not claimed.
+Normal selected-instance CaC refresh and live monitoring acceptance remain
+separate operations; no new wrapper, job, credential type or secret store was
+added by this fix.
+
 ## Remove the duplicate RHEL action and stabilize navigation — 2026-11-13
 
 Implementation `38a61b5dded16553d21588cb35c04b27130057a8` (source 0.62.4)
@@ -4939,23 +4960,52 @@ All 23 local and downloaded deployed-asset checks passed. Pages run
 `43557407229` succeeded and all six public assets matched the implementation.
 Browser geometry was not measured. Version 0.63.9 documents this result only.
 
-## 2026-11-14 — Explain protected import authentication failures safely
 
-Implementation `f3deca3d33fdb89f44107a9c6092dd813b3c786e` (0.63.10)
-retains the importer's protected URI result and reports only a numeric HTTP
-status and fixed failure category. This makes an execution-side authentication
-failure diagnosable while keeping bearer, URL, response and raw exception
-details hidden. TLS verification, redirect refusal and the existing credential
-selection remain unchanged. It adds no importer or authentication fallback.
+## 2026-11-14 — Delete all underneath-arrow text
 
-Nine synthetic success/HTTP/TLS/DNS/network/timeout cases passed in the unchanged
-cached official Core 2.20.10 image with networking disabled. Verbose-output
-canaries remained hidden when fixture results were loaded separately from
-executable YAML, matching production's protected runtime values. The test fixture
-uses the project's native YAML/trust handling. Offline production lint reported
-no findings for the changed authentication task. A live diagnostic rerun remains
-necessary; these checks do not establish a live connection failure's cause.
+Implementation `00f843a920da67807d9d6ad49840773b96c6fa4a` (0.63.12)
+deletes ACTIVE cues from all six arrows and the New VM/New AAP, Scan job and
+Another AAP subtitles. Their HTML, presenter write and unused CSS are removed
+rather than hidden. Action captions above the arrows, card titles, travelling
+blocks and route activity remain. The change follows the owner's explicit
+request to remove the secondary text everywhere.
 
-Concurrent unrelated caption documentation was preserved during the unpublished
-commit's rebase, with the next unused patch version assigned. Version 0.63.11
-documents this implementation.
+A normal push encountered concurrent source changes. The visual commit was
+rebased onto them, preserving both updates and reconciling only version/release
+metadata. All 23 walkthrough checks passed after integration. Pages run
+`43558753956` succeeded; all six deployed assets matched and the same 23 checks
+passed against them, including absence of secondary-label markup and rendering
+references. Browser geometry was not measured. Version 0.63.13 documents this
+result without changing deployed assets.
+
+
+## 2026-11-14 — Name purple pushes by their configuration layer
+
+Implementation `4d3974df5808262dbc20d9ea6d06d8620557485c` (0.63.14)
+uses the owner-requested purple-stage arrow captions: “Push OS changes”,
+“Push AAP config changes” and “Push AAP content changes”. Existing expectations
+and README use the same labels. Blue-stage captions, chapter names, routing and
+the deletion of underneath-arrow text are preserved.
+All 23 local and downloaded deployed-asset checks passed. Pages run
+`43560037080` succeeded, with all six public assets matching the implementation.
+Browser geometry was not measured. Version 0.63.15 documents this result only.
+
+
+## 2026-11-14 — Integrate secret-safe importer authentication diagnostics
+
+Implementation `f3deca3d33fdb89f44107a9c6092dd813b3c786e` adds a protected URI
+result and a separate fail-closed assertion exposing only a numeric HTTP
+status and fixed error category. Bearer, URL, raw response and exception
+details stay hidden. Existing TLS, redirect and credential-source rules
+are preserved; no importer or authentication fallback is introduced.
+
+Nine synthetic success/HTTP/TLS/DNS/network/timeout cases passed in the
+unchanged cached official Core 2.20.10 image with networking disabled.
+Verbose-output canaries remained hidden with protected fixture values
+separate from executable YAML. Offline production lint passed.
+
+Version 0.63.16 integrates the diagnostic and its existing implementation
+commit with concurrent published documentation and AIOps-rendering work.
+Only the tested diagnostic, its test and explanatory documentation differ
+from the upstream branch; other published work remains intact. A live
+diagnostic rerun is still needed to identify the actual connection cause.
