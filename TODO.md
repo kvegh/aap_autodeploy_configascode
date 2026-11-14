@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-216 tasks: 33 outstanding; 183 closed.
+216 tasks: 32 outstanding; 184 closed.
 
 ## Outstanding tasks
 
@@ -43,7 +43,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.12 | Track Command Center and MCP DNS and nginx configuration in CaC | open | P2 | task | bead-wd-72f.31 |
 | bead-wd-72v | Design complete CaC object ownership beyond labels | open | P2 | feature | — |
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
-| bead-wd-kb27 | Refresh saved task lists and encrypted recovery backup | in_progress | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | open | P2 | task | bead-wd-mcr |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
@@ -221,6 +220,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-j0g.8 | Register RHEL CaC deployment with the shared importer and JT | closed | P2 | feature | bead-wd-j0g |
 | bead-wd-j2wh | Unify receiving AAP component widths and spacing | closed | P2 | task | — |
 | bead-wd-jjzm | Build the new two-instance AAP CaC visualization | closed | P2 | feature | — |
+| bead-wd-kb27 | Refresh saved task lists and encrypted recovery backup | closed | P2 | task | — |
 | bead-wd-msyw | Research professional sysadmin illustration ideas | closed | P2 | task | — |
 | bead-wd-nsjo | Illustrate a professional seated Linux sysadmin | closed | P2 | task | — |
 | bead-wd-opqw | Use Jinja variables for mockup VM inputs | closed | P2 | task | — |

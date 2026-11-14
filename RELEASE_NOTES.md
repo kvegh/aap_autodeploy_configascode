@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.27
+
+Document completion of the saved-task export refresh in the generated overview
+and encrypted recovery checkpoint. Both repositories' existing mirrors passed
+their freshness checks before publication; no deployment state changed.
+
 ## 0.63.26
 
 Document current Beads task states in the generated public overview and refresh
