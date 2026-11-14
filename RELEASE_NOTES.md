@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.63.61
+
+Document the necessary external WSUS observation added to the existing Windows
+readiness template, including protected optional-read behavior and evidence
+limits. Native execution passed with bounded available protected artifacts;
+separate WSUS phase/item counters also advanced. Close the diagnostic task and
+refresh normal mirrors and encrypted records. AutoDeploy runtime is unchanged;
+full synchronization and demonstrations remain unfinished. The newer checkpoint
+also records successful AD preparation and sixteen successful Windows stages;
+domain deployment and functional access checks remain pending.
+
 ## 0.63.60
 
 Document fourteen successful Windows stages, hashed Chocolatey package/export

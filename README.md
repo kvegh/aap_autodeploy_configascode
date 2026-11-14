@@ -39,17 +39,24 @@ and an incomplete private Git transfer. Focused stage recoveries created all fiv
 guests, and server basics passed on all four regular guests. AD updates continue
 with measured servicing activity. The qualified Windows caller update is
 published. Its next normal activation stage adopted the exact reviewed source
-and completed the protected private Git read. At the next checkpoint, all four
-regular Windows activations, repository preparation, WSUS/Chocolatey setup and
-WSUS prerequisite checks had passed. Chocolatey synchronization then produced
-four unique hashed package/version artifacts, bringing the checkpoint to
-fourteen of twenty-nine stages after the package export also passed. The export
-retains archive/manifest SHA-256 values and the exact producer artifact. Its
-normal import and WSUS synchronization were still pending completion. AD had
-rebooted into a newer build with a valid license and no pending reboot; fresh
-workers and logs then proved another servicing pass in the original update call.
-The read-recovery tasks are closed; complete Windows and AIOps demonstrations remain
-unfinished. Original failures remain recorded.
+and completed the protected private Git read. The sixteen-stage checkpoint then
+includes all regular activations, repository preparation, WSUS/Chocolatey setup,
+WSUS prerequisites, the verified Chocolatey synchronization/export/import chain,
+and AD preparation. Four unique packages have matching destination SHA-256
+readbacks. AD preparation installed nine applicable Server updates and verified
+none remaining, no required reboot and removal of inherited public access.
+Domain deployment and its functional checks follow the existing graph; WSUS
+synchronization and the full Windows/AIOps demonstrations remain unfinished.
+Original failures remain recorded.
+
+The external WSUS readiness check now has protected optional worker/log metadata
+using its existing template and credentials (Windows implementation `8cb20fb`,
+documented by `1b16e14`). Unavailable process fields or rotating/missing logs do
+not add readiness failures. Independent review, structural checks and the normal
+native observer passed with bounded available protected data. Its separate WSUS
+API sample also advanced from Categories to Updates with processed items. Service
+CPU and log activity do not establish synchronization completion or payload
+downloads.
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops

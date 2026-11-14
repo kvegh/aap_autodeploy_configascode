@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-233 tasks: 30 outstanding; 203 closed.
+234 tasks: 30 outstanding; 204 closed.
 
 ## Outstanding tasks
 
@@ -96,6 +96,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.4.1.1 | Correct the rejected Windows workflow node prompts | closed | P1 | bug | bead-wd-3ix.2.4.1 |
 | bead-wd-3ix.2.4.1.3 | Recover isolated private Git read failure before internal repository creation | closed | P1 | bug | bead-wd-3ix.2.4.1 |
 | bead-wd-3ix.2.4.1.3.1 | Retry incomplete private source reads before policy changes | closed | P1 | bug | bead-wd-3ix.2.4.1.3 |
+| bead-wd-3ix.2.4.1.4 | Observe external WSUS activity through the existing readiness check | closed | P1 | bug | bead-wd-3ix.2.4.1 |
 | bead-wd-3ix.2.4.2 | Prepare the current AIOps runtime demonstration | closed | P1 | task | bead-wd-3ix.2.4 |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
