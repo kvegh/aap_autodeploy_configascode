@@ -148,7 +148,7 @@
     byId('target-title').textContent = step.stage < 3 ? 'New RHEL VM' : 'New AAP';
     byId('target-state').textContent = step.status;
     const deploymentActions = ['Deploy', 'Create VM', 'Prepare OS', 'Install AAP'];
-    const baseCaptions = { 'base-aap': 'Apply AAP', base: 'Apply content' };
+    const baseCaptions = { 'base-aap': 'Push AAP config', base: 'Apply content' };
     byId('apply-caption').textContent = step.stage < 4 ? deploymentActions[step.stage] : baseCaptions[step.id] || (step.id === 'git-change' ? 'Apply changes' : step.id === 'infra-change' ? 'Apply infra' : 'Apply objects');
     // The base categories arrive independently; later steps keep prior categories.
     byId('flow-apply').dataset.destination = ['infrastructure', 'infra-change'].includes(step.id) ? 'rhel' : 'aap';

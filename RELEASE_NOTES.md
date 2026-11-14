@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.63.8
+
+Rename the AAP configuration arrow caption from “Apply AAP” to “Push AAP config”.
+
 ## 0.63.7
 
 Document RHEL-preview and travelling-block fixes from `77b2d16` (0.63.6).

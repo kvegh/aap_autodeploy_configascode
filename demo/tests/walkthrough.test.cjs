@@ -544,7 +544,7 @@ test('active routes remain visible and deployment actions name the current stage
     ['vm', 'Create VM', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
     ['infrastructure', 'Prepare OS', 'New VM', ['flow-config', 'flow-code', 'flow-apply']],
     ['installation', 'Install AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
-    ['base-aap', 'Apply AAP', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
+    ['base-aap', 'Push AAP config', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['base', 'Apply content', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['infra-change', 'Apply infra', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['git-change', 'Apply changes', 'New AAP', ['flow-config', 'flow-code', 'flow-apply']],
