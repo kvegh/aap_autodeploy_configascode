@@ -143,7 +143,8 @@ class UseCaseSetupTests(unittest.TestCase):
 
     def test_real_launch_argument_rendering_separates_preparation_routes_from_generic_imports(self):
         tasks = yaml.safe_load((ROOT / "tasks/selected-use-case-import.yml").read_text())
-        launch = next(task["ansible.controller.job_launch"] for task in tasks
+        launch_block = next(task["block"] for task in tasks if "block" in task)
+        launch = next(task["ansible.controller.job_launch"] for task in launch_block
                       if "ansible.controller.job_launch" in task)
         organization = "Fixture organization"
 

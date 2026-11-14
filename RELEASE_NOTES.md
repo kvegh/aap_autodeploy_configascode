@@ -1,5 +1,21 @@
 # Release notes
 
+## 0.63.51
+
+Retain a selected configuration job's ID before waiting, without retrying its
+launch after an observation failure. Preserve bounded encrypted diagnostics with
+the existing CaC key and require the same successful child and exact credential
+associations. Native controlled failure capture prevents module error summaries
+from escaping normal logs on Core 2.20; arbitrary raised action exceptions retain
+Core's existing limitation. Focused selector/base fixtures passed thirteen tests
+on Core 2.20.10 and 2.21.5; the existing seventeen setup/credential tests passed
+on Core 2.20.10. Live selector acceptance remains pending.
+
+Correct the fresh-target procedure to import existing AutoDeploy CaC before
+Windows templates that reference its Controller-access credentials. Preserve
+original import and checksum failures; a successful unchanged SCM recovery does
+not explain the intermittent artifact mismatch or establish a clean candidate.
+
 ## 0.63.50
 
 Document successful base configuration, exact published access/inventory and the

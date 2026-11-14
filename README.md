@@ -26,12 +26,26 @@ The current receiving AAP passed installation, base configuration and published
 access checks. Its normal demonstration job passed on the receiving own-Hub
 default execution environment. The new encrypted Windows profile passed native
 Core 2.20 rendering and current identity, network and route checks. Normal
-Windows/AIOps prerequisite preparation and imports have been launched; workload
-deployment and both functional demonstration tests still require verification.
+Windows/AIOps prerequisite preparation passed. The first Windows import exposed
+a missing AutoDeploy CaC prerequisite; applying that existing configuration
+created its two shared Controller-access credentials. Windows import completion,
+AIOps import, workload deployment and both functional demonstration tests still
+require verification. Original failed jobs remain part of this candidate's record.
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
 at that failure; credentials remain protected in its normal logs.
+
+The use-case selector launches each configuration job once and records its actual
+ID before waiting for that same job. A polling error stops the selector without
+launching a replacement. Inspect the recorded child and its encrypted diagnostic
+before retrying: the child may still be running or may have succeeded. Native
+module failures are captured before a generic assertion reports failure, because
+Core 2.20 can otherwise include a module error summary despite `no_log`.
+The internal `changed` result temporarily retains the original failure predicate;
+it is never published as evidence of completion. Final success still requires
+the same child's successful status and exact credential readback. This does not
+change API timeouts or establish a fix for the observed API read timeout itself.
 
 Base configuration and project imports keep CoP asynchronous results in an
 absolute, private directory inside that job's temporary workspace. Launch,
@@ -52,9 +66,14 @@ Start with [RESTART_HERE.md](RESTART_HERE.md) when resuming existing work.
 2. Run the four existing AAP deployment stages in order: create the VM, configure
    infrastructure, install AAP and apply shared base CaC. Use the VM name returned
    by Stage 01 as `aap_instance_key` in Stages 02–04.
-3. Run the existing selected-use-case selector for the chosen AAP inventory
-   entry. It prepares each use case's PAH prerequisites, then imports its CaC.
-   For a standalone import, run the existing Stage 05 preparation first, then
+3. On a fresh target, first use the existing selector to import
+   `aap_autodeploy_configascode` and verify its successful completion. This owns
+   **AAP CaC source reader** and **AAP CaC source CA**, which imported Windows
+   templates require; base CaC's repository credentials do not create them.
+   Then select Windows and AIOps for the same AAP inventory entry. The selector
+   prepares each selection's PAH prerequisites, then imports its CaC.
+   For a standalone import, run the existing Stage 05 preparation first, apply
+   the same AutoDeploy CaC prerequisite where required, then
    supply `aap_instance_key` to the use case's CaC deployment template. Each
    template calls `deploy-cac-project.yml` with its saved `aap_cac_project_id`
    and repository-specific Git/Vault credentials. The inventory FQDN and
@@ -1451,6 +1470,13 @@ Choose the inventory destination; its API bearer is selected automatically; raw
 repository/file inputs and installer-password SSH fallback are removed.
 Prepared target public CA/known-host inputs are required for application trust.
 See the [shared procedure and safeguards](docs/cac-project-import.md).
+
+On a fresh receiving Controller, import AutoDeploy CaC successfully before this
+Windows import. Its existing **AAP CaC source reader** and **AAP CaC source CA**
+credential definitions are required by seven Windows templates. Their absence
+can leave a partial import even when the Windows SCM Project sync succeeds.
+After correcting that prerequisite, rerun the failed configuration import;
+do not repeat successful VM, infrastructure or installation stages.
 
 The vault must set `windows_disconnected_configuration_ready: true` and list its
 required secret variables in `windows_disconnected_required_secret_variables`.

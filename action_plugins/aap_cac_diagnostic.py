@@ -1,4 +1,4 @@
-"""Seal only the initial organization failure with its existing CaC Vault key."""
+"""Seal bounded configuration failures with their existing labelled CaC key."""
 
 import json
 from collections.abc import Mapping
@@ -13,6 +13,7 @@ RESULT_FIELDS = frozenset((
     'msg', 'detail', 'error', 'exception', 'stderr', 'module_stderr',
     'module_stdout', 'stdout', 'rc', 'results_file', 'ansible_job_id',
     'started', 'finished', 'failed', 'unreachable', 'censored', 'results',
+    'id', 'job', 'status', 'failed_when_suppressed_exception',
 ))
 LAUNCH_FIELDS = frozenset(('ansible_job_id', 'results_file', 'started', 'finished', 'failed'))
 EXCLUDED_FIELDS = frozenset(('invocation', 'module_args', 'module_arguments'))
@@ -73,7 +74,10 @@ class ActionModule(ActionBase):
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
         try:
-            if self._task.args:
+            if set(self._task.args) - {'stage'}:
+                raise ValueError()
+            stage = self._task.args.get('stage', 'initial_base_organizations')
+            if stage not in ('initial_base_organizations', 'selected_configuration_job'):
                 raise ValueError()
             context = task_vars or {}
             # Select only the existing explicitly labelled CaC credential. Never
@@ -93,7 +97,7 @@ class ActionModule(ActionBase):
             failed_task = context.get('ansible_failed_task')
             task_name = getattr(failed_task, 'name', None)
             payload = {
-                'stage': 'initial_base_organizations',
+                'stage': stage,
                 'failed_task': scrub(task_name),
                 'async_status': observed,
                 # The role's always cleanup can fail after the original poll.
@@ -106,6 +110,15 @@ class ActionModule(ActionBase):
                     'ansible_playbook_python', 'ansible_python_interpreter')},
                 'discovered_interpreter_python': scrub(context.get('ansible_facts', {}).get('discovered_interpreter_python')),
             }
+            if stage == 'selected_configuration_job':
+                launch = context.get('aap_selected_import_job', {})
+                job_id = launch.get('id') if isinstance(launch, Mapping) else None
+                payload['configuration_job'] = {
+                    'id': job_id if isinstance(job_id, int) and not isinstance(job_id, bool) and job_id > 0 else None,
+                    'selection': scrub(context.get('aap_selected_importer_key')),
+                }
+                payload['launch'] = failure_result(launch)
+                payload['observation'] = failure_result(context.get('aap_selected_import_wait', {}))
             plaintext = json.dumps(payload, sort_keys=True).encode()
             if len(plaintext) > 131072:
                 raise ValueError()
@@ -116,4 +129,4 @@ class ActionModule(ActionBase):
             return result
         except Exception:
             # Exception messages and module results can contain credentials.
-            raise AnsibleActionFail('The protected organization diagnostic could not be encrypted with the existing CaC Vault credential.') from None
+            raise AnsibleActionFail('The protected configuration diagnostic could not be encrypted with the existing CaC Vault credential.') from None

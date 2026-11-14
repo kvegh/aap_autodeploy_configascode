@@ -53,8 +53,13 @@ deployment acceptance remain separate from offline capture validation.
 
 ## Operator procedure
 
-1. Choose the project's configuration Job Template after the destination's base
-   installation is ready.
+1. After the destination's base installation is ready, prepare its PAH content
+   through the existing use-case preparation. On a fresh destination, import
+   `aap_autodeploy_configascode` first and verify completion before Windows or
+   other captures that reference its shared Controller-access credentials.
+   **AAP CaC source reader** and **AAP CaC source CA** belong to that existing
+   AutoDeploy capture. Base repository Git/Vault credentials do not supply them.
+   Then choose the required project's configuration Job Template.
 2. Set `aap_instance_key` to its exact host name in the shared inventory. That
    entry must have `ansible_fqdn`, for example `test-aap.example.invalid`. VM
    placement still uses the inventory's `hypervisor_host` group variable.
@@ -68,6 +73,11 @@ deployment acceptance remain separate from offline capture validation.
    one canonical capture, checks readiness/labels and imports the declared data.
 5. Check the completed job result. Imports create definitions; application
    deployment, functional tests and explicit activation remain separate actions.
+
+If an import fails, inspect its actual child job and receiving Project sync before
+retrying. An observer's API timeout does not establish that the child stopped.
+Recover only the failed configuration stage after its prerequisites are ready;
+retain the original failure and verify all declared resources after recovery.
 
 The destination may be the same AAP that launches the job. The standalone
 importer has no fresh-instance or different-controller requirement. The optional
