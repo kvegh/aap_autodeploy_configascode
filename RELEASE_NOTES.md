@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.17
+
+Document the configuration-model research decision and source commit
+`e032374681d6145efae5b828e0891458eaf80345` (0.63.16). Preserve the distinction
+between verified research, existing CoP capabilities and unfinished scanner
+implementation. No deployment or dependency changes.
+
 ## 0.63.16
 
 Document authoritative component configuration models, observed API schema

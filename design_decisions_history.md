@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Assess configuration coverage against component models — 2026-11-14
+
+Documentation `e032374681d6145efae5b828e0891458eaf80345` (0.63.16) identifies the
+deployed component APIs, OpenAPI documents, collection arguments and installation
+definitions as the available sources for AAP configuration models. Read-only
+discovery showed that the gateway's schema describes gateway resources rather
+than every backend routed through it. A single complete portable model was not
+verified, so an accessible API or exported file is insufficient evidence of
+complete configuration coverage.
+
+The CoP exporter already supports several Controller features refused by this
+project's current extractor. Its supported-object scope, export selections,
+settings overrides and protected secret placeholders must be checked before
+adding replacement serializers. Record unsupported or unreadable fields and
+relationships explicitly; a masked secret cannot prove equality or a rotation.
+The README-linked research guide separates these findings from the unfinished
+all-component scanner and owning-project Git capture. No dependency, API
+permission, deployed setting or scanner behavior changed with this research.
+
 ## Render and publish generated monitoring projections on Core 2.20 — 2026-11-14
 
 Implementation `e74b38ac09c78a04581c68cbf0f78a7bfd6c33b1` (0.63.10) gives the existing AIOps preparer's
