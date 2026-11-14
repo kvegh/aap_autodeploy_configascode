@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.52
+
+Document implementation `6dac362`, the observed API read timeout, native failure
+capture rationale and exact validation limits. Preserve the fresh-target
+AutoDeploy-before-Windows procedure and original failed-run evidence.
+
 ## 0.63.51
 
 Retain a selected configuration job's ID before waiting, without retrying its

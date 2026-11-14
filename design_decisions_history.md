@@ -1,5 +1,33 @@
 # Design decisions history
 
+## Retain configuration job identity before waiting — 2026-11-14
+
+Implementation: `6dac362` (working version 0.63.51).
+
+A selected-use-case parent failed on an API read timeout while its prerequisite
+child continued and completed successfully. Combining launch and wait hid the
+child's ID until completion. Separate the existing native launch and wait,
+publish the actual ID first, and keep the same-child success and credential
+checks. A failure stops observation without launching a duplicate.
+
+The existing labelled CaC key encrypts bounded selector diagnostics. Native
+fixtures showed that Core 2.20 can expose a failed module's message in an error
+summary despite `no_log`. Capture the original failure predicate in the private
+`changed` result before suppressing that summary, then immediately reject it with
+a generic assertion. Reject retained exceptions, unreachable results, nonzero
+return codes and malformed or mismatched IDs as well. Both Core 2.20.10 and
+2.21.5 passed the focused fixtures, including real synthetic module failures.
+Arbitrary exceptions raised before native conditionals retain Core's existing
+logging limitation. Live SDK acceptance and the underlying read timeout remain
+unresolved; this change improves identity retention and protected diagnosis.
+
+The fresh-target Windows import also exposed a procedure dependency: two shared
+Controller-access credentials belong to existing AutoDeploy CaC. Its normal
+producer completed and restored those definitions. Document that import before
+Windows rather than inventing new credential definitions or changing base scope.
+An independent collection checksum failure recovered through unchanged SCM sync;
+its cause remains unknown and all original failures remain recorded.
+
 ## Document completed base and validated workload configuration — 2026-11-14
 
 Existing base configuration completed without failed or unreachable tasks. Its
