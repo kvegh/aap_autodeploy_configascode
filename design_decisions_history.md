@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Document successful installation and the active base stage — 2026-11-14
+
+The existing installer completed with a zero return code and no failed or
+unreachable task events. Its trusted upstream, public Gateway and actual
+Controller checks passed. The normal base stage was launched once with the
+registered candidate and unchanged saved credential bindings. Receiving EE build,
+base/access publication and both workload demonstration paths remain unfinished.
+
+This execution checkpoint changes no implementation. The installer used source
+`9a233006ce8d8001b9b36a21daeae6016d9d0f43`; the base launch selected the existing
+path after reviewing documentation-only source checkpoint `31d22c0`.
+Protected records preserve exact jobs, revisions and original failures. The next
+iteration's host-number/DNS-cutoff decision is awaiting the owner; no counter,
+naming or workflow change follows from asking it. The feature freeze remains.
+
 ## Document verified images and the active platform installation — 2026-11-14
 
 Execution checkpoint only; existing deployment stages and security gates are

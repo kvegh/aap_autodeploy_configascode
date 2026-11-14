@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.49
+
+Document successful native AAP installation and trusted public Gateway/Controller
+checks, followed by the single normal base-configuration launch. Preserve receiving
+EE, configuration/access publication and both workload/demo results as unfinished.
+Refresh the protected task checkpoint, including the unresolved next-iteration
+host-naming decision. No deployment implementation or architecture changes.
+
 ## 0.63.48
 
 Document seven-image checksum/publication success, managed safeguards, fresh AAP

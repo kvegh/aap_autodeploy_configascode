@@ -22,6 +22,11 @@ pins, and all eight saved references match the pre-reinstall record. Verificatio
 must finish before image publication; recording a checksum after a download does
 not replace comparison with the saved reference.
 
+The current receiving AAP installation passed its native installer and trusted
+Gateway/Controller checks. Normal base configuration is running. Receiving
+execution-environment and access publication, both workload imports/deployments
+and their functional demonstration tests still require actual verification.
+
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
 at that failure; credentials remain protected in its normal logs.
