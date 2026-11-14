@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.57
+
+Document test correction `1cee2ac`, native trust-tag and encrypted-roundtrip
+evidence, and passing publisher/Windows dependency qualification. Runtime code
+is unchanged from the bounded-read retry implementation.
+
 ## 0.63.56
 
 Use the existing literal-template predicate in two instance-ownership assertions

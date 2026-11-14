@@ -1,5 +1,24 @@
 # Design decisions history
 
+## Verify literal trust using the supported native representation — 2026-11-14
+
+Test correction: `1cee2ac` (working version 0.63.56).
+
+Qualification of the pinned read retry exposed two old instance-ownership tests
+that checked the legacy `__UNSAFE__` property. The old and current dependency
+pins fail identically: Core 2.20 represents literal strings through native trust
+tags, and the property is absent. Their serialization helper is byte-identical;
+the inventory-variable writer has the same parsed implementation. Two real
+labelled-Vault roundtrips for registration and every retirement capture retained
+literal paths and explicit tags. Actual templating evaluates a trusted control
+while leaving the literal fields, including a failing expression, untouched.
+
+Replace only those two assertions with the existing literal-template predicate.
+Production ownership and serialization code are unchanged. The actual on-disk
+22-test instance-key suite and 34 protected-YAML, Windows lifecycle and supplemental
+interface checks passed on Core 2.20.10. This is dependency qualification; it does
+not turn the repaired current deployment into an uninterrupted clean run.
+
 ## Retry only the pinned source read before policy work — 2026-11-14
 
 Implementation: `ad39bbe` (working version 0.63.54).
