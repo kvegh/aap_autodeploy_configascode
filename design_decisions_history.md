@@ -1,5 +1,41 @@
 # Design decisions history
 
+## Combine scanner and CoP capabilities — 2026-11-14
+
+The owner explicitly corrected the extension approach: take the union of the
+existing scanner and CoP exporter capabilities rather than assuming CoP covers
+everything already handled locally. The research in
+`e032374681d6145efae5b828e0891458eaf80345` establishes useful CoP coverage but does
+not establish semantic equivalence or a complete superset.
+
+Keep locally implemented capabilities, verify CoP-only additions, and compare
+overlapping fields and relationships before selecting their implementation.
+Preserve review, conflict, deletion, visibility, reference and protected-value
+guarantees across the combined coverage. Conflicting values require review;
+removing duplicate capability descriptions must not choose a configuration value.
+The README-linked model guide now states this requirement explicitly. Runtime
+integration remains unfinished; this documents the agreed direction without
+claiming an implemented union or changing deployed configuration.
+
+## Assess configuration coverage against component models — 2026-11-14
+
+Documentation `e032374681d6145efae5b828e0891458eaf80345` (0.63.16) identifies the
+deployed component APIs, OpenAPI documents, collection arguments and installation
+definitions as the available sources for AAP configuration models. Read-only
+discovery showed that the gateway's schema describes gateway resources rather
+than every backend routed through it. A single complete portable model was not
+verified, so an accessible API or exported file is insufficient evidence of
+complete configuration coverage.
+
+The CoP exporter already supports several Controller features refused by this
+project's current extractor. Its supported-object scope, export selections,
+settings overrides and protected secret placeholders must be checked before
+adding replacement serializers. Record unsupported or unreadable fields and
+relationships explicitly; a masked secret cannot prove equality or a rotation.
+The README-linked research guide separates these findings from the unfinished
+all-component scanner and owning-project Git capture. No dependency, API
+permission, deployed setting or scanner behavior changed with this research.
+
 ## Render and publish generated monitoring projections on Core 2.20 — 2026-11-14
 
 Implementation `e74b38ac09c78a04581c68cbf0f78a7bfd6c33b1` (0.63.10) gives the existing AIOps preparer's
@@ -4991,6 +5027,28 @@ All 23 local and downloaded deployed-asset checks passed. Pages run
 Browser geometry was not measured. Version 0.63.15 documents this result only.
 
 
+## 2026-11-14 — Align the content push with the original AAP top
+
+Implementation `6376a603e78697cbd676fd9c07f04db8f20ad8e4` (0.63.18)
+changes the blue base-content caption to the owner-requested “Push AAP config”.
+The purple “Push AAP content changes” arrow uses a separate content destination
+and aligns its line centre with the original AAP's top edge. Its position uses
+the rendered source-card offset and caption/track heights, recalculated after
+scene rendering and on window resize, instead of a fixed coordinate for this
+stage. Other stages clear that inline position, and the existing narrow-layout
+CSS override preserves the stacked vertical connectors. No dependency or layout
+framework is introduced.
+
+Existing checks cover alignment arithmetic with simulated dimensions, resize
+recalculation, stage reset and the requested caption. All 23 checks passed.
+The change was integrated with concurrent documentation commits, preserving
+their content and reconciling only version/release metadata. Visualization assets
+were unchanged by that rebase. Pages run `43561593593` succeeded; all six public
+assets matched and all 23 checks passed against the downloaded deployed files.
+Actual browser geometry was not measured. Version 0.63.19 documents this result
+without changing deployed assets.
+
+
 ## 2026-11-14 — Integrate secret-safe importer authentication diagnostics
 
 Implementation `f3deca3d33fdb89f44107a9c6092dd813b3c786e` adds a protected URI
@@ -5004,7 +5062,7 @@ unchanged cached official Core 2.20.10 image with networking disabled.
 Verbose-output canaries remained hidden with protected fixture values
 separate from executable YAML. Offline production lint passed.
 
-Version 0.63.16 integrates the diagnostic and its existing implementation
+Version 0.63.21 integrates the diagnostic and its existing implementation
 commit with concurrent published documentation and AIOps-rendering work.
 Only the tested diagnostic, its test and explanatory documentation differ
 from the upstream branch; other published work remains intact. A live

@@ -308,10 +308,13 @@ role with matching private inputs; a later certificate update highlights only it
 section. Travelling blocks use the same light fills as their configuration objects.
 Each step scrolls both panes to the matching section and colours only
 the active definitions/code, while all other sections remain available.
-The AAP-settings arrow reads “Push AAP config”. Arrows show only their action captions
+The blue AAP-settings and base-content arrows both read “Push AAP config”.
+Arrows show only their action captions
 above the line; destination subtitles and ACTIVE text underneath are deleted.
 Purple change arrows read “Push OS changes”, “Push AAP config changes”, and
 “Push AAP content changes”, in that order.
+The purple content-push arrow aligns with the original AAP’s top edge, entering
+the receiving content area; its position follows the rendered card on resize.
 
 The [decision history](design_decisions_history.md) records the original
 component-width and project-import choices separately from later layout fixes
@@ -1545,6 +1548,14 @@ through its existing encrypted runtime inputs, separately from shared AAP base.
 See [Configuration_as_Code.md](Configuration_as_Code.md) for variable naming,
 resource types, and restore dependencies. Empty templates do not provision
 resources and have not been tested as populated demo configurations against AAP.
+
+[AAP configuration models and export coverage](docs/aap-configuration-model.md)
+explains the component API schemas, CoP export capabilities and remaining scanner
+integration work. Extend the scanner with the union of its existing capabilities
+and useful CoP capabilities; compare overlapping fields and relationships before
+selecting an implementation. CoP's export-all selection does not establish
+complete AAP coverage; masked secrets and unreadable or unsupported configuration
+need explicit handling before a comparison can be considered complete.
 
 ## Version maintenance
 

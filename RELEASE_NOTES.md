@@ -1,6 +1,6 @@
 # Release notes
 
-## 0.63.16
+## 0.63.21
 
 Integrate the protected import authentication diagnostic from f3deca3.
 The URI request and response remain hidden; failures expose only a numeric
@@ -8,6 +8,40 @@ HTTP status and fixed authorization/TLS/DNS/network/timeout category. TLS,
 redirect refusal and credential selection remain unchanged. Nine native
 Core 2.20.10 canary cases and offline production lint passed. Concurrent
 published work is preserved. Live diagnosis and acceptance remain separate.
+
+## 0.63.20
+
+Document the agreed union of existing scanner and CoP exporter capabilities.
+Retain capabilities unique to either, compare overlapping fields and
+relationships, and preserve existing review and protected-value guarantees.
+Runtime integration remains unfinished; this changes its documented direction.
+
+## 0.63.19
+
+Document responsive content-arrow alignment and the base-caption change in
+`6376a60` (0.63.18), successful Pages publication and 23 passing deployed-asset
+checks. Geometry checks use simulated dimensions; browser placement is unmeasured.
+
+## 0.63.18
+
+Rename the base-content arrow from “Apply content” to “Push AAP config”.
+Position the purple content-push arrow at the original AAP’s top edge using
+its rendered geometry, updating it on scene changes and window resize.
+
+## 0.63.17
+
+Document the configuration-model research decision and source commit
+`e032374681d6145efae5b828e0891458eaf80345` (0.63.16). Preserve the distinction
+between verified research, existing CoP capabilities and unfinished scanner
+implementation. No deployment or dependency changes.
+
+## 0.63.16
+
+Document authoritative component configuration models, observed API schema
+boundaries and CoP exporter coverage. Distinguish existing CoP capabilities from
+unfinished scanner integration and explain why export-all, hidden secrets and
+an accessible API do not establish complete, replayable configuration coverage.
+No scanner, dependency or deployed configuration changes are included.
 
 ## 0.63.15
 
