@@ -30,6 +30,18 @@ Retries retain the accepted password, including a lost Git push acknowledgement.
 Existing deployments' known runtime/password material is preserved rather than
 rotated or copied into another allocation.
 
+Preparation also fills missing values in only the selected runtime namespace
+from six existing shared inputs in the same encrypted AIOps capture:
+`demo_website_dns_api_token`, `demo_zabbix_dns_api_token`,
+`demo_zabbix_clone_api_token`, `demo_zabbix_mcp_api_token`,
+`demo_zabbix_basic_auth_file` and `demo_claude_vertex_auth`.
+The original values and literal-template semantics are preserved, including
+nested authentication data. An explicit per-instance value takes precedence and
+is never replaced when a shared default changes. Other instance namespaces,
+target-generated webhook/Event Stream data and unrelated capture fields are
+untouched. The existing runtime Vault, embedded ciphertext and Git publication
+path remain authoritative; no separate copy step is required for these inputs.
+
 The same pre-import phase reads the existing vaulted `vault_rhsm_org_id` and
 `vault_rhsm_activation_key` already used for AAP's RHEL installation. It seeds
 only this instance's `demo_mcp_subscription` in the existing runtime Vault,

@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.63.41
+
+The existing AIOps importer copies six maintained shared runtime inputs into
+missing selected-instance settings before deployment. It preserves explicit
+overrides, other instances, literal secrets and target-generated data, using
+the existing two-Vault publication path. The 43 affected tests pass in cached
+Core 2.20.10, including actual Ansible pre/post-import fixture executions.
+Legacy test assertions now check template trust rather than obsolete unsafe
+string subclasses. Live fresh-instance acceptance remains pending.
+
 ## 0.63.40
 
 Record recovered off-host restore access and the successful single replacement

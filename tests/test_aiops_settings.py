@@ -17,8 +17,8 @@ from ansible.parsing.dataloader import DataLoader
 from ansible.parsing.vault import VaultLib, VaultSecret
 from ansible.parsing.yaml.loader import AnsibleLoader
 from ansible.plugins.action import ActionBase
-from ansible.utils.unsafe_proxy import AnsibleUnsafeText, wrap_var
-from ansible.template import Templar
+from ansible.utils.unsafe_proxy import wrap_var
+from ansible.template import Templar, is_trusted_as_template, trust_as_template
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -182,7 +182,7 @@ class InstancePreparationTests(unittest.TestCase):
         self.assertNotIn('firewall', row)
         self.assertEqual(row['zabbix']['configuration']['firewall'], {'guest_host_clients': []})
         self.assertEqual(row['other'], capture['aiops_instances'][context['instance_name']]['other'])
-        self.assertIsInstance(row['other'], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(row['other']))
         self.assertNotIn('configuration', capture['aiops_instances'][context['instance_name']]['zabbix'])
 
     def test_foreign_importer_alias_and_missing_fresh_gateway_are_refused(self):
@@ -275,7 +275,45 @@ class InstancePreparationTests(unittest.TestCase):
         self.assertIs(row["testserver_monitoring_enabled"], False)
         self.assertEqual(protected["instances"], {context["instance_name"]: {}})
         self.assertEqual((capture, runtime), before)
-        self.assertIsInstance(after["unrelated"]["injector"], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(after["unrelated"]["injector"]))
+
+    def test_shared_runtime_defaults_seed_selected_namespace_with_literal_secrets(self):
+        context, capture, runtime, _, _ = fixture()
+        defaults = {
+            "demo_website_dns_api_token": "synthetic-website-{{ literal }}",
+            "demo_zabbix_dns_api_token": "synthetic-dns-token",
+            "demo_zabbix_clone_api_token": "synthetic-clone-token",
+            "demo_zabbix_mcp_api_token": "synthetic-mcp-token",
+            "demo_zabbix_basic_auth_file": "synthetic-user:synthetic-hash",
+            "demo_claude_vertex_auth": {"adc": {"private_key": "synthetic-{{ literal }}"}},
+        }
+        capture.update(defaults)
+        runtime["instances"]["aap27-test-6"] = {"keep": wrap_var("{{ other_literal }}")}
+        before = deepcopy((capture, runtime))
+        after, protected = self.prepare(capture, runtime)
+        self.assertEqual(protected["instances"][context["instance_name"]], defaults)
+        selected = protected["instances"][context["instance_name"]]
+        self.assertFalse(is_trusted_as_template(selected["demo_website_dns_api_token"]))
+        self.assertFalse(is_trusted_as_template(selected["demo_claude_vertex_auth"]["adc"]["private_key"]))
+        self.assertEqual(protected["instances"]["aap27-test-6"], runtime["instances"]["aap27-test-6"])
+        self.assertEqual((capture, runtime), before)
+        self.assertEqual(self.prepare(after, protected), (after, protected))
+
+    def test_shared_runtime_defaults_preserve_selected_overrides_and_target_generated_values(self):
+        context, capture, runtime, _, _ = fixture()
+        capture.update({"demo_zabbix_mcp_api_token": "synthetic-shared-token",
+                        "demo_claude_vertex_auth": {"adc": {"account": "synthetic-shared"}},
+                        "demo_website_fault_template_id": 999})
+        overrides = {"demo_zabbix_mcp_api_token": wrap_var("synthetic-selected-token"),
+                     "demo_claude_vertex_auth": {"adc": {"account": wrap_var("{{ selected_literal }}")}},
+                     "demo_website_fault_template_id": 42}
+        runtime["instances"][context["instance_name"]] = deepcopy(overrides)
+        before = deepcopy((capture, runtime))
+        after, protected = self.prepare(capture, runtime)
+        self.assertEqual(protected["instances"][context["instance_name"]], overrides)
+        self.assertEqual((capture, runtime), before)
+        after["demo_zabbix_mcp_api_token"] = "synthetic-later-shared-token"
+        self.assertEqual(self.prepare(after, protected)[1], protected)
 
     def test_subscription_seeds_only_the_selected_namespace_and_repeats_without_rotation(self):
         context, capture, runtime, _, _ = fixture()
@@ -289,7 +327,7 @@ class InstancePreparationTests(unittest.TestCase):
         self.assertEqual(selected["demo_mcp_subscription"]["instance_name"], context["instance_name"])
         self.assertEqual(selected["demo_mcp_subscription"]["organization"], subscription["organization"])
         self.assertEqual(selected["demo_mcp_subscription"]["activation_keys"], subscription["activation_keys"])
-        self.assertIsInstance(selected["demo_mcp_subscription"]["activation_keys"][0], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(selected["demo_mcp_subscription"]["activation_keys"][0]))
         self.assertEqual(protected["instances"]["aap27-test-6"], runtime["instances"]["aap27-test-6"])
         self.assertEqual((capture, runtime), before)
         repeated = settings.prepare_documents(after, protected, context, "Base guest Machine", subscription=subscription)
@@ -302,7 +340,7 @@ class InstancePreparationTests(unittest.TestCase):
         token = 'synthetic-source-reader-{{ literal }}'
         after, protected = settings.prepare_documents(capture, runtime, context, 'Base guest Machine', source_git_token=token)
         self.assertEqual(protected['instances']['aap27-test-6'], runtime['instances']['aap27-test-6'])
-        self.assertIsInstance(protected['instances'][context['instance_name']]['hactar_source_git_token'], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(protected['instances'][context['instance_name']]['hactar_source_git_token']))
         self.assertEqual(settings.prepare_documents(after, protected, context, 'Base guest Machine', source_git_token=token), (after, protected))
         for replacement in ['different-reader', '', 'invalid\nheader']:
             with self.subTest(valid=bool(replacement)), self.assertRaises(Exception) as raised:
@@ -450,7 +488,7 @@ class InstancePreparationTests(unittest.TestCase):
         self.assertEqual(again, (after, protected))
         self.assertEqual(protected["instances"][context["instance_name"]]["demo_website_fault_template_id"], 21)
         self.assertTrue(all(method == "GET" for method, _ in client.calls))
-        self.assertIsInstance(native["demo_website_webhook_key"], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(native["demo_website_webhook_key"]))
 
     def test_native_stream_explicit_default_https_port_preserves_canonical_url(self):
         context, _, _, _, _ = fixture()
@@ -516,6 +554,15 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.subscription = {"organization": wrap_var("synthetic-rhsm-org"),
                              "activation_keys": [wrap_var("synthetic-rhsm-key-{{ protected_rhsm_literal }}")]}
         self.source_git_token = wrap_var('synthetic-source-reader-{{ protected_literal }}')
+        self.shared_runtime_defaults = {
+            "demo_website_dns_api_token": wrap_var("synthetic-website-{{ literal }}"),
+            "demo_zabbix_dns_api_token": wrap_var("synthetic-zabbix-dns"),
+            "demo_zabbix_clone_api_token": wrap_var("synthetic-clone-token"),
+            "demo_zabbix_mcp_api_token": wrap_var("synthetic-mcp-token"),
+            "demo_zabbix_basic_auth_file": wrap_var("synthetic-user:synthetic-hash"),
+            "demo_claude_vertex_auth": {"adc": {"private_key": wrap_var("synthetic-{{ literal }}")}},
+        }
+        capture.update(deepcopy(self.shared_runtime_defaults))
         capture.update(aiops_website_dns_zone="example.invalid", aiops_guest_machine_credential_name="Base guest Machine",
                        aiops_configuration_ready=True)
         capture["cac_import_metadata"] = {"schema_version": 1, "project_id": "aiops-selfhealing-demo",
@@ -665,7 +712,7 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.assertEqual(subscription["instance_name"], self.context["instance_name"])
         self.assertEqual(subscription["organization"], self.subscription["organization"])
         self.assertEqual(subscription["activation_keys"], self.subscription["activation_keys"])
-        self.assertIsInstance(subscription["activation_keys"][0], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(subscription["activation_keys"][0]))
         self.assertEqual(capture["unrelated"], before_capture["unrelated"])
         self.assertEqual(runtime["instances"]["aap27-test-6"], before_runtime["instances"]["aap27-test-6"])
         self.assertTrue(cipher.startswith(b"$ANSIBLE_VAULT;1.2;AES256;cac\n"))
@@ -674,6 +721,11 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.assertNotIn(selected["event_stream_password"].encode(), cipher + runtime_cipher)
         self.assertNotIn(self.subscription["activation_keys"][0].encode(), cipher + runtime_cipher)
         self.assertEqual(runtime['instances'][self.context['instance_name']]['hactar_source_git_token'], self.source_git_token)
+        for field, value in self.shared_runtime_defaults.items():
+            self.assertEqual(runtime["instances"][self.context["instance_name"]][field], value)
+            self.assertEqual(capture[field], before_capture[field])
+        self.assertIn(b"!unsafe", self.vault.decrypt(runtime_cipher))
+        self.assertNotIn(b"synthetic-website-", cipher + runtime_cipher)
         self.assertNotIn(self.source_git_token.encode(), cipher + runtime_cipher)
         accepted = self.git("--git-dir", str(self.bare), "rev-parse", "main")
         self.assertFalse(self.action()["changed"])
@@ -753,7 +805,7 @@ class EncryptedPublicationTests(unittest.TestCase):
             self.assertTrue(self.action()["prepared"])
         capture, runtime, _, _ = self.remote_pair()
         self.assertEqual(capture["concurrent_literal"], "{{ other_writer_preserved }}")
-        self.assertIsInstance(capture["concurrent_literal"], AnsibleUnsafeText)
+        self.assertFalse(is_trusted_as_template(capture["concurrent_literal"]))
         self.assertEqual(runtime["instances"]["aap27-test-6"]["demo_website_fault_template_id"], 66)
         self.assertFalse(any("--force" in arg or arg.startswith("+") for args in calls for arg in args))
 
@@ -837,7 +889,7 @@ class EncryptedPublicationTests(unittest.TestCase):
         runtime_key.write_text("synthetic-runtime-password")
         runtime_key.chmod(0o600)
         capture_key.chmod(0o600)
-        password = "{{ aiops_instances['aap27-test-7'].event_stream_password }}"
+        password = trust_as_template("{{ aiops_instances['aap27-test-7'].event_stream_password }}")
         variables = {key: value for key, value in self.variables.items() if key != "hostvars"}
         variables["cac_import_resources"] = resources(password)
         variables["cac_api_auth"] = {"hostname": self.context["aap_origin"], "token": "synthetic-api-token", "username": "", "password": ""}

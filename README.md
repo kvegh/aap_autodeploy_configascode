@@ -1325,6 +1325,9 @@ before resource creation and records native webhook/Event Stream data afterward.
 It reuses the existing AIOps repository's approved write access and preserves
 existing secrets on retries. Missing auxiliary VMs stay absent and disabled;
 their actual ownership comes only from existing native deployment evidence.
+Missing runtime inputs for a fresh instance inherit the six maintained shared
+website/Zabbix/Vertex defaults from that same encrypted AIOps capture. Explicit
+instance values and target-generated credentials or identifiers are preserved.
 Native inventory SSH ports may be decimal text; preparation normalizes that
 representation before applying the same strict hypervisor pin validation.
 Preparation marks its generated monitoring importer, firewall-owner and policy
