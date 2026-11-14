@@ -5414,3 +5414,36 @@ transition. Verify actual existing workflow-node tags: inspected certified
 workflow modules omit falsey update values, so empty YAML cannot prove old tags
 were cleared. Populated base CaC pins the selected shared source instead of
 assuming a mutable branch was tested. Version0.64.1 documents this implementation.
+
+
+## 2026-11-14 — Carry existing-owner routing without image claims
+
+Implementation `203c0999b8c8cdb15b7f2dea056cfd6535870906` (candidate 0.64.2)
+repairs the handoff between the verified existing-owner branch and the shared
+creator. The earlier branch passed false creation but omitted routing; the
+minimal encrypted bootstrap credential could not satisfy fresh-image validation.
+An invented legacy checksum would hide the mismatch and corrupt provenance.
+
+Publish the six already validated non-image route fields as
+`linux_vm_existing_route`. The paired umbrella fix
+`d0d6e6918d15695ec94d7bd85e40184bbec399e5` (0.0.4) accepts that exact map only
+for strict false creation and checks the protected target locally. It changes
+no credential, SSH/root restriction, ownership store or no-overwrite guard.
+The owner keeps its independently verified artifact and null/unknown legacy
+source checksum. The shared job supplies no new proof and performs no remote or
+image action; fresh creation retains its complete image/hash requirements.
+
+The actual producer-to-shared-entrypoint fixtures use bootstrap-only encrypted
+settings and poisoned SSH. They prove the skip preserves the owner artifact and
+reject ambiguous targets, bad pins, unknown/credential keys, mixed routes and
+fresh input missing image fields. All three methods passed on Core 2.20.10;
+all 29 existing shared and seven affected AAP methods also passed, for 39 total.
+Both syntax checks and separate strict production lint passed. Independent
+bounded source review found no remaining concrete issue in this repair, and
+all reviewed source hashes remained exact.
+
+Version 0.64.3 documents the implementation. This candidate remains separate
+from active main and deployment jobs. Populated five-step bindings, coordinated
+adoption, live existing-owner acceptance and complete formal review/APME remain
+unfinished. Existing Assistant consumers are retained until their replacement
+qualifies; Zabbix and the OLD environment are unchanged.

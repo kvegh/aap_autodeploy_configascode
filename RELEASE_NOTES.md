@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.64.3
+
+Document the paired shared/AAP existing-owner repair commits and the completed
+39-method, syntax and bounded review qualification. Keep historical image
+provenance unknown and distinguish source publication from live five-step
+adoption, independent VM acceptance and complete formal/APME review.
+
 ## 0.64.2
 
 Correct the existing-owner handoff to the shared VM job. Publish only the six
