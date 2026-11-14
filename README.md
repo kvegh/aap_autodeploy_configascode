@@ -469,9 +469,11 @@ their history remains in Beads and the encrypted recovery export. Their owning
 chats track subsequent implementation.
 
 The generated overview and protected export reflect the current Beads records.
-They include completed API-only Zabbix deployment and the current Claude/MCP
-deployment correction. Full AIOps functional acceptance remains outstanding;
-the next physical reinstall is still gated by it.
+They include completed API-only Zabbix and Claude/MCP deployment, the verified
+website recovery loop and an actual successful saved agent repair. The parent
+model run exhausted its turn limit; a prepared Phase 4 verification proposal
+awaits the owner's decision. Full AIOps functional acceptance remains outstanding,
+and the next physical reinstall is still gated by it.
 The source Core 2.20 runtime passed an authenticated forced image pull, normal
 preflight and zero-error CaC preview. The approved physical reinstall then passed
 provider host-key matching and strict authenticated OS, machine-ID and hardware

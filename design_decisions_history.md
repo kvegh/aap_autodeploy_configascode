@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Preserve actual repair success and the pending Phase 4 decision — 2026-11-14
+
+The normal Claude/MCP installer and website outage/restore/rearm loop passed.
+The model also launched the correct saved agent repair, whose native success
+and fresh monitoring recovery were independently verified. Its parent CLI
+exhausted the 48-turn limit, so full functional acceptance remains incomplete.
+Keep both outcomes in the existing encrypted task export and show the single
+pending owner decision in the generated overview. A prepared local proposal
+would use the existing AAP post-checks to finish verification after the model
+launches a repair; it is not published or applied by this bookkeeping.
+
 ## Refresh the task checkpoint after appliance deployment — 2026-11-14
 
 Refresh the existing generated task overview and encrypted full recovery

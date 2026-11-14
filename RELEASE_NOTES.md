@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.37
+
+Document the completed Claude/MCP correction, successful website recovery loop
+and actual saved agent repair while retaining the parent model-run failure.
+Refresh the existing task overview and encrypted recovery records with the
+single pending Phase 4 decision. No proposal is applied by this checkpoint;
+full AIOps acceptance and the next physical reinstall remain outstanding.
+
 ## 0.63.36
 
 Document the current task checkpoint after API-only Zabbix deployment and the
