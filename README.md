@@ -470,10 +470,12 @@ chats track subsequent implementation.
 
 The generated overview and protected export reflect the current Beads records.
 They include completed API-only Zabbix and Claude/MCP deployment, the verified
-website recovery loop and an actual successful saved agent repair. The parent
-model run exhausted its turn limit; a prepared Phase 4 verification proposal
-awaits the owner's decision. Full AIOps functional acceptance remains outstanding,
-and the next physical reinstall is still gated by it.
+website recovery loop and the original full Claude investigation, automatic
+agent repair, verification and report. The owner-directed turn-cap removal
+passed the live retry; earlier failures remain historical evidence. No
+verification handoff was applied. Both v20 demo gates are complete, and selected
+v20 configuration/DNS retirement is active before the authorized replacement-host
+reinstall. A fresh uninterrupted installation and both demos remain required.
 The source Core 2.20 runtime passed an authenticated forced image pull, normal
 preflight and zero-error CaC preview. The approved physical reinstall then passed
 provider host-key matching and strict authenticated OS, machine-ID and hardware

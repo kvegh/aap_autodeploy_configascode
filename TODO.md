@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-219 tasks: 32 outstanding; 187 closed.
+219 tasks: 30 outstanding; 189 closed.
 
 ## Outstanding tasks
 
@@ -20,8 +20,8 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Complete Core 2.20 migration and rebuild bare metal for v20 | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
-| bead-wd-3ix.2 | Reinstall &#91;HOST&#93; and prove both demos on v21 after v20 acceptance | open | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-72f.31.2.7 |
-| bead-wd-3ix.2.1 | Retire v20 configuration and DNS after both demo tests | open | P1 | task | bead-wd-3ix.1.23, bead-wd-3ix.2, bead-wd-72f.31.2.7 |
+| bead-wd-3ix.2 | Reinstall &#91;HOST&#93; and prove both demos on v21 after v20 acceptance | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-72f.31.2.7 |
+| bead-wd-3ix.2.1 | Retire v20 configuration and DNS after both demo tests | in_progress | P1 | task | bead-wd-3ix.1.23, bead-wd-3ix.2, bead-wd-72f.31.2.7 |
 | bead-wd-3ix.2.2 | Reinstall only the verified &#91;HOST&#93; replacement server for v21 | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.1 |
 | bead-wd-3ix.2.3 | Deploy AAP v21 and import Windows and AIOps projects | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.2 |
 | bead-wd-3ix.2.4 | Run Windows and AIOps demos on v21 | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.3 |
@@ -31,8 +31,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2 | Prepare AIOps configuration for each new instance | open | P1 | feature | bead-wd-72f.31 |
 | bead-wd-72f.31.2.4 | Add CloudCLI user setup to AIOps CaC | open | P1 | feature | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | open | P1 | task | bead-wd-72f.31.2 |
-| bead-wd-72f.31.2.7 | Deploy and functionally verify AIOps on v20 | in_progress | P1 | task | bead-wd-3ix.1.23, bead-wd-72f.31.2 |
-| bead-wd-72f.31.2.7.6 | Diagnose the bounded agent failure after the successful v20 repair | blocked | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | open | P1 | task | bead-wd-72f |
 | bead-wd-72f.42 | Complete CaC and scanner coverage across AAP components | in_progress | P1 | feature | bead-wd-72f |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | open | P1 | task | bead-wd-mcr.1 |
@@ -116,11 +114,13 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2.1 | Expose the existing minimal Linux provisioning template on the successor | closed | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.2 | Publish verified Linux SSH fields required by AIOps guest import | closed | P1 | bug | bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.3 | Allow MCP installer to use the existing hypervisor SSH key | closed | P1 | task | bead-wd-72f.31.2 |
+| bead-wd-72f.31.2.7 | Deploy and functionally verify AIOps on v20 | closed | P1 | task | bead-wd-3ix.1.23, bead-wd-72f.31.2 |
 | bead-wd-72f.31.2.7.1 | Use the Core 2.20-compatible dependency for Linux guest publication | closed | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.31.2.7.2 | Diagnose website runtime validation before AIOps deployment | closed | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.31.2.7.3 | Render generated AIOps CaC projections on Core 2.20 | closed | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.31.2.7.4 | Remove every SSH dependency from the Zabbix appliance deployment | closed | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.31.2.7.5 | Diagnose and fix the v20 Claude and MCP deployment failure | closed | P1 | bug | bead-wd-72f.31.2.7 |
+| bead-wd-72f.31.2.7.6 | Remove the unrequested agent turn cap and verify the original demo workflow | closed | P1 | bug | bead-wd-72f.31.2.7 |
 | bead-wd-72f.31.3 | Prepare and verify Assistant Team on the selected test environment | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4 | Prepare and verify Windows patching on the selected test environment | closed | P1 | task | bead-wd-72f.31 |
 | bead-wd-72f.31.4.1 | Approve and add NTFS inspection support on the test hypervisor | closed | P1 | task | bead-wd-72f.31.4 |

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.38
+
+Document the successful original complete Claude recovery after the owner's
+turn-cap removal, preserve earlier failures and refresh task recovery records.
+Both v20 demo gates are complete; selected configuration/DNS retirement is now
+active before the authorized replacement-host reinstall. A fresh uninterrupted
+build and both demos remain unverified. Preserve unrelated deferred reviews.
+
 ## 0.63.37
 
 Document the completed Claude/MCP correction, successful website recovery loop

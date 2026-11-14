@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Follow the owner's removal of the unrequested turn cap — 2026-11-14
+
+The owner confirmed that the agent turn limit was not their decision and
+explicitly directed its removal. AIOps implementation `53a86be`, documented at
+`368e397` (working deployment version 1.6.12), removes the CLI flag entirely.
+Claude retains the original verification workflow. The proposed transfer of
+Phase 4 verification was not approved or applied. Keep the prior failed parent
+run and successful repair in history; a fresh normal functional rehearsal is
+was required before accepting AIOps or proceeding to the next physical reinstall.
+That original full workflow now passed: native parent 242 and its automatically
+launched repair 244 succeeded, with independent fresh monitoring and trigger
+recovery. Public acceptance documentation is `8c73b48`; private encrypted evidence
+is `07a1485`, documented at `ff334ed`. Both v20 functional gates are closed and
+the authorized configuration/DNS-only retirement is active. Preserve the older
+failed runs and the separately deferred security review. A fresh uninterrupted
+replacement-host build and both demo runs remain unverified.
+This checkpoint updates task records and documentation, not the live workflow.
+
 ## Preserve actual repair success and the pending Phase 4 decision — 2026-11-14
 
 The normal Claude/MCP installer and website outage/restore/rearm loop passed.
