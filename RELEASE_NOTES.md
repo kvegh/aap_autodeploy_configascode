@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.59
+
+Document actual Windows caller adoption and completed protected private Git read
+after the qualified dependency update. Close only the recovered source-read
+tasks and refresh their normal task mirrors and encrypted recovery checkpoint.
+Windows activation, AD updates and both full demonstrations remain unfinished;
+the original failed workflow remains recorded.
+
 ## 0.63.58
 
 Document qualified Windows dependency publication, completed regular-server

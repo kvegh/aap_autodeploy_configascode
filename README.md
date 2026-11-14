@@ -38,8 +38,10 @@ actual node/launch readback. The Windows workflow then failed on AD activation
 and an incomplete private Git transfer. Focused stage recoveries created all five
 guests, and server basics passed on all four regular guests. AD updates continue
 with measured servicing activity. The qualified Windows caller update is
-published and the next normal activation stage is queued; actual use and
-functional acceptance remain pending. Original failures remain recorded.
+published. Its next normal activation stage adopted the exact reviewed source
+and completed the protected private Git read. The read-recovery tasks are closed;
+activation, AD updates and both full functional demonstrations remain unfinished.
+Original failures remain recorded.
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops

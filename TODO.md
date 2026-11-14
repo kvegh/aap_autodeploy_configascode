@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-233 tasks: 32 outstanding; 201 closed.
+233 tasks: 30 outstanding; 203 closed.
 
 ## Outstanding tasks
 
@@ -24,8 +24,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.4 | Run Windows and AIOps demos on v21 | in_progress | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.3 |
 | bead-wd-3ix.2.4.1 | Deploy and verify the current Windows demonstration | in_progress | P1 | task | bead-wd-3ix.2.4 |
 | bead-wd-3ix.2.4.1.2 | Verify focused recovery after AD evaluation activation reported failure | in_progress | P1 | bug | bead-wd-3ix.2.4.1 |
-| bead-wd-3ix.2.4.1.3 | Recover isolated private Git read failure before internal repository creation | in_progress | P1 | bug | bead-wd-3ix.2.4.1 |
-| bead-wd-3ix.2.4.1.3.1 | Retry incomplete private source reads before policy changes | in_progress | P1 | bug | bead-wd-3ix.2.4.1.3 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
@@ -96,6 +94,8 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.3.4 | Retain configuration child IDs and protect selector wait errors | closed | P1 | bug | bead-wd-3ix.2.3 |
 | bead-wd-3ix.2.3.5 | Verify current AIOps configuration import and runtime bindings | closed | P1 | task | bead-wd-3ix.2.3 |
 | bead-wd-3ix.2.4.1.1 | Correct the rejected Windows workflow node prompts | closed | P1 | bug | bead-wd-3ix.2.4.1 |
+| bead-wd-3ix.2.4.1.3 | Recover isolated private Git read failure before internal repository creation | closed | P1 | bug | bead-wd-3ix.2.4.1 |
+| bead-wd-3ix.2.4.1.3.1 | Retry incomplete private source reads before policy changes | closed | P1 | bug | bead-wd-3ix.2.4.1.3 |
 | bead-wd-3ix.2.4.2 | Prepare the current AIOps runtime demonstration | closed | P1 | task | bead-wd-3ix.2.4 |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
