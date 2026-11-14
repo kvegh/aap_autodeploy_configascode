@@ -2,7 +2,7 @@
 
 ## Five-step source candidate
 
-Working version **0.64.1** prepares the owner-requested shared VM deployment
+Working version **0.64.2** prepares the owner-requested shared VM deployment
 refactor on a separate integration branch. It has passed focused Core 2.20
 checks and bounded independent source review. It has not been merged into the
 active deployment source or applied to a running workflow. Preserve the current
@@ -779,10 +779,15 @@ retains its original reservation/isolation access. Concurrent runs of this workf
 Failure stops downstream success nodes. Stages 02–04 can be rerun with the same
 registered instance input. Select `aap_instance_key` for an already registered
 AAP primary: Stage 01 independently proves its stored/live identity and resources,
-then supplies `generic_linux_vm_create: false`. The shared job only emits a skip
-marker and does not claim verification or touch the guest. Stage 02 rechecks the
-owner result before continuing. Legacy source-image hashes remain explicitly
-unknown; the current declared golden image is never labeled as their baseline.
+then supplies `generic_linux_vm_create: false` and `linux_vm_existing_route`.
+That route contains only the verified name, destination directory, DNS domain,
+network, bridge and hypervisor pin. The shared job can consume the same minimal
+encrypted bootstrap credential without requiring an invented image path/hash;
+it only emits a skip marker and does not claim verification or touch the guest.
+Stage 02 rechecks the owner's result before continuing. Legacy source-image
+hashes remain explicitly unknown; the current declared golden image is never
+labeled as their baseline. Fresh creation still requires its complete image
+route and exact checksum.
 Without an existing owner selection, a new workflow reserves a fresh name.
 An unregistered or uncertain existing VM/disk stops for reconciliation.
 Inspect the failure before a bounded manual continuation of its remaining tasks;

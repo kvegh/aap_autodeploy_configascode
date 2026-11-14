@@ -25,6 +25,13 @@
   ansible.builtin.set_stats:
     data:
       generic_linux_vm_create: false
+      linux_vm_existing_route:
+        vm_name: '{{ aap_existing_owner.instance_route.vm_name }}'
+        vm_dir: '{{ aap_existing_owner.instance_resources.aap.disk | dirname }}'
+        vm_domain: '{{ vault_domain }}'
+        vm_network: '{{ aap_existing_owner.instance_resources.aap.network }}'
+        network_bridge: '{{ aap_existing_owner.instance_resources.aap.bridge }}'
+        hypervisor_pin: '{{ aap_existing_owner.instance_route.hypervisor }}'
       generic_linux_vm: '{{ aap_existing_owner.instance_resources.aap | combine({''vm_name'': vm_name, ''host_keys'': aap_existing_owner.instance_route.guest_host_keys,
         ''machine_id'': aap_primary_guest_machine_id.stdout | trim, ''hostname'': aap_primary_guest_hostname.stdout | trim,
         ''verified'': true, ''verification_source'': ''aap_resource_owner'', ''vcpus'': aap_primary_live_vcpus | int, ''memory_mb'':

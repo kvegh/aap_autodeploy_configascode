@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.64.2
+
+Correct the existing-owner handoff to the shared VM job. Publish only the six
+validated non-image route fields with strict false creation, preserving the
+owner's null/unknown legacy source checksum. The paired shared loader accepts
+minimal encrypted bootstrap settings, checks the target locally and performs no
+remote action. Fresh image/checksum checks and credential restrictions remain.
+All 39 distinct shared/AAP regression methods and both syntax checks passed on
+Core 2.20.10; separate production lint passed with zero failures or warnings.
+Independent bounded source review found no remaining concrete issue in the fix.
+Live five-step adoption remains pending. The candidate stays on its separate
+branch while the active deployment is preserved.
+
 ## 0.64.1
 
 Document the five-step candidate implementation, exact fixture baseline and
