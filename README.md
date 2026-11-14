@@ -1288,6 +1288,12 @@ existing secrets on retries. Missing auxiliary VMs stay absent and disabled;
 their actual ownership comes only from existing native deployment evidence.
 Native inventory SSH ports may be decimal text; preparation normalizes that
 representation before applying the same strict hypervisor pin validation.
+Preparation marks its generated monitoring importer, firewall-owner and policy
+projections as templates for Core 2.20. They render into native configuration
+before AAP saves inventory variables; literal runtime and credential values
+retain their data semantics.
+The writer also detects changes between literal data and executable templates,
+including when the underlying text is unchanged.
 Application deployment and successor-environment acceptance remain separate.
 
 Normal preparation job 3320 succeeded on published revision `5728dfe` (0.41.1)

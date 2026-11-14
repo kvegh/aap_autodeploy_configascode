@@ -199,7 +199,8 @@ class InstancePreparationTests(unittest.TestCase):
         bindings = {'importer': native.importer, 'hosts': native.source_hosts, 'groups': native.source_groups}
         expression = "{{ hostvars[hostvars[aap_instance_key].hypervisor_host].isolation_policy | combine({'guest_host_clients': (aiops_instances.values() | selectattr('zabbix', 'defined') | selectattr('zabbix.hypervisor_machine_id', 'equalto', hostvars[hostvars[aap_instance_key].hypervisor_host].machine_id) | map(attribute='firewall.guest_host_clients') | flatten) | unique | list}) }}"
         capture['controller_hosts_aiops_demo'] = [{'variables': {'demo_zabbix_deployment': {
-            'isolation_policy': expression, 'firewall': {'guest': 'old projection'}}}}]
+            'isolation_policy': expression, 'firewall': {'guest': 'old projection'},
+            'literal_canary': wrap_var('{{ forbidden_expression }}')}}}]
         planned, _ = self.prepare(capture, runtime, source_bindings=bindings)
         variables = {'aap_instance_key': 'aap27-v07', 'aiops_instances': planned['aiops_instances'],
                      'hostvars': {'aap27-v07': instance, 'recovery-host': hypervisor}}
@@ -208,6 +209,13 @@ class InstancePreparationTests(unittest.TestCase):
         self.assertEqual(rendered['firewall']['guest'], {})
         self.assertEqual(rendered['isolation_policy']['guest_host_clients'], [])
         self.assertEqual(rendered['cac_import']['job_template_id'], native.importer['id'])
+        self.assertEqual(rendered['literal_canary'], '{{ forbidden_expression }}')
+        codec = settings.load('projection_vault_yaml', 'src/cac_yaml.py')
+        restored = codec.load_repository_yaml(yaml.dump(planned, Dumper=codec.VaultDumper, sort_keys=False))
+        restored_variables = dict(variables, aiops_instances=restored['aiops_instances'])
+        restored_deployment = Templar(loader=DataLoader(), variables=restored_variables).template(
+            restored['controller_hosts_aiops_demo'][0]['variables']['demo_zabbix_deployment'])
+        self.assertEqual(restored_deployment, rendered)
         self.assertIn("selectattr('zabbix.hypervisor_machine_id', 'defined')",
                       planned['controller_hosts_aiops_demo'][0]['variables']['demo_zabbix_deployment']['isolation_policy'])
 
@@ -579,6 +587,41 @@ class EncryptedPublicationTests(unittest.TestCase):
                 mock.patch.object(self.plugin.settings.lifecycle, "Client", return_value=self.client), \
                 mock.patch.dict(os.environ, {"CAC_GIT_TOKEN": "synthetic-private-repository-token"}):
             return action.run(task_vars=self.variables)
+
+    def test_generated_template_trust_changes_publish_without_rotating_runtime(self):
+        self.assertNotIn('failed', self.action())
+        self.git('-C', str(self.checkout), 'fetch', str(self.bare), 'main')
+        self.git('-C', str(self.checkout), 'merge', '--ff-only', 'FETCH_HEAD')
+        capture, runtime, _, _ = self.remote_pair()
+        capture['controller_hosts_aiops_demo'] = [
+            {'variables': {'demo_zabbix_deployment': {'firewall': {}}}}]
+        self.plugin.settings.prepare_zabbix_configuration(capture, self.context)
+        deployment = capture['controller_hosts_aiops_demo'][0]['variables']['demo_zabbix_deployment']
+        deployment['cac_import'] = wrap_var(deployment['cac_import'])
+        deployment['firewall']['guest'] = wrap_var(deployment['firewall']['guest'])
+        self.write_pair(self.checkout, capture, runtime)
+        self.git('-C', str(self.checkout), 'add', '--all')
+        self.commit(self.checkout, 'Retain previous literal projection markers')
+        self.git('-C', str(self.checkout), 'push', '--quiet', str(self.bare), 'HEAD:main')
+        before_capture, _, before_cipher, before_runtime = self.remote_pair()
+        result = self.action()
+        self.assertNotIn('failed', result)
+        self.assertTrue(result['changed'])
+        after_capture, _, after_cipher, after_runtime = self.remote_pair()
+        self.assertEqual(before_capture, after_capture)
+        self.assertNotEqual(before_cipher, after_cipher)
+        self.assertEqual(before_runtime, after_runtime)
+        codec = self.plugin.vault_yaml
+        before = codec.load_repository_yaml(self.vault.decrypt(before_cipher))
+        after = codec.load_repository_yaml(self.vault.decrypt(after_cipher))
+        self.assertNotEqual(codec.literal_paths(before), codec.literal_paths(after))
+        rendered = Templar(loader=DataLoader(), variables={
+            'aap_instance_key': 'aap27-v07', 'aiops_instances': after['aiops_instances'],
+            'hostvars': {'aap27-v07': self.instance}}).template(
+                after['controller_hosts_aiops_demo'][0]['variables']['demo_zabbix_deployment'])
+        self.assertIsInstance(rendered['cac_import'], dict)
+        self.assertEqual(rendered['firewall']['guest'], {})
+        self.assertEqual(after['unrelated'], before['unrelated'])
 
     def test_actual_git_two_vaults_literal_preservation_and_idempotence(self):
         before_capture, before_runtime, _, _ = self.remote_pair()

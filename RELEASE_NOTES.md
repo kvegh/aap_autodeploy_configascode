@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.63.10
+
+Render the AIOps preparer's generated monitoring importer, firewall-owner and
+reviewed policy projections on Core 2.20 before inventory publication. Preserve
+literal runtime and credential values. Publish changes to literal-template
+meaning even when the text is unchanged, preserving runtime ciphertext. Four
+focused native tests pass, including encrypted Git/YAML publication/reload and
+unchanged importer/guest identity refusals. The
+pre-existing broader suite has proxy-type assertions and synthetic publication
+fixtures that fail on Core 2.20; no complete-suite pass is claimed. Actual
+configuration refresh and monitoring deployment remain separate verification.
+
 ## 0.63.9
 
 Document the “Push AAP config” caption change in `a7694b4` (0.63.8), successful

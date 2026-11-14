@@ -150,7 +150,7 @@ class ActionModule(ActionBase):
                 updates = []
 
                 def seal(value, old, relative, vault_label, vault_secret, original_header):
-                    if value == old:
+                    if value == old and vault_yaml.literal_paths(value) == vault_yaml.literal_paths(old):
                         return (checkout / relative).read_bytes()
                     plain = yaml.dump(value, Dumper=vault_yaml.VaultDumper, sort_keys=False, width=110).encode()
                     require(vault_yaml.load_repository_yaml(plain) == value, "Protected AIOps YAML must roundtrip unchanged.")

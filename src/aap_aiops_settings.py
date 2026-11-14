@@ -14,6 +14,7 @@ import secrets
 import uuid
 from urllib.parse import urlsplit
 
+from ansible.template import trust_as_template
 from ansible.utils.unsafe_proxy import wrap_var
 
 
@@ -198,7 +199,8 @@ def prepare_zabbix_configuration(capture, context, binding=None, new_owners=()):
         deployment = row.get("variables", {}).get("demo_zabbix_deployment")
         if not isinstance(deployment, dict):
             continue
-        deployment["cac_import"] = "{{ aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name].zabbix.configuration.cac_import }}"
+        deployment["cac_import"] = trust_as_template(
+            "{{ aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name].zabbix.configuration.cac_import }}")
         policy = deployment.get("isolation_policy")
         if isinstance(policy, str):
             old_path = "map(attribute='firewall.guest_host_clients')"
@@ -211,8 +213,11 @@ def prepare_zabbix_configuration(capture, context, binding=None, new_owners=()):
                 match = "selectattr('zabbix.hypervisor_machine_id', 'equalto',"
                 require(match in policy, "Keep the explicit hypervisor filter in the maintained projection.")
                 policy = policy.replace(match, defined + " | " + match)
-            deployment["isolation_policy"] = policy
-        deployment["firewall"]["guest"] = "{{ aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name].zabbix | dict2items | rejectattr('key', 'equalto', 'configuration') | items2dict }}"
+            # This reviewed projection is executable CaC, rather than a runtime
+            # credential. String replacement drops Core 2.20's template trust.
+            deployment["isolation_policy"] = trust_as_template(policy)
+        deployment["firewall"]["guest"] = trust_as_template(
+            "{{ aiops_instances[hostvars[aap_instance_key].vm_resource.vm_name].zabbix | dict2items | rejectattr('key', 'equalto', 'configuration') | items2dict }}")
 
 
 def zabbix_resource(value, context, source_sha256):
