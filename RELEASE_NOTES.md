@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.26
+
+Document current Beads task states in the generated public overview and refresh
+the full recovery export in the existing encrypted repository. Preserve original
+worktrees and historical review requests. The export uses the unchanged reviewed
+helper and existing Vault key; this housekeeping does not establish a new demo
+deployment or acceptance result.
+
 ## 0.63.25
 
 Record the private-CA import correction in `d983450` (0.63.24), six passing
