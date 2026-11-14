@@ -46,6 +46,9 @@
       register: cac_workspace
 
     - name: Authenticate, load and import only this project's reviewed definitions
+      environment: >-
+        {{ {'SSL_CERT_FILE': cac_api_ca_path, 'REQUESTS_CA_BUNDLE': cac_api_ca_path}
+           if cac_api_ca_path | default('') | length > 0 else {} }}
       block:
         - name: Keep configuration role async results inside this job's private workspace
           ansible.builtin.set_fact:

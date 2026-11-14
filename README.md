@@ -1641,3 +1641,13 @@ No standalone formatter or linter dependency is required for the version helper.
 - Beads: authoritative current tasks; `TODO.md`: generated public overview.
   `PLAN.md` and Git history preserve the earlier implementation plans.
 - `design_decisions_history.md`: documented decisions and implementation references.
+
+### Private CA trust for project imports
+
+For a receiver signed by the existing private CA, attach the existing **AAP CaC
+source CA** credential to that repository's importer. The importer preserves the
+execution environment's default PEM trust, appends the injected CA in its private
+workspace, and applies it to authenticated requests and imported configuration
+modules only for that job. TLS verification and hostname checks stay enabled;
+the private workspace is removed on success or failure. This does not change the
+EE image, system trust, credential type or receiver certificate.

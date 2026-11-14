@@ -91,3 +91,13 @@ release/retire/network operations use separate capture paths that preserve the
 complete token mapping; this change requires no unrelated guest lifecycle pin
 change. Receiving stores are refreshed by their existing AutoDeploy CaC import,
 not assumed to change when source base publication finishes.
+
+## Private CA trust for project imports
+
+For a receiver signed by the existing private CA, attach the existing **AAP CaC
+source CA** credential to that repository's importer. The importer preserves the
+execution environment's default PEM trust, appends the injected CA in its private
+workspace, and applies it to authenticated requests and imported configuration
+modules only for that job. TLS verification and hostname checks stay enabled;
+the private workspace is removed on success or failure. This does not change the
+EE image, system trust, credential type or receiver certificate.

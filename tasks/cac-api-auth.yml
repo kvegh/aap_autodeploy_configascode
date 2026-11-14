@@ -29,12 +29,48 @@
     aap_validate_certs: true
   no_log: true
 
+- name: Supplement job-local API trust with the existing injected CA
+  when: lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_CA_FILE') | length > 0
+  no_log: true
+  block:
+    - name: Validate the injected CA and locate the unchanged default trust bundle
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - -c
+          - >-
+            import ssl, sys; context = ssl.create_default_context();
+            context.load_verify_locations(cafile=sys.argv[1]);
+            print(ssl.get_default_verify_paths().cafile or '')
+          - "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_CA_FILE') }}"
+      register: cac_api_default_ca
+      changed_when: false
+
+    - name: Require the supported execution environment's default PEM trust
+      ansible.builtin.assert:
+        that: cac_api_default_ca.stdout | trim | length > 0
+        fail_msg: Require the execution environment's default PEM trust bundle.
+
+    - name: Append the declared CA to a private copy of default trust
+      ansible.builtin.copy:
+        dest: "{{ cac_workspace.path }}/selected-api-ca.pem"
+        mode: '0600'
+        content: |
+          {{ lookup('ansible.builtin.file', cac_api_default_ca.stdout | trim, rstrip=false) }}
+          {{ lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_CA_FILE'), rstrip=false) }}
+      diff: false
+
+    - name: Bind supplemental trust only to this job's API requests
+      ansible.builtin.set_fact:
+        cac_api_ca_path: "{{ cac_workspace.path }}/selected-api-ca.pem"
+
 - name: Authenticate the supplied bearer before fetching private configuration
   ansible.builtin.uri:
     url: "{{ cac_api_auth.hostname }}/api/gateway/v1/me/"
     headers:
       Authorization: "Bearer {{ cac_api_auth.token }}"
     validate_certs: true
+    ca_path: "{{ cac_api_ca_path | default(omit, true) }}"
     follow_redirects: none
     status_code: 200
   register: cac_bearer_probe

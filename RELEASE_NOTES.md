@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.24
+
+Allow the existing injected private CA on project import jobs. Preserve default
+trust in a private combined bundle, keep strict TLS and hostname verification,
+and scope module trust to the job. Six real local-TLS scenarios and nine
+protected-result cases passed on Core 2.20.10; focused production lint passed.
+Live application remains separate.
+
 ## 0.63.23
 
 Document the distinct blue configuration/content captions from `3ce55f2`
