@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.25
+
+Record the private-CA import correction in `d983450` (0.63.24), six passing
+local-TLS scenarios and nine passing protected-result cases on actual Core
+2.20.10. Native credential binding and live import verification remain pending.
+
 ## 0.63.24
 
 Allow the existing injected private CA on project import jobs. Preserve default

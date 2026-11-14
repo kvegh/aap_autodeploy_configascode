@@ -5079,3 +5079,24 @@ commit with concurrent published documentation and AIOps-rendering work.
 Only the tested diagnostic, its test and explanatory documentation differ
 from the upstream branch; other published work remains intact. A live
 diagnostic rerun is still needed to identify the actual connection cause.
+
+
+## 2026-11-14 — Use the existing CA for private receiver imports
+
+Implementation `d983450900dabce47b27b9f6f7ecc20af43a1484` (0.63.24)
+corrects an observed project-import TLS validation failure by consuming the
+existing injected CA credential. It appends that CA to an unchanged default
+PEM trust bundle in the importer's private workspace and supplies it to the
+verified authentication URI and configuration modules within that job.
+Certificate and hostname validation remain enabled; no receiver certificate,
+system trust, credential type, login source or importer architecture changes.
+
+Six synthetic local-TLS scenarios passed on actual cached Core 2.20.10:
+trusted private CA, missing CA, unrelated CA, malformed CA even with trusted
+defaults, preserved default trust and wrong-host rejection. They exercise
+real HTTPS requests, inherited module trust, private file mode and cleanup.
+Nine protected-result classification cases also passed, including verbose
+output canaries. Initial fixture-only literal-template markers were corrected
+before the passing run. Tests used disabled external networking and unchanged
+images. Focused offline production lint passed with the existing action/filter
+mocked. This records code and tests; live binding and import remain separate.
