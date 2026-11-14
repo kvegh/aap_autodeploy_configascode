@@ -332,6 +332,10 @@ The [decision history](design_decisions_history.md) records the original
 component-width and project-import choices separately from later layout fixes
 and their verification limits.
 
+<a href="https://kvegh.github.io/aap_autodeploy_configascode/#separation">
+  <img src="docs/screenshots/visualization.png" alt="Preview of the AAP Configuration as Code interactive story; open from the first step" width="320">
+</a>
+
 [Open the interactive story](https://kvegh.github.io/aap_autodeploy_configascode/)
 to follow an original AAP, its first destination and another AAP rebuilt from
 Git, keeping private encrypted YAML separate from public execution playbooks.

@@ -5152,3 +5152,26 @@ output canaries. Initial fixture-only literal-template markers were corrected
 before the passing run. Tests used disabled external networking and unchanged
 images. Focused offline production lint passed with the existing action/filter
 mocked. This records code and tests; live binding and import remain separate.
+
+
+## 2026-11-14 — Preview the interactive story in the README
+
+Documented at 2026-11-14T02:29:10-05:00. The owner requested the supplied AutoDeploy
+screenshot as a clickable preview in this public project README. The
+320-pixel-wide preview sits beside the existing visualization introduction
+and opens `https://kvegh.github.io/aap_autodeploy_configascode/#separation`,
+the first supported story step. The original PNG is stored at
+`docs/screenshots/visualization.png` without editing or recompression.
+
+Keeping only the text link would omit the requested visual preview;
+generating or rescaling a separate image would add unnecessary work and
+discard the supplied original. HTML display width keeps the preview
+modest while preserving its aspect ratio and exact bytes.
+
+This documentation-only change advances the project patch version to
+0.63.34 under the existing per-commit version policy. Validation covers
+the README link, local image path, exact screenshot hash and whitespace.
+It does not establish a new runtime or deployment result.
+
+Implementation commit: pending; the coordinating agent will create the
+documentation commit and add its identifier after publication.

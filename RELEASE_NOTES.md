@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.34
+
+Document the interactive story with the owner-supplied screenshot in the
+project README. Its compact clickable preview opens the first step; the
+PNG is preserved byte-for-byte. Documentation, link and image-integrity
+checks cover this change; no runtime or deployed automation changes.
+
 ## 0.63.33
 
 Document the shared blue/purple content-arrow alignment from `f95ff21`
