@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.43
+
+Refresh task overviews and encrypted recovery records after the shared AIOps
+runtime preparation fix passed and was published. The replacement connection,
+version assignment and host DNS stages passed; operating-system conversion is
+running. Complete fresh deployment and both demonstration tests remain pending.
+
 ## 0.63.42
 
 Document implementation `b7fef1b` and its 43 passing Core 2.20.10 AIOps
