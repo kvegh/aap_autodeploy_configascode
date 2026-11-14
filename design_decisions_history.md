@@ -4927,3 +4927,14 @@ The 23-case regression suite passed locally and against the downloaded deployed
 assets. Pages run `43517173937` succeeded, and all six public assets matched the
 implementation checkout. Browser geometry and pixel colours were not measured.
 Version 0.63.7 documents these outcomes without changing the deployed assets.
+
+
+## 2026-11-14 — Name the AAP configuration push explicitly
+
+Implementation `a7694b4f609f70299aead6d9fb36b990e2c21237` (0.63.8)
+changes the base AAP-settings arrow caption from “Apply AAP” to the
+owner-requested “Push AAP config”. The existing interaction expectation and
+README are aligned; other labels and behavior are unchanged.
+All 23 local and downloaded deployed-asset checks passed. Pages run
+`43557407229` succeeded and all six public assets matched the implementation.
+Browser geometry was not measured. Version 0.63.9 documents this result only.

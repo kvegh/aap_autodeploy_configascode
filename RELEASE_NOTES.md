@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.9
+
+Document the “Push AAP config” caption change in `a7694b4` (0.63.8), successful
+Pages publication and 23 passing checks against the published assets.
+
 ## 0.63.8
 
 Rename the AAP configuration arrow caption from “Apply AAP” to “Push AAP config”.
