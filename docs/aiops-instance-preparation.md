@@ -43,14 +43,15 @@ store, job or registration activity. The existing MCP job later performs the
 actual RHEL prerequisite configuration on its verified TRA.
 
 Absent auxiliary guests remain absent. Only matching existing native source
-inventory `vm_resource` records can populate a guest entry. Their VM name,
+inventory `vm_resource` records can populate a Linux guest entry. Their VM name,
 number, hypervisor, UUID, disk, network, address, machine ID, SSH keys, account
 and port must agree. Another allocation's identities or changed saved ownership
 are refused. The helper does not create, discover or claim to verify a running
 VM; the existing VM deployment jobs establish that evidence.
-Zabbix retains its distinct native clone schema, saved-image hash, frontend/API
-references and native monitoring IDs. It is not converted into a generic Linux
-deployment record.
+Zabbix retains its distinct schema 2 native clone provenance, saved-image hash,
+authenticated API version, frontend/API references and native monitoring IDs.
+Its disabled source inventory row contains metadata only, without a guest SSH
+connection or guest machine ID. It is not converted into a generic Linux record.
 
 ## Native monitoring record publication
 
@@ -64,8 +65,12 @@ with conflicting copies refused. Existing VM fields, other instances and secrets
 remain intact. Before creation, the VM section can contain configuration only;
 UUIDs, addresses and machine identity are never invented.
 
-After pinned SSH verifies a real clone, the existing Zabbix job writes its
-`vm_resource` and connection fields to the existing native source inventory.
+After the pinned hypervisor verifies the native domain and DHCP identity, the
+existing Zabbix job configures the appliance through its private API from AAP.
+It writes the authenticated `vm_resource` and API references to a disabled,
+metadata-only row in the existing native source inventory. No SSH connection
+into the appliance is used. Internet forwarding remains blocked before boot,
+during reconfiguration and afterward.
 The observed bridge gateway joins that same verified resource. It then launches
 the existing AIOps CaC importer with its saved credentials. This pre-import phase
 reads the newly available host variables, validates the complete VM record, and
@@ -77,7 +82,7 @@ its already approved token and concurrency checks. The existing target API
 client retains its fixed-origin HTTPS and redirect guard during discovery.
 No new Git publisher, credential type, task store, service or Job Template is
 introduced. The parent waits without a firewall lock and reloads the newly
-rendered inventory host and saved-template ciphertext before configuration and
+rendered inventory host and saved-template ciphertext before frontend and
 permission application continue. This reloading is required because an already
 running job retains its original inventory and Extra Variables.
 

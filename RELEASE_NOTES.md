@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.29
+
+Document the API-only appliance ownership and guarded retirement implementation
+in `9c75987` (0.63.28). Eight focused ownership, encrypted retirement and CaC
+preparation tests passed on Core 2.20. Native AIOps deployment acceptance remains
+separate; no successful live appliance correction is claimed by this publication.
+
 ## 0.63.28
 
 Accept Zabbix appliance ownership through native VM and authenticated API

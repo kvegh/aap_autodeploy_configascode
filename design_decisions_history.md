@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Retain native ownership for an API-only monitoring appliance — 2026-11-14
+
+Implementation `9c75987` (0.63.28) accepts the Zabbix appliance's schema 2
+native VM and authenticated API provenance instead of requiring guest SSH keys,
+account or machine ID. The owner explicitly requires no SSH into the appliance.
+Generated monitoring deployment settings discard the obsolete management-account
+inputs. Existing Linux guest transport and identity requirements are unchanged.
+
+The source appliance row is disabled and contains metadata only. Retirement
+retains exact domain UUID, disk, network, MAC, address and physical hypervisor
+checks, rejects SSH-bearing or enabled appliance rows and preserves other owners.
+Older or conflicting records require verified correction rather than fabricated
+API evidence or a compatibility fallback. The owner's startup choice is to boot
+under verified network isolation, configure through the internal API, and keep
+Internet forwarding blocked; no separately prepared image is required.
+
+Eight focused native Core 2.20 tests passed for ownership refusal, metadata-only
+inventory, saved-CaC continuity, preservation of successor guests, encrypted
+retirement and AIOps preparation. Seven broader local literal-wrapper assertions
+also fail unchanged on the public baseline, so no full-suite pass is claimed.
+Actual appliance correction and end-to-end AIOps acceptance remain unverified.
+
 ## Distinguish AAP configuration from AAP content pushes — 2026-11-14
 
 Implementation `3ce55f2734cfd94921adb7e1cb80a122a56ab982` (0.63.22) labels the
