@@ -482,8 +482,11 @@ other records and found no old numbered namespace remaining. This included the
 current separately numbered host DNS name; OS hostname, counters and pinned-IP
 management were preserved. Existing automatic host-DNS workflow guards remain
 unchanged. Do not recreate below-cutoff names while continuing the deployment.
-No new AAP generation has been allocated. Complete fresh platform installation
-and both demonstration tests remain unverified. Earlier completed candidate
+The selected seven-image recovery download is running through the existing
+native asynchronous job. A fresh pinned-host read confirms actual byte transfer;
+publication still requires every saved size and SHA-256 check. No new AAP
+generation has been allocated. Complete fresh platform installation and both
+demonstration tests remain unverified. Earlier completed candidate
 results are retained as history rather than repeated in active task reports.
 In the earlier Core 2.20 migration, the source runtime passed an authenticated forced image pull, normal
 preflight and zero-error CaC preview. The approved physical reinstall then passed

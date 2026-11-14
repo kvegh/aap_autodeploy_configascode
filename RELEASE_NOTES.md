@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.45
+
+Document the running seven-image recovery download with independently observed
+native async, process and byte-transfer evidence. Preserve checksum/publication
+and fresh-platform acceptance as unfinished gates. Refresh protected task records
+and distinguish earlier-candidate host/VM evidence from the current rebuild.
+
 ## 0.63.44
 
 Record the failed collection prerequisite and subsequently verified host checks,

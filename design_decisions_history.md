@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Document the running native recovery-image transfer — 2026-11-14
+
+Execution evidence only; no deployment implementation or architecture changed.
+The existing download template launched once, after a fresh pinned empty-host
+check. Its source synchronization succeeded at the published revision. A strict
+current-identity read then observed the actual native async identifier, running
+vendor process and increasing byte counters for the seven selected images.
+Transfer progress is not checksum verification, publication or AAP acceptance.
+The original failed host workflow and later recovery remain explicitly separate.
+
+The encrypted task export preserves the exact job identifiers and observations.
+Existing namespace-cutoff and naming boundaries remain in force. No additional
+host erase, guest allocation or application deployment is implied by this record.
+
 ## Record the explicit DNS cutoff and recovered host checks — 2026-11-14
 
 This is an execution record; deployment source code and workflow guards are
