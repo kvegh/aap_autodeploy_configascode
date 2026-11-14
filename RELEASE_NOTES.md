@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.33
+
+Document the shared blue/purple content-arrow alignment from `f95ff21`
+(0.63.32), successful Pages publication and 23 passing deployed-asset checks.
+
 ## 0.63.32
 
 Align the blue “Push AAP content” arrow with the purple “Push AAP content

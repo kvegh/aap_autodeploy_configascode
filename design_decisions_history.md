@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Align both AAP content pushes at the content section — 2026-11-14
+
+Implementation `f95ff2168e1d0000b23687772393969c1d37047e` (0.63.32) applies the
+existing responsive content-arrow placement to both the blue base-content stage
+and the purple content-change stage. Both arrows enter the receiving content
+area at the original AAP’s top edge, accounting for caption height and resize.
+The preceding AAP-settings arrow keeps its existing placement.
+
+All 23 existing walkthrough checks, JavaScript syntax and whitespace checks
+passed. Existing coverage now exercises both content stages and their resize
+calculation. Concurrent runtime updates were preserved before publication.
+Pages run `43571282117` succeeded; six published assets matched the checkout and
+all 23 deployed-asset checks passed. Geometry inputs are simulated, so browser
+placement was not visually measured. No browser or dependency was installed.
+
 ## Read disabled appliance metadata through the existing API — 2026-11-14
 
 Implementation `fe49d8d` (0.63.30) reads the selected disabled appliance row
