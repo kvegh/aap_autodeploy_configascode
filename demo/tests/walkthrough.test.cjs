@@ -556,7 +556,7 @@ test('active routes remain visible and deployment actions name the current stage
     ['infrastructure', 'Prepare OS', ['flow-config', 'flow-code', 'flow-apply']],
     ['installation', 'Install AAP', ['flow-config', 'flow-code', 'flow-apply']],
     ['base-aap', 'Push AAP config', ['flow-config', 'flow-code', 'flow-apply']],
-    ['base', 'Push AAP config', ['flow-config', 'flow-code', 'flow-apply']],
+    ['base', 'Push AAP content', ['flow-config', 'flow-code', 'flow-apply']],
     ['infra-change', 'Push OS changes', ['flow-config', 'flow-code', 'flow-apply']],
     ['git-change', 'Push AAP config changes', ['flow-config', 'flow-code', 'flow-apply']],
     ['project', 'Push AAP content changes', ['flow-config', 'flow-code', 'flow-apply']],

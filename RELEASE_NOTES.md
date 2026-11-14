@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.22
+
+Correct the blue base-content arrow to “Push AAP content”, keeping the preceding
+AAP-settings arrow as “Push AAP config”. Update the existing caption regression
+expectation and visualization documentation.
+
 ## 0.63.21
 
 Integrate the protected import authentication diagnostic from f3deca3.
