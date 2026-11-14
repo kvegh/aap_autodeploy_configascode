@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Verify imports and restore the existing workflow survey answer — 2026-11-14
+
+The normal Windows import completed and independent readback matched all
+thirty-five templates, twenty-nine nodes and twenty-nine edges. The AIOps import
+and fixed selector also completed; readback matched eleven templates, native EDA
+objects, generated webhook/runtime bindings, own-Hub image and TLS configuration.
+Both activations remain disabled. These results close configuration/import work,
+not application deployment or either functional demonstration.
+
+The original Windows preservation baseline records the unchanged AAP and two
+source images before guest creation. Workflow launch metadata then rejected the
+Chocolatey synchronization node despite its general start flag being true. The
+existing public workflow code already supplies `chocolatey_no_log: 'true'`;
+captured node data had omitted it. Private Windows implementation `12bc167`,
+documented by `63a1a6b` (configuration 0.0.24), restores only that current-profile
+and shared-seed answer. Core 2.20.10 full rendering and inverse/Vault preservation
+checks passed. Normal import and actual node/launch readback then passed,
+including an empty rejected-prompt list. The existing Windows workflow was
+launched once and has actual child-task progress; functional acceptance remains
+unfinished. Prompt permissions and diagnostic protection are unchanged.
+
 ## Retain configuration job identity before waiting — 2026-11-14
 
 Implementation: `6dac362` (working version 0.63.51).

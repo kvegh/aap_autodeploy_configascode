@@ -26,11 +26,16 @@ The current receiving AAP passed installation, base configuration and published
 access checks. Its normal demonstration job passed on the receiving own-Hub
 default execution environment. The new encrypted Windows profile passed native
 Core 2.20 rendering and current identity, network and route checks. Normal
-Windows/AIOps prerequisite preparation passed. The first Windows import exposed
-a missing AutoDeploy CaC prerequisite; applying that existing configuration
-created its two shared Controller-access credentials. Windows import completion,
-AIOps import, workload deployment and both functional demonstration tests still
-require verification. Original failed jobs remain part of this candidate's record.
+Windows and AIOps configuration imports passed with independent receiving-object,
+runtime, own-Hub EE and TLS checks. The fixed selector also completed its normal
+preparation/import path and retained both successful child IDs. Earlier missing
+AutoDeploy credentials were supplied by their existing producer; original failed
+jobs remain part of this candidate's record. Both workloads and demonstrations
+still require execution. Windows launch preflight found a required protected
+Chocolatey survey answer missing from captured node data; its encrypted fix is
+published, applied through the normal configuration importer and verified by
+actual node/launch readback. The existing Windows workflow is now running; its
+functional result remains pending.
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
@@ -1477,6 +1482,13 @@ credential definitions are required by seven Windows templates. Their absence
 can leave a partial import even when the Windows SCM Project sync succeeds.
 After correcting that prerequisite, rerun the failed configuration import;
 do not repeat successful VM, infrastructure or installation stages.
+
+Before launching the Windows workflow, check its launch metadata for missing
+templates and rejected node prompts as well as its general start flag. The
+Chocolatey synchronization node must explicitly retain the existing string
+`chocolatey_no_log: 'true'` survey answer to hide upload diagnostics. An otherwise
+complete imported graph can still omit this required input. Correct that saved
+CaC and apply it normally before starting guest creation.
 
 The vault must set `windows_disconnected_configuration_ready: true` and list its
 required secret variables in `windows_disconnected_required_secret_variables`.

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.53
+
+Document verified Windows and AIOps imports, actual successful selector child-ID
+retention, immutable Windows preservation baseline and the remaining workload
+tests. Document the rejected Chocolatey workflow prompt and its existing protected
+string answer restored in encrypted CaC. Refresh task records, preserving original
+failures, the feature freeze and unanswered next-iteration naming decision.
+
 ## 0.63.52
 
 Document implementation `6dac362`, the observed API read timeout, native failure
