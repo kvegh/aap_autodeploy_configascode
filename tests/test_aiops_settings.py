@@ -593,6 +593,31 @@ class EncryptedPublicationTests(unittest.TestCase):
                 mock.patch.dict(os.environ, {"CAC_GIT_TOKEN": "synthetic-private-repository-token"}):
             return action.run(task_vars=self.variables)
 
+    def test_disabled_appliance_api_record_is_published_without_ansible_hostvars(self):
+        capture, runtime, _, _ = self.remote_pair()
+        capture['aiops_zabbix_source_image'] = {'sha256': 'c' * 64}
+        self.write_pair(self.checkout, capture, runtime)
+        self.git('-C', str(self.checkout), 'add', '--all')
+        self.commit(self.checkout, 'Declare the existing appliance source image')
+        self.git('-C', str(self.checkout), 'push', '--quiet', str(self.bare), 'HEAD:main')
+        source = zabbix_guest(self.context)
+        row = {'id': 105, 'name': 'zabbix-v07', 'inventory': self.client.importer['inventory'],
+               'enabled': False, 'variables': source}
+        self.client.source_hosts.append(row)
+        self.assertNotIn('zabbix-v07', self.variables['hostvars'])
+        self.assertNotIn('failed', self.action())
+        after, protected, _, _ = self.remote_pair()
+        resource = after['aiops_instances'][self.context['instance_name']]['zabbix']
+        self.assertEqual(resource['uuid'], source['vm_resource']['uuid'])
+        self.assertEqual(resource['api_version'], '7.4.12')
+        self.assertEqual(resource['api_url'], source['zabbix_api_url'])
+        self.assertFalse({'host_keys', 'machine_id', 'user', 'port'}.intersection(resource))
+        accepted = self.git('--git-dir', str(self.bare), 'rev-parse', 'main')
+        row['enabled'] = True
+        with self.assertRaises(AnsibleActionFail):
+            self.action()
+        self.assertEqual(self.git('--git-dir', str(self.bare), 'rev-parse', 'main'), accepted)
+
     def test_generated_template_trust_changes_publish_without_rotating_runtime(self):
         self.assertNotIn('failed', self.action())
         self.git('-C', str(self.checkout), 'fetch', str(self.bare), 'main')

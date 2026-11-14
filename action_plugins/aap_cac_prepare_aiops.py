@@ -123,7 +123,7 @@ class ActionModule(ActionBase):
                 credential_name = settings.base_machine_credential(client, before["aiops_guest_machine_credential_name"])
                 if operation == "pre":
                     sources = {}
-                    for role in ("testserver1", "tra", "zabbix"):
+                    for role in ("testserver1", "tra"):
                         name = role + "-" + context["version"]
                         if name in hostvars:
                             sources[name] = record(name, ("aap_instance_number", "hypervisor_host", "vm_resource",
@@ -138,6 +138,18 @@ class ActionModule(ActionBase):
                         settings.lifecycle.query(inventory=importer["inventory"], page_size=200)),
                         "groups": client.rows("/api/controller/v2/groups/" +
                         settings.lifecycle.query(inventory=importer["inventory"], page_size=200))}
+                    # Disabled appliance rows are metadata, not Ansible targets;
+                    # read them through the native inventory API already in use.
+                    appliance_name = "zabbix-" + context["version"]
+                    appliance_rows = [row for row in source_bindings["hosts"] if row.get("name") == appliance_name]
+                    require(len(appliance_rows) <= 1, "The selected appliance has duplicate native inventory rows.")
+                    if appliance_rows:
+                        appliance = appliance_rows[0]
+                        require(appliance.get("enabled") is False
+                                and appliance.get("inventory") == importer["inventory"]
+                                and settings.positive_id(appliance.get("id")),
+                                "Use the selected importer's disabled metadata-only appliance row.")
+                        sources[appliance_name] = settings.keys.inventory_variables(appliance)
                     desired, runtime = settings.prepare_documents(before, old_runtime, context, credential_name, sources,
                         mcp_access=self._task.args.get("mcp_connection"), authentication=auth,
                         subscription=self._task.args["subscription"], source_git_token=self._task.args["source_git_token"],

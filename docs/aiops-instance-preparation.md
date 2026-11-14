@@ -73,7 +73,8 @@ into the appliance is used. Internet forwarding remains blocked before boot,
 during reconfiguration and afterward.
 The observed bridge gateway joins that same verified resource. It then launches
 the existing AIOps CaC importer with its saved credentials. This pre-import phase
-reads the newly available host variables, validates the complete VM record, and
+reads the disabled appliance row through the existing native inventory API,
+validates the complete VM record, and
 derives only the fresh owner's own-bridge TCP 443 permission. A later explicit
 permission removal is preserved rather than recreated on every import.
 

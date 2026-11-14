@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.30
+
+Read the appliance's disabled metadata-only inventory row through the existing
+native API during AIOps preparation. Such rows need not appear in Ansible
+hostvars. A real encrypted-Git regression reproduced missing VM publication
+before the correction and passes afterward; enabled appliance rows are refused.
+
 ## 0.63.29
 
 Document the API-only appliance ownership and guarded retirement implementation
