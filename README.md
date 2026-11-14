@@ -2,6 +2,14 @@
 
 ## Feature freeze for clean deployment
 
+Complete and test the current candidate even when it needs fixes. Then retire
+only that candidate's active CaC, DNS and owned metadata, preserving shared data,
+recovery inputs, history and monotonic counters. Repeat the full installation
+with the next allocated version until one uninterrupted run passes from bare
+metal through AAP and both Windows/AIOps deployments and functional demo tests
+on the replacement host. A repaired candidate supplies fixes and evidence;
+it does not satisfy the clean-run criterion.
+
 The owner has frozen new features and refactors while the clean platform build,
 Windows deployment and AIOps deployment and demonstration tests are completed.
 Continue the existing deployment path, verification and targeted fixes needed

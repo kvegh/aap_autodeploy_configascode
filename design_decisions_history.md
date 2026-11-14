@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Repeat complete candidates until one run is clean — 2026-11-14
+
+The owner explicitly authorized finishing and testing the current candidate,
+fixing encountered issues, then retiring its active CaC/DNS/owned metadata and
+repeating the existing full procedure with the next allocated version. Continue
+until a complete run succeeds from bare metal through AAP, Windows and AIOps
+deployments and both functional demonstration tests on that same replacement.
+Keep original failures and recovered test evidence; they do not make a repaired
+candidate uninterrupted acceptance. Preserve shared/production data, immutable
+recovery inputs, history, monotonic counters and all native controls.
+
+Further reinstall iterations are authorized only after the current candidate's
+deployments/tests and verified retirement. This does not authorize an immediate
+second erase, skipping tests, a new architecture, unapproved credential types or
+answering another chat's pending decisions. The feature freeze remains active.
+This is an execution requirement, not a new deployment implementation.
+
 ## Document the owner’s feature freeze and checksum verification — 2026-11-14
 
 The owner explicitly froze new features and refactors to prioritize a clean

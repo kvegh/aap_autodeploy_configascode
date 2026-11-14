@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.47
+
+Document the owner's iterative clean-deployment goal: finish and test the current
+candidate, fix encountered issues, retire its active CaC/DNS/owned metadata and
+repeat with the next allocated version until one uninterrupted full installation
+and both Windows/AIOps deployment and demonstration paths pass. Preserve history,
+shared/production data, counters, native controls and the feature freeze.
+
 ## 0.63.46
 
 Document the owner's feature freeze for the clean platform, Windows and AIOps
