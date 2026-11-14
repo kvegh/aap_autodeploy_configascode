@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Fill existing shared AIOps runtime defaults during import — 2026-11-14
+
+Implementation `b7fef1bcf77a0150eaf67fd109fa5c91dc282b07` adds eight lines to the
+existing `prepare_documents` function. It copies only six maintained shared
+website/Zabbix/Vertex inputs from the same encrypted capture into missing values
+for the selected runtime instance. Explicit overrides, other namespaces and
+instance-generated identifiers or secrets are preserved. Nested values retain
+literal semantics. The existing importer, runtime Vault and encrypted Git
+publication mechanism are unchanged.
+
+A new regression failed against the old implementation because the selected
+runtime mapping was empty. The affected suite now passes all 43 cases in cached
+Core 2.20.10, including real synthetic Git/two-Vault publication, repeated import,
+other-instance and override preservation, nested literal values and native
+Ansible pre/post-import executions. Thirty pure preparation cases also passed
+locally. Existing test-only unsafe-subclass checks were updated to Core 2.20’s
+template-trust semantics; the deliberately executable fixture expression is
+explicitly trusted. Actual secret values and production APIs were not used in
+these tests. Live fresh-instance acceptance remains a later stage of the
+already-authorized rebuild; this fix does not create or allocate that instance.
+
 ## Record verified reinstall and the running host workflow — 2026-11-14
 
 Actual fresh off-host metadata and encrypted-manifest access passed after the

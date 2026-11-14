@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.42
+
+Document implementation `b7fef1b` and its 43 passing Core 2.20.10 AIOps
+preparation/publication tests. Fresh-instance shared defaults use the existing
+encrypted inputs and preserve overrides and unrelated values. No live
+application deployment or complete fresh demonstration is claimed.
+
 ## 0.63.41
 
 The existing AIOps importer copies six maintained shared runtime inputs into
