@@ -4938,3 +4938,24 @@ README are aligned; other labels and behavior are unchanged.
 All 23 local and downloaded deployed-asset checks passed. Pages run
 `43557407229` succeeded and all six public assets matched the implementation.
 Browser geometry was not measured. Version 0.63.9 documents this result only.
+
+## 2026-11-14 — Explain protected import authentication failures safely
+
+Implementation `f3deca3d33fdb89f44107a9c6092dd813b3c786e` (0.63.10)
+retains the importer's protected URI result and reports only a numeric HTTP
+status and fixed failure category. This makes an execution-side authentication
+failure diagnosable while keeping bearer, URL, response and raw exception
+details hidden. TLS verification, redirect refusal and the existing credential
+selection remain unchanged. It adds no importer or authentication fallback.
+
+Nine synthetic success/HTTP/TLS/DNS/network/timeout cases passed in the unchanged
+cached official Core 2.20.10 image with networking disabled. Verbose-output
+canaries remained hidden when fixture results were loaded separately from
+executable YAML, matching production's protected runtime values. The test fixture
+uses the project's native YAML/trust handling. Offline production lint reported
+no findings for the changed authentication task. A live diagnostic rerun remains
+necessary; these checks do not establish a live connection failure's cause.
+
+Concurrent unrelated caption documentation was preserved during the unpublished
+commit's rebase, with the next unused patch version assigned. Version 0.63.11
+documents this implementation.

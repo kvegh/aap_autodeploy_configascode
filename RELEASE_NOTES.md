@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.11
+
+Document secret-safe authentication diagnostic implementation `f3deca3` (0.63.10)
+and its nine native Core 2.20.10 cases with protected-output canary checks.
+Offline production lint passed. A live diagnostic rerun remains separate.
+
 ## 0.63.10
 
 Report only a numeric HTTP status and fixed error category when the shared
