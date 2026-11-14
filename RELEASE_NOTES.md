@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.19
+
+Document responsive content-arrow alignment and the base-caption change in
+`6376a60` (0.63.18), successful Pages publication and 23 passing deployed-asset
+checks. Geometry checks use simulated dimensions; browser placement is unmeasured.
+
 ## 0.63.18
 
 Rename the base-content arrow from “Apply content” to “Push AAP config”.

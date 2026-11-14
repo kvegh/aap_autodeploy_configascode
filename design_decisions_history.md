@@ -5008,3 +5008,25 @@ the deletion of underneath-arrow text are preserved.
 All 23 local and downloaded deployed-asset checks passed. Pages run
 `43560037080` succeeded, with all six public assets matching the implementation.
 Browser geometry was not measured. Version 0.63.15 documents this result only.
+
+
+## 2026-11-14 — Align the content push with the original AAP top
+
+Implementation `6376a603e78697cbd676fd9c07f04db8f20ad8e4` (0.63.18)
+changes the blue base-content caption to the owner-requested “Push AAP config”.
+The purple “Push AAP content changes” arrow uses a separate content destination
+and aligns its line centre with the original AAP's top edge. Its position uses
+the rendered source-card offset and caption/track heights, recalculated after
+scene rendering and on window resize, instead of a fixed coordinate for this
+stage. Other stages clear that inline position, and the existing narrow-layout
+CSS override preserves the stacked vertical connectors. No dependency or layout
+framework is introduced.
+
+Existing checks cover alignment arithmetic with simulated dimensions, resize
+recalculation, stage reset and the requested caption. All 23 checks passed.
+The change was integrated with concurrent documentation commits, preserving
+their content and reconciling only version/release metadata. Visualization assets
+were unchanged by that rebase. Pages run `43561593593` succeeded; all six public
+assets matched and all 23 checks passed against the downloaded deployed files.
+Actual browser geometry was not measured. Version 0.63.19 documents this result
+without changing deployed assets.
