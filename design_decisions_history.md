@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Retry only the pinned source read before policy work — 2026-11-14
+
+Implementation: `ad39bbe` (working version 0.63.54).
+
+A Windows preparation failed while reading the exact private source revision;
+the protected native Git output identified an incomplete pack (`early EOF` and
+invalid index-pack). The same pinned read succeeded in a focused stage recovery.
+The underlying transfer interruption remains unknown. Add two native retries
+with a three-second delay to that read alone, before the existing exact-SHA
+assertion, transaction lock and policy or VM work. Preserve every source,
+authentication, TLS, redirect and protected-output setting. This does not retry
+job launches or mutations or introduce a new transport, cache or dependency.
+
+Four native control-flow cases passed on Core 2.20.10 and 2.21.5: ordinary
+success, interruption followed by success, all three reads failing, and a
+successful read of the wrong revision. Failed or mismatched reads never reach
+the mutation marker; token/output canaries remain hidden. The existing real
+local Git authentication/cleanup regression passed on both versions. These
+checks establish bounded retry behavior, not recovery from every possible
+partial checkout or resolution of the original transport cause. Downstream
+exact-pin qualification and actual workload acceptance remain separate.
+
 ## Verify imports and restore the existing workflow survey answer — 2026-11-14
 
 The normal Windows import completed and independent readback matched all

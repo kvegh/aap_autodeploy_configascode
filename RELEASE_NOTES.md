@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.55
+
+Document implementation `ad39bbe`, the observed incomplete private Git transfer,
+the bounded read-only retry and native validation limits. Retain current workload
+recovery status separately from downstream pin qualification and clean acceptance.
+
 ## 0.63.54
 
 Retry only a failed job-local private Hactar Git read twice before the existing
