@@ -30,23 +30,26 @@ Windows and AIOps configuration imports passed with independent receiving-object
 runtime, own-Hub EE and TLS checks. The fixed selector also completed its normal
 preparation/import path and retained both successful child IDs. Earlier missing
 AutoDeploy credentials were supplied by their existing producer; original failed
-jobs remain part of this candidate's record. Both workloads and demonstrations
-still require execution. Windows launch preflight found a required protected
+jobs remain part of this candidate's record. Both complete workload
+demonstrations remain unfinished. Windows launch preflight found a protected
 Chocolatey survey answer missing from captured node data; its encrypted fix is
 published, applied through the normal configuration importer and verified by
 actual node/launch readback. The Windows workflow then failed on AD activation
 and an incomplete private Git transfer. Focused stage recoveries created all five
-guests, and server basics passed on all four regular guests. AD updates continue
-with measured servicing activity. The qualified Windows caller update is
-published. Its next normal activation stage adopted the exact reviewed source
-and completed the protected private Git read. The sixteen-stage checkpoint then
-includes all regular activations, repository preparation, WSUS/Chocolatey setup,
-WSUS prerequisites, the verified Chocolatey synchronization/export/import chain,
-and AD preparation. Four unique packages have matching destination SHA-256
-readbacks. AD preparation installed nine applicable Server updates and verified
-none remaining, no required reboot and removal of inherited public access.
-Domain deployment and its functional checks follow the existing graph; WSUS
-synchronization and the full Windows/AIOps demonstrations remain unfinished.
+guests, and server basics passed on all four regular guests. AD preparation then
+completed its measured update and reboot passes. The qualified caller update is
+published and a normal activation stage adopted it and completed the protected
+private Git read. The twenty-four-stage checkpoint includes both repository
+synchronization/export/import chains and complete AD functional verification.
+Four Chocolatey packages have matching destination SHA-256 readbacks. AD
+preparation installed nine applicable Server updates, with none remaining and
+no reboot required. Domain deployment, LDAPS, gateway trust and regional setup
+passed; the final verifier passed twelve real LDAP logins, 360 permission checks
+and all thirty-six localhost mock jobs, with no cross-region grants. External
+WSUS synchronization downloaded every selected payload, and native internal
+metadata import completed successfully. The original monthly update limit,
+managed-server patching and application tests follow the existing graph.
+Full Windows acceptance and AIOps application execution remain unfinished.
 Original failures remain recorded.
 
 The external WSUS readiness check now has protected optional worker/log metadata

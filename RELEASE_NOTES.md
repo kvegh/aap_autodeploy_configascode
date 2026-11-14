@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.62
+
+Document twenty-four successful Windows stages, complete AD login and permission
+verification, and completed WSUS synchronization/export/import. Keep remaining
+monthly-limit, patching and application acceptance separate from this checkpoint.
+Refresh normal task mirrors and encrypted recovery records; runtime is unchanged
+and original failed stages remain preserved.
+
 ## 0.63.61
 
 Document the necessary external WSUS observation added to the existing Windows

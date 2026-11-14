@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Document AD acceptance and completed repository imports — 2026-11-14
+
+The existing Windows graph has twenty-four successful stage jobs. Its final AD
+verification passed twelve real LDAP logins, 75 scoped grants, 360 permission
+checks and thirty-six localhost mock jobs, with no cross-region grants and
+view-only readers. Root independently verified the native report and terminal
+result before closing only the AD recovery task. The original activation failure
+and its unknown cause remain preserved.
+
+External WSUS synchronization, payload verification, export and native internal
+metadata import also completed. The original monthly update limit, managed-server
+patching and application tests remain required. This documentation and encrypted
+task checkpoint changes no runtime code, security control or architecture. A
+recovered candidate still does not satisfy uninterrupted clean-run acceptance.
+
 ## Verify literal trust using the supported native representation — 2026-11-14
 
 Test correction: `1cee2ac` (working version 0.63.56).
