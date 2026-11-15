@@ -1,5 +1,22 @@
 # Design decisions history
 
+## Run independent website setup while preserving the VM baseline — 2026-11-15
+
+Read-only inspection verified that the existing AIOps website template changes
+only the selected version's DNS, website files, dedicated nginx configuration
+and certificate, with validated graceful nginx reload. It changes no VM,
+allocation, isolation policy, Windows resource or image. Monitoring, fail2ban
+management and button arming remain disabled. The existing job therefore runs
+alongside Windows monthly update preparation without adding another deployment
+path or architecture.
+
+AIOps VM creation still waits for complete Windows functional and preservation
+verification: that verifier requires the original AAP plus five Windows domains.
+Available memory alone cannot release this dependency, and the original baseline
+must not be replaced to accommodate new guests. Each later creator must refresh
+its current policy, identity and resource checks. Actual website and full AIOps
+functional acceptance remain separate from this execution checkpoint.
+
 ## Document AD acceptance and completed repository imports — 2026-11-14
 
 The existing Windows graph has twenty-four successful stage jobs. Its final AD

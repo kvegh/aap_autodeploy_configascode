@@ -39,7 +39,7 @@ and an incomplete private Git transfer. Focused stage recoveries created all fiv
 guests, and server basics passed on all four regular guests. AD preparation then
 completed its measured update and reboot passes. The qualified caller update is
 published and a normal activation stage adopted it and completed the protected
-private Git read. The twenty-four-stage checkpoint includes both repository
+private Git read. The twenty-five-stage checkpoint includes both repository
 synchronization/export/import chains and complete AD functional verification.
 Four Chocolatey packages have matching destination SHA-256 readbacks. AD
 preparation installed nine applicable Server updates, with none remaining and
@@ -47,10 +47,20 @@ no reboot required. Domain deployment, LDAPS, gateway trust and regional setup
 passed; the final verifier passed twelve real LDAP logins, 360 permission checks
 and all thirty-six localhost mock jobs, with no cross-region grants. External
 WSUS synchronization downloaded every selected payload, and native internal
-metadata import completed successfully. The original monthly update limit,
-managed-server patching and application tests follow the existing graph.
-Full Windows acceptance and AIOps application execution remain unfinished.
+metadata import completed successfully. The April 2026 update policy passed with
+four updates offered, 133 blocked, no automatic approval rules and no missing
+content. Both managed-server patch jobs are under way; application tests follow
+the existing graph. Full Windows and AIOps demonstration acceptance remains
+unfinished.
 Original failures remain recorded.
+
+The existing AIOps website setup now runs independently alongside the Windows
+monthly update preparation. Its reviewed path manages only its version's DNS,
+website files, dedicated nginx configuration and certificate. Monitoring,
+fail2ban management and button arming stay off. AIOps VM creation still waits
+for Windows functional and preservation checks: adding guests earlier would
+change the exact domain set required by the immutable pre-creation baseline.
+The later creators must reread current isolation policy and available resources.
 
 The external WSUS readiness check now has protected optional worker/log metadata
 using its existing template and credentials (Windows implementation `8cb20fb`,

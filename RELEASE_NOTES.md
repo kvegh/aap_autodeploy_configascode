@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.63
+
+Document the existing independent AIOps website setup and its verified scope.
+Document the verified April update policy and both launched managed patch jobs.
+Keep VM creation behind Windows functional and immutable-baseline preservation
+checks. Add the actual AIOps runtime acceptance task to the normal overview and
+encrypted recovery export. No runtime code or architecture changes.
+
 ## 0.63.62
 
 Document twenty-four successful Windows stages, complete AD login and permission
