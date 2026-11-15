@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-263 tasks: 40 outstanding; 223 closed.
+264 tasks: 39 outstanding; 225 closed.
 
 ## Outstanding tasks
 
@@ -26,7 +26,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | in_progress | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.5 | Deploy and verify AIOps on v22 | in_progress | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.4 |
 | bead-wd-3ix.2.7.5.2 | Reconcile AAP supplemental interface metadata in source inventory | in_progress | P1 | bug | bead-wd-3ix.2.7.5 |
-| bead-wd-3ix.2.7.5.3 | Preserve Linux creator production-source default | in_progress | P1 | bug | bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.5.4 | Reconcile canonical Windows network policy into original Source aliases before AIOps release | in_progress | P1 | bug | bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.6 | Pass the v22 AIOps website demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.7 | Pass the v22 AIOps agent repair demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.6 |
@@ -123,6 +122,8 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.7.4 | Deploy and functionally verify Windows on v22 | closed | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.3 |
 | bead-wd-3ix.2.7.4.1 | Diagnose and fix the first v22 Windows template import failure | closed | P1 | bug | bead-wd-3ix.2.7.4 |
 | bead-wd-3ix.2.7.5.1 | Correct the v22 AIOps selector inventory key | closed | P1 | bug | bead-wd-3ix.2.7.5 |
+| bead-wd-3ix.2.7.5.3 | Preserve Linux creator production-source default | closed | P1 | bug | bead-wd-3ix.2.7.5 |
+| bead-wd-3ix.2.7.5.5 | Correct current AIOps testserver role name without weakening ownership guards | closed | P1 | bug | bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.8.1 | Enable visible logging for existing v22 Linux creator | closed | P1 | task | bead-wd-3ix.2.7.8 |
 | bead-wd-3ix.2.7.8.2 | Honor explicit visible logging in AIOps preparation guard | closed | P1 | bug | bead-wd-3ix.2.7.8 |
 | bead-wd-3wpp | Document the verified dedicated Google Drive rclone setup | closed | P1 | task | — |

@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Reconcile only proved Windows release omissions in Source aliases — 2026-11-15
+
+Implementation `d31358762439c1ebcbf73bdae11914f988fe25d6` addresses the
+original Source controller retaining older policy aliases after Windows jobs
+publish canonical permissions from the receiving AAP. The existing guest-release
+path proves each omitted tuple against complete verified Windows ownership for
+the same generation and hypervisor, then invokes the unchanged strict policy
+guard. Extra or reordered identities, foreign or ambiguous owners, missing
+non-Windows grants and other policy changes still refuse.
+
+Planning remains read-only. The existing post-native publication sends ordinary
+variables-only PATCH bodies, checks exact row identity and full variable
+preimages immediately before writes, and verifies exact readback afterward.
+Unrelated variables, production exclusions, credentials, counters and native
+firewall enforcement remain protected. These bounded checks provide no atomic
+compare-and-swap guarantee.
+
+Eight focused tests passed under native Core 2.20.10, covering real transport
+failures, races, readback, encrypted interrupted publication and safe retry,
+native rollback and application-grant preservation. The broader run passed
+38 of 40; both remaining assertions fail on the clean baseline because of an
+obsolete unsafe-string type expectation and the authorized visible logging
+policy. No full-suite pass or live automatic-repair acceptance is claimed.
+The same narrow functions and existing lazy-loader dependency are qualified
+separately on the accepted Linux creator dependency; later caller adoption
+remains a distinct step.
+
 ## Reconcile missing selected AAP interface metadata before remote setup — 2026-11-15
 
 Implementation `15ebd84cd1bbfb50db90dcff7cd5557541103c23` repairs a stale

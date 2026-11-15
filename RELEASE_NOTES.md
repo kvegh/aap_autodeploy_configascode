@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.64.7
+
+- Document implementation `d313587`, ownership proofs, bounded API publication,
+  focused native validation and remaining live acceptance limitations.
+- Refresh the protected task recovery export and public overview from Beads.
+
 ## 0.64.6
 
 - Reconcile only proved missing current-generation Windows release identities
