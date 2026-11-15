@@ -5868,3 +5868,20 @@ and twenty-nine-node workflow. Only Windows was selected for normal prerequisite
 preparation and CaC import. Prerequisites passed; the import stopped during
 job-template creation before workload execution. Actual guest deployment and both AIOps demo outcomes
 remain separate. This checkpoint changes documentation and task records only.
+
+## 2026-11-15 — Preserve the protected project-import error before cleanup
+
+Implementation `f07dac557dc0f77216895ea6a79944d76dcef09d` reuses the existing encrypted diagnostic action in
+the generic project import rescue. The Windows import stopped during job-template
+creation, but protected role output and cleanup hid the underlying module error.
+The existing labelled CaC key seals the original and async failure in the native
+job artifact before cleanup. A fixed derived capture path is verified; ordinary
+logs remain protected, invocation arguments remain excluded, and no workload or
+automatic retry is introduced. This fixes diagnostic loss; the original import
+error still requires its own diagnosis and focused correction.
+
+Five diagnostic integration tests passed locally and in actual Core 2.20.10,
+including original/cleanup secret canaries, nested invocation redaction and
+missing-key refusal. Ten existing retained-child observer tests and native
+importer syntax also passed. Actual normal importer rerun and encrypted error
+inspection remain the next operational step.

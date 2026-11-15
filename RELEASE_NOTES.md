@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.84
+
+- Document implementation and validation of encrypted project-import failure
+  preservation; keep the underlying Windows template error unresolved pending
+  its protected live diagnostic. No additional runtime behavior changes.
+
 ## 0.63.83
 
 - Preserve protected generic project-import failures in the existing encrypted
