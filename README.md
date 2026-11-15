@@ -120,9 +120,12 @@ The existing encrypted private verification history retains these outcomes and
 diagnostic limitations. Its append passed native cached Core 2.20.10 inverse,
 roundtrip and previous-history checks without changing CaC or runtime
 ciphertext. Current application and demonstration tasks are closed. Exact
-candidate-only retirement is being inventoried through existing ownership
-guards; the next full reinstall still requires the outstanding host/platform
-counter and DNS-naming decision. Original failed stages remain recorded, so
+candidate-only retirement has a reviewed read-only plan, but execution is
+blocked: the existing cleanup requires stopped guests and its normal job then
+deletes the selected AAP/AIOps VMs. Current ownership and DNS are retained until
+the owner resolves that conflict with preserving all running VMs. The next full
+reinstall also requires the outstanding host/platform counter and DNS-naming
+decision. Original failed stages remain recorded, so
 this candidate does not satisfy uninterrupted clean acceptance.
 
 The external WSUS readiness check now has protected optional worker/log metadata

@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Retain ownership while retirement order is unresolved — 2026-11-15
+
+Read-only current-candidate plans passed the existing typed ownership and
+inverse checks. They identified eight canonical rows, four saved selectors and
+three owned provider recordsets; the separate build-target map is already empty.
+The plans preserve unrelated records, historical evidence and consumed counters.
+
+The existing native permission cleanup requires actual stopped guests and
+retains the AIOps owner/grant tuples until rich-rule cleanup succeeds. Its
+normal decommission entry subsequently deletes the selected VM resources; no
+qualified grant-only or proxy-only entry preserves all running VMs. Treating
+the grant-enable rescue as revocation or omitting the owner first would bypass
+those guards. A later full reset is not a published substitute cleanup proof.
+
+Retirement therefore remains unapplied pending an actual owner decision about
+the existing decommission path versus retaining the running VMs. The separate
+allocator/DNS question remains unanswered. No VM stop, deletion, firewall,
+profile, ownership, provider DNS or proxy change was made by this inventory.
+Qualified runtime `f9aa841` is unchanged; this is a task/documentation checkpoint.
+
 ## Accept both actual demonstrations before candidate retirement — 2026-11-15
 
 Private evidence implementation `c839f003659f249a1654f861b3b21ad8ad7ed24e`,
