@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.92
+
+- Document implementation `5e926d1664da` and native Core 2.20.10 validation of
+  explicit AIOps preparation logging with unchanged encrypted publication guards.
+
 ## 0.63.91
 
 - Honor the owner's explicit visible-logging choice in AIOps pre-import

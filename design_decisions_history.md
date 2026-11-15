@@ -5923,3 +5923,19 @@ non-logging fields unchanged. Native credential redaction, authentication,
 permissions, TLS and rollback remain active. Logs stay private and reports are
 redacted. The native Git failure test verifies visible errors and continued
 cleanup; active jobs retain their original settings.
+
+### Honor the explicit AIOps preparation logging choice
+
+Implementation `5e926d1664da025ba30c76ee6da71d77a1867788` fixes a guard found
+before the next application import: preparation still required hidden task logs
+after the owner explicitly requested visible deployment logs. Pre-import now
+accepts either explicit Boolean logging choice. Subscription/source-reader inputs
+remain restricted to pre-import; private checkout, native authentication,
+credential, encryption and no-force-publication checks remain unchanged.
+
+A regression reproduced the rejection before the change. Fourteen encrypted
+publication tests passed in the actual cached Core 2.20.10 runtime, including
+both native action modes, visible logging, malformed-choice refusal, paired
+Vault ciphertext, idempotence, concurrent writers and denied-write handling.
+No live application import was launched to test this guard. Raw diagnostics
+remain private under the owner's temporary logging instruction.
