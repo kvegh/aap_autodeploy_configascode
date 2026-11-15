@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.64.6
+
+- Reconcile only proved missing current-generation Windows release identities
+  in Source aliases through the existing guest-release publication path.
+  Preserve strict policy checks, production protection and read-only planning;
+  verify bounded preimages and exact API readback for reconciled PATCHes.
+- Eight focused native Core 2.20 tests passed. The broader run passed 38 of 40;
+  both remaining failures reproduce on the unchanged baseline, so no complete
+  suite pass or live automatic-repair acceptance is claimed.
+- Document successful Linux guest creation, verification, release and normal
+  AIOps ownership import, keeping service and demonstration acceptance separate.
+
 ## 0.64.5
 
 - Document implementation `15ebd84` and the missing-interface repair's scope,

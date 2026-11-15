@@ -94,7 +94,12 @@ their disks and definitions were retained, and AAP remained running.
 The original failures and diagnostic retries remain recorded. AIOps prerequisite
 preparation and configuration import passed after correcting an operator's
 inventory-key input and reconciling the Source inventory's missing interface
-metadata. Guest/service deployment and both AIOps demo tests remain outstanding.
+metadata. Both required Linux guests subsequently passed creation, authenticated
+verification, native network release and ownership publication. A normal AIOps
+refresh bound both logical hosts to their exact verified ownership records.
+Service deployment and both AIOps demo tests remain outstanding. An unused guest
+created with an incorrect role name is gracefully stopped, with its ownership
+retained for the conditional whole-host cleanup.
 The owner's post-wipe absence-check withdrawal
 remains in force.
 
@@ -119,6 +124,23 @@ selected owner; no atomic compare-and-swap guarantee is claimed.
 Select the actual shared-inventory hostname as the instance key. That alias can
 differ from the physical VM name; verify their registered identity rather than
 constructing one from the other.
+
+## Preserve already published Windows release metadata
+
+Windows automation on a receiving AAP can leave older policy aliases on the
+original Source controller. The normal guest-release transaction now proves
+missing canonical Windows release identities from complete current-generation
+ownership on the selected hypervisor before invoking the unchanged strict
+policy guard. Extra identities, conflicting ownership, changed ordering and
+changes to production exclusions or other grant types still refuse.
+
+Planning remains read-only. Existing publication runs after native verification
+and updates only the selected Source aliases and normal current-guest record.
+Reconciled PATCHes require exact row identity and complete variable preimages,
+then verify exact readback. No additional credential, operation, transport or
+Windows inventory record is introduced. Bounded preimage checks provide no
+atomic compare-and-swap guarantee. Missing non-Windows grants remain outside
+this repair's scope.
 
 ## Protected native source Git failures
 
