@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.61
+
+- Document the temporary visible-logging implementation `9fc743324df7`
+  and native validation under the owner's current troubleshooting direction.
+
 ## 0.63.60
 
 - Apply the explicit temporary owner direction: deployment tasks use no_log:false

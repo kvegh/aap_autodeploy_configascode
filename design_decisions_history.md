@@ -5513,3 +5513,13 @@ fails, a fixed notice allows the existing outer rollback and cleanup to run.
 Six diagnostic cases passed on Core 2.20.10 against the existing pinned baseline. The original live
 Git cause remains unresolved. The caller receives the minimal backport on its
 existing lifecycle baseline while investigation continues.
+
+
+### Temporary visible deployment logging
+
+At the owner's explicit direction, implementation `9fc743324df79a01bb931ae37d3322dc5d2e0ca0`
+sets task no_log and configuration-role logging controls to false until clean
+acceptance. YAML-node comparison proves every non-logging field unchanged.
+Three native Core 2.20.10 cases verify visible failure text, encrypted diagnostic
+retention, native credential redaction and continued cleanup. Preserve private
+job output and redact reports; active jobs retain their original settings.
