@@ -1,7 +1,7 @@
 ---
 # Definitions remain encrypted; only this target can issue its service bearer.
 - name: Prepare target-owned Assistant Team inventory lifecycle access
-  no_log: true
+  no_log: false
   diff: false
   vars:
     cac_assistant_ca_path: >-
@@ -255,7 +255,7 @@
       ansible.builtin.include_role:
         name: infra.aap_configuration.controller_roles
       vars:
-        controller_configuration_role_secure_logging: true
+        controller_configuration_role_secure_logging: false
 
     - name: Inspect private token storage on the target
       ansible.builtin.stat:

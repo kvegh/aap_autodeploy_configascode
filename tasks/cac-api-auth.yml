@@ -10,7 +10,7 @@
     instance_name: "{{ aap_instance_key | aap_inventory_instance_name(hostvars[aap_instance_key]) }}"
     fqdn: "{{ hostvars[aap_instance_key].ansible_fqdn }}"
   register: cac_selected_instance_access
-  no_log: true
+  no_log: false
 
 - name: Explain a safe instance-token selection failure without revealing stored data
   ansible.builtin.assert:
@@ -27,11 +27,11 @@
     aap_password: ''
     aap_request_timeout: 10.0
     aap_validate_certs: true
-  no_log: true
+  no_log: false
 
 - name: Supplement job-local API trust with the existing injected CA
   when: lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_CA_FILE') | length > 0
-  no_log: true
+  no_log: false
   block:
     - name: Validate the injected CA and locate the unchanged default trust bundle
       ansible.builtin.command:
@@ -75,7 +75,7 @@
     status_code: 200
   register: cac_bearer_probe
   failed_when: false
-  no_log: true
+  no_log: false
 
 - name: Require authenticated HTTPS and report only a safe failure category
   ansible.builtin.assert:

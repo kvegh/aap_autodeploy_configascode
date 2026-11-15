@@ -12,15 +12,15 @@
   become: false
   check_mode: false
   register: aap_dns_zone_page
-  no_log: true
+  no_log: false
 
 - name: Require a complete provider record array
   ansible.builtin.assert:
     that: aap_dns_zone_page.json | type_debug == 'list'
-  no_log: true
+  no_log: false
 
 - name: Retain the protected records and pagination state
   ansible.builtin.set_fact:
     aap_dns_zone_records: "{{ aap_dns_zone_records | default([]) + aap_dns_zone_page.json }}"
     aap_dns_zone_complete: "{{ aap_dns_zone_page.json | length < 500 }}"
-  no_log: true
+  no_log: false

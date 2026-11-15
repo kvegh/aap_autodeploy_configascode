@@ -12,7 +12,7 @@
       - aap_instance_resources.aap.verified | bool
       - aap_instance_route | aap_instance_route is mapping
     fail_msg: Complete normal base, MCP/API access and source publication successfully before releasing AAP isolation.
-  no_log: true
+  no_log: false
 
 - name: Prepare new short-lived pinned SSH trust after all base cleanup succeeded
   ansible.builtin.include_tasks: aap-instance-ssh.yml
@@ -22,7 +22,7 @@
     aap_final_release_login:
       user: "{{ vault_ansible_user }}"
       password: "{{ vault_ansible_password }}"
-  no_log: true
+  no_log: false
 
 - name: Read only the authenticated selected guest machine identity through its pinned route
   ansible.builtin.command:
@@ -41,7 +41,7 @@
   register: aap_final_guest_machine_id
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Require actual guest facts rather than the hypervisor machine identity
   ansible.builtin.assert:
@@ -49,7 +49,7 @@
       - aap_final_guest_machine_id.stdout | trim is match('^[0-9a-f]{32}$')
       - aap_final_guest_machine_id.stdout | trim != aap_instance_route.hypervisor.machine_id
     fail_msg: Fresh authenticated guest machine identity is required for final AAP release.
-  no_log: true
+  no_log: false
 
 # Preserve the existing public role input names.
 - name: Release this consumed AAP primary through the same existing lifecycle transaction # noqa: var-naming[no-role-prefix]

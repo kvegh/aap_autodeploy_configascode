@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.60
+
+- Apply the explicit temporary owner direction: deployment tasks use no_log:false
+  until clean acceptance; native credential redaction and rollback remain intact.
+- Prove all non-logging YAML fields unchanged and verify visible synthetic Git
+  errors, encrypted diagnostic retention and cleanup on Core 2.20.10.
+
 ## 0.63.59
 
 - Document protected source Git diagnostic implementation `307beb2c7b1a`

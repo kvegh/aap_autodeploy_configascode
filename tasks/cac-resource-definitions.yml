@@ -3,7 +3,7 @@
   ansible.builtin.include_role:
     name: infra.aap_configuration.dispatch
     apply:
-      no_log: true
+      no_log: false
   vars:
     dispatch_include_wildcard_vars: false
     # A cold project/collection sync exceeded CoP's default 50 status polls.
@@ -21,7 +21,7 @@
       - eda_event_streams
       - eda_decision_environments
       - eda_rulebook_activations
-  no_log: true
+  no_log: false
 
 - name: Persist dedicated inventory service access using only the target APIs
   aap_cac_lifecycle:
@@ -31,7 +31,7 @@
     password: "{{ vars | aap_cac_read_path(cac_import_metadata.capabilities.inventory_service_access.password_variable) }}"
     credential_type: "{{ cac_service_preflight.credential_type }}"
   when: cac_import_metadata.capabilities.inventory_service_access is defined
-  no_log: true
+  no_log: false
 
 - name: Persist or preserve the EDA Controller credential using only the target APIs
   aap_cac_lifecycle:
@@ -40,7 +40,7 @@
     capability: "{{ cac_import_metadata.capabilities.eda_controller_access }}"
     definitions: "{{ cac_import_resources.eda_credentials }}"
   when: cac_import_metadata.capabilities.eda_controller_access is defined
-  no_log: true
+  no_log: false
 
 - name: Create all group skeletons before establishing group relationships
   ansible.controller.group:
@@ -55,31 +55,31 @@
     controller_password: "{{ aap_password | default(omit, true) }}"
     validate_certs: true
   loop: "{{ controller_groups }}"
-  no_log: true
+  no_log: false
 
 - name: Link group relationships after every group skeleton exists
   ansible.builtin.include_role:
     name: infra.aap_configuration.controller_host_groups
     apply:
-      no_log: true
+      no_log: false
   when: controller_groups | length > 0
-  no_log: true
+  no_log: false
 
 - name: Import job templates after their persistent credential dependencies
   ansible.builtin.include_role:
     name: infra.aap_configuration.controller_job_templates
     apply:
-      no_log: true
+      no_log: false
   when: controller_templates | length > 0
-  no_log: true
+  no_log: false
 
 - name: Import workflow definitions after all referenced job templates
   ansible.builtin.include_role:
     name: infra.aap_configuration.controller_workflow_job_templates
     apply:
-      no_log: true
+      no_log: false
   when: controller_workflows | length > 0
-  no_log: true
+  no_log: false
 
 - name: Import each EDA project completely in its first application
   ansible.eda.project:
@@ -100,23 +100,23 @@
     controller_password: "{{ aap_password | default(omit, true) }}"
     validate_certs: true
   loop: "{{ eda_projects }}"
-  no_log: true
+  no_log: false
 
 - name: Import Event Streams after their projects and credential dependencies
   ansible.builtin.include_role:
     name: infra.aap_configuration.eda_event_streams
     apply:
-      no_log: true
+      no_log: false
   when: eda_event_streams | length > 0
-  no_log: true
+  no_log: false
 
 - name: Import decision environments before activation definitions
   ansible.builtin.include_role:
     name: infra.aap_configuration.eda_decision_environments
     apply:
-      no_log: true
+      no_log: false
   when: eda_decision_environments | length > 0
-  no_log: true
+  no_log: false
 
 - name: Import activation definitions with disabled creation and unchanged existing active states
   aap_cac_activation:
@@ -144,4 +144,4 @@
     controller_password: "{{ aap_password | default(omit, true) }}"
     validate_certs: true
   loop: "{{ eda_rulebook_activations }}"
-  no_log: true
+  no_log: false

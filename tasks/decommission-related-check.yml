@@ -5,7 +5,7 @@
     follow: false
     get_checksum: false
   register: aap_related_disk
-  no_log: true
+  no_log: false
 
 - name: Require recorded ownership for a related guest or orphaned disk
   ansible.builtin.assert:
@@ -14,7 +14,7 @@
         (aap_related_guest.name not in aap_retirement_domains.stdout_lines and not aap_related_disk.stat.exists)
         or (aap_related_guest.uuid | default('', true) | length > 0)
       - not aap_related_disk.stat.islnk | default(false)
-  no_log: true
+  no_log: false
 
 - name: Inspect both bounded related disk variants before any deletion
   ansible.builtin.stat:
@@ -25,7 +25,7 @@
     - '/opt/vms/{{ aap_related_guest.name }}.disk.qcow2'
     - '/opt/vms/{{ aap_related_guest.name }}.qcow2'
   register: aap_related_disk_variants
-  no_log: true
+  no_log: false
 
 - name: Refuse unrecorded or extra related disks including missing source inventory rows
   ansible.builtin.assert:
@@ -35,7 +35,7 @@
         not item.stat.exists or
         (aap_related_guest.uuid | default('', true) | length > 0 and item.item == aap_related_guest.disk)
   loop: '{{ aap_related_disk_variants.results }}'
-  no_log: true
+  no_log: false
 
 - name: Inspect related domain storage and UUID
   ansible.builtin.command:
@@ -44,13 +44,13 @@
   register: aap_related_xml
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Require the recorded UUID and exact related disk
   ansible.builtin.assert:
     that: aap_related_xml.stdout | aap_decommission_domain_matches(aap_related_guest)
   when: aap_related_guest.name in aap_retirement_domains.stdout_lines
-  no_log: true
+  no_log: false
 
 - name: Inspect related snapshots
   ansible.builtin.command:
@@ -59,10 +59,10 @@
   register: aap_related_snapshots
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Refuse implicit related snapshot deletion
   ansible.builtin.assert:
     that: aap_related_snapshots.stdout | trim | length == 0
   when: aap_related_guest.name in aap_retirement_domains.stdout_lines
-  no_log: true
+  no_log: false

@@ -8,12 +8,12 @@
     - aap_isolation_lock_attempt.rc | default(1) == 0
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Forget the completed invocation's lock ownership
   ansible.builtin.set_fact:
     aap_isolation_lock_acquired: false
-  no_log: true
+  no_log: false
 
 - name: Remove only this invocation's controller source checkout
   ansible.builtin.file:
@@ -26,4 +26,4 @@
   when:
     - aap_isolation_source_workspace.path | default('') is match('^/tmp/aap-hactar-source-[A-Za-z0-9_]+$')
   check_mode: false
-  no_log: true
+  no_log: false

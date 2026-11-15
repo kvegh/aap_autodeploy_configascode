@@ -34,7 +34,7 @@
             cac_workflow_pah: >-
               {{ cac_use_case_prerequisites |
                  aap_selected_use_case_prerequisites(aap_selected_use_cases) }}
-          no_log: true
+          no_log: false
 
         - name: Use an explicit native API session for prerequisite preparation
           ansible.builtin.include_tasks: tasks/cac-api-session.yml
@@ -46,8 +46,8 @@
           ansible.builtin.include_tasks:
             file: tasks/use-case-prerequisites.yml
             apply:
-              no_log: true
-          no_log: true
+              no_log: false
+          no_log: false
       always:
         - name: Revoke the temporary token and remove the private checkout
           ansible.builtin.include_tasks: tasks/private-config-cleanup.yml

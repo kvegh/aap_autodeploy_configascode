@@ -6,14 +6,14 @@
     name: aap_isolation_repository_settings
   delegate_to: localhost
   become: false
-  no_log: true
+  no_log: false
 
 - name: Resolve the same fixed central repository used by the existing publisher
   ansible.builtin.set_fact:
     aap_isolation_central_namespace: >-
       {{ aap_isolation_repository_settings.vault_cac_repository_namespace |
          default(aap_isolation_repository_settings.git_url | default('') | regex_replace('/[^/]+/?$', '')) }}
-  no_log: true
+  no_log: false
 
 - name: Require the protected central HTTPS namespace and existing writer authentication
   ansible.builtin.assert:
@@ -26,7 +26,7 @@
       - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
     fail_msg: Read the existing encrypted central bootstrap with its current credential before composing firewall policy.
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Read the central bootstrap and retain protected failures before rollback
   block:
@@ -55,7 +55,7 @@
       vars:
         ansible_connection: local
       check_mode: false
-      no_log: true
+      no_log: false
 
   rescue:
     - name: Preserve only ciphertext without preventing native rollback on diagnostic failure
@@ -64,13 +64,13 @@
           aap_cac_diagnostic:
             stage: guest_source_git
           register: aap_guest_source_git_diagnostic
-          no_log: true
+          no_log: false
 
         - name: Retain the encrypted native source Git diagnostic
           ansible.builtin.set_stats:
             data:
               aap_guest_source_git_failure_vault: '{{ aap_guest_source_git_diagnostic.encrypted_diagnostic }}'
-          no_log: true
+          no_log: false
       rescue:
         - name: Report unavailable protected diagnostics without disclosing the original result
           ansible.builtin.debug:
@@ -93,7 +93,7 @@
     ansible_connection: local
   register: aap_isolation_base_stat
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Require the existing ordinary encrypted bootstrap file
   ansible.builtin.assert:
@@ -101,7 +101,7 @@
       - aap_isolation_base_stat.stat.isreg | default(false)
       - not aap_isolation_base_stat.stat.islnk | default(false)
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Read only the central bootstrap ciphertext
   ansible.builtin.slurp:
@@ -112,13 +112,13 @@
     ansible_connection: local
   register: aap_isolation_base_ciphertext
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Refuse an unencrypted bootstrap before loading any credential material
   ansible.builtin.assert:
     that: (aap_isolation_base_ciphertext.content | b64decode).startswith('$ANSIBLE_VAULT;')
     quiet: true
-  no_log: true
+  no_log: false
 
 # Match the normal base loader: namespacing the entire bootstrap eagerly templates
 # unrelated settings (such as pah_base) before selecting these literal credentials.
@@ -127,7 +127,7 @@
     file: '{{ aap_isolation_source_workspace.path }}/central/cac/base_CaC_vault.yml'
   delegate_to: localhost
   become: false
-  no_log: true
+  no_log: false
 
 - name: Require the already chosen AIOps repository reader and Vault material
   ansible.builtin.assert:
@@ -146,7 +146,7 @@
       - cac_bootstrap_vault_credentials.aiops.vault_id is string
     fail_msg: The authoritative AIOps reader and Vault bootstrap must be present; missing source is not an empty policy.
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Read AIOps permissions from their own authoritative private repository
   ansible.builtin.git:
@@ -173,7 +173,7 @@
   vars:
     ansible_connection: local
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Refuse a linked or missing authoritative encrypted capture
   ansible.builtin.stat:
@@ -186,7 +186,7 @@
     ansible_connection: local
   register: aap_isolation_app_capture_stat
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Require the ordinary protected CaC capture file
   ansible.builtin.assert:
@@ -194,7 +194,7 @@
       - aap_isolation_app_capture_stat.stat.isreg | default(false)
       - not aap_isolation_app_capture_stat.stat.islnk | default(false)
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Decrypt the whole AIOps capture with the existing protected bootstrap key
   ansible.builtin.command:
@@ -212,7 +212,7 @@
   register: aap_isolation_app_plaintext
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Stage tag-aware variables only in this job's protected temporary directory
   # from_yaml rejects existing !unsafe/!vault tags. Native include_vars retains
@@ -227,7 +227,7 @@
     ansible_connection: local
   check_mode: false
   diff: false
-  no_log: true
+  no_log: false
 
 # As with the base bootstrap, select global branches without eagerly rendering
 # the entire capture. The registered native facts stay raw for ownership actions.
@@ -237,7 +237,7 @@
   register: aap_isolation_app_capture
   delegate_to: localhost
   become: false
-  no_log: true
+  no_log: false
 
 - name: Require the selected project's explicit instance namespace
   ansible.builtin.assert:
@@ -246,13 +246,13 @@
       - aiops_instances is mapping
     fail_msg: Load the authoritative AIOps capture; do not substitute an empty permission list.
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Initialize only this job's selected application grants
   ansible.builtin.set_fact:
     aap_isolation_app_owners: []
     aap_isolation_app_clients: []
-  no_log: true
+  no_log: false
 
 - name: Refuse the former parallel firewall section before composing any permissions
   ansible.builtin.assert:
@@ -260,7 +260,7 @@
     quiet: true
     fail_msg: Migrate firewall configuration into its existing Zabbix VM section before applying policy.
   loop: '{{ aiops_instances.keys() | list }}'
-  no_log: true
+  no_log: false
 
 - name: Require explicit migrated firewall data for every declared Zabbix owner
   ansible.builtin.assert:
@@ -273,7 +273,7 @@
     quiet: true
   loop: '{{ aiops_instances.keys() | list }}'
   when: aiops_instances[item].zabbix | default(none) is not none
-  no_log: true
+  no_log: false
 
 - name: Refuse grants without their existing guest ownership record
   ansible.builtin.assert:
@@ -282,7 +282,7 @@
     quiet: true
   loop: '{{ aiops_instances.keys() | list }}'
   when: aiops_instances[item].zabbix | default(none) is none
-  no_log: true
+  no_log: false
 
 - name: Refuse declared permissions before the VM has verified ownership
   ansible.builtin.assert:
@@ -293,7 +293,7 @@
   loop: '{{ aiops_instances.keys() | list }}'
   when: >-
     (aiops_instances[item].zabbix.configuration.firewall | default({})).guest_host_clients | default([]) | length > 0
-  no_log: true
+  no_log: false
 
 - name: Select only declared owners on the actual pinned hypervisor
   ansible.builtin.set_fact:
@@ -306,11 +306,11 @@
     - aiops_instances[item].zabbix.verified | default(false) | bool
     - aiops_instances[item].zabbix.hypervisor_machine_id == aap_isolation_machine_id.stdout | trim
     - aiops_instances[item].zabbix.configuration.firewall.guest_host_clients | length > 0
-  no_log: true
+  no_log: false
 
 - name: Verify each selected owner against actual native resources before granting access
   ansible.builtin.include_tasks: '{{ aap_isolation_autodeploy_root }}/tasks/aap-isolation-app-instance.yml'
   loop: '{{ aap_isolation_app_owners }}'
   loop_control:
     loop_var: aap_isolation_app_owner
-  no_log: true
+  no_log: false

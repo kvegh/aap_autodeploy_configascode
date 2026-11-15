@@ -6,4 +6,4 @@
     hub_token: "{{ hub_token }}"
     validate_certs: "{{ aap_validate_certs }}"
     policy: "{{ pah_collection_policy }}"
-  no_log: true
+  no_log: false

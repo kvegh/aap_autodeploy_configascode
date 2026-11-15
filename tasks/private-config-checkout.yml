@@ -25,7 +25,7 @@
     that:
       - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
     fail_msg: Attach the Git credential that injects CAC_GIT_TOKEN.
-  no_log: true
+  no_log: false
 
 - name: Create a private temporary configuration workspace
   ansible.builtin.tempfile:
@@ -38,7 +38,7 @@
   ansible.builtin.set_fact:
     cac_workspace: "{{ cac_new_workspace }}"
   when: cac_new_workspace.path is defined
-  no_log: true
+  no_log: false
 
 - name: Prepare the temporary Git authentication helper
   ansible.builtin.copy:
@@ -71,7 +71,7 @@
     GIT_CONFIG_VALUE_1: 'false'
     GIT_CONFIG_KEY_2: http.sslVerify
     GIT_CONFIG_VALUE_2: 'true'
-  no_log: true
+  no_log: false
 
 - name: Prefer the canonical capture while retaining the old path during migration
   ansible.builtin.set_fact:
@@ -80,7 +80,7 @@
            ['vaults/cac/aap_autodeploy_configascode-cac-vault.yml', 'cac/autodeploy.yml'],
            'paths': [cac_workspace.path ~ '/repository']}) |
          relpath(cac_workspace.path ~ '/repository') }}
-  no_log: true
+  no_log: false
 
 - name: Read only the requested configuration ciphertexts
   ansible.builtin.slurp:
@@ -89,7 +89,7 @@
     - cac/base_CaC_vault.yml
     - "{{ cac_autodeploy_capture_relative_path }}"
   register: cac_configuration_ciphertexts
-  no_log: true
+  no_log: false
 
 - name: Require every configuration file to be fully Vault encrypted
   ansible.builtin.assert:
@@ -97,7 +97,7 @@
       - (item.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
     fail_msg: All downloaded configuration inputs must be fully Vault encrypted.
   loop: "{{ cac_configuration_ciphertexts.results }}"
-  no_log: true
+  no_log: false
 
 - name: Load the shared authentication inputs and the separate AutoDeploy capture
   ansible.builtin.include_vars:
@@ -105,4 +105,4 @@
   loop:
     - cac/base_CaC_vault.yml
     - "{{ cac_autodeploy_capture_relative_path }}"
-  no_log: true
+  no_log: false

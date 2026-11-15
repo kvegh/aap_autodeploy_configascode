@@ -9,16 +9,16 @@
   vars:
     debug_logging: false
     dispatch_include_wildcard_vars: false
-    aap_configuration_secure_logging: true
-    controller_configuration_credentials_secure_logging: true
-    gateway_users_secure_logging: true
+    aap_configuration_secure_logging: false
+    controller_configuration_credentials_secure_logging: false
+    gateway_users_secure_logging: false
   pre_tasks:
     - name: Derive the reviewed repository and encrypted capture before using any credentials
       ansible.builtin.set_fact:
         cac_project_contract: >-
           {{ aap_cac_project_id | default('') | aap_cac_project_contract(
                vault_cac_repository_namespace | default(git_url | regex_replace('/[^/]+/?$', ''))) }}
-      no_log: true
+      no_log: false
 
     - name: Require an inventory AAP host and reject raw repository or file overrides
       ansible.builtin.assert:
@@ -30,14 +30,14 @@
           - aap_config_file is not defined
           - debug_logging is boolean or (debug_logging is string and (debug_logging | lower) in ['true', 'false'])
         fail_msg: Select an AAP inventory host; project, repository, and capture are fixed by the saved job template.
-      no_log: true
+      no_log: false
 
     - name: Require the project-specific private Git credential
       ansible.builtin.assert:
         that:
           - lookup('ansible.builtin.env', 'CAC_GIT_TOKEN') | length > 0
         fail_msg: Attach the project's CaC repository read token and Vault credential.
-      no_log: true
+      no_log: false
 
     - name: Create a private temporary configuration workspace
       ansible.builtin.tempfile:
@@ -76,7 +76,7 @@
           ansible.builtin.set_fact:
             "{{ cac_import_metadata.capabilities.eda_controller_access.token_variable }}": ''
           when: cac_import_metadata.capabilities.eda_controller_access is defined
-          no_log: true
+          no_log: false
 
         - name: Require already prepared Windows public trust inputs without SSH discovery
           ansible.builtin.assert:
@@ -85,14 +85,14 @@
               - (vars | aap_cac_read_path(cac_import_metadata.capabilities.target_public_trust.known_hosts_variable)) | length > 0
             fail_msg: Prepare the target public CA bundle and SSH known-host data in the encrypted project configuration.
           when: cac_import_metadata.capabilities.target_public_trust is defined
-          no_log: true
+          no_log: false
 
         - name: Require completed capture review and protected input values
           ansible.builtin.assert:
             that:
               - (cac_import_metadata | aap_cac_import_metadata(cac_project_contract.project_id)) is mapping
               - cac_import_metadata | aap_cac_validate_checks(vars)
-          no_log: true
+          no_log: false
 
         # Build against this receiver's Hub before templating its EE resources.
         # API bearer authentication stays separate from protected registry login.
@@ -105,13 +105,13 @@
 
         - name: Normalize only this capture's explicitly mapped resource lists
           aap_cac_prepare_resources:
-          no_log: true
+          no_log: false
 
         - name: Bind the selected resource lists without ambient wildcard merging
           ansible.builtin.set_fact:
             "{{ item.key }}": "{{ item.value }}"
           loop: "{{ cac_import_resources | dict2items }}"
-          no_log: true
+          no_log: false
 
         - name: Validate every imported template's project label before making changes
           ansible.builtin.include_tasks: tasks/cac-template-labels.yml
@@ -124,7 +124,7 @@
           ansible.builtin.assert:
             that:
               - cac_import_resources | aap_cac_validate_resources(cac_import_metadata)
-          no_log: true
+          no_log: false
 
         - name: Check the dedicated service identity and permissions before changing resources
           aap_cac_lifecycle:
@@ -135,13 +135,13 @@
             resources: "{{ cac_import_resources }}"
           when: cac_import_metadata.capabilities.inventory_service_access is defined
           register: cac_service_preflight
-          no_log: true
+          no_log: false
 
         - name: Preserve the password of an authenticated existing service user
           ansible.builtin.set_fact:
             aap_user_accounts: "{{ cac_service_preflight.resources.aap_user_accounts }}"
           when: cac_import_metadata.capabilities.inventory_service_access is defined
-          no_log: true
+          no_log: false
 
         - name: Exclude the persistent EDA credential from ordinary masked-secret updates
           ansible.builtin.set_fact:
@@ -149,7 +149,7 @@
               {{ eda_credentials | rejectattr('name', 'equalto',
                    cac_import_metadata.capabilities.eda_controller_access.credential_name) | list }}
           when: cac_import_metadata.capabilities.eda_controller_access is defined
-          no_log: true
+          no_log: false
 
         - name: Import the shared resource types in dependency order
           ansible.builtin.include_tasks: tasks/cac-resource-definitions.yml
@@ -159,7 +159,7 @@
             that:
               - aap_configuration_role_errors | default({}) | dict2items | selectattr('value', 'ne', []) | list | length == 0
             fail_msg: A configuration role reported errors; no workload was launched by this importer.
-          no_log: true
+          no_log: false
 
         - name: Preserve native AIOps webhook and Event Stream data after the existing roles create them
           ansible.builtin.include_tasks: tasks/cac-aiops-settings.yml
@@ -170,7 +170,7 @@
         - name: Refresh selected AIOps saved runtime ciphertext after native resource readback
           aap_cac_prepare_resources:
           when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
-          no_log: true
+          no_log: false
 
         - name: Revalidate AIOps template labels after the accepted remote settings reread
           ansible.builtin.include_tasks: tasks/cac-template-labels.yml
@@ -185,17 +185,17 @@
             that:
               - cac_import_resources | aap_cac_validate_resources(cac_import_metadata)
           when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
-          no_log: true
+          no_log: false
 
         - name: Save prepared AIOps runtime ciphertext through the existing Controller configuration role
           ansible.builtin.include_role:
             name: infra.aap_configuration.controller_job_templates
             apply:
-              no_log: true
+              no_log: false
           vars:
             controller_templates: "{{ cac_import_resources.controller_templates }}"
           when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
-          no_log: true
+          no_log: false
       always:
         - name: Remove the private checkout without revoking the supplied API credential
           ansible.builtin.include_tasks: tasks/private-config-cleanup.yml

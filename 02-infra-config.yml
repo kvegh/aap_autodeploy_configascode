@@ -27,7 +27,7 @@
     - name: Bind infrastructure changes to the instance's own hypervisor
       ansible.builtin.set_fact:
         aap_hypervisor_pin: "{{ aap_instance_route.hypervisor }}"
-      no_log: true
+      no_log: false
 
     - name: Verify the pinned hypervisor before DNS, proxy or certificate changes
       ansible.builtin.include_tasks: tasks/aap-hypervisor-pin.yml
@@ -50,7 +50,7 @@
         path: "/etc/letsencrypt/live/{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}/{{ item }}"
       loop: [fullchain.pem, privkey.pem]
       register: aap_existing_instance_certificate
-      no_log: true
+      no_log: false
 
     - name: Require an existing ACME registration rather than accepting new terms
       ansible.builtin.find:
@@ -59,7 +59,7 @@
         recurse: true
         file_type: file
       register: aap_existing_acme_accounts
-      no_log: true
+      no_log: false
 
     - name: Stop before certificate registration without explicit separate approval
       ansible.builtin.assert:
@@ -81,7 +81,7 @@
       delegate_to: localhost
       become: false
       register: aap_existing_instance_dns
-      no_log: true
+      no_log: false
 
     - name: Refuse a hostname already bound to a different address
       ansible.builtin.assert:
@@ -89,7 +89,7 @@
           aap_existing_instance_dns.json | aap_safe_instance_dns(
             aap_test_subdomain, aap_instance_route.hypervisor.public_ip)
         fail_msg: The reserved hostname already has a conflicting DNS record; inspect it before continuing.
-      no_log: true
+      no_log: false
 
     - name: Read the exact reserved hostname's IPv6 records
       ansible.builtin.uri:
@@ -103,13 +103,13 @@
       delegate_to: localhost
       become: false
       register: aap_existing_instance_ipv6_dns
-      no_log: true
+      no_log: false
 
     - name: Refuse an unpinned alternate IPv6 route
       ansible.builtin.assert:
         that: aap_existing_instance_ipv6_dns.json == []
         fail_msg: The selected IPv4-only instance hostname has an unexpected IPv6 record.
-      no_log: true
+      no_log: false
 
     - name: Create GoDaddy DNS A record
       ansible.builtin.uri:
@@ -126,7 +126,7 @@
         validate_certs: true
       delegate_to: localhost
       become: false
-      no_log: true
+      no_log: false
 
     - name: Deploy temporary HTTP-only nginx config for certbot challenge
       ansible.builtin.template:

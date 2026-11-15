@@ -4,7 +4,7 @@
   ansible.builtin.set_fact:
     aap_ee_build_result:
       verified: false
-  no_log: true
+  no_log: false
 
 - name: Load the public execution-environment recipe defaults
   ansible.builtin.include_vars:
@@ -27,7 +27,7 @@
       - aap_ee_redhat_password | default('') is string
       - (aap_ee_redhat_username | default('') | length > 0) == (aap_ee_redhat_password | default('') | length > 0)
     fail_msg: Supply one Hub hostname with an optional valid port, a versioned repository, its protected login, and an optional complete Red Hat login pair.
-  no_log: true
+  no_log: false
 
 - name: Require the existing native container tools without installing anything
   ansible.builtin.command:
@@ -44,7 +44,7 @@
          | regex_findall('(?m)^FROM\s+(\S+)\s*$') }}
     aap_ee_base_inventory: "{{ lookup('ansible.builtin.file', playbook_dir ~ '/execution-environment/base-inventory.json') | from_json }}"
     aap_ee_asset_hashes: []
-  no_log: true
+  no_log: false
 
 - name: Require the digest-pinned official base and the two approved direct requirements
   ansible.builtin.assert:
@@ -72,7 +72,7 @@
     aap_ee_lock_versions: >-
       {{ dict(lookup('ansible.builtin.file', playbook_dir ~ '/execution-environment/requirements.lock')
          | regex_findall('(?m)^([A-Za-z0-9_.-]+)==([^\s]+)')) }}
-  no_log: true
+  no_log: false
 
 - name: Allocate an owned private build workspace on the actual build host
   ansible.builtin.tempfile:
@@ -80,10 +80,10 @@
     path: /tmp
     prefix: aap-ee-build-
   register: aap_ee_workspace
-  no_log: true
+  no_log: false
 
 - name: Build, publish and independently verify this versioned artifact
-  no_log: true
+  no_log: false
   block:
     - name: Enforce private workspace permissions
       ansible.builtin.file:
@@ -525,4 +525,4 @@
         path: "{{ aap_ee_workspace.path }}"
         state: absent
       when: aap_ee_workspace.path | default('') is match('^/tmp/aap-ee-build-[A-Za-z0-9_]+$')
-      no_log: true
+      no_log: false

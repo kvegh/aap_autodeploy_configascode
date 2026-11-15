@@ -11,7 +11,7 @@
         validate_certs: "{{ aap_validate_certs }}"
         ca_path: "{{ cac_cleanup_ca_path | default(omit, true) }}"
       when: cac_gateway_token.json.id is defined
-      no_log: true
+      no_log: false
   always:
     - name: Remove the private checkout and Git helper on success or failure
       ansible.builtin.file:
