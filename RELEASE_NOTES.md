@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.64.1
+
+- Document implementation `6f70405debad`, native Core 2.20.10 tests, current
+  read-only capability evidence and the remaining live/reconciliation limits.
+
 ## 0.64.0
 
 - Add cold AAP snapshot and explicit restore playbooks, with success-only

@@ -5939,3 +5939,42 @@ both native action modes, visible logging, malformed-choice refusal, paired
 Vault ciphertext, idempotence, concurrent writers and denied-write handling.
 No live application import was launched to test this guard. Raw diagnostics
 remain private under the owner's temporary logging instruction.
+
+## 2026-11-15 — Keep cold AAP checkpoints for the next installation
+
+Implementation `6f70405debadb9aee5aeae29bf0ec43af87f8f06` follows the owner's
+request to stop and snapshot the selected AAP VM after successful infrastructure,
+installer and base stages, then restart and verify it. The existing stage plays
+reuse one bounded native module and task path; standalone creation and explicit
+restore playbooks provide the same guards. Encrypted CaC owns the three names,
+future-generation enablement, time bounds and reserve. No current guest power
+operation or snapshot was performed for this implementation.
+
+Internal cold qcow2 checkpoints preserve the registered disk path and require
+the exact native UUID, disk, NICs and supported BIOS shape. They do not replace
+off-host backups. Creation never overwrites a checkpoint, and an atomic creation
+failure retains its original error while restarting the unchanged original VM
+where safe. An uncertain failed restore stays off for review. A normal base
+refresh preserves an already existing immutable checkpoint even after later
+project changes; it does not pretend to recapture that newer state.
+
+Restore requires matching checkpoint-relevant canonical ownership, selected
+access and grants, native stored snapshot XML and selected Windows/AIOps private
+state. Existing fixed-owner bootstrap readers and Vault keys are reused without
+wider credentials. Private webhook keys, Event Stream endpoints and template IDs
+are included because a CaC import can update those outside the VM. Unrelated
+installations, global counters and volatile observations are excluded. No whole
+repository rewind, new registry or automatic project guest cleanup is introduced.
+Owner-specific reconciliation and actual DNS/native policy verification remain
+separate requirements, so arbitrary project-test reset automation is unfinished.
+
+Twenty-nine snapshot tests and the existing base completion/cleanup flow passed
+in the cached Core 2.20.10 runtime. New playbooks passed native syntax checks;
+module packaging and disabled-policy refusal passed without native access.
+Actual encrypted capture checks detected 22 scoped mutations while ignoring
+unrelated instances and counters. A single read-only pinned host check verified
+the current single writable qcow2/BIOS shape and native command support. These
+checks do not prove a real snapshot or restore: first enabled next-installation
+acceptance remains outstanding. Full base-playbook syntax checking in that
+minimal cached image stops at its pre-existing missing `ansible.controller`
+collection; no dependency was installed for this feature.
