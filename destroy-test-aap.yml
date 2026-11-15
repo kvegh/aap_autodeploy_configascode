@@ -20,6 +20,12 @@
           - aap_instance_route.hypervisor == aap_hypervisor_pin
         fail_msg: Confirm the instance name and select its pinned rebuild-only inventory.
       no_log: true
+    - name: Retire only metadata after a separately proved whole-host replacement
+      ansible.builtin.include_tasks: tasks/decommission-post-reset.yml
+      when: aap_post_reset_verification_job is defined
+    - name: End the replacement-host branch before any old-pin infrastructure connection
+      ansible.builtin.meta: end_play
+      when: aap_post_reset_verification_job is defined
     - name: Verify the actual rebuild hypervisor before any deletion
       ansible.builtin.include_tasks: tasks/aap-hypervisor-identity.yml
     - name: Derive only the selected reservation's resource paths

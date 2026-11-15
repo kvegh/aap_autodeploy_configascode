@@ -120,9 +120,13 @@ The existing encrypted private verification history retains these outcomes and
 diagnostic limitations. Its append passed native cached Core 2.20.10 inverse,
 roundtrip and previous-history checks without changing CaC or runtime
 ciphertext. Current application and demonstration tasks are closed. Exact
-candidate-only retirement has a reviewed read-only plan. Ownership and DNS are
-retained while a guarded cleanup path is qualified for the whole-host reset;
-individual guest deletion is not a prerequisite. The owner approved one shared
+candidate-only retirement has a reviewed plan and a qualified controller-only
+path after the authorized whole-host reset. The existing decommission job
+requires actual provider, hardware, fresh-host and native absence proof before
+retiring old ownership and DNS. It preserves recoverable ownership through
+partial Source cleanup and retains the replacement host's new trust. Individual
+guest deletion is not a prerequisite; see [the reset retirement order](docs/decommission.md#metadata-retirement-after-an-authorized-whole-host-reinstall).
+Live reset and retirement remain separate outcomes. The owner approved one shared
 host/platform generation, starting at v22. The existing encrypted AAP allocation
 registry is its authority; host installation history records that allocation
 without inventing intervening installations. Original failed stages remain recorded, so

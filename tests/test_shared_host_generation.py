@@ -63,6 +63,8 @@ class SharedHostGenerationTests(unittest.TestCase):
         state['reservations'][request]['decommissioned'] = True
         with self.assertRaises(ValueError):
             allocation.host_generation_request(state, 'aap27-test', '2' * 32)
+        with self.assertRaises(ValueError):
+            allocation.reserve_host_generation(state, 'aap27-test', 'a' * 64, '2' * 32)
 
     def test_tampered_marker_and_out_of_range_generation_fail_closed(self):
         state, request, _ = allocation.reserve_host_generation(seed(), 'aap27-test', 'a' * 64, '2' * 32)
@@ -158,6 +160,21 @@ class EncryptedGenerationTransactionTests(unittest.TestCase):
         result = self.invoke()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(self.path.read_bytes().splitlines()[0], b'$ANSIBLE_VAULT;1.1;AES256')
+
+    def test_retired_installation_history_cannot_be_consumed_again(self):
+        self.assertEqual(self.invoke().returncode, 0)
+        self.document = self.read()
+        record = next(row for row in self.document['aap_vm_allocation']['reservations'].values()
+                      if row.get('host_installation_id') == 'a' * 64)
+        record['decommissioned'] = True
+        self.write()
+        before = self.path.read_bytes()
+        self.assertNotEqual(self.invoke().returncode, 0)
+        self.assertEqual(self.path.read_bytes(), before)
+        self.assertEqual(self.read()['aap_vm_allocation']['next_number'], 23)
+        newer = self.invoke('b', '3')
+        self.assertEqual(newer.returncode, 0, newer.stderr)
+        self.assertEqual(json.loads(newer.stdout)['number'], 23)
 
 
 if __name__ == '__main__':

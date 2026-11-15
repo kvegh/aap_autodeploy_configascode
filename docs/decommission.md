@@ -8,7 +8,7 @@ AutoDeploy CaC reader/Vault. It is separate from the deployment workflow.
 The existing source API credential and its configured CA trust are also required
 for the decommission-only related-ownership read and final source cleanup.
 
-Before deletion it verifies SSH keys, the actual hypervisor machine ID and
+The ordinary native teardown verifies SSH keys, the actual hypervisor machine ID and
 persistent isolation. It checks the selected domain's exact disk and refuses
 snapshots or unexpected storage. DNS ownership is checked before any destructive
 step. An unexpected destination stops the job for review.
@@ -102,7 +102,7 @@ partial cleanup stops the job rather than weakening identity checks. Native
 finite expiry timestamps are read in UTC; malformed or ambiguous data fail
 closed. Saved CaC ownership remains available for the normal retry procedure.
 
-All selected existing VMs are stopped and checked before permissions change.
+For ordinary native teardown, all selected existing VMs are stopped and checked before permissions change.
 The certified firewall role disables only those exact base/application rich
 rules in both runtime and permanent libvirt-zone configuration. Native Hactar
 Ansible tasks then apply and verify the complete reduced nft file/table. The
@@ -142,12 +142,66 @@ entry from encrypted CaC. It retains that ownership row while updating the sourc
 token store and removing the matching source inventory/manual API credential.
 A referenced source credential stops cleanup without silently detaching it.
 Only after source retirement and the fresh canonical comparison succeed does
-the writer remove the selected reservation in a separate encrypted Git commit.
+the writer remove an ordinary selected reservation in a separate encrypted Git commit.
+An installation-bound host-generation record instead remains decommissioned in
+that same registry as consumed history. It cannot provision a guest or allocate
+again; a fresh installation consumes the next shared number.
 It rereads the remote result and verifies removal, the unchanged monotonic
 counter and preserved other allocation rows. Nonforce push contention uses the
 existing bounded synchronization retry; altered selected ownership or a regressed
 counter stops cleanup. A later concurrent update after the final removal stops
 success reporting for review instead of overwriting the newer commit.
+
+## Metadata retirement after an authorized whole-host reinstall
+
+When the next full attempt already authorizes a physical reinstall, individual
+guest deletion is unnecessary. The existing job can retire old metadata after
+the replacement is independently proved. This mode grants no authority to reset
+a host and never substitutes a claimed stopped-state flag for native cleanup.
+
+Retain all old authoritative Windows, AAP and application ownership through the
+reset. Prepare the exact protected expectation from those owners and an
+authenticated backing-filesystem observation. Preserve verified off-host recovery
+inputs and histories first. Store the same expectation in Hactar's existing
+encrypted registry inputs and the AutoDeploy capture's bounded
+`aap_post_reset_retirement`, together with the reviewed Hactar template, project,
+inventory and revision. Runtime callers supply an actual verification job ID,
+not a proof dictionary.
+
+After the normal provider reinstall completes, update only current Hactar trust
+from provider-matched keys and authenticated fresh OS/hardware proof. Keep the
+old shared captures and AutoDeploy rebuild inventory pin until retirement.
+Run the existing standalone Hactar Connection preflight before conversion or
+new host policy. It must prove fresh Rocky, a different machine ID and all new
+provider-matched host keys on the same pinned nonproduction hardware. It checks
+all nine exact guest disks, saved/runtime/process guests, previous storage UUIDs,
+selected proxy/website/certificate paths and persistent/runtime permissions.
+Missing tools or incomplete native evidence fail the check.
+
+Save the actual successful preflight job ID as the existing decommission job's
+integer `aap_post_reset_verification_job`, retaining its ordinary instance and
+confirmation inputs. Its early controller-only branch runs before any old-pin
+connection. It verifies that job's completion, reviewed bindings, full expectation
+and freshness, then reads current application and Source ownership again. Later
+target jobs invalidate the proof, except the current retirement or a completed
+identically bound metadata retry. A Source alias used to inspect the replacement
+must match the new proof and retains its new connection identity; other old
+aliases remain bound to the original ownership.
+
+The branch verifies exact selected DNS ownership and removes only those records.
+It keeps all nine canonical owners and previous policies recoverable until
+Source cleanup is acknowledged and read back, then publishes final metadata
+retirement atomically. A lost deletion response is reconciled from fresh state
+in a subsequent real job. Ordinary guest shutdown, permission application,
+disk deletion and certificate deletion never run on this branch.
+
+After that actual success, remove only the selected Windows/application private
+leaves through their existing protected publication procedures. Clear the active
+Source post-reset binding and Hactar retirement expectation, retaining their
+encrypted historical evidence. Reconcile the remaining current host pins and
+start the existing conversion, host setup and new generation deployment only
+after those steps succeed. Local/native tests qualify this path; live reset,
+retirement and full-run acceptance are separate outcomes.
 
 Check mode remains read-only. Failed partial source cleanup retains the selected
 row for the existing exact-confirmation retry; active deployment refuses its

@@ -833,7 +833,8 @@ def canonical_api_port(value):
     return value
 
 
-def source_inventory_operations(client, shared, autodeploy, hactar, context, policy_variables):
+def source_inventory_operations(client, shared, autodeploy, hactar, context, policy_variables,
+                                replacement_hypervisor=None):
     """Read and validate every exact API target before returning bounded operations."""
     operations = {}
     pin = context["route"]["hypervisor"]
@@ -854,6 +855,8 @@ def source_inventory_operations(client, shared, autodeploy, hactar, context, pol
         if optional:
             matches = client.rows("inventories/?name=" + quote(captured["inventory"]))
             if not matches:
+                require(replacement_hypervisor is None,
+                        'The proved replacement Hactar inventory must remain visible during retirement.')
                 identity = client.rows("me/")
                 require(len(identity) == 1 and identity[0].get("is_superuser") is True,
                         "Verify administrator visibility before treating an optional Hactar alias as undeployed.")
@@ -865,13 +868,42 @@ def source_inventory_operations(client, shared, autodeploy, hactar, context, pol
         current = inventory_variables(row)
         require(current.get("ansible_host") == pin["address"],
                 "The live hypervisor inventory address conflicts with its registered pin.")
-        for field, expected in (("machine_id", pin["machine_id"]), ("ansible_port", pin["port"]),
-                                ("ansible_user", pin["user"]), ("host_keys", pin["host_keys"])):
-            require(field not in current or
-                    (canonical_api_port(current[field]) == expected if field == "ansible_port"
-                     else current[field] == expected),
-                    "The live hypervisor inventory identity conflicts with its registered pin.")
-        desired = policy_variables(current, context)
+        if optional and replacement_hypervisor is not None:
+            replacement = replacement_hypervisor
+            require(isinstance(replacement, dict) and set(replacement) == {
+                'inventory_id', 'address', 'machine_id', 'host_keys'}
+                and isinstance(replacement['inventory_id'], int) and not isinstance(replacement['inventory_id'], bool)
+                and replacement['inventory_id'] > 0
+                and live_inventory['id'] == replacement['inventory_id']
+                and replacement['address'] == pin['address']
+                and isinstance(replacement['machine_id'], str) and re.fullmatch(r'[a-f0-9]{32}', replacement['machine_id'])
+                and current.get('machine_id') == replacement['machine_id']
+                and replacement['machine_id'] != pin['machine_id'],
+                'The live Hactar alias must match the independently proved replacement identity.')
+            _routing.host_keys(current.get('host_keys'))
+            _routing.host_keys(replacement['host_keys'])
+            require(len(current['host_keys']) == len(set(current['host_keys'])) == 3
+                and set(current['host_keys']) == set(replacement['host_keys'])
+                and not set(current['host_keys']).intersection(pin['host_keys'])
+                and isinstance(current.get('ansible_user'), str)
+                and re.fullmatch(r'[a-z_][a-z0-9_-]*[$]?', current['ansible_user']),
+                'Preserve only a complete new Hactar identity and its explicit existing login.')
+            canonical_api_port(current.get('ansible_port'))
+            planned = policy_variables(current, context)
+            # Native preflight already used the new bootstrap connection. Do
+            # not restore old managed trust or add absent legacy policy aliases.
+            desired = deepcopy(current)
+            for field in ('isolation_policy', 'hactar_isolation_policy', 'firewall_additional_zone_rules'):
+                if field in current:
+                    desired[field] = planned[field]
+        else:
+            for field, expected in (("machine_id", pin["machine_id"]), ("ansible_port", pin["port"]),
+                                    ("ansible_user", pin["user"]), ("host_keys", pin["host_keys"])):
+                require(field not in current or
+                        (canonical_api_port(current[field]) == expected if field == "ansible_port"
+                         else current[field] == expected),
+                        "The live hypervisor inventory identity conflicts with its registered pin.")
+            desired = policy_variables(current, context)
         if desired != current:
             operations[("PATCH", "hosts/%s/" % row["id"])] = {"variables": json.dumps(desired)}
         return live_inventory
@@ -907,9 +939,15 @@ def source_inventory_operations(client, shared, autodeploy, hactar, context, pol
     if current != desired:
         operations[("PATCH", "inventories/%s/" % live["id"])] = {"variables": json.dumps(desired)}
     if hactar is not None:
+        replacement_matches = 0
         for captured in hactar.get("controller_hosts_hactar_recovery", []):
             if inventory_variables(captured).get("ansible_host") == pin["address"]:
                 patch_hypervisor(captured, optional=True)
+                replacement_matches += 1
+        require(replacement_hypervisor is None or replacement_matches == 1,
+                'Resolve exactly one captured Hactar replacement alias before metadata retirement.')
+    require(replacement_hypervisor is None or hactar is not None,
+            'Require the existing captured Hactar alias for replacement metadata retirement.')
     return [(method, path, body) for method in ("PATCH", "DELETE")
             for (operation, path), body in operations.items() if operation == method]
 

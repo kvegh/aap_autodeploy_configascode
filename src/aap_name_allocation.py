@@ -110,6 +110,8 @@ def reserve_host_generation(state, prefix, installation_id, hypervisor_id):
         raise ValueError('Use the verified provider installation identity.')
     request_id = str(uuid.uuid5(uuid.NAMESPACE_URL, 'aap-host-install:' + installation_id))
     updated, record = reserve(state, prefix, request_id, hypervisor_id)
+    if record.get('decommissioned'):
+        raise ValueError('A retired installation must not reserve another generation or provision a guest.')
     if record['number'] > 99:
         raise ValueError('Host deployment generations are exhausted at v99.')
     if record.get('host_installation_id') not in (None, installation_id):

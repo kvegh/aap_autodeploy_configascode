@@ -5,8 +5,10 @@ from copy import deepcopy
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
+import uuid
 
 import yaml
 from ansible.errors import AnsibleActionFail
@@ -49,17 +51,23 @@ class ActionModule(ActionBase):
         try:
             if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "guest_bootstrap_http", "installation_access", "retire_guest", "aap_supplemental_interface"):
                 return self.release_guest(result, task_vars or {})
-            if self._task.check_mode:
+            if self._task.check_mode and self._task.args.get('operation') != 'post_reset_inspect':
                 result.update(changed=False, published=False)
                 return result
             args = self._task.args
             keys.require(set(args) >= {"instance_name", "record", "organization"} and
                          set(args) <= {"instance_name", "record", "organization", "operation", "inventory_registration",
-                                      "isolation_retirement"},
+                                      "isolation_retirement", "post_reset_verification_job"},
                          "Publish only the selected instance's verified saved token.")
-            retiring = args.get("operation", "publish") == "retire"
-            keys.require(args.get("operation", "publish") in ("publish", "retire"),
+            inspecting_reset = args.get('operation') == 'post_reset_inspect'
+            retiring = args.get("operation", "publish") in ("retire", "post_reset_inspect")
+            keys.require(args.get("operation", "publish") in ("publish", "retire", "post_reset_inspect"),
                          "Choose instance access publication or retirement.")
+            post_reset = 'post_reset_verification_job' in args
+            keys.require(not post_reset or (retiring and 'isolation_retirement' not in args),
+                         'Post-reset retirement derives its exact transition from protected ownership and native proof.')
+            keys.require(not inspecting_reset or post_reset, 'Inspect post-reset retirement with the actual verification job.')
+            reset_guard = load('post_reset_retirement_guard', ROOT / 'filter_plugins/aap_post_reset_retirement.py') if post_reset else None
             isolation_retirement = args.get("isolation_retirement")
             keys.require("isolation_retirement" not in args or (retiring and isinstance(isolation_retirement, dict)),
                          "Isolation retirement is permitted only during final selected instance retirement.")
@@ -124,7 +132,42 @@ class ActionModule(ActionBase):
                     git("checkout", "--quiet", "--detach", "FETCH_HEAD")
                     retirement_context = None
                     management_context = None
-                    if isolation_retirement is not None:
+                    if post_reset:
+                        def protected_file(name):
+                            selected_path = checkout / name
+                            keys.require(selected_path.is_file() and not selected_path.is_symlink(),
+                                         'Retain current encrypted ownership until reset retirement is complete.')
+                            return vault_yaml.load_repository_yaml(self._loader._vault.decrypt(selected_path.read_bytes()))
+                        reset_configuration = protected_file(relative)
+                        settings = reset_guard.protected_settings(reset_configuration, args['instance_name'])
+                        reset_proof = reset_guard.verified_job(source, args['post_reset_verification_job'], settings,
+                            retirement_job=dict(id=int(job_id), template_id=int(template_id), project_revision=revision),
+                            source_inventory_id=preflight_ownership.get('inventory_id') if isinstance(preflight_ownership, dict) else None)
+                        reset_shared = protected_file('cac/host_inventory.yml')
+                        reset_hactar = protected_file('cac/hactar_recovery.yml')
+                        retirement_context, source_ownership_snapshot, reset_resources = reset_guard.combined_context(
+                            reset_configuration, reset_shared, reset_hactar, protected_file('state/aap_vm_allocations_vault.yml'),
+                            source, args['instance_name'], variables.get('aap_isolation_app_capture', {}).get('ansible_facts'),
+                            settings['expectation'])
+                        keys.require(isinstance(preflight_ownership, dict)
+                            and preflight_ownership.get('source_job_id') == str(job_id)
+                            and preflight_ownership.get('source_project_revision') == revision
+                            and all(preflight_ownership.get(key) == source_ownership_snapshot[key] for key in (
+                                'instance_name', 'inventory_name', 'inventory_id', 'hypervisor_name',
+                                'hypervisor_machine_id', 'related_resources')),
+                            'Reset metadata retirement requires this running job\'s fresh source ownership read.')
+                        if inspecting_reset:
+                            # Validate every mixed old/new Source destination
+                            # before the playbook removes any selected DNS record.
+                            reset_guard.source_operations(source,
+                                keys.retire_inventory_capture(reset_shared, retirement_context, 'shared'),
+                                keys.retire_inventory_capture(reset_configuration, retirement_context, 'autodeploy'),
+                                keys.retire_inventory_capture(reset_hactar, retirement_context, 'hactar'),
+                                retirement_context, settings, reset_proof)
+                            result.update(changed=False, reset_verified=True, retirement=reset_resources,
+                                          expectation_sha256=reset_guard.digest(settings['expectation']))
+                            return result
+                    if isolation_retirement is not None and not post_reset:
                         allocation_path = checkout / "state/aap_vm_allocations_vault.yml"
                         keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
                                      "Read the selected encrypted reservation before planning source retirement.")
@@ -156,7 +199,7 @@ class ActionModule(ActionBase):
                     before = vault_yaml.load_repository_yaml(plain)
                     after = (keys.retire_record(before, args["instance_name"], args["record"].get("target"))
                              if retiring else keys.merge_record(before, args["instance_name"], args["record"]))
-                    if retirement_context is not None:
+                    if retirement_context is not None and not post_reset:
                         after = keys.retire_inventory_capture(after, retirement_context, "autodeploy")
                     changes = [(relative, path, before, after, label, secret)]
                     retirement_shared = retirement_hactar = None
@@ -224,7 +267,8 @@ class ActionModule(ActionBase):
                                 retirement_record = deepcopy(matches[0])
                             else:
                                 if retirement_context is not None:
-                                    updated = keys.retire_inventory_capture(updated, retirement_context, "shared")
+                                    if not post_reset:
+                                        updated = keys.retire_inventory_capture(updated, retirement_context, "shared")
                                     retirement_shared = updated
                                 else:
                                     inventory = updated["host_inventory_configuration"]
@@ -243,10 +287,18 @@ class ActionModule(ActionBase):
                             raw, extra_label, extra_secret = self._loader._vault.decrypt_and_get_vault_id(
                                 extra_path.read_bytes())
                             old = vault_yaml.load_repository_yaml(raw)
-                            retirement_hactar = keys.retire_inventory_capture(old, retirement_context, "hactar")
+                            retirement_hactar = (deepcopy(old) if post_reset else
+                                keys.retire_inventory_capture(old, retirement_context, "hactar"))
                             changes.append((extra, extra_path, old, retirement_hactar, extra_label, extra_secret))
                         # Validate every current API target before any encrypted publication or source write.
-                        keys.source_retirement_operations(source, retirement_shared, after, retirement_hactar, retirement_context)
+                        desired_source_captures = (
+                            keys.retire_inventory_capture(retirement_shared, retirement_context, 'shared') if post_reset else retirement_shared,
+                            keys.retire_inventory_capture(after, retirement_context, 'autodeploy') if post_reset else after,
+                            keys.retire_inventory_capture(retirement_hactar, retirement_context, 'hactar') if post_reset else retirement_hactar)
+                        if post_reset:
+                            reset_guard.source_operations(source, *desired_source_captures, retirement_context, settings, reset_proof)
+                        else:
+                            keys.source_retirement_operations(source, *desired_source_captures, retirement_context)
                     changed_files = []
                     for changed_relative, changed_path, old, desired, changed_label, changed_secret in changes:
                         if old == desired:
@@ -329,39 +381,61 @@ class ActionModule(ActionBase):
                                 latest_allocation["aap_vm_allocation"], args["instance_name"],
                                 variables.get("aap_isolation_app_capture", {}).get("ansible_facts"), source_ownership_snapshot)
                             keys.verify_remaining_guest_grants(retirement_context["desired_policy"], source_ownership_snapshot)
-                            keys.require(len(latest_records) == 1 and latest_records[0].get("decommissioned") is True
-                                and keys.isolation_retirement_context(latest_records[0], args["instance_name"],
+                            keys.require(len(latest_records) == 1 and latest_records[0].get("decommissioned") is True,
+                                "Selected retirement ownership changed during source synchronization.")
+                            if post_reset:
+                                keys.require(latest_records[0] == retirement_record,
+                                             'The proved retired reservation changed during source synchronization.')
+                                keys.require(reset_guard.protected_settings(latest, args['instance_name']) == settings,
+                                             'The protected reset verifier binding changed during source synchronization.')
+                                reset_proof = reset_guard.verified_job(source, args['post_reset_verification_job'], settings,
+                                    retirement_job=dict(id=int(job_id), template_id=int(template_id), project_revision=revision),
+                                    source_inventory_id=source_ownership_snapshot['inventory_id'])
+                            else:
+                                keys.require(keys.isolation_retirement_context(latest_records[0], args["instance_name"],
                                     args["record"].get("target"), isolation_retirement,
                                     source_ownership_snapshot["related_resources"]) == retirement_context,
-                                "Selected retirement ownership changed during source synchronization.")
-                            keys.require(keys.retire_inventory_capture(latest, retirement_context, "autodeploy") == latest,
+                                    "Selected retirement ownership changed during source synchronization.")
+                            keys.require(post_reset or keys.retire_inventory_capture(latest, retirement_context, "autodeploy") == latest,
                                          "Canonical rebuild inventory changed after retirement publication.")
                             retirement_shared = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
                                 git("show", "FETCH_HEAD:cac/host_inventory.yml").stdout.encode()))
-                            keys.require(keys.retire_inventory_capture(retirement_shared, retirement_context, "shared") == retirement_shared,
+                            keys.require(post_reset or keys.retire_inventory_capture(retirement_shared, retirement_context, "shared") == retirement_shared,
                                          "Canonical shared inventory changed after retirement publication.")
                             retirement_hactar = None
                             hactar_file = git("show", "FETCH_HEAD:cac/hactar_recovery.yml", optional=True)
                             if hactar_file.returncode == 0:
                                 retirement_hactar = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(hactar_file.stdout.encode()))
-                                keys.require(keys.retire_inventory_capture(retirement_hactar, retirement_context, "hactar") == retirement_hactar,
+                                keys.require(post_reset or keys.retire_inventory_capture(retirement_hactar, retirement_context, "hactar") == retirement_hactar,
                                              "Canonical Hactar capture changed after retirement publication.")
-                            source_operations = keys.source_retirement_operations(source, retirement_shared,
-                                latest, retirement_hactar, retirement_context)
+                            # A replacement already erased native resources. Keep all
+                            # nine canonical owners until API deletion/readback succeeds;
+                            # use only the validated desired views for Source changes.
+                            source_retirement_shared = (keys.retire_inventory_capture(retirement_shared, retirement_context, 'shared')
+                                if post_reset else retirement_shared)
+                            source_retirement_main = (keys.retire_inventory_capture(latest, retirement_context, 'autodeploy')
+                                if post_reset else latest)
+                            source_retirement_hactar = (keys.retire_inventory_capture(retirement_hactar, retirement_context, 'hactar')
+                                if post_reset else retirement_hactar)
+                            def planned_retirement_operations():
+                                if post_reset:
+                                    return reset_guard.source_operations(source, source_retirement_shared,
+                                        source_retirement_main, source_retirement_hactar, retirement_context, settings, reset_proof)
+                                return keys.source_retirement_operations(source, source_retirement_shared,
+                                    source_retirement_main, source_retirement_hactar, retirement_context)
+                            source_operations = planned_retirement_operations()
                             for method, api_path, body in source_operations:
                                 if method != "PATCH":
                                     continue
                                 source.request(method, api_path, body)
                                 api_changed = True
-                            remaining_operations = keys.source_retirement_operations(source, retirement_shared,
-                                latest, retirement_hactar, retirement_context)
+                            remaining_operations = planned_retirement_operations()
                             keys.require(all(method == "DELETE" for method, _, _ in remaining_operations),
                                          "Verify every source policy alias before deleting guest ownership records.")
                             for method, api_path, body in remaining_operations:
                                 source.request(method, api_path, body)
                                 api_changed = True
-                            keys.require(not keys.source_retirement_operations(source, retirement_shared,
-                                latest, retirement_hactar, retirement_context),
+                            keys.require(not planned_retirement_operations(),
                                 "Verify completed source inventory retirement before returning success.")
                         else:
                             for host in source.rows("hosts/?name=" + args["instance_name"]):
@@ -426,7 +500,15 @@ class ActionModule(ActionBase):
                                         for row in state["reservations"].values()),
                                 "Refuse a regressed allocation counter before final reservation removal.")
                             desired_allocation = deepcopy(final_allocation)
-                            del desired_allocation["aap_vm_allocation"]["reservations"][matches[0][0]]
+                            host_installation = matches[0][1].get('host_installation_id')
+                            if host_installation is None:
+                                del desired_allocation["aap_vm_allocation"]["reservations"][matches[0][0]]
+                            else:
+                                keys.require(isinstance(host_installation, str)
+                                    and re.fullmatch(r'[a-f0-9]{64}', host_installation)
+                                    and matches[0][0] == str(uuid.uuid5(uuid.NAMESPACE_URL, 'aap-host-install:' + host_installation))
+                                    and matches[0][1].get('decommissioned') is True,
+                                    'Retain the complete consumed host generation as retired allocation history.')
                             sealed = self._loader._vault.encrypt(
                                 yaml.dump(desired_allocation, Dumper=vault_yaml.VaultDumper, sort_keys=False, width=110),
                                 secret=allocation_secret, vault_id=allocation_label)
@@ -436,9 +518,35 @@ class ActionModule(ActionBase):
                                 "Final reservation removal must preserve other allocations and literal data.")
                             git("checkout", "--quiet", "--detach", "FETCH_HEAD")
                             (checkout / allocation_relative).write_bytes(sealed)
-                            git("add", "--", allocation_relative)
+                            final_files = [allocation_relative]
+                            final_captures = {}
+                            if post_reset:
+                                # Complete the same recoverable transaction only after
+                                # all exact native Source operations were read back.
+                                for final_relative, kind, current in (
+                                    (relative, 'autodeploy', latest),
+                                    ('cac/host_inventory.yml', 'shared', retirement_shared),
+                                    ('cac/hactar_recovery.yml', 'hactar', retirement_hactar)):
+                                    old_ciphertext = git('show', 'FETCH_HEAD:' + final_relative).stdout.encode()
+                                    old_plain, final_label, final_secret = self._loader._vault.decrypt_and_get_vault_id(old_ciphertext)
+                                    current_capture = vault_yaml.load_repository_yaml(old_plain)
+                                    keys.require(current_capture == current,
+                                                 'Canonical ownership changed before final reset retirement publication.')
+                                    desired_capture = keys.retire_inventory_capture(current_capture, retirement_context, kind)
+                                    final_ciphertext = self._loader._vault.encrypt(yaml.dump(desired_capture,
+                                        Dumper=vault_yaml.VaultDumper, sort_keys=False, width=110),
+                                        secret=final_secret, vault_id=final_label)
+                                    final_restored = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(final_ciphertext))
+                                    keys.require(final_restored == desired_capture
+                                        and vault_yaml.literal_paths(final_restored) == vault_yaml.literal_paths(desired_capture),
+                                        'Final reset retirement must preserve unrelated records and literal data.')
+                                    (checkout / final_relative).write_bytes(final_ciphertext)
+                                    final_files.append(final_relative)
+                                    final_captures[final_relative] = desired_capture
+                            git("add", "--", *final_files)
                             git("-c", "user.name=AAP AutoDeploy", "-c", "user.email=automation@example.invalid",
-                                "commit", "--quiet", "-m", "Remove completed instance reservation")
+                                "commit", "--quiet", "-m", "Retain retired host generation history" if host_installation is not None
+                                else "Remove completed instance reservation")
                             if git("push", "origin", "HEAD:refs/heads/main", optional=True).returncode:
                                 continue
                             published = True
@@ -448,7 +556,12 @@ class ActionModule(ActionBase):
                             verified_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
                                 git("show", "FETCH_HEAD:" + allocation_relative).stdout.encode()))
                             keys.require(verified_allocation == desired_allocation,
-                                "Verify selected reservation absence and unchanged counter after publication.")
+                                "Verify selected retirement history and unchanged counter after publication.")
+                            for final_relative, desired_capture in final_captures.items():
+                                verified_capture = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
+                                    git('show', 'FETCH_HEAD:' + final_relative).stdout.encode()))
+                                keys.require(verified_capture == desired_capture,
+                                             'Verify completed reset retirement and unrelated record preservation.')
                         result.update(changed=published or api_changed, published=True,
                             source_credential_id=synchronized["credential_id"])
                         return result

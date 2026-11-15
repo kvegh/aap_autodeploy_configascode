@@ -103,7 +103,7 @@ class ApplicationPolicyTests(unittest.TestCase):
                 self.assertEqual(observed['GIT_CONFIG_VALUE_2'], 'true')
 
     def test_bootstrap_native_loading_does_not_template_unrelated_base_configuration(self):
-        tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-permissions.yml').read_text())
+        tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-read.yml').read_text())
         load = next(task for task in tasks if task['name'].startswith('Load the existing central bootstrap'))
         guard = next(task for task in tasks if task['name'].startswith('Require the already chosen AIOps'))
         app_load = next(task for task in tasks if task['name'].startswith('Load AIOps variables'))
@@ -387,9 +387,11 @@ class ApplicationPolicyTests(unittest.TestCase):
             dhcp['block'][0]['ansible.builtin.command']['argv'][0] = str(virsh)
             (project / 'tasks/aap-isolation-app-instance.yml').write_text(yaml.safe_dump(instance_tasks, sort_keys=False))
             tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-permissions.yml').read_text())
-            git_tasks = [task for task in tasks if 'ansible.builtin.git' in task]
+            reader_tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-read.yml').read_text())
+            git_tasks = [task for task in reader_tasks if 'ansible.builtin.git' in task]
             git_tasks[0]['ansible.builtin.git']['repo'] = str(central)
             git_tasks[1]['ansible.builtin.git']['repo'] = str(app)
+            (project / 'tasks/aap-isolation-app-read.yml').write_text(yaml.safe_dump(reader_tasks, sort_keys=False))
             base = {'bridges': ['virbr0'], 'dns_bridges': ['virbr0'],
                     'protected_ipv4': ['198.51.100.5'], 'guest_host_clients': []}
             base_desired = deepcopy(base)

@@ -1,5 +1,22 @@
 # Release notes
 
+## 0.63.73
+
+- Qualify metadata retirement after an authorized whole-host reinstall through
+  the existing decommission job, using actual native verification and fresh
+  authoritative ownership before DNS or metadata changes.
+- Preserve all nine owners until Source cleanup succeeds, reconcile interrupted
+  cleanup, and retain the replacement Hactar alias's new verified identity.
+- Keep consumed installation-bound reservations marked retired; refuse their
+  reuse while allowing a fresh installation to consume the next shared number.
+- Separate actual controller attestation time from preserved remote observation
+  time, retaining the job-window, freshness and later-target-work guards.
+- Validate ten post-reset and twenty-two existing publisher tests in native
+  Core 2.20, eighteen ordinary decommission checks, nine allocator lifecycle
+  tests, and syntax checks. Broader app fixtures have independently reproduced
+  baseline failures; this change does not fix or mask them. No live reset or
+  v22 deployment is established by these tests.
+
 ## 0.63.72
 
 - Document the approved shared-generation decision, its implementation commit

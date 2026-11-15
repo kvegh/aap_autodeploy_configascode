@@ -179,6 +179,7 @@ class GuestAccessRetirementTests(unittest.TestCase):
                 "aap_hypervisor_isolation_host_clients": inputs[0]["guest_host_clients"],
                 "aap_retirement": inputs[1], "aap_instance_route": inputs[2], "aap_instance_resources": inputs[3],
                 "aap_decommission_guest_xmls": inputs[4], "aap_decommission_guest_network_xmls": inputs[5],
+                "aap_decommission_persistent_guest_xmls": inputs[4],
                 "aap_decommission_isolation_capture": {"content": base64.b64encode(json.dumps(expected["desired_policy"]).encode()).decode()}}
             play = directory / "play.yml"
             play.write_text(yaml.safe_dump([{"hosts": "localhost", "connection": "local", "become": False,
@@ -200,7 +201,8 @@ class GuestAccessRetirementTests(unittest.TestCase):
         play = yaml.safe_load((ROOT / "destroy-test-aap.yml").read_text())[0]
         preflight = next(index for index, task in enumerate(play["pre_tasks"])
                          if task.get("ansible.builtin.include_tasks") == "tasks/decommission-guest-access.yml")
-        end = next(index for index, task in enumerate(play["pre_tasks"]) if "ansible.builtin.meta" in task)
+        end = next(index for index, task in enumerate(play["pre_tasks"])
+                   if "ansible.builtin.meta" in task and task.get('when') == 'ansible_check_mode')
         self.assertLess(preflight, end)
         self.assertFalse(play["pre_tasks"][0]["vars"]["aap_read_related_resources"])
         ownership_tasks = yaml.safe_load((ROOT / "tasks/decommission-guest-access.yml").read_text())[1]["block"]
@@ -238,7 +240,11 @@ class GuestAccessRetirementTests(unittest.TestCase):
         self.assertEqual(identity[-1]["ansible.builtin.command"]["argv"], ["cat", "/etc/machine-id"])
         self.assertIn("aap_hypervisor_pin.machine_id", identity[-1]["failed_when"])
         play = yaml.safe_load((ROOT / "destroy-test-aap.yml").read_text())[0]
-        self.assertEqual(play["pre_tasks"][2]["ansible.builtin.include_tasks"], "tasks/aap-hypervisor-identity.yml")
+        identity_index = next(index for index, task in enumerate(play['pre_tasks'])
+            if task.get('ansible.builtin.include_tasks') == 'tasks/aap-hypervisor-identity.yml')
+        self.assertNotIn('when', play['pre_tasks'][identity_index])
+        self.assertEqual(play['pre_tasks'][identity_index - 1]['ansible.builtin.meta'], 'end_play')
+        self.assertEqual(play['pre_tasks'][identity_index - 1]['when'], 'aap_post_reset_verification_job is defined')
 
     def run_apply(self, fail=False, check=False, applications=False, no_delete=False):
         inputs = fixture()

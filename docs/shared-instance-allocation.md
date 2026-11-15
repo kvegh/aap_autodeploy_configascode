@@ -40,6 +40,11 @@ Those gates remain with the native callers. Focused tests exercise real Vault
 encryption, concurrent processes, lost-response retries, migration preservation,
 and a host-bound Stage 01 writer competing with another ordinary VM writer.
 
+After successful retirement, installation-bound records remain marked
+decommissioned as consumed history in this same registry. Neither the host
+counter nor VM provisioning may reuse them. A fresh verified installation can
+consume the next number; no second counter or replacement history is created.
+
 ## Ordinary VM reservation
 
 The controller-side action uses the active attached `cac` Vault secret and an

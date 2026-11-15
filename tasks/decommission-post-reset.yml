@@ -1,0 +1,111 @@
+---
+# The ordinary native teardown remains separate. This branch never connects
+# through the old pin or claims that old guests were individually stopped.
+- name: Require an actual native replacement verification job
+  ansible.builtin.assert:
+    that:
+      - aap_post_reset_verification_job is integer
+      - aap_post_reset_verification_job > 0
+    quiet: true
+  no_log: true
+
+- name: Allocate only controller-side space for the existing authoritative reader
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: aap-post-reset-read-
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  check_mode: false
+  register: aap_isolation_source_workspace
+
+- name: Verify reset completion and retire the exact old metadata
+  block:
+    - name: Bind the existing reader to this project without an old-host lock or connection
+      ansible.builtin.set_fact:
+        aap_isolation_autodeploy_root: '{{ playbook_dir }}'
+      no_log: true
+
+    - name: Load application ownership through its existing controller-side reader
+      ansible.builtin.include_tasks: aap-isolation-app-read.yml
+
+    - name: Read fresh source ownership within this actual retirement job
+      ansible.builtin.include_tasks: aap-instance-select.yml
+      vars:
+        aap_read_related_resources: true
+
+    - name: Verify actual replacement completion and all exact old ownership before DNS changes
+      aap_publish_instance_keys:
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        record:
+          target: '{{ aap_instance_route.aap_hostname }}'
+        organization: Default
+        operation: post_reset_inspect
+        post_reset_verification_job: '{{ aap_post_reset_verification_job }}'
+      delegate_to: localhost
+      become: false
+      register: aap_post_reset_inspection
+      no_log: true
+
+    - name: Retain only independently derived selected DNS resource names
+      ansible.builtin.set_fact:
+        aap_retirement: '{{ aap_post_reset_inspection.retirement }}'
+        aap_dns_zone_records: []
+        aap_dns_zone_complete: false
+      no_log: true
+
+    - name: Read the complete DNS zone using the unchanged ownership guard
+      ansible.builtin.include_tasks: decommission-dns-page.yml
+      loop: '{{ range(0, 10000, 500) | list }}'
+      loop_control:
+        loop_var: aap_dns_page_offset
+      when: not (aap_dns_zone_complete | bool)
+      no_log: true
+
+    - name: Require complete zone readback before any selected record removal
+      ansible.builtin.assert:
+        that: aap_dns_zone_complete | bool
+        quiet: true
+      no_log: true
+
+    - name: Plan only exact old instance records and refuse conflicting DNS ownership
+      ansible.builtin.set_fact:
+        aap_retirement_dns_plan: >-
+          {{ aap_dns_zone_records | aap_decommission_dns_plan(aap_retirement,
+               aap_hypervisor_pin.public_ip, vault_domain) }}
+      no_log: true
+
+    - name: End read-only post-reset inspection without publishing metadata or DNS
+      ansible.builtin.meta: end_play
+      when: ansible_check_mode
+
+    - name: Remove and verify only the independently owned selected DNS records
+      ansible.builtin.include_tasks: decommission-dns-delete.yml
+      loop: '{{ aap_retirement_dns_plan }}'
+      loop_control:
+        loop_var: aap_dns_retire_record
+      no_log: true
+
+    - name: Retire old access and metadata only with the actual replacement proof
+      aap_publish_instance_keys:
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        record:
+          target: '{{ aap_instance_route.aap_hostname }}'
+        organization: Default
+        operation: retire
+        post_reset_verification_job: '{{ aap_post_reset_verification_job }}'
+      delegate_to: localhost
+      become: false
+      no_log: true
+  always:
+    - name: Remove only this invocation's protected controller-side reader workspace
+      ansible.builtin.file:
+        path: '{{ aap_isolation_source_workspace.path }}'
+        state: absent
+      delegate_to: localhost
+      become: false
+      vars:
+        ansible_connection: local
+      check_mode: false
+      no_log: true
