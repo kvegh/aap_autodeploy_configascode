@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.74
+
+- Document the guarded reset-retirement implementation and verified lifecycle
+  behavior, with its implementation commit and native qualification limits.
+- Remove a trailing blank line from the extracted controller-side reader.
+
 ## 0.63.73
 
 - Qualify metadata retirement after an authorized whole-host reinstall through

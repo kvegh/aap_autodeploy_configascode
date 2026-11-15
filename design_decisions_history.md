@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Retire metadata from actual replacement proof — 2026-11-15
+
+Implementation `a76a5708bb565ac84ef661a7f9792efb5bc9b34f` adds an early
+controller-only branch to the existing decommission entry. It consumes an actual
+successful, reviewed Hactar verification job and freshly compares exact old
+Windows, AAP and application ownership. The ordinary stop-and-clean-native
+sequence is unchanged. No old-pin host connection or fabricated stopped flag
+is used after a whole-host reinstall.
+
+All nine canonical owners and previous policies remain recoverable until Source
+cleanup is acknowledged and read back. A fresh-job retry reconciles a lost
+deletion response. Only the actual replacement Hactar alias may use new trust,
+verified against the proof; its login, port and unrelated values are preserved.
+The shared old-pin aliases stay strict until final retirement. Installation-bound
+reservations remain marked decommissioned as consumed history, preventing old
+installations from allocating again. The ordinary legacy reservation lifecycle
+remains compatible.
+
+Controller attestation time is kept separate from unchanged remote observation
+time. Actual job-window and thirty-minute freshness checks, later/unfinished
+work checks, full native absence and all existing ownership guards remain.
+Native Core 2.20 qualification passed ten post-reset tests, twenty-two existing
+publisher tests, eighteen ordinary decommission tests, nine allocator lifecycle
+tests and syntax checks. Broader application fixture failures were reproduced
+against the unchanged baseline and are outside this fix. These results do not
+establish a live reset, retirement or clean next deployment.
+
 ## Use one existing generation counter for host and AAP — 2026-11-15
 
 The owner explicitly approved consistent numbering from v22 and required the

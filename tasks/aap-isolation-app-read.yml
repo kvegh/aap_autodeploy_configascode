@@ -220,4 +220,3 @@
     fail_msg: Load the authoritative AIOps capture; do not substitute an empty permission list.
     quiet: true
   no_log: true
-
