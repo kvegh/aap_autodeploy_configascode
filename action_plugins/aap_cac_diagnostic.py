@@ -1,6 +1,7 @@
 """Seal bounded configuration failures with their existing labelled CaC key."""
 
 import json
+import re
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -77,7 +78,7 @@ class ActionModule(ActionBase):
             if set(self._task.args) - {'stage'}:
                 raise ValueError()
             stage = self._task.args.get('stage', 'initial_base_organizations')
-            if stage not in ('initial_base_organizations', 'selected_configuration_job'):
+            if stage not in ('initial_base_organizations', 'selected_configuration_job', 'guest_source_git'):
                 raise ValueError()
             context = task_vars or {}
             # Select only the existing explicitly labelled CaC credential. Never
@@ -86,10 +87,19 @@ class ActionModule(ActionBase):
             if len(secrets) != 1:
                 raise ValueError()
             vault = VaultLib([('cac', secrets[0])])
-            capture = Path(context['cac_workspace']['path']) / 'repository/cac/base_CaC_vault.yml'
-            _, label, secret = vault.decrypt_and_get_vault_id(capture.read_bytes())
-            if label != 'cac':
-                raise ValueError()
+            if stage == 'guest_source_git':
+                # The failed checkout may not contain its encrypted capture yet.
+                # Use only the caller's existing labelled CaC key; no fallback.
+                workspace = context.get('aap_isolation_source_workspace', {})
+                path = workspace.get('path') if isinstance(workspace, Mapping) else None
+                if not isinstance(path, str) or not re.fullmatch(r'/tmp/aap-hactar-source-[A-Za-z0-9_]+', path):
+                    raise ValueError()
+                secret = secrets[0]
+            else:
+                capture = Path(context['cac_workspace']['path']) / 'repository/cac/base_CaC_vault.yml'
+                _, label, secret = vault.decrypt_and_get_vault_id(capture.read_bytes())
+                if label != 'cac':
+                    raise ValueError()
             observed = failure_result(context.get('__cas_job_async_result', {}))
             original = failure_result(context.get('ansible_failed_result', {}))
             if not observed and not original:

@@ -28,32 +28,59 @@
     quiet: true
   no_log: true
 
-- name: Read the existing central bootstrap without another credential attachment
-  ansible.builtin.git:
-    repo: '{{ aap_isolation_central_namespace }}/aap_autodeploy_configascode-secrets.git'
-    dest: '{{ aap_isolation_source_workspace.path }}/central'
-    version: main
-    depth: 1
-    recursive: false
-    single_branch: true
-  environment:
-    GIT_TERMINAL_PROMPT: '0'
-    GIT_CONFIG_COUNT: '4'
-    GIT_CONFIG_KEY_0: credential.helper
-    GIT_CONFIG_VALUE_0: ''
-    GIT_CONFIG_KEY_1: http.followRedirects
-    GIT_CONFIG_VALUE_1: 'false'
-    GIT_CONFIG_KEY_2: http.sslVerify
-    GIT_CONFIG_VALUE_2: 'true'
-    GIT_CONFIG_KEY_3: 'http.{{ aap_isolation_central_namespace }}/.extraheader'
-    GIT_CONFIG_VALUE_3: >-
-      Authorization: Basic {{ ('x-access-token:' ~ lookup('ansible.builtin.env', 'CAC_GIT_TOKEN')) | b64encode }}
-  delegate_to: localhost
-  become: false
-  vars:
-    ansible_connection: local
-  check_mode: false
-  no_log: true
+- name: Read the central bootstrap and retain protected failures before rollback
+  block:
+    - name: Read the existing central bootstrap without another credential attachment
+      ansible.builtin.git:
+        repo: '{{ aap_isolation_central_namespace }}/aap_autodeploy_configascode-secrets.git'
+        dest: '{{ aap_isolation_source_workspace.path }}/central'
+        version: main
+        depth: 1
+        recursive: false
+        single_branch: true
+      environment:
+        GIT_TERMINAL_PROMPT: '0'
+        GIT_CONFIG_COUNT: '4'
+        GIT_CONFIG_KEY_0: credential.helper
+        GIT_CONFIG_VALUE_0: ''
+        GIT_CONFIG_KEY_1: http.followRedirects
+        GIT_CONFIG_VALUE_1: 'false'
+        GIT_CONFIG_KEY_2: http.sslVerify
+        GIT_CONFIG_VALUE_2: 'true'
+        GIT_CONFIG_KEY_3: 'http.{{ aap_isolation_central_namespace }}/.extraheader'
+        GIT_CONFIG_VALUE_3: >-
+          Authorization: Basic {{ ('x-access-token:' ~ lookup('ansible.builtin.env', 'CAC_GIT_TOKEN')) | b64encode }}
+      delegate_to: localhost
+      become: false
+      vars:
+        ansible_connection: local
+      check_mode: false
+      no_log: true
+
+  rescue:
+    - name: Preserve only ciphertext without preventing native rollback on diagnostic failure
+      block:
+        - name: Seal the original protected source Git failure with the existing CaC key
+          aap_cac_diagnostic:
+            stage: guest_source_git
+          register: aap_guest_source_git_diagnostic
+          no_log: true
+
+        - name: Retain the encrypted native source Git diagnostic
+          ansible.builtin.set_stats:
+            data:
+              aap_guest_source_git_failure_vault: '{{ aap_guest_source_git_diagnostic.encrypted_diagnostic }}'
+          no_log: true
+      rescue:
+        - name: Report unavailable protected diagnostics without disclosing the original result
+          ansible.builtin.debug:
+            msg: The source Git diagnostic could not be encrypted; normal rollback and cleanup continue.
+          no_log: false
+
+    - name: Stop after the protected source Git read failure and retain normal rollback
+      ansible.builtin.fail:
+        msg: Source configuration could not be read. Inspect the encrypted source Git diagnostic; native rollback and cleanup remain active.
+      no_log: false
 
 - name: Inspect the authoritative central bootstrap without following links
   ansible.builtin.stat:

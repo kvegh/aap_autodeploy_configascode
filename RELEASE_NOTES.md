@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.58
+
+- Backport encrypted native source Git failure capture to the existing pinned
+  Windows lifecycle dependency without adopting later lifecycle changes.
+- Preserve existing authentication, TLS checks, protected logging, native rollback
+  and cleanup; diagnostic failure does not obstruct cleanup and no retry is added.
+- Pass six native Core 2.20.10 diagnostic integration cases.
+
 ## 0.63.57
 
 Document test correction `1cee2ac`, native trust-tag and encrypted-roundtrip

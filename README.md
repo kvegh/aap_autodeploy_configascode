@@ -1,5 +1,22 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Native source Git diagnostic backport
+
+This branch starts from the exact existing Windows lifecycle dependency and
+adds protected capture for the central bootstrap Git-read failure observed in
+the current Rebuild. The existing `aap_cac_diagnostic` action writes the encrypted
+native artifact `aap_guest_source_git_failure_vault` with the attached labelled
+CaC key. It excludes invocation arguments, retains protected logging and leaves
+Git authentication and certificate validation unchanged. A diagnostic failure
+never prevents the existing outer rollback and cleanup. No retry is added.
+
+Six native Core 2.20.10 diagnostic cases passed, including original-error
+recovery, secret canaries, missing-key refusal and unchanged success behavior.
+The underlying live Git error remains unresolved until a qualified focused
+normal retry captures its result. Other lifecycle and allocation behavior stays
+at this reviewed dependency revision.
+
+
 ## Feature freeze for clean deployment
 
 Complete and test the current candidate even when it needs fixes. Then retire
