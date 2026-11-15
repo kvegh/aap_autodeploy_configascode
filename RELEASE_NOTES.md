@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.64.8
+
+Document the final point-in-time task checkpoint after acceptance reconciliation.
+Shared integration is on hold for the owning clean-deployment acceptance and
+feature-freeze release; the completed disposable cleanup has no pending decision.
+Refresh the existing public overview and paired encrypted recovery records.
+Published candidates remain separate from live caller and workflow adoption.
+
 ## 0.64.7
 
 Document the actual shared-VM acceptance checkpoint implementation and preserve

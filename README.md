@@ -2,7 +2,7 @@
 
 ## Five-step source candidate
 
-Working version **0.64.7** prepares the owner-requested shared VM deployment
+Working version **0.64.8** prepares the owner-requested shared VM deployment
 refactor on a separate integration branch. It has passed focused Core 2.20
 checks and bounded independent source review. It has not been merged into the
 active deployment source or applied to a running workflow. Preserve the current
@@ -17,7 +17,8 @@ including identity guards and late launch-value overrides. The qualified private
 source-pin update is published on an integration branch only; the live shared
 Project still uses **0.0.3**. Live caller adoption, the isolated caller and complete
 five-step acceptance remain separate work. Preserve the active deployment and
-its feature freeze.
+its feature freeze. The current integration task is on hold until the owning
+clean-deployment acceptance completes and that integration boundary is released.
 
 ## Feature freeze for clean deployment
 
