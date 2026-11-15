@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.64.6
+
+Document independent shared-creator 0.0.3 acceptance and completed cleanup of
+its disposable VM, owned disk and temporary credential. Shared source 0.0.4 and
+portable caller rendering passed separate Core 2.20.10 checks, including guarded
+identity handling and late launch-value overrides. Refresh the generated task
+overview and encrypted full-record checkpoint. The qualified private source-pin
+update is published on its integration branch only; live source pins, caller
+bindings and deployment workflows are unchanged. Isolated-caller qualification
+and complete five-step acceptance remain unfinished.
+
 ## 0.64.5
 
 Document the current task checkpoint: shared source qualification is complete,

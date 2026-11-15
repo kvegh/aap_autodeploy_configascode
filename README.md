@@ -2,12 +2,22 @@
 
 ## Five-step source candidate
 
-Working version **0.64.5** prepares the owner-requested shared VM deployment
+Working version **0.64.6** prepares the owner-requested shared VM deployment
 refactor on a separate integration branch. It has passed focused Core 2.20
 checks and bounded independent source review. It has not been merged into the
 active deployment source or applied to a running workflow. Preserve the current
 clean-deployment path and its existing jobs until the transition is coordinated.
 Final AAP end-to-end acceptance of this candidate remains unperformed.
+
+Shared creator **0.0.3** passed independent disposable-VM acceptance. Its test
+VM, owned disk and temporary credential have been removed after separate owner
+approvals, with unrelated resources preserved. Published shared source **0.0.4**
+and portable caller rendering passed their separate Core 2.20.10 checks,
+including identity guards and late launch-value overrides. The qualified private
+source-pin update is published on an integration branch only; the live shared
+Project still uses **0.0.3**. Live caller adoption, the isolated caller and complete
+five-step acceptance remain separate work. Preserve the active deployment and
+its feature freeze.
 
 ## Feature freeze for clean deployment
 
