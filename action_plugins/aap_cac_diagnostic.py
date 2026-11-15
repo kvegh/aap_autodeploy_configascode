@@ -79,7 +79,7 @@ class ActionModule(ActionBase):
                 raise ValueError()
             stage = self._task.args.get('stage', 'initial_base_organizations')
             if stage not in ('initial_base_organizations', 'selected_configuration_job',
-                             'project_configuration_import'):
+                             'project_configuration_import', 'guest_source_git'):
                 raise ValueError()
             context = task_vars or {}
             # Select only the existing explicitly labelled CaC credential. Never
@@ -88,22 +88,31 @@ class ActionModule(ActionBase):
             if len(secrets) != 1:
                 raise ValueError()
             vault = VaultLib([('cac', secrets[0])])
-            repository = Path(context['cac_workspace']['path']) / 'repository'
-            relative = 'cac/base_CaC_vault.yml'
-            if stage == 'project_configuration_import':
-                contract = context.get('cac_project_contract', {})
-                project = contract.get('project_id') if isinstance(contract, Mapping) else None
-                if not isinstance(project, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,127}', project):
+            if stage == 'guest_source_git':
+                # The failed checkout may not contain its encrypted capture yet.
+                # Use only the caller's existing labelled CaC key; no fallback.
+                workspace = context.get('aap_isolation_source_workspace', {})
+                path = workspace.get('path') if isinstance(workspace, Mapping) else None
+                if not isinstance(path, str) or not re.fullmatch(r'/tmp/aap-hactar-source-[A-Za-z0-9_]+', path):
                     raise ValueError()
-                relative = 'vaults/cac/' + project + '-cac-vault.yml'
-                if contract.get('configuration_file') != relative:
+                secret = secrets[0]
+            else:
+                repository = Path(context['cac_workspace']['path']) / 'repository'
+                relative = 'cac/base_CaC_vault.yml'
+                if stage == 'project_configuration_import':
+                    contract = context.get('cac_project_contract', {})
+                    project = contract.get('project_id') if isinstance(contract, Mapping) else None
+                    if not isinstance(project, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,127}', project):
+                        raise ValueError()
+                    relative = 'vaults/cac/' + project + '-cac-vault.yml'
+                    if contract.get('configuration_file') != relative:
+                        raise ValueError()
+                capture = repository / relative
+                if capture.is_symlink() or not capture.resolve().is_relative_to(repository.resolve()):
                     raise ValueError()
-            capture = repository / relative
-            if capture.is_symlink() or not capture.resolve().is_relative_to(repository.resolve()):
-                raise ValueError()
-            _, label, secret = vault.decrypt_and_get_vault_id(capture.read_bytes())
-            if label != 'cac':
-                raise ValueError()
+                _, label, secret = vault.decrypt_and_get_vault_id(capture.read_bytes())
+                if label != 'cac':
+                    raise ValueError()
             observed = failure_result(context.get('__cas_job_async_result', {}))
             original = failure_result(context.get('ansible_failed_result', {}))
             if not observed and not original:

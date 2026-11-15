@@ -35,7 +35,11 @@ The focused Windows configuration retry passed. Independent readback verified
 all 35 templates, 29 workflow nodes and 29 links, exact runtime/credential/image
 bindings and eight collection pins. Launch metadata has no missing templates,
 rejected node prompts or required inputs. One normal Windows workflow is now
-running; guest deployment is not yet accepted. The original failures and
+running; guest deployment is not yet accepted. Two native creation branches
+failed while reading central Git configuration. Their original errors were
+protected and not retained; the existing encrypted diagnostic is being extended
+at that exact boundary. Preserve the healthy AD branch, qualify the minimal
+change against the current pinned dependency, then recover only failed stages. The original failures and
 diagnostic retry remain recorded. AIOps and both AIOps demo tests remain
 outstanding. The owner's post-wipe absence-check withdrawal remains in force.
 

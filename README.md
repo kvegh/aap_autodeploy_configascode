@@ -39,6 +39,20 @@ running; guest deployment is not yet accepted. The original failures and
 diagnostic retry remain recorded. AIOps and both AIOps demo tests remain
 outstanding. The owner's post-wipe absence-check withdrawal remains in force.
 
+## Protected native source Git failures
+
+The Windows workflow reached native guest creation, where two branches failed
+while reading the existing central bootstrap repository. Their underlying Git
+errors were hidden by protected logging; the cause remains unresolved. Successful
+branches and the continuing AD update are retained.
+
+The same existing encrypted diagnostic action now preserves that exact Git
+failure as `aap_guest_source_git_failure_vault`, using only the existing labelled
+CaC key. Missing diagnostics never prevent normal native rollback or cleanup.
+Normal Git parameters, certificate checks and protected logs remain unchanged;
+no automatic retry is introduced. Qualify the minimal change on the existing
+pinned dependency before retrying only the failed normal stage.
+
 ## Protected project import failures
 
 A failed project import preserves the original async/module error as the native

@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.63.86
+
+- Preserve native guest-lifecycle central Git failures in the existing encrypted
+  diagnostic artifact, using only the attached labelled CaC key.
+- Keep normal rollback and cleanup active even if diagnostic encryption fails;
+  preserve protected logging, Git authentication, TLS checks and no-retry behavior.
+- Qualify eight diagnostic, seven affected permission and fourteen native
+  rollback/ownership cases on Core 2.20.10; record unchanged legacy-fixture failures
+  separately from these focused checks.
+
 ## 0.63.85
 
 - Document the protected Windows import diagnosis: execution skipped the existing

@@ -388,7 +388,13 @@ class ApplicationPolicyTests(unittest.TestCase):
             (project / 'tasks/aap-isolation-app-instance.yml').write_text(yaml.safe_dump(instance_tasks, sort_keys=False))
             tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-permissions.yml').read_text())
             reader_tasks = yaml.safe_load((ROOT / 'tasks/aap-isolation-app-read.yml').read_text())
-            git_tasks = [task for task in reader_tasks if 'ansible.builtin.git' in task]
+            def git_tasks_in(tasks):
+                for task in tasks:
+                    if 'ansible.builtin.git' in task:
+                        yield task
+                    for section in ('block', 'rescue', 'always'):
+                        yield from git_tasks_in(task.get(section, []))
+            git_tasks = list(git_tasks_in(reader_tasks))
             git_tasks[0]['ansible.builtin.git']['repo'] = str(central)
             git_tasks[1]['ansible.builtin.git']['repo'] = str(app)
             (project / 'tasks/aap-isolation-app-read.yml').write_text(yaml.safe_dump(reader_tasks, sort_keys=False))
@@ -437,6 +443,7 @@ class ApplicationPolicyTests(unittest.TestCase):
             config = root / 'ansible.cfg'; config.write_text('[defaults]\n')
             env = dict(os.environ, ANSIBLE_CONFIG=str(config), ANSIBLE_LOCAL_TEMP=str(root / 'local'),
                        ANSIBLE_REMOTE_TEMP=str(root / 'remote'), CAC_GIT_TOKEN='synthetic-central-canary')
+            env['ANSIBLE_ACTION_PLUGINS'] = str(ROOT / 'action_plugins')
             result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook', '-i', 'localhost,',
                 str(path), '--vault-id', 'cac@' + str(key_file)], env=env, text=True, capture_output=True, timeout=90)
             self.assertFalse(work.exists(), 'Always cleanup must remove decrypted variables and checkouts')
