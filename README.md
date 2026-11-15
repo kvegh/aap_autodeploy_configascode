@@ -1,5 +1,16 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Future cold AAP installation checkpoints
+
+The requested snapshot and explicit restore playbooks are implemented with
+success-only infrastructure, installer and base hooks. Encrypted CaC owns the
+three exact checkpoint names and enables them only for future allocations;
+public defaults remain disabled. No current guest has been stopped or snapshotted
+for this feature. See [cold AAP checkpoints](docs/aap-cold-snapshots.md) for
+supported storage, bounded power handling, tests and the guarded external-state
+requirements. Project import can itself update private state, so automatic
+project-test reconciliation is not yet established by a VM rollback alone.
+
 ## Temporary visible deployment logging
 
 At the owner's explicit request, deployment tasks use `no_log: false` until a

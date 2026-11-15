@@ -3,6 +3,7 @@
 from importlib.util import module_from_spec, spec_from_file_location
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 import subprocess
 import tempfile
 
@@ -44,10 +45,12 @@ class ActionModule(ActionBase):
             raise AnsibleActionFail(
                 "Attach the AutoDeploy secrets repository CaC read-token credential."
             )
-        if set(self._task.args) - {"instance_key", "expected_route", "allow_retired", "read_related_resources"}:
+        if set(self._task.args) - {"instance_key", "expected_route", "allow_retired", "read_related_resources", "read_snapshot_state"}:
             raise AnsibleActionFail("The registry repository is fixed by encrypted AutoDeploy configuration.")
         if type(self._task.args.get("read_related_resources", False)) is not bool:
             raise AnsibleActionFail("Select source-related ownership explicitly with a boolean option.")
+        if type(self._task.args.get("read_snapshot_state", False)) is not bool:
+            raise AnsibleActionFail("Select snapshot state readback explicitly with a boolean option.")
         try:
             repository = contract.autodeploy_repository(
                 self._loader, Path(__file__).resolve().parents[1]
@@ -130,6 +133,32 @@ class ActionModule(ActionBase):
                     raise AnsibleActionFail("Source related-VM ownership could not be verified; no target connection was attempted.") from None
             result.update(changed=False, instance_route=route, registry_repository=repository,
                           instance_resources=ownership)
+            if self._task.args.get('read_snapshot_state', False):
+                snapshot_spec = spec_from_file_location('read_aap_snapshot_state',
+                    Path(__file__).resolve().parents[1] / 'module_utils/aap_snapshot.py')
+                snapshots = module_from_spec(snapshot_spec)
+                snapshot_spec.loader.exec_module(snapshots)
+                shared = AnsibleLoader(self._loader._vault.decrypt(
+                    git('show', 'FETCH_HEAD:cac/host_inventory.yml').encode())).get_single_data()
+                capture = AnsibleLoader(self._loader._vault.decrypt(git('show',
+                    'FETCH_HEAD:vaults/cac/aap_autodeploy_configascode-cac-vault.yml').encode())).get_single_data()
+                for data in (shared['host_inventory_configuration'], capture.get('autodeploy_configuration', {})):
+                    for kind in ('hosts', 'groups', 'inventories'):
+                        for row in data.get(kind, []):
+                            if isinstance(row.get('variables'), str):
+                                row['variables'] = AnsibleLoader(row['variables']).get_single_data() or {}
+                owners_spec = spec_from_file_location('read_aap_snapshot_owners',
+                    Path(__file__).resolve().parents[1] / 'src/aap_snapshot_owner_state.py')
+                owners = module_from_spec(owners_spec); owners_spec.loader.exec_module(owners)
+                bootstrap = AnsibleLoader(self._loader._vault.decrypt(
+                    git('show', 'FETCH_HEAD:cac/base_CaC_vault.yml').encode())).get_single_data()
+                project_state = owners.read(bootstrap, workspace, route['vm_name'], repository)
+                result['snapshot_external_state'] = snapshots.external_state(
+                    configuration['aap_vm_allocation'], shared, capture, route['vm_name'], project_state)
+                records = capture.get('aap_instance_api_credentials', {})
+                keys = source_keys()
+                result['snapshot_api_access'] = keys.select_access(keys.document(records), route['vm_name'],
+                    {'ansible_fqdn': urlsplit(route['aap_hostname']).hostname}) if route['vm_name'] in records else None
             if proof is not None:
                 result["related_resource_proof"] = proof
             return result

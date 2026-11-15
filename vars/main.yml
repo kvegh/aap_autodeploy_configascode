@@ -16,3 +16,8 @@ golden_image_path: "/opt/images/goldimg-vm-1.disk.qcow2"
 
 vm_network: "internal"
 vm_dir: "/opt/vms"
+
+# The encrypted stage CaC enables snapshots only for the next agreed generation.
+# Standalone playbooks must receive the complete declared policy explicitly.
+aap_snapshot_policy:
+  enabled: false

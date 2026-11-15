@@ -74,7 +74,6 @@
             state: absent
           when: aap_instance_trust.path | default('') is match('^/tmp/aap-instance-known-hosts-[A-Za-z0-9_]+$')
           no_log: false
-
     - name: Finish the bounded access repair without ordinary base configuration
       ansible.builtin.meta: end_play
       tags: [never, aap_installation_access]
@@ -574,3 +573,11 @@
             state: absent
           when: aap_instance_trust.path | default('') is match('^/tmp/aap-instance-known-hosts-[A-Za-z0-9_]+$')
           no_log: false
+
+    - name: Capture the successful base checkpoint for repeatable project tests
+      ansible.builtin.include_tasks: tasks/aap-cold-snapshot.yml
+      vars:
+        aap_snapshot_checkpoint: base
+      when:
+        - aap_snapshot_policy.enabled | default(false) | bool
+        - aap_instance_route.vm_name | regex_replace('^.*-', '') | int >= aap_snapshot_policy.minimum_instance_number | int

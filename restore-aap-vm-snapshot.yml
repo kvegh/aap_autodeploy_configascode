@@ -1,0 +1,23 @@
+---
+- name: Restore one explicitly confirmed cold AAP checkpoint
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files: [myvars, vars/main.yml]
+  tasks:
+    - name: Require one exact declared snapshot name
+      ansible.builtin.assert:
+        that:
+          - aap_snapshot_policy.enabled | default(false) | bool
+          - aap_snapshot_name is defined
+          - aap_snapshot_name in aap_snapshot_policy.names.values()
+        fail_msg: Choose one of the three exact snapshot names from CaC.
+    - name: Resolve the chosen native snapshot to its declared checkpoint
+      ansible.builtin.set_fact:
+        aap_snapshot_checkpoint: '{{ (aap_snapshot_policy.names | dict2items | selectattr("value", "equalto", aap_snapshot_name) | first).key }}'
+    - name: Resolve the exact active registered instance without allocating a generation
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+    - name: Restore only when checkpoint-relevant external state already matches
+      ansible.builtin.include_tasks: tasks/aap-cold-snapshot.yml
+      vars:
+        aap_snapshot_operation: restore

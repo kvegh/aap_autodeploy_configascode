@@ -258,3 +258,11 @@
         that:
           - aap_public_ping.json.version is defined
           - aap_public_ping.json.version | length > 0
+
+    - name: Capture the successful installer checkpoint before base configuration
+      ansible.builtin.include_tasks: tasks/aap-cold-snapshot.yml
+      vars:
+        aap_snapshot_checkpoint: installed
+      when:
+        - aap_snapshot_policy.enabled | default(false) | bool
+        - aap_instance_route.vm_name | regex_replace('^.*-', '') | int >= aap_snapshot_policy.minimum_instance_number | int

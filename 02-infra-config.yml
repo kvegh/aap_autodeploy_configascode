@@ -183,6 +183,18 @@
         aap_upstream_ready: false
       notify: Reload nginx
 
+  post_tasks:
+    - name: Apply pending proxy handlers before the infrastructure checkpoint
+      ansible.builtin.meta: flush_handlers
+
+    - name: Capture the successful infrastructure checkpoint for future allocations
+      ansible.builtin.include_tasks: tasks/aap-cold-snapshot.yml
+      vars:
+        aap_snapshot_checkpoint: infra
+      when:
+        - aap_snapshot_policy.enabled | default(false) | bool
+        - aap_instance_route.vm_name | regex_replace('^.*-', '') | int >= aap_snapshot_policy.minimum_instance_number | int
+
   handlers:
     - name: Validate nginx before the TLS frontend reload
       ansible.builtin.command:

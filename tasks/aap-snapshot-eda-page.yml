@@ -1,0 +1,22 @@
+---
+- name: Read one bounded page of native EDA activations
+  ansible.builtin.uri:
+    url: '{{ aap_snapshot_eda_next }}'
+    headers:
+      Authorization: 'Bearer {{ aap_snapshot_registered.snapshot_api_access.token }}'
+    validate_certs: true
+    follow_redirects: none
+    status_code: 200
+  register: aap_snapshot_eda_page
+  delegate_to: localhost
+  become: false
+  vars:
+    ansible_connection: local
+  check_mode: false
+  no_log: false
+  when: aap_snapshot_eda_next | default('') | length > 0
+
+- name: Require complete idle activation records and retain only a same-origin next page
+  ansible.builtin.set_fact:
+    aap_snapshot_eda_next: '{{ aap_snapshot_eda_page.json | aap_snapshot_eda_next_page(aap_instance_route.aap_hostname) }}'
+  when: aap_snapshot_eda_next | default('') | length > 0

@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.64.0
+
+- Add cold AAP snapshot and explicit restore playbooks, with success-only
+  infrastructure, installer and base hooks and future-only encrypted CaC policy.
+- Validate native disk/domain identity, graceful power bounds, immutable
+  checkpoint metadata and selected private project state; preserve counters.
+- Keep restore conservative when import-generated keys, project guests or
+  scoped grants differ. Automatic owner-state reconciliation and real next-run
+  snapshot/restore acceptance remain outstanding.
+
 ## 0.63.92
 
 - Document implementation `5e926d1664da` and native Core 2.20.10 validation of

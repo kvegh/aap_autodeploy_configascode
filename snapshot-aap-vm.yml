@@ -1,0 +1,13 @@
+---
+- name: Create one declared cold checkpoint of the selected AAP VM
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files: [myvars, vars/main.yml]
+  tasks:
+    - name: Resolve the exact registered instance
+      ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+    - name: Create the explicitly selected installation checkpoint
+      ansible.builtin.include_tasks: tasks/aap-cold-snapshot.yml
+      vars:
+        aap_snapshot_operation: create
