@@ -16,19 +16,19 @@
       ansible.builtin.slurp:
         src: "{{ cac_workflow_vars_file }}"
       register: cac_workflow_ciphertext
-      no_log: true
+      no_log: false
 
     - name: Require whole-file encryption before loading workflow configuration
       ansible.builtin.assert:
         that:
           - (cac_workflow_ciphertext.content | b64decode) is match('^\$ANSIBLE_VAULT;1\.[12];AES256(;[^\r\n]+)?\r?\n')
         fail_msg: Workflow configuration must be a whole-file Ansible Vault payload.
-      no_log: true
+      no_log: false
 
     - name: Load the protected workflow configuration
       ansible.builtin.include_vars:
         file: "{{ cac_workflow_vars_file }}"
-      no_log: true
+      no_log: false
 
     - name: Configure the workflow using the selected seed controller authentication
       ansible.builtin.include_tasks: tasks/deployment-workflow.yml

@@ -8,7 +8,7 @@
            aap_selected_setup_plan.organization,
            aap_instance_route.hypervisor.machine_credential_name,
            cac_use_case_selector.shared_seed_credentials | default({})) }}
-  no_log: true
+  no_log: false
   when: aap_selected_importer.item.playbook == '05-prepare-use-cases.yml'
 
 - name: Retain the shared token store alongside preparation dependencies
@@ -17,7 +17,7 @@
       {{ (aap_selected_preparation_credential_ids +
          (aap_selected_api_credentials | map(attribute='id') | list)) | unique | list }}
   when: aap_selected_importer.item.playbook == '05-prepare-use-cases.yml'
-  no_log: true
+  no_log: false
 
 - name: Retain saved import access and only the reviewed Orchestrator build route
   ansible.builtin.set_fact:
@@ -31,13 +31,13 @@
            aap_selected_route_credentials.results | map(attribute='json.results') | flatten | list,
            aap_instance_route.hypervisor.machine_credential_name) }}
   when: aap_selected_importer.item.playbook == 'deploy-cac-project.yml'
-  no_log: true
+  no_log: false
 
 - name: Clear only the current configuration step's previous observation
   ansible.builtin.set_fact:
     aap_selected_import_job: {}
     aap_selected_import_wait: {}
-  no_log: true
+  no_log: false
 
 - name: Launch once and retain the configuration job before observing completion
   block:
@@ -61,7 +61,7 @@
       # reject it and any native suppressed exception immediately below.
       changed_when: aap_selected_import_job is failed
       failed_when: false
-      no_log: true
+      no_log: false
 
     - name: Require an actual configuration job identifier before waiting
       ansible.builtin.assert:
@@ -75,7 +75,7 @@
           - aap_selected_import_job.id > 0
           - aap_selected_import_job.status is string
         fail_msg: The configuration launch did not return a valid acknowledged job.
-      no_log: true
+      no_log: false
 
     - name: Publish the acknowledged configuration job before its completion is known
       ansible.builtin.set_stats:
@@ -86,7 +86,7 @@
             status: "{{ aap_selected_import_job.status }}"
         per_host: false
         aggregate: false
-      no_log: true
+      no_log: false
 
     - name: Wait only for the recorded configuration job without launching another
       ansible.controller.job_wait:
@@ -101,7 +101,7 @@
       register: aap_selected_import_wait
       changed_when: aap_selected_import_wait is failed
       failed_when: false
-      no_log: true
+      no_log: false
 
     - name: Bind only a successful observation of the same configuration job
       ansible.builtin.assert:
@@ -115,19 +115,19 @@
           - aap_selected_import_wait.id == aap_selected_import_job.id
           - aap_selected_import_wait.status == 'successful'
         fail_msg: The configuration observer did not verify successful completion of the recorded job.
-      no_log: true
+      no_log: false
 
     - name: Keep the launch identity and its verified final status together
       ansible.builtin.set_fact:
         aap_selected_import_job: >-
           {{ aap_selected_import_job | combine({'status': aap_selected_import_wait.status}) }}
-      no_log: true
+      no_log: false
   rescue:
     - name: Encrypt the configuration launch or observation failure with the existing CaC key
       aap_cac_diagnostic:
         stage: selected_configuration_job
       register: aap_selected_import_diagnostic
-      no_log: true
+      no_log: false
 
     - name: Preserve only the encrypted configuration failure in native job artifacts
       ansible.builtin.set_stats:
@@ -142,7 +142,7 @@
           aap_selected_configuration_failure_vault: "{{ aap_selected_import_diagnostic.encrypted_diagnostic }}"
         per_host: false
         aggregate: false
-      no_log: true
+      no_log: false
 
     - name: Stop after the protected configuration launch or observation failure
       ansible.builtin.fail:
@@ -160,7 +160,7 @@
     ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
     follow_redirects: none
   register: aap_selected_completed_credentials
-  no_log: true
+  no_log: false
 
 - name: Require the completed job to have used exactly the bounded credential set
   ansible.builtin.assert:
@@ -169,7 +169,7 @@
       - >-
         (aap_selected_completed_credentials.json.results | map(attribute='id') | sort | list) ==
         (aap_selected_launch_credential_ids | sort | list)
-  no_log: true
+  no_log: false
 
 - name: Require actual successful configuration-job completion
   ansible.builtin.assert:
@@ -177,11 +177,11 @@
       - aap_selected_import_job.id is integer
       - aap_selected_import_job.status == 'successful'
     fail_msg: The selected configuration import did not complete successfully.
-  no_log: true
+  no_log: false
 
 - name: Retain only the completed setup key and job result
   ansible.builtin.set_fact:
     aap_selected_setup_results: >-
       {{ aap_selected_setup_results + [{'selection': aap_selected_importer_key,
           'job_id': aap_selected_import_job.id, 'status': aap_selected_import_job.status}] }}
-  no_log: true
+  no_log: false

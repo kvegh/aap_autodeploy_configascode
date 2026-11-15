@@ -7,7 +7,7 @@
     __recovery_release_operation: "{{ recovery_release_operation | default('release_guest') }}"
     __recovery_release_publish:
       durable_policy_published: false
-  no_log: true
+  no_log: false
 
 - name: Choose an existing guest permission or verified supplemental AAP interface
   ansible.builtin.assert:
@@ -20,7 +20,7 @@
       {{ {'release_guest': 'release', 'guest_bootstrap_https': 'bootstrap_https',
           'guest_bootstrap_http': 'bootstrap_http',
           'aap_supplemental_interface': 'supplemental_interface'}[__recovery_release_operation] }}
-  no_log: true
+  no_log: false
 
 - name: Preflight the source job and exact saved policy before changing the hypervisor
   aap_publish_instance_keys:
@@ -31,4 +31,4 @@
   delegate_to: localhost
   become: false
   register: __recovery_release_plan
-  no_log: true
+  no_log: false

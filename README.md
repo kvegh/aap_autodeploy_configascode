@@ -1,5 +1,15 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Temporary visible deployment logging
+
+At the owner's explicit request, deployment tasks use `no_log: false` until a
+clean deployment is achieved. This temporary direction overrides the earlier
+protected task-logging defaults described below. Keep job output and diagnostic
+captures private, redact reports, and never copy raw logs or secrets into Git.
+Native credential-field redaction, authentication, TLS checks and rollback
+remain in force. Active jobs retain the settings with which they started.
+
+
 ## v22 Rebuild checkpoint — 2026-11-15
 
 The host Rebuild completed successfully: all ten native workflow jobs passed

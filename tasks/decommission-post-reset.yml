@@ -7,7 +7,7 @@
       - aap_post_reset_verification_job is integer
       - aap_post_reset_verification_job > 0
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Allocate only controller-side space for the existing authoritative reader
   ansible.builtin.tempfile:
@@ -25,7 +25,7 @@
     - name: Bind the existing reader to this project without an old-host lock or connection
       ansible.builtin.set_fact:
         aap_isolation_autodeploy_root: '{{ playbook_dir }}'
-      no_log: true
+      no_log: false
 
     - name: Load application ownership through its existing controller-side reader
       ansible.builtin.include_tasks: aap-isolation-app-read.yml
@@ -46,14 +46,14 @@
       delegate_to: localhost
       become: false
       register: aap_post_reset_inspection
-      no_log: true
+      no_log: false
 
     - name: Retain only independently derived selected DNS resource names
       ansible.builtin.set_fact:
         aap_retirement: '{{ aap_post_reset_inspection.retirement }}'
         aap_dns_zone_records: []
         aap_dns_zone_complete: false
-      no_log: true
+      no_log: false
 
     - name: Read the complete DNS zone using the unchanged ownership guard
       ansible.builtin.include_tasks: decommission-dns-page.yml
@@ -61,20 +61,20 @@
       loop_control:
         loop_var: aap_dns_page_offset
       when: not (aap_dns_zone_complete | bool)
-      no_log: true
+      no_log: false
 
     - name: Require complete zone readback before any selected record removal
       ansible.builtin.assert:
         that: aap_dns_zone_complete | bool
         quiet: true
-      no_log: true
+      no_log: false
 
     - name: Plan only exact old instance records and refuse conflicting DNS ownership
       ansible.builtin.set_fact:
         aap_retirement_dns_plan: >-
           {{ aap_dns_zone_records | aap_decommission_dns_plan(aap_retirement,
                aap_hypervisor_pin.public_ip, vault_domain) }}
-      no_log: true
+      no_log: false
 
     - name: End read-only post-reset inspection without publishing metadata or DNS
       ansible.builtin.meta: end_play
@@ -85,7 +85,7 @@
       loop: '{{ aap_retirement_dns_plan }}'
       loop_control:
         loop_var: aap_dns_retire_record
-      no_log: true
+      no_log: false
 
     - name: Retire old access and metadata only with the actual replacement proof
       aap_publish_instance_keys:
@@ -97,7 +97,7 @@
         post_reset_verification_job: '{{ aap_post_reset_verification_job }}'
       delegate_to: localhost
       become: false
-      no_log: true
+      no_log: false
   always:
     - name: Remove only this invocation's protected controller-side reader workspace
       ansible.builtin.file:
@@ -108,4 +108,4 @@
       vars:
         ansible_connection: local
       check_mode: false
-      no_log: true
+      no_log: false

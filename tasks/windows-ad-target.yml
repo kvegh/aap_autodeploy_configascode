@@ -35,10 +35,10 @@
     ansible_become: true
   register: windows_ad_public_trust
   changed_when: false
-  no_log: "{{ not (debug_logging | default(false) | bool) }}"
+  no_log: false
 
 - name: Bind the encrypted AD target credential to this imported platform
   ansible.builtin.set_fact:
     windows_disconnected_ad_target_ca: "{{ (windows_ad_public_trust.stdout | from_json).ca }}"
     windows_disconnected_ad_target_known_hosts: "{{ (windows_ad_public_trust.stdout | from_json).known_hosts }}"
-  no_log: true
+  no_log: false

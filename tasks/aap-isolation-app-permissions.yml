@@ -7,7 +7,7 @@
   ansible.builtin.set_fact:
     aap_isolation_app_owners: []
     aap_isolation_app_clients: []
-  no_log: true
+  no_log: false
 
 - name: Refuse the former parallel firewall section before composing any permissions
   ansible.builtin.assert:
@@ -15,7 +15,7 @@
     quiet: true
     fail_msg: Migrate firewall configuration into its existing Zabbix VM section before applying policy.
   loop: '{{ aiops_instances.keys() | list }}'
-  no_log: true
+  no_log: false
 
 - name: Require explicit migrated firewall data for every declared Zabbix owner
   ansible.builtin.assert:
@@ -28,7 +28,7 @@
     quiet: true
   loop: '{{ aiops_instances.keys() | list }}'
   when: aiops_instances[item].zabbix | default(none) is not none
-  no_log: true
+  no_log: false
 
 - name: Refuse grants without their existing guest ownership record
   ansible.builtin.assert:
@@ -37,7 +37,7 @@
     quiet: true
   loop: '{{ aiops_instances.keys() | list }}'
   when: aiops_instances[item].zabbix | default(none) is none
-  no_log: true
+  no_log: false
 
 - name: Refuse declared permissions before the VM has verified ownership
   ansible.builtin.assert:
@@ -48,7 +48,7 @@
   loop: '{{ aiops_instances.keys() | list }}'
   when: >-
     (aiops_instances[item].zabbix.configuration.firewall | default({})).guest_host_clients | default([]) | length > 0
-  no_log: true
+  no_log: false
 
 - name: Select only declared owners on the actual pinned hypervisor
   ansible.builtin.set_fact:
@@ -61,11 +61,11 @@
     - aiops_instances[item].zabbix.verified | default(false) | bool
     - aiops_instances[item].zabbix.hypervisor_machine_id == aap_isolation_machine_id.stdout | trim
     - aiops_instances[item].zabbix.configuration.firewall.guest_host_clients | length > 0
-  no_log: true
+  no_log: false
 
 - name: Verify each selected owner against actual native resources before granting access
   ansible.builtin.include_tasks: '{{ aap_isolation_autodeploy_root }}/tasks/aap-isolation-app-instance.yml'
   loop: '{{ aap_isolation_app_owners }}'
   loop_control:
     loop_var: aap_isolation_app_owner
-  no_log: true
+  no_log: false

@@ -21,7 +21,7 @@ class GuestSourceGitDiagnosticTests(unittest.TestCase):
     def test_success_does_not_publish_diagnostic_or_change_completion(self):
         self.run_case('success')
 
-    def test_failure_retains_original_error_only_in_existing_cac_ciphertext(self):
+    def test_failure_retains_encrypted_copy_and_requested_visible_error(self):
         self.run_case('failure')
 
     def test_missing_cac_key_never_uses_environment_key_or_prevents_outer_cleanup(self):
@@ -36,7 +36,7 @@ class GuestSourceGitDiagnosticTests(unittest.TestCase):
             'Read the central bootstrap and retain protected failures before rollback'))
         git = block['block'][0]
         self.assertEqual(git['ansible.builtin.git']['version'], 'main')
-        self.assertTrue(git['no_log'])
+        self.assertFalse(git['no_log'])
         self.assertEqual(git['environment']['GIT_CONFIG_VALUE_2'], 'true')
         git.pop('ansible.builtin.git')
         git.pop('environment')
@@ -89,7 +89,8 @@ class CallbackModule(CallbackBase):
                 cwd=ROOT, env=env, capture_output=True, text=True, timeout=35)
             console = result.stdout + result.stderr
             self.assertEqual(result.returncode == 0, behavior == 'success', console)
-            for value in (PASSWORD, ERROR, ARGUMENT):
+            self.assertEqual(ERROR in console, behavior != 'success', console)
+            for value in (PASSWORD, ARGUMENT):
                 self.assertNotIn(value, console)
             self.assertTrue(cleanup.exists(), console)
             self.assertEqual(rollback.exists(), behavior != 'success', console)

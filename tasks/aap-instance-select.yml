@@ -8,7 +8,7 @@
     allow_retired: "{{ aap_allow_retired_instance | default(false) | bool }}"
     read_related_resources: "{{ aap_read_related_resources | default(false) | bool }}"
   register: aap_registered_target
-  no_log: true
+  no_log: false
 
 - name: Refuse conflicting caller-supplied target names, addresses or URLs
   ansible.builtin.assert:
@@ -18,7 +18,7 @@
       - aap_hostname is not defined or aap_hostname == aap_registered_target.instance_route.aap_hostname
       - aap_target_hostname is not defined or aap_target_hostname == aap_registered_target.instance_route.aap_hostname
     fail_msg: Select the registered instance key; its protected route determines all connection targets.
-  no_log: true
+  no_log: false
 
 - name: Require existing AAP inventory identity to agree with the registered route
   ansible.builtin.assert:
@@ -27,7 +27,7 @@
          aap_inventory_route_matches((hostvars[aap_instance_key] if aap_instance_key is defined and aap_instance_key in hostvars else {}),
            aap_registered_target.instance_route, aap_registered_target.instance_resources | default({})) }}
     fail_msg: The selected inventory entry must match its verified registered VM.
-  no_log: true
+  no_log: false
 
 - name: Use only the registered instance's complete connection handoff
   ansible.builtin.set_fact:
@@ -41,4 +41,4 @@
     aap_target_hostname: "{{ aap_registered_target.instance_route.aap_hostname }}"
     aap_instance_resources: "{{ aap_registered_target.instance_resources | default({}) }}"
     aap_related_resource_proof: "{{ aap_registered_target.related_resource_proof | default({}) }}"
-  no_log: true
+  no_log: false

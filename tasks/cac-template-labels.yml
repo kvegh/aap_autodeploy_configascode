@@ -12,7 +12,7 @@
       - cac_required_template_label is string
       - cac_required_template_label | length > 0
     fail_msg: Supply the captured templates, label definitions and required project label.
-  no_log: true
+  no_log: false
 
 - name: Require named labels with their owning organizations
   ansible.builtin.assert:
@@ -24,7 +24,7 @@
       - item.organization | length > 0
     fail_msg: Every captured label must name its owning organization.
   loop: "{{ cac_label_definitions }}"
-  no_log: true
+  no_log: false
 
 - name: Require each template's project label and all referenced label definitions
   ansible.builtin.assert:
@@ -43,14 +43,14 @@
           map(attribute='name') | list) | length == 0
     fail_msg: Every template needs its project label and matching-organization label definitions.
   loop: "{{ cac_label_templates }}"
-  no_log: true
+  no_log: false
 
 - name: Require the Controller API string type for multiselect survey defaults
   ansible.builtin.assert:
     that: item.1.type != 'multiselect' or item.1.default is string
     fail_msg: Multiselect survey defaults must be strings; use an empty string for no default selection.
   loop: "{{ cac_label_templates | subelements('survey_spec.spec', skip_missing=True) }}"
-  no_log: true
+  no_log: false
 
 - name: Require complete registered-instance prompts on configuration importers
   ansible.builtin.assert:
@@ -67,4 +67,4 @@
     fail_msg: Each configuration importer needs required registered-instance and repository prompts.
   loop: "{{ cac_label_templates }}"
   when: item.playbook | default('') in (cac_registered_setup_playbooks | default([]))
-  no_log: true
+  no_log: false

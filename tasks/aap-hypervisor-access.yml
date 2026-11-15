@@ -37,7 +37,7 @@
              aap_hypervisor_isolation_http_clients | default([])) }}
       mode: "{{ aap_management_mode | default('management') }}"
       check_mode: '{{ ansible_check_mode | bool }}'
-  no_log: true
+  no_log: false
 
 - name: Resolve the pinned hypervisor to exactly one existing inventory host
   ansible.builtin.assert:
@@ -74,7 +74,7 @@
         prefix: aap-management-resource-
       check_mode: false
       register: aap_management_native_runtime
-      no_log: true
+      no_log: false
 
     - name: Stage the existing read-only resource validator
       ansible.builtin.copy:
@@ -84,7 +84,7 @@
         group: root
         mode: '0600'
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Verify native guest identity and derive only its approved access
       # Libvirt provenance guards are retained; firewall changes are native Ansible.
@@ -95,12 +95,12 @@
       register: aap_management_resource_proof
       changed_when: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Retain the existing validated complete CaC transition
       ansible.builtin.set_fact:
         aap_management_native_plan: '{{ aap_management_resource_proof.stdout | from_json }}'
-      no_log: true
+      no_log: false
 
     - name: Refuse native isolation drift before opening any connection
       ansible.builtin.include_tasks: aap-isolation-observe.yml
@@ -116,19 +116,19 @@
       failed_when: aap_management_native_rule_previous.rc not in [0, 1]
       changed_when: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Retain only this transaction's native rollback candidates
       ansible.builtin.set_fact:
         aap_management_rollback_policy: '{{ aap_isolation_rollback_policy }}'
         aap_management_policy_attempted: true
-      no_log: true
+      no_log: false
 
     - name: Apply the selected guest rich rule through the certified firewall role
       ansible.builtin.include_role:
         name: redhat.rhel_system_roles.firewall
         apply:
-          no_log: true
+          no_log: false
           # Core 2.20 reads the delegated host's package facts directly, fixing
           # the old unsafe-template lookup without changing protected values:
           # https://github.com/ansible/ansible/issues/82598
@@ -140,7 +140,7 @@
             runtime: true
             permanent: true
         firewall_disable_conflicting_services: false
-      no_log: true
+      no_log: false
 
     - name: Apply the complete selected CaC isolation through native Hactar tasks
       ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
@@ -150,7 +150,7 @@
     - name: Retain the exact policy for the existing encrypted publication
       ansible.builtin.set_fact:
         aap_hypervisor_management_policy: '{{ aap_management_native_plan.desired_policy }}'
-      no_log: true
+      no_log: false
 
     - name: Publish only a planned installation permission through the existing publisher
       aap_publish_instance_keys:
@@ -167,7 +167,7 @@
       when:
         - aap_management_mode | default('management') == 'installation'
         - not ansible_check_mode
-      no_log: true
+      no_log: false
 
   rescue:
     - name: Classify protected access failure without exposing module inputs
@@ -206,7 +206,7 @@
           ansible.builtin.include_role:
             name: redhat.rhel_system_roles.firewall
             apply:
-              no_log: true
+              no_log: false
           vars:
             firewall:
               - zone: libvirt
@@ -220,7 +220,7 @@
                 runtime: false
                 permanent: true
             firewall_disable_conflicting_services: false
-          no_log: true
+          no_log: false
 
         - name: Restore the complete prior CaC isolation using native tasks
           ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
@@ -239,7 +239,7 @@
         state: absent
       when: aap_management_native_runtime.path | default('') is match('^/tmp/aap-management-resource-[A-Za-z0-9_]+$')
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Release this invocation's temporary transaction lock and public checkout
       ansible.builtin.include_tasks: aap-isolation-finish.yml
@@ -264,4 +264,4 @@
   when:
     - not ansible_check_mode
     - aap_management_mode | default('management') == 'management'
-  no_log: true
+  no_log: false

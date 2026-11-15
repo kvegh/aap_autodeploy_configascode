@@ -11,7 +11,7 @@
       - cac_workflow_execution_image is string
       - cac_workflow_execution_image | length > 0
     fail_msg: Supply the reviewed deployment/use-case PAH requirements and execution image in encrypted AutoDeploy configuration.
-  no_log: true
+  no_log: false
 
 - name: Require exact collection versions and explicit repository ownership
   ansible.builtin.assert:
@@ -21,13 +21,13 @@
       - item.1.version is match('^[0-9]+\.[0-9]+\.[0-9]+([.+-][a-zA-Z0-9.-]+)?$')
     fail_msg: Prerequisite collections must use exact versions from the configured PAH sources.
   loop: "{{ cac_workflow_pah.repositories | subelements('collections') }}"
-  no_log: true
+  no_log: false
 
 - name: Prepare each declared PAH repository in order without pruning content
   ansible.builtin.include_tasks:
     file: use-case-pah-repository.yml
     apply:
-      no_log: true
+      no_log: false
   loop: "{{ cac_workflow_pah.repositories }}"
   loop_control:
     loop_var: cac_required_repository

@@ -9,14 +9,14 @@
       - recovery_guest_retire_plan.hypervisor == __recovery_retire_pin
       - recovery_guest_retire_plan.transition is mapping
     fail_msg: Plan exact generic guest retirement before deleting or publishing anything.
-  no_log: true
+  no_log: false
 
 - name: Bind the exact selected native transaction inputs # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     aap_isolation_hypervisor: '{{ __recovery_retire_pin }}'
     aap_isolation_trust_file: ''
     __recovery_retire_policy_attempted: false
-  no_log: true
+  no_log: false
 
 - name: Verify native ownership or absence and publish only completed retirement
   block:
@@ -42,12 +42,12 @@
       delegate_to: localhost
       become: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Bind the verified hypervisor trust file for native tasks # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
         aap_isolation_trust_file: '{{ __recovery_retire_trust.path }}'
-      no_log: true
+      no_log: false
 
     - name: Prepare the reviewed native source and acquire the temporary lock
       ansible.builtin.include_tasks:
@@ -81,7 +81,7 @@
       vars: *recovery_retire_connection
       check_mode: false
       register: __recovery_retire_runtime
-      no_log: true
+      no_log: false
 
     - name: Stage the same existing native management and guest lifecycle primitives
       ansible.builtin.copy:
@@ -95,7 +95,7 @@
       become: true
       vars: *recovery_retire_connection
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Require only the complete previous or desired CaC policy on the hypervisor
       ansible.builtin.include_tasks:
@@ -111,7 +111,7 @@
     - name: Retain the current complete CaC policy for bounded native rollback
       ansible.builtin.set_fact:
         __recovery_retire_rollback_policy: '{{ aap_isolation_rollback_policy }}'
-      no_log: true
+      no_log: false
 
     - name: Prove native ownership and remove only exact absent-guest DHCP reservations
       ansible.builtin.command:
@@ -132,19 +132,19 @@
         __recovery_retire_native.rc | default(1) | int == 0 and
         __recovery_retire_native.stdout | default('') | length > 0 and
         (__recovery_retire_native.stdout | from_json).changed | bool
-      no_log: true
+      no_log: false
 
     - name: Retain only verified native retirement metadata for the existing caller
       ansible.builtin.set_fact:
         recovery_guest_retire_plan: >-
           {{ recovery_guest_retire_plan | combine({'native': __recovery_retire_native.stdout | from_json}) }}
-      no_log: true
+      no_log: false
 
     - name: Mark this invocation's exact policy application before native tasks
       ansible.builtin.set_fact:
         __recovery_retire_policy_attempted: true
       when: recovery_retire_phase == 'publish' and not ansible_check_mode
-      no_log: true
+      no_log: false
 
     - name: Apply complete reduced CaC using native Hactar Ansible
       ansible.builtin.include_tasks:
@@ -171,7 +171,7 @@
       when:
         - recovery_retire_phase == 'publish'
         - not ansible_check_mode
-      no_log: true
+      no_log: false
 
   rescue:
     - name: Restore only this invocation's unpublished native policy reduction
@@ -204,7 +204,7 @@
       vars: *recovery_retire_connection
       check_mode: false
       when: __recovery_retire_runtime.path | default('') is match('^/tmp/aap-guest-retire-[A-Za-z0-9_]+$')
-      no_log: true
+      no_log: false
 
     - name: Release only this phase's temporary native lock and public source
       ansible.builtin.include_tasks:
@@ -222,4 +222,4 @@
       become: false
       check_mode: false
       when: __recovery_retire_trust.path | default('') is match('^/tmp/aap-guest-retire-known-hosts-[A-Za-z0-9_]+$')
-      no_log: true
+      no_log: false

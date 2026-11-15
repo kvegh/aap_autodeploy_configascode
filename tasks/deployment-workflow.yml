@@ -9,7 +9,7 @@
       - cac_workflow.repositories is mapping
       - "'base' in cac_workflow.repositories"
     fail_msg: Supply the workflow organization and shared base configuration repository URL.
-  no_log: true
+  no_log: false
 
 - name: Reject repository URLs containing credentials or redirects through query parameters
   ansible.builtin.assert:
@@ -25,7 +25,7 @@
       - item is not search('\\s')
     fail_msg: Every workflow configuration repository must be an HTTPS Git URL without embedded credentials.
   loop: "{{ [cac_workflow.repositories.base] }}"
-  no_log: true
+  no_log: false
 
 - name: Create the success-only base AAP deployment graph
   ansible.controller.workflow_job_template:
@@ -62,4 +62,4 @@
     controller_oauthtoken: "{{ aap_token | default(omit) }}"
     validate_certs: "{{ aap_validate_certs | default(true) }}"
     state: present
-  no_log: true
+  no_log: false

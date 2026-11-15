@@ -16,7 +16,7 @@
       - cac_registry_route_readback.json.request_timeout_seconds == aap_registry_route_timeout
       - cac_registry_route_readback.json.idle_timeout_seconds == aap_registry_route_timeout
     fail_msg: Select the reviewed receiver-built default, verify its Gateway login and prepare its scoped registry route first.
-  no_log: true
+  no_log: false
 
 - name: Select only the reviewed default and the existing Red Hat registry login
   ansible.builtin.set_fact:
@@ -28,7 +28,7 @@
     # The build uses the currently authenticated target password. The persisted
     # pull credential must survive the desired password rotation during dispatch.
     aap_ee_receiver_pull_password: "{{ aap_password | default(cac_gateway_login_password, true) }}"
-  no_log: true
+  no_log: false
 
 - name: Require a dedicated declared receiver registry credential
   ansible.builtin.assert:
@@ -51,7 +51,7 @@
       - aap_ee_receiver_redhat_credentials[0].inputs.password is string
       - aap_ee_receiver_redhat_credentials[0].inputs.password | length > 0
     fail_msg: Declare one dedicated native registry credential for this default and retain the existing verified Red Hat registry login.
-  no_log: true
+  no_log: false
 
 - name: Resolve the actual receiver install-user UID for native rootless storage
   ansible.builtin.command:
@@ -71,7 +71,7 @@
     ansible_ssh_host_key_checking: true
   register: aap_ee_receiver_uid
   changed_when: false
-  no_log: true
+  no_log: false
 
 - name: Inspect the receiver's running Hub API as its existing installer user
   ansible.builtin.command:
@@ -84,7 +84,7 @@
     XDG_RUNTIME_DIR: "/run/user/{{ aap_ee_receiver_uid.stdout | int }}"
   register: aap_ee_receiver_hub_api
   changed_when: false
-  no_log: true
+  no_log: false
 
 - name: Require the supported Hub worker timeout before uploading an image
   ansible.builtin.assert:
@@ -116,7 +116,7 @@
     aap_ee_redhat_password: "{{ aap_ee_receiver_redhat_credentials[0].inputs.password }}"
     aap_ee_image_name: "{{ aap_ee_receiver_recipe.defaults.image_name }}"
     aap_ee_image_tag: "{{ aap_ee_receiver_recipe.defaults.image_tag }}"
-  no_log: true
+  no_log: false
 
 - name: Require an immutable result owned by this receiving Hub
   ansible.builtin.assert:
@@ -127,13 +127,13 @@
           ((aap_ee_receiver_registry ~ '/' ~ aap_ee_receiver_recipe.defaults.image_name) | regex_escape) ~
           '@sha256:[a-f0-9]{64}$')
     fail_msg: The build must verify an immutable image in this receiver's own Hub before base configuration.
-  no_log: true
+  no_log: false
 
 - name: Initialize the narrow receiver-owned desired-state updates
   ansible.builtin.set_fact:
     aap_ee_receiver_environments: []
     aap_ee_receiver_credentials: []
-  no_log: true
+  no_log: false
 
 - name: Bind only the reviewed default to the verified receiver-local image
   ansible.builtin.set_fact:
@@ -142,7 +142,7 @@
          [(item | combine({'image': aap_ee_build_result.image, 'pull': 'missing'}))
           if item.name == aap_default_execution_environment else item] }}
   loop: "{{ controller_execution_environments_base }}"
-  no_log: true
+  no_log: false
 
 - name: Bind only its dedicated pull credential to the final receiver login
   ansible.builtin.set_fact:
@@ -153,10 +153,10 @@
            'password': aap_ee_receiver_pull_password, 'verify_ssl': true})}))
           if item.name == aap_ee_receiver_definition.credential else item] }}
   loop: "{{ controller_credentials_base }}"
-  no_log: true
+  no_log: false
 
 - name: Supply receiver-local values before the ordinary base dispatcher combines them
   ansible.builtin.set_fact:
     controller_execution_environments_base: "{{ aap_ee_receiver_environments }}"
     controller_credentials_base: "{{ aap_ee_receiver_credentials }}"
-  no_log: true
+  no_log: false

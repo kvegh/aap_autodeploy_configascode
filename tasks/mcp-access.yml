@@ -1,7 +1,7 @@
 ---
 # Reuse this one token for MCP and remote API access; never issue a second token.
 - name: Manage persistent administrator API and MCP access
-  no_log: true
+  no_log: false
   vars:
     cac_mcp_directory: /var/lib/aap-autodeploy
     cac_mcp_file: "{{ cac_mcp_directory }}/mcp-token.json"
@@ -280,7 +280,7 @@
 
 - name: Publish the verified shared API and MCP token for this instance
   when: aap_instance_key_store.publish | default(false) | bool
-  no_log: true
+  no_log: false
   block:
     - name: Require a recoverable token before publishing API access
       ansible.builtin.assert:

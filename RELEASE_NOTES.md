@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.88
+
+- Apply the owner's explicit temporary direction: no_log:false across deployment
+  tasks and configuration-role logging controls until clean deployment acceptance.
+- Verify YAML structure and every non-logging field unchanged; keep native
+  credential redaction, authentication, permissions and rollback intact.
+- Keep job output private and redact reports. Existing running jobs retain their
+  original settings. The focused Git failure test now verifies visible errors.
+
 ## 0.63.87
 
 - Document protected source Git diagnostic implementation `cf1dcbf857bc`

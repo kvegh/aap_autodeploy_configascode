@@ -30,16 +30,16 @@
     GIT_CONFIG_VALUE_1: 'false'
     GIT_CONFIG_KEY_2: http.sslVerify
     GIT_CONFIG_VALUE_2: 'true'
-  no_log: true
+  no_log: false
 
 - name: Check encrypted capture identity and safety before evaluating its variables
   aap_cac_validate_capture:
     file: "{{ cac_workspace.path }}/repository/{{ cac_project_contract.configuration_file }}"
     repository: "{{ cac_workspace.path }}/repository"
     project_id: "{{ cac_project_contract.project_id }}"
-  no_log: true
+  no_log: false
 
 - name: Load only the derived encrypted project capture
   ansible.builtin.include_vars:
     file: "{{ cac_workspace.path }}/repository/{{ cac_project_contract.configuration_file }}"
-  no_log: true
+  no_log: false

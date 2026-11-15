@@ -25,7 +25,7 @@
               - aap_instance_key in hostvars
               - awx_job_id is defined
             fail_msg: Run this launcher in AAP with the shared inventory and an explicit destination host.
-          no_log: true
+          no_log: false
 
         - name: Require the existing source API credential and running job identity
           ansible.builtin.assert:
@@ -35,18 +35,18 @@
               - awx_job_template_id is defined
               - awx_project_revision is defined
             fail_msg: Attach the source AAP API credential and run this template in AAP.
-          no_log: true
+          no_log: false
 
         - name: Bind orchestration to the API credential of the AAP running this job
           ansible.builtin.set_fact:
             aap_selected_source_auth:
               hostname: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_URL') }}"
               token: "{{ lookup('ansible.builtin.env', 'AAP_CAC_SOURCE_TOKEN') }}"
-          no_log: true
+          no_log: false
 
         - name: Supplement the execution environment's trust with the existing source CA
           when: aap_seed_ca_path | default('') | length > 0
-          no_log: true
+          no_log: false
           block:
             - name: Create the private workspace before using supplemental source trust
               ansible.builtin.tempfile:
@@ -95,7 +95,7 @@
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           register: aap_selected_source_job
-          no_log: true
+          no_log: false
 
         - name: Require the credential to identify the actual running source job
           ansible.builtin.assert:
@@ -105,7 +105,7 @@
               - aap_selected_source_job.json.job_template | int == awx_job_template_id | int
               - aap_selected_source_job.json.scm_revision == awx_project_revision
             fail_msg: The source API credential must identify the AAP running this job.
-          no_log: true
+          no_log: false
 
         - name: Select destination API authentication from the existing instance token store
           ansible.builtin.include_tasks: tasks/cac-api-auth.yml
@@ -113,7 +113,7 @@
         - name: Retain only the selected destination API authentication
           ansible.builtin.set_fact:
             aap_selected_target_auth: "{{ cac_api_auth }}"
-          no_log: true
+          no_log: false
 
         - name: Resolve the explicit instance key before any setup orchestration
           ansible.builtin.include_tasks: tasks/aap-instance-select.yml
@@ -124,14 +124,14 @@
               (aap_use_case_catalog_repo_url | aap_normalized_git_url) ==
               (aap_registered_target.registry_repository | aap_normalized_git_url)
             fail_msg: Use the AutoDeploy repository selected by encrypted configuration.
-          no_log: true
+          no_log: false
 
         - name: Require inventory and registered preparation routes to identify the same API
           ansible.builtin.assert:
             that:
               - (aap_target_hostname | aap_https_origin) == (aap_selected_target_auth.hostname | aap_https_origin)
             fail_msg: The selected inventory destination and registered preparation route must agree.
-          no_log: true
+          no_log: false
 
         - name: Verify the registered target public API before sending credentials
           ansible.builtin.include_tasks: tasks/aap-instance-api.yml
@@ -149,7 +149,7 @@
                    aap_use_case_catalog, cac_use_case_selector,
                    aap_selected_source_auth.hostname, aap_target_hostname) }}
             aap_selected_setup_results: []
-          no_log: true
+          no_log: false
 
         - name: Read the credentials actually attached to this launcher job
           ansible.builtin.uri:
@@ -161,12 +161,12 @@
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           register: aap_selected_parent_credentials
-          no_log: true
+          no_log: false
 
         - name: Select the shared instance token store attached to this job
           ansible.builtin.set_fact:
             aap_selected_api_credentials: "{{ aap_selected_parent_credentials.json.results | aap_instance_store_credentials }}"
-          no_log: true
+          no_log: false
 
         - name: Read the selected store credential type
           ansible.builtin.uri:
@@ -179,7 +179,7 @@
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           register: aap_selected_api_type
-          no_log: true
+          no_log: false
 
         - name: Require the complete association list and approved instance token store
           ansible.builtin.assert:
@@ -188,7 +188,7 @@
               - not aap_selected_api_type.json.managed
               - aap_selected_api_type.json.name == 'Pseudo Instance Key Store'
               - aap_selected_api_type.json.id == aap_selected_api_credentials[0].credential_type
-          no_log: true
+          no_log: false
 
         - name: Read the seed controller's current instance identities
           ansible.builtin.uri:
@@ -199,7 +199,7 @@
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           register: aap_seed_instances
-          no_log: true
+          no_log: false
 
         - name: Read the fresh target's identities before allowing any importer launch
           ansible.builtin.uri:
@@ -211,7 +211,7 @@
             validate_certs: true
             follow_redirects: none
           register: aap_target_instances
-          no_log: true
+          no_log: false
 
         - name: Verify the selected local or remote controller identities
           ansible.builtin.assert:
@@ -222,7 +222,7 @@
                 aap_seed_instances.json.results | aap_verified_controllers(
                   aap_target_instances.json.results, aap_selected_source_auth.hostname, aap_target_hostname)
             fail_msg: The selected source and destination controller identities must match their verified API origins.
-          no_log: true
+          no_log: false
 
         - name: Resolve only the fixed preparation and selected importer templates
           ansible.builtin.uri:
@@ -235,7 +235,7 @@
             follow_redirects: none
           loop: "{{ [aap_selected_setup_plan.preparation] + aap_selected_setup_plan.importers }}"
           register: aap_selected_importer_lookups
-          no_log: true
+          no_log: false
 
         - name: Require unique owned importer identities and fixed template behavior
           ansible.builtin.assert:
@@ -256,7 +256,7 @@
                 (item.json.results[0].extra_vars | from_yaml).aap_cac_project_id == item.item.project_id
             fail_msg: Reconcile the seed's labelled configuration importers before selected setup.
           loop: "{{ aap_selected_importer_lookups.results }}"
-          no_log: true
+          no_log: false
 
         - name: Read the importers' actual source project
           ansible.builtin.uri:
@@ -269,7 +269,7 @@
             ca_path: "{{ aap_seed_ca_path | default(omit, true) }}"
             follow_redirects: none
           register: aap_selected_source_project
-          no_log: true
+          no_log: false
 
         - name: Require the reviewed AutoDeploy source repository
           ansible.builtin.assert:
@@ -277,7 +277,7 @@
               - aap_selected_source_project.json.scm_url | aap_normalized_git_url == aap_selected_setup_plan.source_project_url
               - not aap_selected_source_project.json.allow_override
             fail_msg: Selected setup may launch only the reviewed AutoDeploy configuration importers.
-          no_log: true
+          no_log: false
 
         - name: Check the bounded surveys before sending target variables
           ansible.builtin.uri:
@@ -290,7 +290,7 @@
             follow_redirects: none
           loop: "{{ aap_selected_importer_lookups.results }}"
           register: aap_selected_importer_surveys
-          no_log: true
+          no_log: false
 
         - name: Require bounded target prompts and keep generic project IDs fixed
           ansible.builtin.assert:
@@ -306,7 +306,7 @@
                 difference(item.json.spec | map(attribute='variable') | list) | length == 0
             fail_msg: Update the seed importer surveys before running selected setup.
           loop: "{{ aap_selected_importer_surveys.results }}"
-          no_log: true
+          no_log: false
 
         - name: Read the actual scoped credential associations on each importer
           ansible.builtin.uri:
@@ -320,7 +320,7 @@
             follow_redirects: none
           loop: "{{ aap_selected_importer_lookups.results }}"
           register: aap_selected_importer_credentials
-          no_log: true
+          no_log: false
 
         - name: Verify the exact saved non-Machine credential boundaries
           ansible.builtin.assert:
@@ -331,14 +331,14 @@
                 (cac_use_case_selector.importer_credentials[item.item.item.name] | sort | list)
             fail_msg: Reconcile the saved importer credential associations before selected setup.
           loop: "{{ aap_selected_importer_credentials.results }}"
-          no_log: true
+          no_log: false
 
         - name: Require the registry's bound Machine credential identity
           ansible.builtin.assert:
             that:
               - aap_instance_route.hypervisor.machine_credential_name is string
               - aap_instance_route.hypervisor.machine_credential_name | length > 0
-          no_log: true
+          no_log: false
 
         - name: Resolve only the bound Machine credential
           ansible.builtin.uri:
@@ -352,7 +352,7 @@
           loop:
             - "{{ aap_instance_route.hypervisor.machine_credential_name }}"
           register: aap_selected_route_credentials
-          no_log: true
+          no_log: false
 
         - name: Require exact unique route credential identities and types
           ansible.builtin.assert:
@@ -362,13 +362,13 @@
               - item.json.results[0].name == item.item
               - item.json.results[0].summary_fields.organization.name == aap_selected_setup_plan.organization
           loop: "{{ aap_selected_route_credentials.results }}"
-          no_log: true
+          no_log: false
 
         - name: Verify the Machine binding while retaining the saved repository Git and Vault credentials
           ansible.builtin.assert:
             that:
               - aap_selected_route_credentials.results[0].json.results[0].kind == 'ssh'
-          no_log: true
+          no_log: false
 
         - name: Prepare only the selected use-case prerequisites and verify completion
           ansible.builtin.include_tasks: tasks/selected-use-case-import.yml
