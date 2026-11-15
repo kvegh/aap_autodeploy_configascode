@@ -5912,3 +5912,14 @@ fails, a fixed notice allows the existing outer rollback and cleanup to run.
 Eight diagnostic, seven affected permission and fourteen native rollback cases passed on Core 2.20.10. The original live
 Git cause remains unresolved. The caller receives the minimal backport on its
 existing lifecycle baseline while investigation continues.
+
+
+### Temporary visible logging until clean deployment acceptance
+
+The owner's explicit direction supersedes protected task-logging defaults for
+new deployment runs. Implementation `a34dddbbb6835592cfbac570cd6e523191a4dc38` sets no_log and
+configuration-role logging controls to false. YAML-node comparison verifies all
+non-logging fields unchanged. Native credential redaction, authentication,
+permissions, TLS and rollback remain active. Logs stay private and reports are
+redacted. The native Git failure test verifies visible errors and continued
+cleanup; active jobs retain their original settings.

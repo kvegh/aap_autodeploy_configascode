@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.89
+
+- Document implementation `a34dddbbb683` of the owner's temporary visible
+  deployment logging policy and the private handling of resulting diagnostics.
+
 ## 0.63.88
 
 - Apply the owner's explicit temporary direction: no_log:false across deployment
