@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.85
+
+- Document the protected Windows import diagnosis: execution skipped the existing
+  AutoDeploy CaC prerequisite that supplies shared source-access credentials.
+- Document successful normal prerequisite and focused Windows imports, exact
+  resource and launch-input readback, and the running normal Windows workflow.
+- Preserve original failures and keep failure-free acceptance unachieved; refresh
+  protected task recovery records. No runtime behavior changes.
+
 ## 0.63.84
 
 - Document implementation and validation of encrypted project-import failure

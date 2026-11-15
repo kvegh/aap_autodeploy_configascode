@@ -5885,3 +5885,16 @@ including original/cleanup secret canaries, nested invocation redaction and
 missing-key refusal. Ten existing retained-child observer tests and native
 importer syntax also passed. Actual normal importer rerun and encrypted error
 inspection remain the next operational step.
+
+
+### v22 Windows import order correction
+
+The protected diagnostic added in `f07dac557dc0f77216895ea6a79944d76dcef09d`
+identified a skipped documented prerequisite, rather than a Windows runtime
+defect: the existing AutoDeploy CaC supplies shared source-access credentials.
+Applying that prerequisite normally and retrying only the failed Windows import
+completed configuration successfully. Independent readback verified the complete
+graph and saved inputs before the normal workflow started. Keep this order for
+fresh deployments, preserve the original failures, and distinguish a functional
+configuration fix from failure-free end-to-end acceptance. No additional
+prerequisite mechanism or automatic retry was introduced.

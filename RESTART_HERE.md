@@ -26,10 +26,18 @@ a failure-free end-to-end run has not been achieved.
 The encrypted Windows profile is published after actual receiver/runtime, pinned
 network/route and native Core 2.20 rendering checks. Normal Windows-only
 prerequisite preparation passed, but CaC import failed during job-template
-creation before any workload launch. The import now preserves that protected
-error through the existing encrypted diagnostic mechanism for a focused rerun.
-Windows deployment, AIOps and both AIOps demo tests remain outstanding. The owner's post-wipe
-absence-check withdrawal remains in force.
+creation before any workload launch. The protected diagnostic confirmed that
+execution skipped the documented AutoDeploy CaC prerequisite: seven Windows
+templates require its source-reader and source-CA credentials. The normal
+AutoDeploy-only prerequisite import passed, and both credential definitions were
+verified on the receiver with the default execution environment unchanged.
+The focused Windows configuration retry passed. Independent readback verified
+all 35 templates, 29 workflow nodes and 29 links, exact runtime/credential/image
+bindings and eight collection pins. Launch metadata has no missing templates,
+rejected node prompts or required inputs. One normal Windows workflow is now
+running; guest deployment is not yet accepted. The original failures and
+diagnostic retry remain recorded. AIOps and both AIOps demo tests remain
+outstanding. The owner's post-wipe absence-check withdrawal remains in force.
 
 ## Current owner direction — 2026-11-15
 
