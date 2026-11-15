@@ -61,6 +61,59 @@ class Source(FakeRetirementSource):
         return super().request(method, path, body)
 
 
+def windows_alias_fixture():
+    """Canonical AAP plus three two-NIC Windows owners, with an older Source view."""
+    from test_windows_guest_lifecycle import source_fixture
+    guest, pin, main, shared, hactar, allocation = fixture(new=True)
+    guest.update(address='192.168.70.77', mac='52:54:00:12:34:77')
+    context = keys.guest_release_context(main, shared, guest, pin)
+    record = allocation['aap_vm_allocation']['reservations']['selected-request']
+    primary = record['instance_resources']['aap']
+    shared = keys.merge_inventory(shared, record['vm_name'], record['instance_route'], context['previous_policy'], primary)
+    released = [{field:primary[source] for field,source in (('bridge','bridge'),('ipv4','address'),('mac','mac'))}]
+    windows = []
+    template = source_fixture()[0]
+    for index in range(1,4):
+        resource = deepcopy(template)
+        name = 'win%s-v07' % index
+        resource.update(vm_name=name, computer_name=name.upper(),
+            uuid=('%08d-2222-3333-4444-555555555555' % (index+30)),
+            computer_uuid=('%08d-2222-3333-4444-555555555555' % (index+30)),
+            disk='/opt/vms/win-'+name+'-clone.disk.qcow2')
+        for number,nic in enumerate(resource['interfaces']):
+            nic.update(address='192.168.%s.%s' % (70+number,60+index),
+                       mac='52:54:00:12:%02d:%02d' % (number,index),
+                       dns_name=name+('-mgmt' if number else '')+'.example.invalid')
+        resource['address'] = resource['interfaces'][-1]['address']
+        windows.extend(keys.guest_identities(resource))
+        shared['host_inventory_configuration']['hosts'].append({'name':name,'inventory':'Shared','variables':{
+            'vm_resource':resource,'vm_uuid':resource['uuid'],'ansible_host':resource['address'],
+            'computer_name':resource['computer_name'],'computer_uuid':resource['computer_uuid'],
+            'hypervisor_host':'fixture-hypervisor','aap_instance_number':7}})
+    policy = dict(context['previous_policy'], released_clients=released+windows)
+    for rows in (shared['host_inventory_configuration']['hosts'],main['autodeploy_configuration']['inventories'],
+                 hactar['controller_hosts_hactar_recovery']):
+        for row in rows:
+            values = keys.inventory_variables(row)
+            if 'aap_hypervisor_pin' in values or values.get('ansible_host') == pin['address']:
+                for field in ('isolation_policy','hactar_isolation_policy'):
+                    values[field] = deepcopy(policy)
+                if 'aap_hypervisor_pin' in values:
+                    values['aap_hypervisor_isolation_released_clients'] = deepcopy(policy['released_clients'])
+                values['unchanged'] = '{{ literal_owner_value }}'
+                keys.set_inventory_variables(row,values)
+    source = Source(main,shared,hactar)
+    for collection in (source.hosts,source.inventories):
+        for row in collection.values():
+            values = keys.inventory_variables(row)
+            for field in ('isolation_policy','hactar_isolation_policy'):
+                if field in values: values[field]['released_clients'] = deepcopy(released)
+            if 'aap_hypervisor_isolation_released_clients' in values:
+                values['aap_hypervisor_isolation_released_clients'] = deepcopy(released)
+            row['variables'] = json.dumps(values)
+    return guest,pin,main,shared,hactar,allocation,source
+
+
 class GuestReleaseTests(unittest.TestCase):
     def test_derives_only_one_exact_guest_release_and_preserves_production_exclusions(self):
         guest, pin, main, shared, *_ = fixture()
@@ -167,7 +220,10 @@ class GuestReleaseTests(unittest.TestCase):
     def test_native_bootstrap_http_action_uses_same_encrypted_transaction_and_safe_retry(self):
         self.exercise_action('guest_bootstrap_http')
 
-    def exercise_action(self, operation):
+    def test_windows_alias_repair_uses_existing_encrypted_publication_retry_without_counter_changes(self):
+        self.exercise_action('release_guest', windows_aliases=True)
+
+    def exercise_action(self, operation, windows_aliases=False):
         module = load('test_guest_release_action', 'action_plugins/aap_publish_instance_keys.py')
         guest, pin, main, shared, hactar, allocation = fixture(new=True)
         if operation == 'guest_bootstrap_http':
@@ -176,6 +232,8 @@ class GuestReleaseTests(unittest.TestCase):
             shared = keys.guest_release_inventory_capture(shared, bootstrap, 'shared')
             hactar = keys.guest_release_inventory_capture(hactar, bootstrap, 'hactar')
         source = Source(main, shared, hactar)
+        if windows_aliases:
+            guest,pin,main,shared,hactar,allocation,source = windows_alias_fixture()
         secret = VaultSecret(b'synthetic-cac-password')
         environment_secret = VaultSecret(b'synthetic-environment-password')
         vault = VaultLib([('cac', secret), ('default', environment_secret)])
@@ -215,6 +273,8 @@ class GuestReleaseTests(unittest.TestCase):
                  mock.patch.dict(os.environ, {'CAC_GIT_TOKEN': 'synthetic-writer-token'}):
                 planned = run('plan', check=True)
                 self.assertFalse(planned.get('failed'), planned)
+                if windows_aliases:
+                    self.assertFalse(source.calls)
                 transition = planned['transition']
                 resource = guest['primary'] if guest.get('kind') == 'aap' else guest
                 selected = [{'bridge': nic['bridge'], 'ipv4': nic['address'], 'mac': nic['mac']}
@@ -252,6 +312,130 @@ class GuestReleaseTests(unittest.TestCase):
             self.assertEqual(restored['state/aap_vm_allocations_vault.yml'], allocation)
             self.assertEqual(restored['vaults/cac/aap_autodeploy_configascode-cac-vault.yml']['aap_instance_api_credentials'], main['aap_instance_api_credentials'])
             self.assertFalse(any(method == 'DELETE' or 'credentials/' in path for method, path in source.calls))
+
+
+
+
+class WindowsAliasPolicyTests(unittest.TestCase):
+    def setUp(self):
+        self.guest,self.pin,self.main,self.shared,self.hactar,self.allocation,self.source = windows_alias_fixture()
+
+    def operations(self):
+        context = keys.guest_release_context(self.main,self.shared,self.guest,self.pin)
+        return context, keys.source_guest_release_operations(self.source,self.shared,self.main,self.hactar,context)
+
+    def test_plan_is_readonly_and_guarded_patches_keep_all_other_values(self):
+        original = deepcopy((self.main,self.shared,self.hactar,self.allocation,self.source.hosts,self.source.inventories))
+        context,operations = self.operations()
+        self.assertFalse(self.source.calls)
+        guarded = [(method,path,body) for method,path,body in operations if isinstance(body,keys._PolicyPatch)]
+        self.assertTrue(guarded)
+        for method,path,body in guarded:
+            self.assertEqual(method,'PATCH')
+            self.assertEqual(set(json.loads(json.dumps(body))),{'variables'})
+            updated = json.loads(body['variables'])
+            self.assertEqual(updated['unchanged'],'{{ literal_owner_value }}')
+            self.assertEqual(updated['isolation_policy'],context['desired_policy'])
+        self.assertEqual((self.main,self.shared,self.hactar,self.allocation,self.source.hosts,self.source.inventories),original)
+        row = next(row for row in self.source.hosts.values() if keys.inventory_variables(row).get('ansible_host')==self.pin['address'])
+        with self.assertRaises(keys.StoreError): keys.guest_release_variables(keys.inventory_variables(row),context)
+
+    def test_unowned_foreign_conflicting_and_reordered_values_refuse_without_writes(self):
+        cases = ('unknown','foreign_generation','foreign_hypervisor','duplicate_owner','wrong_computer',
+                 'wrong_instance','wrong_counter','unverified','changed_protected','changed_https','extra','reordered')
+        for case in cases:
+            with self.subTest(case=case):
+                self.setUp()
+                owner = next(row for row in self.shared['host_inventory_configuration']['hosts'] if row['name']=='win1-v07')
+                resource = owner['variables']['vm_resource']
+                if case=='unknown': self.shared['host_inventory_configuration']['hosts'].remove(owner)
+                elif case=='foreign_generation': resource['instance_name']='aap27-test-8'
+                elif case=='foreign_hypervisor': resource['hypervisor_machine_id']='0'*32
+                elif case=='duplicate_owner': self.shared['host_inventory_configuration']['hosts'].append(deepcopy(owner))
+                elif case=='wrong_computer': owner['variables']['computer_uuid']='99999999-2222-3333-4444-555555555555'
+                elif case=='wrong_instance': resource['instance_name']='missing-test-7'
+                elif case=='wrong_counter': owner['variables']['aap_instance_number']=8
+                elif case=='unverified': resource['verified']=False
+                else:
+                    row = next(row for row in self.source.hosts.values() if keys.inventory_variables(row).get('ansible_host')==self.pin['address'])
+                    values=keys.inventory_variables(row); policy=values['isolation_policy']
+                    if case=='changed_protected': policy['protected_ipv4']=['198.51.100.199']
+                    elif case=='changed_https': policy['https_clients']=[]
+                    elif case=='extra': policy['released_clients'].append({'bridge':'vmbr0','ipv4':'192.168.70.199','mac':'52:54:00:00:00:99'})
+                    else:
+                        canonical=keys.inventory_variables(self.main['autodeploy_configuration']['inventories'][0])['aap_hypervisor_isolation_released_clients']
+                        policy['released_clients']=list(reversed(canonical[:2]))
+                    row['variables']=json.dumps(values)
+                with self.assertRaises((keys.StoreError,AnsibleFilterError,ValueError)): self.operations()
+                self.assertFalse(self.source.calls)
+
+    def transport(self, *, before=None, after=None, denied=False):
+        """Real SourceClient serialization and opt-in guards, with an in-memory HTTP opener."""
+        source=self.source; calls=[]
+        class Response:
+            def __init__(self,value): self.value=value
+            def __enter__(self): return self
+            def __exit__(self,*args): return False
+            def read(self): return json.dumps(self.value).encode()
+        class Opener:
+            def open(inner,request,timeout):
+                from urllib.parse import urlsplit
+                path=urlsplit(request.full_url).path.split('/api/controller/v2/',1)[1]
+                method=request.get_method();calls.append((method,path))
+                collection=source.hosts if path.startswith('hosts/') else source.inventories
+                row=collection[int(path.split('/')[1])]
+                if method=='GET':
+                    if denied: raise PermissionError('Synthetic permission denial')
+                    if before: before(row)
+                    return Response(deepcopy(row))
+                payload=json.loads(request.data)
+                self.assertEqual(set(payload),{'variables'})
+                row.update(payload)
+                if after: after(row)
+                return Response(deepcopy(row))
+        client=object.__new__(keys.SourceClient)
+        client.origin=source.origin;client.token='synthetic-source-token';client.opener=Opener()
+        return client,calls
+
+    def test_real_transport_preserves_identity_inventory_and_unrelated_variables(self):
+        _,operations=self.operations()
+        for method,path,body in operations:
+            if not isinstance(body,keys._PolicyPatch): continue
+            client,calls=self.transport(); original=deepcopy(body.preimage)
+            client.request(method,path,body)
+            self.assertEqual(calls,[('GET',path),('PATCH',path),('GET',path)])
+            collection=self.source.hosts if path.startswith('hosts/') else self.source.inventories
+            row=collection[original['id']]
+            self.assertTrue(all(row[key]==value for key,value in original.items() if key!='variables'))
+            self.assertEqual(keys.inventory_variables(row),json.loads(body['variables']))
+        client,calls=self.transport()
+        client.request('PATCH','inventories/3/',{'variables':self.source.inventories[3]['variables']})
+        self.assertEqual(calls,[('PATCH','inventories/3/')])
+
+    def test_real_transport_race_permissions_and_readback_fail_closed(self):
+        for field in ('variables','name','inventory','id','denied','readback'):
+            with self.subTest(field=field):
+                self.setUp();_,operations=self.operations()
+                method,path,body=next(op for op in operations if isinstance(op[2],keys._PolicyPatch) and op[1].startswith('hosts/'))
+                def mutate(row):
+                    if field=='variables':
+                        values=keys.inventory_variables(row);values['concurrent']='preserve';row['variables']=json.dumps(values)
+                    elif field=='id':row['id']=999
+                    elif field=='inventory':row['inventory']=999
+                    elif field=='name':row['name']='foreign'
+                if field=='readback': client,calls=self.transport(after=lambda row:row.update(variables='{}'))
+                else: client,calls=self.transport(before=mutate,denied=field=='denied')
+                with self.assertRaises(keys.StoreError):client.request(method,path,body)
+                self.assertEqual(sum(method=='PATCH' for method,_ in calls),1 if field=='readback' else 0)
+
+    def test_unrelated_hypervisor_provenance_does_not_expand_selected_ownership(self):
+        other=deepcopy(next(row for row in self.shared['host_inventory_configuration']['hosts'] if row['name']=='win1-v07'))
+        other['name']='foreign-v07'
+        other['variables']['vm_resource']['hypervisor_machine_id']='9'*32
+        self.shared['host_inventory_configuration']['hosts'].append(other)
+        original=deepcopy(other)
+        self.assertTrue(self.operations()[1])
+        self.assertEqual(other,original)
 
 
 if __name__ == '__main__': unittest.main()

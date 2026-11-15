@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.62.6
+
+Repair only proved missing canonical Windows release identities in the
+original Source aliases during the existing guest-release transaction. Retain
+the strict policy guard, read-only planning, native verification, production
+exclusions and bounded publication with preimage checks and exact readback.
+This is a focused backport on the accepted Linux creator dependency.
+
 ## 0.62.5
 
 Document implementation `afffa8ea3624551efae80310f0344294c7e9d728`, its

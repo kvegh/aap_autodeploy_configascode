@@ -39,6 +39,15 @@ def require(condition, message):
         raise StoreError(message)
 
 
+def inventory_identity():
+    """Load the existing strict matcher only for explicit selected-host reconciliation."""
+    spec = spec_from_file_location('instance_key_inventory_identity',
+        Path(__file__).resolve().parents[1] / 'filter_plugins/aap_inventory_identity.py')
+    identity = module_from_spec(spec)
+    spec.loader.exec_module(identity)
+    return identity
+
+
 def validate_aap_primary(route, resource):
     try:
         return _allocation.validate_primary_resource(route, resource)
@@ -49,6 +58,18 @@ def validate_aap_primary(route, resource):
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
+
+
+class _ReconciledPolicy(dict):
+    """Mark only a policy whose missing Windows owners were independently proved."""
+
+
+class _PolicyPatch(dict):
+    """An ordinary variables PATCH with a private, non-serialized exact preimage."""
+    def __init__(self, desired, row):
+        super().__init__(variables=json.dumps(desired))
+        self.preimage = {key: deepcopy(row[key]) for key in ('id', 'name', 'inventory') if key in row}
+        self.preimage['variables'] = inventory_variables(row)
 
 
 class SourceClient:
@@ -64,6 +85,18 @@ class SourceClient:
         self.opener = build_opener(NoRedirect(), HTTPSHandler(context=context))
 
     def request(self, method, path, body=None):
+        guarded = isinstance(body, _PolicyPatch)
+        if guarded:
+            expected = body.preimage
+            require(method == 'PATCH' and type(expected.get('id')) is int
+                    and expected['id'] > 0 and isinstance(expected.get('name'), str)
+                    and path in ('hosts/%s/' % expected['id'], 'inventories/%s/' % expected['id'])
+                    and (not path.startswith('hosts/') or type(expected.get('inventory')) is int),
+                    'Guard only the exact existing Source policy alias destination.')
+            current = self.request('GET', path)
+            require(all(current.get(key) == value for key, value in expected.items() if key != 'variables')
+                    and inventory_variables(current) == expected['variables'],
+                    'Source policy alias changed before PATCH; retry from current ownership.')
         relative = path if path.startswith("/") else "/api/controller/v2/" + path
         url = urljoin(self.origin + "/", relative)
         require(urlsplit(url).netloc == urlsplit(self.origin).netloc,
@@ -73,9 +106,15 @@ class SourceClient:
         try:
             with self.opener.open(request, timeout=45) as response:
                 raw = response.read()
-            return json.loads(raw) if raw else {}
+            result = json.loads(raw) if raw else {}
         except Exception:
             raise StoreError("Source AAP API access failed; inspect protected job state before retry.") from None
+        if guarded:
+            observed = self.request('GET', path)
+            require(all(observed.get(key) == value for key, value in expected.items() if key != 'variables')
+                    and inventory_variables(observed) == json.loads(body['variables']),
+                    'Source policy alias readback differs from the exact verified update.')
+        return result
 
     def rows(self, path):
         result = []
@@ -825,7 +864,9 @@ def source_inventory_operations(client, shared, autodeploy, hactar, context, pol
                     "The live hypervisor inventory identity conflicts with its registered pin.")
         desired = policy_variables(current, context)
         if desired != current:
-            operations[("PATCH", "hosts/%s/" % row["id"])] = {"variables": json.dumps(desired)}
+            operations[("PATCH", "hosts/%s/" % row["id"])] = (
+                _PolicyPatch(desired, row) if isinstance(desired, _ReconciledPolicy)
+                else {"variables": json.dumps(desired)})
         return live_inventory
 
     hosts = shared["host_inventory_configuration"]["hosts"]
@@ -857,7 +898,9 @@ def source_inventory_operations(client, shared, autodeploy, hactar, context, pol
     current = inventory_variables(live)
     desired = policy_variables(current, context, True)
     if current != desired:
-        operations[("PATCH", "inventories/%s/" % live["id"])] = {"variables": json.dumps(desired)}
+        operations[("PATCH", "inventories/%s/" % live["id"])] = (
+            _PolicyPatch(desired, live) if isinstance(desired, _ReconciledPolicy)
+            else {"variables": json.dumps(desired)})
     if hactar is not None:
         for captured in hactar.get("controller_hosts_hactar_recovery", []):
             if inventory_variables(captured).get("ansible_host") == pin["address"]:
@@ -1775,7 +1818,84 @@ def guest_release_inventory_capture(configuration, context, kind):
 
 def source_guest_release_operations(client, shared, autodeploy, hactar, context):
     """Preflight all bounded writes before publication; register only verified guest ownership."""
-    operations = source_inventory_operations(client, shared, autodeploy, hactar, context, guest_release_variables)
+    def reconcile_missing_windows(values, selected, pinned=False):
+        # Keep the existing release guard unchanged. Only prove/insert omissions
+        # already owned in canonical policy before asking that guard to validate
+        # this exact current guest's normal transition.
+        candidate = deepcopy(values)
+        policies = [(key, candidate[key]) for key in ('isolation_policy', 'hactar_isolation_policy')
+                    if key in candidate]
+        if pinned:
+            require(candidate.get('aap_hypervisor_pin') == selected['route']['hypervisor'],
+                    'Keep the exact recovery pin during Windows alias reconciliation.')
+            policies.append((None, _routing.isolation_policy(selected['route']['hypervisor'],
+                candidate.get('aap_hypervisor_isolation_https_clients', []),
+                candidate.get('aap_hypervisor_isolation_protected_ipv4', []),
+                candidate.get('aap_hypervisor_isolation_host_clients', []),
+                candidate.get('aap_hypervisor_isolation_released_clients', []),
+                candidate.get('aap_hypervisor_isolation_http_clients', []))))
+        expected = selected['desired_policy'].get('released_clients', [])
+        previous = selected['previous_policy'].get('released_clients', [])
+        own = guest_identities(selected['guest'])
+        number = int(selected['guest']['vm_name'].rsplit('-v', 1)[1])
+        changed = False
+        for key, policy in policies:
+            pin = selected['route']['hypervisor']
+            require(isinstance(policy, dict) and _routing.isolation_policy(pin,
+                    policy.get('https_clients', []), policy.get('protected_ipv4'),
+                    policy.get('guest_host_clients', []), policy.get('released_clients', []),
+                    policy.get('http_clients', [])) == policy,
+                    'Keep normalized Source policy aliases during reconciliation.')
+            present = policy.get('released_clients', [])
+            require(isinstance(present, list) and all(item in expected for item in present)
+                    and present == [item for item in expected if item in present],
+                    'Existing released identities must be an unchanged ordered canonical subset.')
+            missing = [item for item in previous if item not in present and item not in own]
+            for identity in missing:
+                owners = []
+                for row in shared['host_inventory_configuration']['hosts']:
+                    owner = inventory_variables(row)
+                    resource = owner.get('vm_resource', {})
+                    if not isinstance(resource, dict) or resource.get('hypervisor_machine_id') != pin['machine_id']:
+                        continue
+                    nics = (resource.get('interfaces', []) if resource.get('kind') == 'windows'
+                            else [resource] + resource.get('supplemental_interfaces', []))
+                    require(isinstance(nics, list) and all(isinstance(nic, dict) for nic in nics),
+                            'Canonical NIC ownership must remain explicit during reconciliation.')
+                    if any(nic.get('address') == identity['ipv4'] or nic.get('mac') == identity['mac'] for nic in nics):
+                        owners.append((row, owner, resource))
+                require(len(owners) == 1, 'Every missing released identity requires one exact canonical Windows owner.')
+                row, owner, resource = owners[0]
+                verified = windows_guest_resource(resource, pin)
+                require(identity in guest_identities(verified)
+                        and row.get('name') == verified['vm_name']
+                        and row.get('inventory') == selected['inventory_name']
+                        and owner.get('hypervisor_host') == selected['hypervisor_name']
+                        and inventory_identity().inventory_counter(owner.get('aap_instance_number')) == number
+                        and verified['vm_name'].endswith('-v%02d' % number)
+                        and re.fullmatch(r'aap[0-9]+-test-%s' % number, verified['instance_name'])
+                        and owner.get('ansible_host') == verified['address']
+                        and owner.get('vm_uuid') == verified['uuid']
+                        and owner.get('computer_name') == verified['computer_name']
+                        and owner.get('computer_uuid') == verified['computer_uuid'],
+                        'Missing releases must belong to complete current-generation Windows ownership on this hypervisor.')
+                aap = [inventory_variables(entry) for entry in shared['host_inventory_configuration']['hosts']
+                       if aap_inventory_owner(entry, verified['instance_name'])]
+                require(len(aap) == 1 and aap[0].get('hypervisor_host') == selected['hypervisor_name']
+                        and aap[0].get('vm_resource', {}).get('hypervisor_machine_id') == pin['machine_id']
+                        and inventory_identity().inventory_instance_name(verified['instance_name'], aap[0]) == verified['instance_name'],
+                        'Windows release reconciliation requires its verified selected AAP owner.')
+            if missing:
+                repaired = [item for item in expected if item in present or item in missing]
+                if key is None:
+                    candidate['aap_hypervisor_isolation_released_clients'] = deepcopy(repaired)
+                else:
+                    candidate[key]['released_clients'] = deepcopy(repaired)
+                changed = True
+        desired = guest_release_variables(candidate, selected, pinned)
+        return _ReconciledPolicy(desired) if changed else desired
+
+    operations = source_inventory_operations(client, shared, autodeploy, hactar, context, reconcile_missing_windows)
     inventories = client.rows("inventories/?name=" + quote(context["inventory_name"]))
     require(len(inventories) == 1, "Use exactly the captured shared inventory for guest release.")
     inventory_id = inventories[0]["id"]

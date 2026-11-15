@@ -7,15 +7,35 @@ at that failure.
 ## Temporary deployment diagnostic logging
 
 The owner explicitly requested `no_log: false` until a clean deployment is
-verified. This branch backports only that logging policy to the exact accepted
-Linux guest release dependency; it does not adopt later deployment behavior.
+verified. This branch preserves that logging policy on the accepted Linux
+guest release dependency and adds only the bounded Source policy metadata
+repair described below.
 Existing native credential-argument redaction, authentication, TLS, identity,
 ownership, isolation and rollback checks remain unchanged. Raw job logs are
 private and must be redacted before sharing or committing evidence.
 
-An independent YAML comparison verifies that every nonlogging runtime value is
-identical to the accepted dependency. This publication starts no deployment,
-release or retirement job and does not establish clean live acceptance.
+The earlier logging-only backport passed an independent comparison of all
+nonlogging YAML values. The subsequent metadata repair has separate focused
+qualification. Publication starts no deployment, release or retirement job
+and does not establish clean live acceptance.
+
+## Reconcile already published Windows release metadata
+
+Windows automation on the receiving AAP can publish verified interface
+permissions while the original Source AAP still has older inventory aliases.
+The existing Linux guest-release transaction now admits only missing canonical
+Windows release identities belonging to the same generation and hypervisor.
+It verifies complete ownership tuples and keeps the original strict policy
+guard. Changed exclusions, other grant types, extra or conflicting identities,
+and unowned omissions still refuse.
+
+Planning remains read-only. The existing post-native publication updates only
+the selected Source aliases and the normal current guest record, with immediate
+preimage checks and exact readback. It adds no credential, Windows inventory
+record, transport, operation or permission. A concurrent update is refused;
+this is not an atomic compare-and-swap guarantee. Existing deployment and
+retirement behavior, native firewall enforcement and production protection
+remain in place.
 
 Base configuration and project imports keep CoP asynchronous results in an
 absolute, private directory inside that job's temporary workspace. Launch,
