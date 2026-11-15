@@ -78,11 +78,47 @@ internal import passed with the exact upstream package artifacts. WSUS
 synchronization, export and internal import also passed: all 21 content files,
 about 13.2 GB, passed checksum verification before metadata import and native
 revision/readiness checks completed. Both repository branches are now verified
-through replication. The original selected patch ceiling is the next stage;
-endnode patching and application tests remain outstanding.
-The original failures and diagnostic retry remain recorded. AIOps and both AIOps
-demo tests remain outstanding. The owner's post-wipe absence-check withdrawal
+through replication. The original April patch ceiling and both managed-server
+patch stages passed, reaching exact builds `20348.5020` and `26100.32690` with
+zero remaining approved updates or pending reboot. Baseline application
+installation and pinned upgrades passed on both servers. A separate combined
+live proof verified internal WSUS, exact OS builds, current executable/package
+versions and retained baseline-before-upgrade history, with no query errors.
+The verified application sequences were 7-Zip `26.3.0` to `26.4.0` and Git
+`2.55.0.5` to `2.56.0.2`. Windows functional acceptance is established through
+the focused continuations; the original workflow remains failed.
+All five Windows VMs were then confirmed off after Windows-native graceful
+shutdown commands through their existing authenticated management connections.
+The virtual power-button requests had not stopped them. No forced stop was used;
+their disks and definitions were retained, and AAP remained running.
+The original failures and diagnostic retries remain recorded. AIOps prerequisite
+preparation and configuration import passed after correcting an operator's
+inventory-key input and reconciling the Source inventory's missing interface
+metadata. Guest/service deployment and both AIOps demo tests remain outstanding.
+The owner's post-wipe absence-check withdrawal
 remains in force.
+
+## Selected-project Source inventory reconciliation
+
+A project running on the selected AAP can update canonical VM ownership and its
+own inventory while the original Source AAP's copy remains older. Before remote
+project setup, the selected-project launcher now reconciles only an absent
+canonical `vm_resource.supplemental_interfaces` field on its existing Source
+inventory host. The existing publisher authenticates the actual running Source
+job, requires unchanged primary identity, placement, keys and counter, and
+verifies an immediate API readback. Existing conflicting fields still refuse.
+It creates no host, changes no native interface or permission, and publishes
+no Git configuration.
+
+The launcher refreshes only that selected host's in-memory `vm_resource` before
+running the original strict destination guard. Self-target setup and legacy
+entries without VM ownership retain their existing selection path. Generic
+registry readers remain read-only. Source variable updates require a quiescent
+selected owner; no atomic compare-and-swap guarantee is claimed.
+
+Select the actual shared-inventory hostname as the instance key. That alias can
+differ from the physical VM name; verify their registered identity rather than
+constructing one from the other.
 
 ## Protected native source Git failures
 
@@ -111,13 +147,26 @@ workload execution or automatic retry is added.
 
 ## Current owner direction — 2026-11-15
 
+Complete and verify the current Windows deployment, then gracefully stop its
+five VMs before deploying AIOps and running both real demo tests. Only after
+those tests pass, retire the current generation's owned DNS, CaC and AAP
+metadata, preserving other deployments, shared resources and historical
+evidence. The owner then authorizes the next whole-host reinstall and complete
+v23 procedure. Use the same monotonic generation for the physical host and AAP.
+The next run includes all Windows and AIOps functional tests, plus the three
+success-only cold AAP checkpoints after infrastructure setup, software
+installation and base deployment. Verify that the actual selected source pins
+contain the snapshot hooks before launch. An uninterrupted clean run remains
+the acceptance target; successful repairs do not erase failures.
+
 The completed full reinstall is authoritative: no post-wipe disk/native absence
 checks are required. The earlier proof-gated retirement proposal is withdrawn.
 Remove superseded generations from active CaC, DNS and AAP; preserve the current
 v22 generation, production/unrelated resources and genuine allocation history.
 Keep the single counter unchanged during cleanup. Do not repeat the reset or
-run individual guest teardown. Continue normal host/platform/workload deployment
-after metadata cleanup and current-trust reconciliation. Historical checkpoints
+run individual guest teardown before the success prerequisites above. Continue
+normal host/platform/workload deployment after metadata cleanup and current-trust
+reconciliation. Historical checkpoints
 below retain their original context; this direction supersedes their proof gates.
 
 The resumed replacement checks passed. Current Hactar identity is refreshed;

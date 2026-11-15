@@ -115,6 +115,26 @@
             aap_selected_target_auth: "{{ cac_api_auth }}"
           no_log: false
 
+        - name: Reconcile only absent canonical supplemental metadata on the selected Source inventory host
+          aap_publish_instance_keys:
+            operation: reconcile_inventory_metadata
+            inventory_host: "{{ aap_instance_key }}"
+          register: aap_selected_inventory_metadata
+          when:
+            - hostvars[aap_instance_key].vm_resource | default(none) is mapping
+            - (aap_selected_source_auth.hostname | aap_https_origin) != (aap_selected_target_auth.hostname | aap_https_origin)
+          no_log: false
+
+        - name: Refresh only selected in-memory ownership from verified Source API readback
+          ansible.builtin.add_host:
+            name: "{{ aap_selected_inventory_metadata.inventory_host }}"
+            vm_resource: "{{ aap_selected_inventory_metadata.vm_resource }}"
+          changed_when: false
+          when:
+            - aap_selected_inventory_metadata is not skipped
+            - aap_selected_inventory_metadata.metadata_verified | default(false) | bool
+          no_log: false
+
         - name: Resolve the explicit instance key before any setup orchestration
           ansible.builtin.include_tasks: tasks/aap-instance-select.yml
 

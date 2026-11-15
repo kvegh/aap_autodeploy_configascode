@@ -39,6 +39,15 @@ def require(condition, message):
         raise StoreError(message)
 
 
+def inventory_identity():
+    """Load the existing strict matcher only for explicit selected-host reconciliation."""
+    spec = spec_from_file_location('instance_key_inventory_identity',
+        Path(__file__).resolve().parents[1] / 'filter_plugins/aap_inventory_identity.py')
+    identity = module_from_spec(spec)
+    spec.loader.exec_module(identity)
+    return identity
+
+
 def validate_aap_primary(route, resource):
     try:
         return _allocation.validate_primary_resource(route, resource)
@@ -95,6 +104,7 @@ def verify_source_job(client, target, variables):
     require(job.get("status") == "running" and job.get("job_template") == int(template_id)
             and job.get("scm_revision") == revision,
             "The source API credential does not identify this running deployment job.")
+    return job
 
 
 def type_definition():
@@ -1509,8 +1519,84 @@ def merge_inventory(configuration, selected, route, policy, primary=None):
     return result
 
 
-def ensure_source_inventory(client, configuration, selected, route):
+def ensure_source_inventory(client, configuration, selected, route, *, missing_supplemental_only=False,
+                            resources=None, job_inventory_id=None, caller_host=None, check_mode=False):
     data = configuration["host_inventory_configuration"]
+    if missing_supplemental_only:
+        # This opt-in path is the Source launcher's metadata repair, not ordinary
+        # registration. Never create hosts/groups or merge other host variables.
+        identity = inventory_identity()
+        hosts = [row for row in data['hosts'] if aap_inventory_owner(row, route['vm_name'])]
+        require(len(hosts) == 1 and hosts[0].get('name') == selected,
+                'Reconcile only the existing canonical selected inventory alias.')
+        host = hosts[0]
+        canonical = inventory_variables(host)
+        require(isinstance(canonical.get('hypervisor_host'), str) and bool(canonical['hypervisor_host']),
+                'Keep the complete canonical hypervisor placement during metadata repair.')
+        primary = resources.get('aap') if isinstance(resources, dict) else None
+        validate_aap_primary(route, primary)
+        canonical_resource = canonical.get('vm_resource')
+        require(isinstance(canonical_resource, dict)
+                and all(canonical_resource.get(key) == value for key, value in primary.items())
+                and set(primary) == (_allocation.ownership.PRIMARY_FIELDS |
+                    ({'supplemental_interfaces'} if 'supplemental_interfaces' in canonical_resource else set())),
+                'Canonical shared inventory and allocation ownership must agree before metadata repair.')
+        identity.inventory_route_matches(selected, canonical, route, resources)
+        require(type(job_inventory_id) is int and job_inventory_id > 0,
+                'Resolve metadata only inside the authenticated running job inventory.')
+        inventories = client.rows('inventories/?name=' + quote(host['inventory']))
+        require(len(inventories) == 1 and inventories[0].get('name') == host['inventory']
+                and inventories[0].get('id') == job_inventory_id,
+                'The canonical inventory must be the inventory of this running Source job.')
+        rows = client.rows('hosts/?inventory=%s&name=%s' % (job_inventory_id, quote(selected)))
+        require(len(rows) == 1 and rows[0].get('name') == selected
+                and rows[0].get('inventory') == job_inventory_id
+                and type(rows[0].get('id')) is int and rows[0]['id'] > 0,
+                'Reconcile one existing selected host in the running Source job inventory.')
+        row = rows[0]
+
+        def candidate(values):
+            require(isinstance(values, dict) and isinstance(values.get('vm_resource'), dict),
+                    'Require complete existing selected ownership before metadata repair.')
+            resource = values['vm_resource']
+            expected = deepcopy(canonical_resource)
+            if 'supplemental_interfaces' not in resource:
+                expected.pop('supplemental_interfaces', None)
+            require(resource == expected,
+                    'Only absent canonical supplemental metadata may be repaired; conflicting ownership must refuse.')
+            require(values.get('hypervisor_host') == canonical.get('hypervisor_host')
+                    and values.get('machine_id') == canonical.get('machine_id')
+                    and identity.inventory_counter(values.get('aap_instance_number')) ==
+                        identity.inventory_counter(canonical.get('aap_instance_number')),
+                    'Preserve the selected host placement and canonical counter during metadata repair.')
+            updated = deepcopy(values)
+            if 'supplemental_interfaces' not in resource and 'supplemental_interfaces' in primary:
+                updated['vm_resource']['supplemental_interfaces'] = deepcopy(primary['supplemental_interfaces'])
+            identity.inventory_route_matches(selected, updated, route, resources)
+            return updated
+
+        current = inventory_variables(row)
+        desired = candidate(current)
+        # The running job's inventory snapshot must describe this same host.
+        caller = candidate(dict(caller_host) if isinstance(caller_host, dict) else caller_host)
+        require(caller['vm_resource'] == desired['vm_resource'],
+                'The caller inventory and authenticated Source host ownership differ.')
+        path = 'hosts/%s/' % row['id']
+        fresh = client.request('GET', path)
+        require(fresh.get('id') == row['id'] and fresh.get('name') == selected
+                and fresh.get('inventory') == job_inventory_id and inventory_variables(fresh) == current,
+                'Selected Source host changed during metadata repair preflight; retry from fresh inventory.')
+        changed = desired != current
+        if changed:
+            require(not check_mode, 'Missing Source metadata requires a normal launcher run; check mode performs no repair.')
+            client.request('PATCH', path, {'variables': json.dumps(desired)})
+        observed = client.request('GET', path)
+        require(observed.get('id') == row['id'] and observed.get('name') == selected
+                and observed.get('inventory') == job_inventory_id and inventory_variables(observed) == desired,
+                'Verify the exact selected Source metadata and preserved variables after reconciliation.')
+        identity.inventory_route_matches(selected, inventory_variables(observed), route, resources)
+        return {'changed': changed, 'inventory_host': selected,
+                'vm_resource': deepcopy(inventory_variables(observed)['vm_resource'])}
     host = next(row for row in data["hosts"] if aap_inventory_owner(row, selected))
     hypervisor = next(row for row in data["hosts"]
                       if row["name"] == inventory_variables(host)["hypervisor_host"])

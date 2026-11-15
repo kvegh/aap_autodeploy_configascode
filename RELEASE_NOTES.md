@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.64.4
+
+- Reconcile only missing canonical supplemental-interface metadata on the
+  selected Source inventory host before remote project setup, then refresh
+  in-memory ownership and retain the strict destination guard. Preserve
+  self-target setup, legacy entries and read-only registry behavior.
+- Record exact April OS patch acceptance, baseline application installation,
+  pinned upgrades and combined live Windows proof on both managed servers.
+- Record verified graceful shutdown of all five Windows VMs with AAP and current
+  disk definitions retained; preserve original failed-run history.
+- Document the owner's conditional v22 retirement and full v23 procedure,
+  including the three AAP checkpoints and Windows/AIOps functional tests.
+
 ## 0.64.3
 
 - Record successful WSUS synchronization, export and verified internal import,

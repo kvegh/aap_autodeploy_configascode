@@ -11,7 +11,7 @@ import tempfile
 import uuid
 
 import yaml
-from ansible.errors import AnsibleActionFail
+from ansible.errors import AnsibleActionFail, AnsibleFilterError
 from ansible.plugins.action import ActionBase
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +48,13 @@ class ActionModule(ActionBase):
 
     def run(self, tmp=None, task_vars=None):
         result = super().run(tmp, task_vars)
+        if self._task.args.get('operation') == 'reconcile_inventory_metadata':
+            try:
+                return self.reconcile_inventory_metadata(result, task_vars or {})
+            except (keys.StoreError, AnsibleActionFail, AnsibleFilterError) as error:
+                raise AnsibleActionFail(str(error)) from None
+            except Exception:
+                raise AnsibleActionFail('Selected Source inventory metadata could not be verified; deployment selection remains blocked.') from None
         try:
             if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "guest_bootstrap_http", "installation_access", "retire_guest", "aap_supplemental_interface"):
                 return self.release_guest(result, task_vars or {})
@@ -571,6 +578,35 @@ class ActionModule(ActionBase):
         except Exception:
             raise AnsibleActionFail("Protected instance-token publication failed; the target token remains saved for review.") from None
 
+
+    def reconcile_inventory_metadata(self, result, variables):
+        """Repair only missing selected Source metadata, without a Git writer or native work."""
+        args = self._task.args
+        keys.require(set(args) == {'operation', 'inventory_host'},
+                     'Reconcile only the explicitly selected Source inventory host.')
+        selected = args['inventory_host']
+        hosts = variables.get('hostvars', {})
+        keys.require(isinstance(selected, str) and selected in hosts,
+                     'Select an existing AAP host from this job inventory.')
+        # Copy only identity fields; resolving all magic hostvars may read unrelated data.
+        caller = {key: deepcopy(hosts[selected][key]) for key in (
+            'vm_resource', 'hypervisor_host', 'aap_instance_number', 'ansible_host',
+            'vm_uuid', 'vm_ip', 'host_keys', 'ansible_fqdn', 'machine_id') if key in hosts[selected]}
+        physical = keys.inventory_identity().inventory_instance_name(selected, caller)
+        reader = load('reconcile_instance_registry_reader',
+                      self._project_root() / 'action_plugins/aap_read_instance.py')
+        registered = reader.ActionModule.read_instance(self._loader, self._project_root(),
+            {'instance_key': physical, 'read_inventory_metadata': True}, variables)
+        source = SourceClient()
+        job = keys.verify_source_job(source, registered['instance_route']['aap_hostname'], variables)
+        keys.require(job.get('id') == int(variables['awx_job_id']),
+                     'Metadata repair must identify the actual running Source job.')
+        result.update(keys.ensure_source_inventory(source, registered['inventory_configuration'],
+            selected, registered['instance_route'], missing_supplemental_only=True,
+            resources=registered['instance_resources'], job_inventory_id=job.get('inventory'),
+            caller_host=caller, check_mode=self._task.check_mode))
+        result['metadata_verified'] = True
+        return result
 
     def release_guest(self, result, variables):
         """Plan and publish one verified guest change using existing Git/API access."""
