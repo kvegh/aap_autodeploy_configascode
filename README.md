@@ -1,5 +1,10 @@
 # AAP AutoDeploy and Configuration as Code
 
+The resumed replacement checks passed. Current Hactar identity is refreshed;
+old ownership is retained pending the actual guarded absence proof and metadata
+retirement. The dedicated Drive app has a published manual authorization guide
+in the host project; it remains an operator prerequisite. See [restart state](RESTART_HERE.md).
+
 ## Maintenance completed; execution resumed — 2026-11-15
 
 The owner explicitly resumed the existing deployment goal after maintenance.

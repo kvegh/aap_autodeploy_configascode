@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.76
+
+- Record verified replacement readiness and the limited current-host trust
+  transition while preserving old ownership until actual native retirement.
+- Refresh the scoped Beads task overview, including completed manual Drive
+  authentication documentation. Runtime behavior is unchanged.
+
 ## 0.63.75
 
 - Document the maintenance pause, subsequent explicit resume and exact post-reset

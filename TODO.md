@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-240 tasks: 29 outstanding; 211 closed.
+241 tasks: 29 outstanding; 212 closed.
 
 ## Outstanding tasks
 
@@ -31,7 +31,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-72f.31.2.5 | Capture external user AAP MCP token in AIOps CaC and deployment | deferred | P1 | task | bead-wd-72f.31.2 |
 | bead-wd-72f.34 | Replace custom helpers and deployed state files with Ansible and CaC | deferred | P1 | task | bead-wd-72f |
 | bead-wd-72f.42 | Complete CaC and scanner coverage across AAP components | deferred | P1 | feature | bead-wd-72f |
-| bead-wd-87w5.12 | Move generic RHEL VM deployment into umbrella and expose shared AAP base job | in_progress | P1 | task | bead-wd-87w5 |
+| bead-wd-87w5.12 | Move generic RHEL VM deployment into umbrella and expose shared AAP base job | on_hold | P1 | task | bead-wd-87w5 |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | open | P1 | task | bead-wd-mcr.1 |
 | bead-wd-1rl.40.6 | Add separate CCNG infrastructure playbook and CaC job | deferred | P2 | task | bead-wd-1rl.40 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
@@ -104,6 +104,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.4.3.1 | Align website job timeout with its DNS readiness path | closed | P1 | bug | bead-wd-3ix.2.4.3 |
 | bead-wd-3ix.2.4.3.2 | Keep recovery policy records consistent after Windows release | closed | P1 | bug | bead-wd-3ix.2.4.3 |
 | bead-wd-3ix.2.4.3.3 | Preserve existing AAP network ownership during configuration refresh | closed | P1 | bug | bead-wd-3ix.2.4.3 |
+| bead-wd-3wpp | Document the verified dedicated Google Drive rclone setup | closed | P1 | task | — |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
 | bead-wd-72f.1 | Split per-repository CaC Vault credentials and rename all CaC Git readers | closed | P1 | feature | bead-wd-72f |
