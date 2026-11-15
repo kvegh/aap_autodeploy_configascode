@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-237 tasks: 29 outstanding; 208 closed.
+238 tasks: 29 outstanding; 209 closed.
 
 ## Outstanding tasks
 
@@ -101,6 +101,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.4.2 | Prepare the current AIOps runtime demonstration | closed | P1 | task | bead-wd-3ix.2.4 |
 | bead-wd-3ix.2.4.3.1 | Align website job timeout with its DNS readiness path | closed | P1 | bug | bead-wd-3ix.2.4.3 |
 | bead-wd-3ix.2.4.3.2 | Keep recovery policy records consistent after Windows release | closed | P1 | bug | bead-wd-3ix.2.4.3 |
+| bead-wd-3ix.2.4.3.3 | Preserve existing AAP network ownership during configuration refresh | closed | P1 | bug | bead-wd-3ix.2.4.3 |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |
 | bead-wd-72f.1 | Split per-repository CaC Vault credentials and rename all CaC Git readers | closed | P1 | feature | bead-wd-72f |

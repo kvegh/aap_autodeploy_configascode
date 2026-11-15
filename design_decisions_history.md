@@ -1,5 +1,34 @@
 # Design decisions history
 
+## Preserve verified ownership while refreshing workload configuration — 2026-11-15
+
+Both Linux creation jobs passed their existing native deployment and publication
+path with package updates disabled. Independent checks matched each actual guest
+to its API and canonical ownership, the complete persistent and live policy, and
+its exact new grant. All previously existing VM identities, allocations, disk
+paths and running states were preserved. These results complete guest creation,
+with application deployment and both functional demonstrations still required.
+
+The normal AutoDeploy import projects its selected AAP resource from the source
+controller. That copied resource omitted an already verified supplemental Windows
+interface, while canonical and target ownership agreed. A bounded variables-only
+source update restored only that existing nested ownership list. Independent
+before/after comparison preserved every other variable and host field; no native
+interface, VM, firewall permission or credential changed. Broader automatic
+cross-controller synchronization remains deferred.
+
+The existing normal AutoDeploy import then refreshed policy copies and preserved
+complete target AAP ownership, all template credential associations, saved runtime
+ciphertexts, webhook, Event Stream and disabled EDA state. Its credential
+description update matches the current declared capture. The subsequent normal
+AIOps import passed exact rendered guest, policy and runtime readback, preserving
+secrets, literal paths, credentials, webhook and disabled EDA state. Initial
+Zabbix deployment must explicitly disable delivery and testserver monitoring;
+the saved delivery default remains enabled and was not executed by the import.
+Existing executable behavior remains qualified by `f9aa841`;
+this documentation and task-record update changes no runtime code. Original
+failures remain evidence that this candidate is not an uninterrupted clean run.
+
 ## Accept Windows only after functional and original-baseline proof — 2026-11-15
 
 Root review accepted all twenty-nine actual stage results, both exact managed

@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.66
+
+Document both Linux guests' verified deployment, exact policy publication and
+preservation of existing VMs. Document the metadata-only repair that prevents a
+normal configuration refresh from dropping existing AAP interface ownership.
+Document normal controller configuration refresh and its preservation checks;
+keep AIOps application and demonstration acceptance separate. Refresh normal
+task mirrors and encrypted recovery records. Runtime code is unchanged.
+
 ## 0.63.65
 
 Document complete recovered Windows acceptance: twenty-nine stage successes,

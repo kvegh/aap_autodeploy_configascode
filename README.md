@@ -30,9 +30,10 @@ Windows and AIOps configuration imports passed with independent receiving-object
 runtime, own-Hub EE and TLS checks. The fixed selector also completed its normal
 preparation/import path and retained both successful child IDs. Earlier missing
 AutoDeploy credentials were supplied by their existing producer; original failed
-jobs remain part of this candidate's record. Both complete workload
-demonstrations remain unfinished. Windows launch preflight found a protected
-Chocolatey survey answer missing from captured node data; its encrypted fix is
+jobs remain part of this candidate's record. Windows demonstration acceptance
+is complete; AIOps application and functional acceptance remain unfinished.
+Windows launch preflight found a protected Chocolatey survey answer missing from
+captured node data; its encrypted fix is
 published, applied through the normal configuration importer and verified by
 actual node/launch readback. The Windows workflow then failed on AD activation
 and an incomplete private Git transfer. Focused stage recoveries created all five
@@ -77,9 +78,21 @@ stale policy records on the original controller while canonical configuration
 and the complete native firewall agree. A bounded variables-only update
 reconciled those existing records; fresh before/after comparison preserved every
 unrelated value and the unchanged safety guards passed. Automatic synchronization
-across controllers remains deferred. No firewall permission changed. The first
-Linux guest job is now in progress through its existing template; guest acceptance
-and the remaining demonstrations still require verified results.
+across controllers remains deferred. No firewall permission changed. Both Linux
+guests now pass deployment and independent identity, policy-publication and
+preservation checks, with deployment updates disabled. Their exact grants were
+added individually; all previously existing VMs remain running and preserved.
+
+Before refreshing configuration, another stale source record omitted the AAP
+VM's already verified Windows network interface. A reviewed metadata-only update
+restored that existing ownership in the source record, preserving every other
+value. The normal AutoDeploy configuration refresh then preserved target
+ownership, credential bindings, saved runtime ciphertexts, webhook and disabled
+EDA state while updating the copied policy. The normal AIOps configuration import
+also passed exact guest, policy and runtime readback. Both guest records are
+enabled with verified identities; secrets, literal values and EDA-off state are
+preserved. Zabbix, Claude/MCP, Agent and both AIOps demonstrations remain
+unfinished.
 
 The external WSUS readiness check now has protected optional worker/log metadata
 using its existing template and credentials (Windows implementation `8cb20fb`,
