@@ -1,8 +1,19 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Current owner direction — 2026-11-15
+
+The completed full reinstall is authoritative: no post-wipe disk/native absence
+checks are required. The earlier proof-gated retirement proposal is withdrawn.
+Remove superseded generations from active CaC, DNS and AAP; preserve the current
+v22 generation, production/unrelated resources and genuine allocation history.
+Keep the single counter unchanged during cleanup. Do not repeat the reset or
+run individual guest teardown. Continue normal host/platform/workload deployment
+after metadata cleanup and current-trust reconciliation. Historical checkpoints
+below retain their original context; this direction supersedes their proof gates.
+
 The resumed replacement checks passed. Current Hactar identity is refreshed;
-old ownership is retained pending the actual guarded absence proof and metadata
-retirement. The dedicated Drive app has a published manual authorization guide
+old active ownership has been retired through metadata-only cleanup after the
+full reinstall. The dedicated Drive app has a published manual authorization guide
 in the host project; it remains an operator prerequisite. See [restart state](RESTART_HERE.md).
 
 ## Maintenance completed; execution resumed — 2026-11-15
@@ -165,9 +176,8 @@ diagnostic limitations. Its append passed native cached Core 2.20.10 inverse,
 roundtrip and previous-history checks without changing CaC or runtime
 ciphertext. Current application and demonstration tasks are closed. Exact
 candidate-only retirement has a reviewed plan and a qualified controller-only
-path after the authorized whole-host reset. The existing decommission job
-requires actual provider, hardware, fresh-host and native absence proof before
-retiring old ownership and DNS. It preserves recoverable ownership through
+path after the authorized whole-host reset. The owner withdrew the proposed absence-proof gate and instead directed old
+generation cleanup in CaC, DNS and AAP after the full reinstall. It preserves recoverable ownership through
 partial Source cleanup and retains the replacement host's new trust. Individual
 guest deletion is not a prerequisite; see [the reset retirement order](docs/decommission.md#metadata-retirement-after-an-authorized-whole-host-reinstall).
 Live reset and retirement remain separate outcomes. The owner approved one shared

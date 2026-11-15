@@ -154,54 +154,31 @@ success reporting for review instead of overwriting the newer commit.
 
 ## Metadata retirement after an authorized whole-host reinstall
 
-When the next full attempt already authorizes a physical reinstall, individual
-guest deletion is unnecessary. The existing job can retire old metadata after
-the replacement is independently proved. This mode grants no authority to reset
-a host and never substitutes a claimed stopped-state flag for native cleanup.
+The owner treats the completed full reinstall as authoritative. Do not require
+post-wipe disk, guest, firewall or filesystem absence checks. The proposed native
+absence-proof prerequisite was explicitly withdrawn; its read-only job was
+canceled. Do not fabricate a proof or run ordinary per-guest teardown instead.
 
-Retain all old authoritative Windows, AAP and application ownership through the
-reset. Prepare the exact protected expectation from those owners and an
-authenticated backing-filesystem observation. Preserve verified off-host recovery
-inputs and histories first. Store the same expectation in Hactar's existing
-encrypted registry inputs and the AutoDeploy capture's bounded
-`aap_post_reset_retirement`, together with the reviewed Hactar template, project,
-inventory and revision. Runtime callers supply an actual verification job ID,
-not a proof dictionary.
+Retire every superseded project generation from active CaC, DNS and Source AAP,
+preserving the current generation, production and unrelated/shared resources.
+Use fresh protected captures and the existing pure metadata helpers to compose
+exact row, group-membership, policy-reference, token and saved-selector removal.
+Keep the current host alias's new trust and all unrelated variables unchanged.
+Remove obsolete Windows/application active profiles and their owned runtime
+files or embeddings. Already absent old entries require no extra operation.
 
-After the normal provider reinstall completes, update only current Hactar trust
-from provider-matched keys and authenticated fresh OS/hardware proof. Keep the
-old shared captures and AutoDeploy rebuild inventory pin until retirement.
-Run the existing standalone Hactar Connection preflight before conversion or
-new host policy. It must prove fresh Rocky, a different machine ID and all new
-provider-matched host keys on the same pinned nonproduction hardware. It checks
-all nine exact guest disks, saved/runtime/process guests, previous storage UUIDs,
-selected proxy/website/certificate paths and persistent/runtime permissions.
-Missing tools or incomplete native evidence fail the check.
+Use the existing authenticated Controller and DNS APIs for metadata changes.
+Compare exact selected values immediately before writes; record each intended
+operation privately and verify its API result. Preserve unselected zone records
+and API objects. This readback verifies metadata cleanup, not server disks.
+No old-guest SSH, shutdown, disk deletion or extra reset belongs to this path.
 
-Save the actual successful preflight job ID as the existing decommission job's
-integer `aap_post_reset_verification_job`, retaining its ordinary instance and
-confirmation inputs. Its early controller-only branch runs before any old-pin
-connection. It verifies that job's completion, reviewed bindings, full expectation
-and freshness, then reads current application and Source ownership again. Later
-target jobs invalidate the proof, except the current retirement or a completed
-identically bound metadata retry. A Source alias used to inspect the replacement
-must match the new proof and retains its new connection identity; other old
-aliases remain bound to the original ownership.
-
-The branch verifies exact selected DNS ownership and removes only those records.
-It keeps all nine canonical owners and previous policies recoverable until
-Source cleanup is acknowledged and read back, then publishes final metadata
-retirement atomically. A lost deletion response is reconciled from fresh state
-in a subsequent real job. Ordinary guest shutdown, permission application,
-disk deletion and certificate deletion never run on this branch.
-
-After that actual success, remove only the selected Windows/application private
-leaves through their existing protected publication procedures. Clear the active
-Source post-reset binding and Hactar retirement expectation, retaining their
-encrypted historical evidence. Reconcile the remaining current host pins and
-start the existing conversion, host setup and new generation deployment only
-after those steps succeed. Local/native tests qualify this path; live reset,
-retirement and full-run acceptance are separate outcomes.
+Remove the active Source post-reset binding and Hactar retirement expectation.
+Retain real consumed-number/audit history and historical acceptance evidence.
+Keep the sole allocation counter unchanged during cleanup. Reconcile current
+host trust in the remaining captures, then run the normal conversion, host
+setup and current-generation AAP/workload deployment. Metadata publication
+alone establishes none of those deployment outcomes.
 
 Check mode remains read-only. Failed partial source cleanup retains the selected
 row for the existing exact-confirmation retry; active deployment refuses its

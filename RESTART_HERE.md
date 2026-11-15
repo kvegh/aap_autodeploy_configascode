@@ -1,5 +1,16 @@
 # Restart here
 
+## Current owner direction — 2026-11-15
+
+The completed full reinstall is authoritative: no post-wipe disk/native absence
+checks are required. The earlier proof-gated retirement proposal is withdrawn.
+Remove superseded generations from active CaC, DNS and AAP; preserve the current
+v22 generation, production/unrelated resources and genuine allocation history.
+Keep the single counter unchanged during cleanup. Do not repeat the reset or
+run individual guest teardown. Continue normal host/platform/workload deployment
+after metadata cleanup and current-trust reconciliation. Historical checkpoints
+below retain their original context; this direction supersedes their proof gates.
+
 ## Verified replacement; retirement proof next — 2026-11-15
 
 The resumed provider check and authenticated fresh-OS read passed, including
@@ -7,7 +18,7 @@ all three provider-matched SSH keys, unchanged hardware, empty guest storage
 and required proof tools. Current Hactar trust is published and its Source host
 alias now matches; old shared/platform captures and the rebuild inventory pin
 remain intentionally unchanged. Bind the final Hactar revision and require
-the actual native absence proof before metadata retirement or conversion.
+the existing metadata cleanup before conversion; do not require native absence proof.
 The new generation remains unallocated and full-run acceptance is outstanding.
 
 ## Maintenance completed; execution resumed — 2026-11-15

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.77
+
+- Record the owner's explicit full-reinstall cleanup decision: retire old active
+  generation metadata in CaC, DNS and AAP without post-wipe absence checks.
+- Preserve current generation, unrelated resources and the shared counter.
+  The earlier proof-gated proposal is withdrawn; no runtime code changes.
+
 ## 0.63.76
 
 - Record verified replacement readiness and the limited current-host trust

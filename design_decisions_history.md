@@ -5763,3 +5763,24 @@ content-arrow implementation and documentation. Focused checks confirm the
 first-step link, local image path, display width, original PNG byte equality
 and whitespace. Version 0.63.35 documents this implementation identifier;
 publication and deployed verification remain separate.
+
+## 2026-11-15 — Retire old active generations without post-wipe checks
+
+The owner explicitly treats the completed full reinstall as authoritative and
+withdraws the proposed disk/native absence-proof prerequisite. Host implementation
+`933c3a03193fa0446a97bee4b16d72f258008cf3` removes its active expectation.
+The read-only proof job was canceled at the owner's direction; it is neither a
+failed deployment stage nor evidence of successful verification. No fake proof,
+individual guest teardown or additional reset was used.
+
+Exact protected metadata cleanup removed superseded platform and application
+entries, old prepared Windows profiles and owned runtime files. Controller API
+readback verified three selected inventory removals and seven metadata patches,
+retaining other hosts and current trust. DNS readback verified removal of three
+old versioned record sets while preserving all fifteen unrelated records. The
+sole allocation counter remained unchanged. Native Core 2.20 checked the
+encrypted metadata plan offline; this performed no server or storage checks.
+
+The linked manual dedicated Drive OAuth application/grant guide remains
+published in the host project. Current host trust reconciliation and the full
+platform/workload deployment remain subsequent stages.
