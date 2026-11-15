@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.63.64
+
+Document the verified AIOps website recovery after its overall deadline stopped
+DNS readiness. The coordinated public DNS allowance and private template timeout
+passed focused checks, normal CaC import and actual website/strict HTTPS
+acceptance. Preserve the original failed run, other runtime guards and the
+Windows VM preservation boundary. Document managed Server 2022 convergence and
+the remaining Server 2025/application checks. Refresh normal task mirrors and encrypted
+recovery records; AutoDeploy runtime code is unchanged.
+
 ## 0.63.63
 
 Document the existing independent AIOps website setup and its verified scope.

@@ -39,7 +39,7 @@ and an incomplete private Git transfer. Focused stage recoveries created all fiv
 guests, and server basics passed on all four regular guests. AD preparation then
 completed its measured update and reboot passes. The qualified caller update is
 published and a normal activation stage adopted it and completed the protected
-private Git read. The twenty-five-stage checkpoint includes both repository
+private Git read. The twenty-six-stage checkpoint includes both repository
 synchronization/export/import chains and complete AD functional verification.
 Four Chocolatey packages have matching destination SHA-256 readbacks. AD
 preparation installed nine applicable Server updates, with none remaining and
@@ -49,15 +49,22 @@ and all thirty-six localhost mock jobs, with no cross-region grants. External
 WSUS synchronization downloaded every selected payload, and native internal
 metadata import completed successfully. The April 2026 update policy passed with
 four updates offered, 133 blocked, no automatic approval rules and no missing
-content. Both managed-server patch jobs are under way; application tests follow
-the existing graph. Full Windows and AIOps demonstration acceptance remains
+content. Managed Server 2022 passed its exact baseline, required KB and final
+zero-update/no-reboot checks. Server 2025 patching continues; application tests
+follow the existing graph. Full Windows and AIOps demonstration acceptance remains
 unfinished.
 Original failures remain recorded.
 
-The existing AIOps website setup now runs independently alongside the Windows
-monthly update preparation. Its reviewed path manages only its version's DNS,
-website files, dedicated nginx configuration and certificate. Monitoring,
-fail2ban management and button arming stay off. AIOps VM creation still waits
+The existing AIOps website setup passed independently alongside Windows
+patching, including certificate, nginx and strict HTTPS checks of both published
+pages. Its first attempt hit the overall five-minute job deadline during DNS
+readiness. The focused fix matches the monitoring frontend's existing 65-retry
+DNS allowance and raises only Enable Demo Website's desired deadline to 1800
+seconds. Normal CaC import preserved all other bindings, runtime ciphertext and
+the webhook before the successful retry. The original failure remains recorded;
+Agent and Claude runtime guards are unchanged. This path manages only its
+version's DNS, website files, dedicated nginx configuration and certificate.
+Monitoring, fail2ban management and button arming stay off. AIOps VM creation waits
 for Windows functional and preservation checks: adding guests earlier would
 change the exact domain set required by the immutable pre-creation baseline.
 The later creators must reread current isolation policy and available resources.

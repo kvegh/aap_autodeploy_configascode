@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Verify the focused website budget repair through normal automation — 2026-11-15
+
+Public AIOps implementation `9adfd92` (documented by `3f5a2c2`, deployment
+version 1.6.14) changes only website DNS retries from thirty to sixty-five,
+matching the existing monitoring allowance. The private companion changes only
+Enable Demo Website's overall deadline from 300 to 1800 seconds. The first
+attempt reached its hard Controller deadline while DNS readiness still retried.
+Authoritative SOA and cached-negative authority data support the advertised
+600-second negative allowance; they do not establish every historical retry's
+exact lifetime. Resolver configuration and readiness conditions are unchanged.
+
+Twenty-one focused public tests and syntax passed on Core 2.20.10. Private
+typed inverse, literal and encrypted-runtime preservation passed locally and
+on that native runtime. Normal configuration import preserved all eleven
+template IDs/configurations except the intended timeout, including credentials,
+runtime ciphertext, webhook and disabled activations. The normal website retry
+then passed certificate, nginx and HTTPS verification; separate strict HTTPS
+reads returned the exact published content for both pages.
+
+Close only the scoped budget repair. The original failed run is preserved, and
+full AIOps and Windows functional acceptance remain separate. This task-record
+checkpoint changes no AutoDeploy executable code or architecture and does not
+permit additional VMs before Windows baseline preservation checks finish.
+
 ## Run independent website setup while preserving the VM baseline — 2026-11-15
 
 Read-only inspection verified that the existing AIOps website template changes
