@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.64.1
+
+- Document the published Elastic standalone registration implementation and
+  refresh its checked task recovery overview; no runtime or active-pin change.
+
 ## 0.64.0
 
 - Accept the exact `Ansible-Elastic-integrated-demo` standalone CaC project ID,

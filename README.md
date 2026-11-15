@@ -2011,3 +2011,7 @@ workspace, and applies it to authenticated requests and imported configuration
 modules only for that job. TLS verification and hostname checks stay enabled;
 the private workspace is removed on success or failure. This does not change the
 EE image, system trust, credential type or receiver certificate.
+
+Elastic standalone registration implementation:
+`792c7621c1b582963910caa30e55d6792a897473` (0.64.0), published on its isolated
+feature branch. It does not alter active importer pins or establish live import.

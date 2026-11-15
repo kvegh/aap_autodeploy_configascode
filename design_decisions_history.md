@@ -5944,3 +5944,13 @@ passed twelve tests with one optional protected fixture skipped (9.876 seconds).
 The established scoped public task export and paired whole-file encrypted
 recovery snapshot passed their exact consistency checks. No active deployment
 pin, native Controller configuration or full-import acceptance is implied.
+
+## 2026-11-15 — Document the published standalone registration implementation
+
+Implementation 792c7621c1b582963910caa30e55d6792a897473 (0.64.0) is published
+on its isolated Elastic registration feature branch with exact SSH readback.
+The source preparation task is closed; the refreshed public overview and paired
+whole-file encrypted recovery export include that outcome and passed the exact
+consistency checks. Version 0.64.1 documents the implementation and recovery
+state only. No shared-main merge, active importer pin change, live Elastic import
+or repeated restoration is claimed.
