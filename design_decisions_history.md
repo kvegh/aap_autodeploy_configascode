@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Reconcile missing selected AAP interface metadata before remote setup — 2026-11-15
+
+Implementation `15ebd84cd1bbfb50db90dcff7cd5557541103c23` repairs a stale
+Source inventory copy after Windows setup publishes a verified supplemental
+interface from the receiving AAP. The selected-project launcher uses the
+existing authenticated publisher to reconcile only an absent canonical
+`vm_resource.supplemental_interfaces` field, then refreshes that host's in-memory
+ownership before the unchanged strict destination guard. Primary VM identity,
+placement, keys and generation must agree. Present conflicting values refuse.
+Self-target setup and legacy entries without VM ownership keep their existing
+selection path; generic registry reads remain read-only.
+
+The repair changes no native interface, network permission, allocation, Git
+configuration or credential. An immediate readback verifies the exact metadata
+result; a quiescent selected owner is required and no atomic compare-and-swap
+guarantee is claimed. Native Core 2.20.10 qualification passed 96 focused and
+existing regressions before a caller compatibility adjustment; 31 affected
+tests passed after that adjustment. An unrelated allocation fixture failure
+also occurs on the unchanged baseline, so no full-suite pass is claimed.
+
+For the current deployment, an exact metadata reconciliation followed by normal
+prerequisite preparation and configuration import passed before this code was
+published. That does not prove the new automatic repair branch in a live run.
+Windows functional acceptance and graceful shutdown are established; AIOps
+guest/service deployment and both demonstrations remain separate acceptance
+gates. The original failed jobs remain part of this unclean deployment's history.
+
 ## Preserve the owner-requested maintenance checkpoint — 2026-11-15
 
 The owner halted operations for a maintenance break after the authorized provider

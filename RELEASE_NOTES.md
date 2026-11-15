@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.64.5
+
+- Document implementation `15ebd84` and the missing-interface repair's scope,
+  self-target compatibility, validation and outstanding live acceptance.
+
 ## 0.64.4
 
 - Reconcile only missing canonical supplemental-interface metadata on the
