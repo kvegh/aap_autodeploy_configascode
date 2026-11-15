@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-255 tasks: 35 outstanding; 220 closed.
+257 tasks: 36 outstanding; 221 closed.
 
 ## Outstanding tasks
 
@@ -28,6 +28,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.7.6 | Pass the v22 AIOps website demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.7 | Pass the v22 AIOps agent repair demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.6 |
 | bead-wd-3ix.2.7.8 | Enable temporary visible deployment logging until clean acceptance | in_progress | P1 | task | bead-wd-3ix.2.7 |
+| bead-wd-3ix.2.7.9 | Diagnose v22 receiving AAP API 503 and timeout incident | in_progress | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.8 | Add cold AAP snapshots at infrastructure, installer and base checkpoints | in_progress | P1 | feature | bead-wd-3ix.2 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
@@ -117,6 +118,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.7.3 | Deploy and configure AAP v22 | closed | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.2 |
 | bead-wd-3ix.2.7.4.1 | Diagnose and fix the first v22 Windows template import failure | closed | P1 | bug | bead-wd-3ix.2.7.4 |
 | bead-wd-3ix.2.7.8.1 | Enable visible logging for existing v22 Linux creator | closed | P1 | task | bead-wd-3ix.2.7.8 |
+| bead-wd-3ix.2.7.8.2 | Honor explicit visible logging in AIOps preparation guard | closed | P1 | bug | bead-wd-3ix.2.7.8 |
 | bead-wd-3wpp | Document the verified dedicated Google Drive rclone setup | closed | P1 | task | — |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.64.2
+
+- Record successful AD access verification and repository setup, confirmed
+  receiving Hub/proxy interruption and the still-incomplete Windows stages.
+- Refresh protected Beads task records after publishing future snapshot
+  playbooks and CaC; preserve all original failures and live-acceptance limits.
+
 ## 0.64.1
 
 - Document implementation `6f70405debad`, native Core 2.20.10 tests, current

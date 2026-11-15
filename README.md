@@ -61,13 +61,21 @@ verified on the receiver with the default execution environment unchanged.
 The focused Windows configuration retry passed. Independent readback verified
 all 35 templates, 29 workflow nodes and 29 links, exact runtime/credential/image
 bindings and eight collection pins. Launch metadata has no missing templates,
-rejected node prompts or required inputs. One normal Windows workflow is now
-running; guest deployment is not yet accepted. Both failed VM-creation stages
-passed focused retries, so all five Windows VMs now exist. Server basics and
-evaluation activation passed with zero failed events. The original AD update
-also passed without retry, and its workflow continued automatically to directory
-configuration. Repository preparation also passed; the next existing branches
-configure WSUS and Chocolatey.
+rejected node prompts or required inputs. The original Windows workflow is terminal with ten successful nodes and its two
+earlier VM-creation failures retained. Focused creation retries passed, so all
+five Windows VMs exist. Server basics, evaluation activation, repository
+preparation, WSUS setup and Chocolatey/Nexus setup passed with zero failed
+events. The original AD branch completed updates, directory/LDAPS/Gateway
+configuration and final access verification successfully without retry.
+
+External Chocolatey synchronization passed and produced four verified package
+artifacts. Its export did not start because an own-Hub collection download in
+project synchronization returned HTTP 502. A contemporaneous Controller
+health-check timeout and proxy HTTP 503 are confirmed; the underlying cause is
+not established. Access recovered without restart or resource changes. A
+subsequent read-only WSUS inspection passed, and a focused export retry preserves
+the exact upstream package artifacts. WSUS synchronization is still processing
+metadata; downstream replication, patching and application tests are outstanding.
 The original failures and diagnostic retry remain recorded. AIOps and both AIOps
 demo tests remain outstanding. The owner's post-wipe absence-check withdrawal
 remains in force.
