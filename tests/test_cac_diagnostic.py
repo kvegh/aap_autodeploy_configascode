@@ -30,12 +30,25 @@ class EncryptedOrganizationDiagnosticTests(unittest.TestCase):
     def test_environment_key_cannot_replace_the_required_cac_key(self):
         self.run_case('missing-cac')
 
-    def run_case(self, behavior):
+    def test_project_import_preserves_original_error_without_exposing_credentials(self):
+        self.run_case('failure', project=True)
+        self.run_case('cleanup', project=True)
+
+    def test_project_import_diagnostic_still_requires_the_labelled_cac_key(self):
+        self.run_case('missing-cac', project=True)
+
+    def run_case(self, behavior, project=False):
         actual = yaml.safe_load((ROOT / '04-aap-config.yml').read_text())[0]
         base = next(task['block'] for task in actual['pre_tasks']
                     if task.get('name') == 'Retrieve and load the encrypted shared configuration')
         block = deepcopy(next(task for task in base if task.get('name') ==
                               'Create base organizations before their PAH credentials'))
+        if project:
+            importer = yaml.safe_load((ROOT / 'deploy-cac-project.yml').read_text())[0]
+            project_block = next(task for task in importer['pre_tasks'] if task.get('name') ==
+                                 "Authenticate, load and import only this project's reviewed definitions")
+            block['rescue'] = deepcopy(project_block['rescue'])
+        artifact = 'aap_project_import_failure_vault' if project else 'aap_base_organization_failure_vault'
         role = block['block'][0]
         self.assertEqual(role['ansible.builtin.include_role']['name'], 'infra.aap_configuration.gateway_organizations')
         self.assertEqual(role['vars'], {'aap_organizations': '{{ aap_organizations_base }}',
@@ -44,7 +57,9 @@ class EncryptedOrganizationDiagnosticTests(unittest.TestCase):
             root = Path(directory)
             secret = VaultSecret(PASSWORD.encode())
             vault = VaultLib([('cac', secret)])
-            capture = root / 'workspace/repository/cac/base_CaC_vault.yml'
+            relative = ('vaults/cac/disconnected-windows-patching-cac-vault.yml' if project
+                        else 'cac/base_CaC_vault.yml')
+            capture = root / 'workspace/repository' / relative
             capture.parent.mkdir(parents=True)
             capture.write_bytes(vault.encrypt(b'synthetic: true\n', secret=secret, vault_id='cac'))
             password_file = root / 'password'
@@ -93,6 +108,8 @@ class CallbackModule(CallbackBase):
             play = root / 'play.yml'
             play.write_text(yaml.safe_dump([{'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
                 'vars': {'cac_workspace': {'path': str(root / 'workspace')},
+                         'cac_project_contract': {'project_id': 'disconnected-windows-patching',
+                                                  'configuration_file': relative},
                          'synthetic_failure_canaries': list(CANARIES),
                          'aap_organizations_base': [{'name': 'Synthetic'}]},
                 'tasks': [block, {'name': 'Prove successful role completion continues normally',
@@ -112,13 +129,15 @@ class CallbackModule(CallbackBase):
             custom = json.loads(receipt.read_text())
             values = custom.get('_run', {})
             if behavior in ('success', 'missing-cac'):
-                self.assertNotIn('aap_base_organization_failure_vault', values)
+                self.assertNotIn(artifact, values)
                 if behavior == 'missing-cac':
                     self.assertNotIn('Stop base configuration after its protected organization failure', console)
                 return
-            sealed = values['aap_base_organization_failure_vault']
+            sealed = values[artifact]
             self.assertTrue(sealed.startswith('$ANSIBLE_VAULT;1.2;AES256;cac\n'))
             decoded = json.loads(vault.decrypt(sealed))
+            self.assertEqual(decoded['stage'], 'project_configuration_import' if project
+                             else 'initial_base_organizations')
             self.assertEqual(decoded['async_status']['msg'], CANARIES[0])
             self.assertEqual(decoded['original_failure']['stderr'].strip(), CANARIES[1] if behavior == 'cleanup' else CANARIES[0])
             self.assertEqual(decoded['controller_launches'], [{'ansible_job_id': 'j123.456',

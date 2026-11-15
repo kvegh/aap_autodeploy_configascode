@@ -14,18 +14,31 @@ checks, and normal managed safeguards passed. AAP VM setup completed successfull
 with zero failed events; its route and primary guest identity match the published
 registry. The remaining platform-stage selectors now target that verified guest.
 
-Infrastructure configuration completed successfully, including DNS propagation,
-certificate issuance and the TLS proxy. The first installer submission stopped
-before playbook execution because a collection download failed its integrity
-check during project synchronization. A fresh read of the configured artifact
-matches its advertised size and SHA-256. One normal installer retry keeps the
-same parameters and integrity checks. The original failure remains recorded;
+Infrastructure and AAP installation completed successfully, including strict
+local-CA and public Gateway checks. Base configuration, the receiver's immutable
+own-Hub execution environment and final guest-access verification passed. A
+normal localhost Demo Job then ran successfully using that exact default image.
+
+The first installer submission remains recorded as a project-sync collection
+integrity failure before playbook execution. One unchanged retry completed;
 a failure-free end-to-end run has not been achieved.
 
-Base configuration, final access verification, Windows, AIOps and both AIOps
-demo tests remain outstanding. An encrypted Windows candidate passed native
-runtime schema checks but is unpublished pending actual AAP and network
-readiness. The owner's post-wipe absence-check withdrawal remains in force.
+The encrypted Windows profile is published after actual receiver/runtime, pinned
+network/route and native Core 2.20 rendering checks. Normal Windows-only
+prerequisite preparation passed, but CaC import failed during job-template
+creation before any workload launch. The import now preserves that protected
+error through the existing encrypted diagnostic mechanism for a focused rerun.
+Windows deployment, AIOps and both AIOps demo tests remain outstanding. The owner's post-wipe
+absence-check withdrawal remains in force.
+
+## Protected project import failures
+
+A failed project import preserves the original async/module error as the native
+job artifact `aap_project_import_failure_vault`, encrypted with its existing
+labelled CaC Vault credential. Normal logs stay protected, invocation arguments
+are excluded, and cleanup cannot silently discard the original failure. Inspect
+the retained diagnostic before rerunning the affected normal importer; no
+workload execution or automatic retry is added.
 
 ## Current owner direction — 2026-11-15
 

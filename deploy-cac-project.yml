@@ -196,6 +196,25 @@
             controller_templates: "{{ cac_import_resources.controller_templates }}"
           when: cac_project_contract.project_id == 'aiops-selfhealing-demo'
           no_log: true
+      rescue:
+        - name: Encrypt the original protected project import failure
+          aap_cac_diagnostic:
+            stage: project_configuration_import
+          register: cac_project_import_diagnostic
+          no_log: true
+
+        - name: Preserve only encrypted project import diagnostics in the native job artifact
+          ansible.builtin.set_stats:
+            data:
+              aap_project_import_failure_vault: "{{ cac_project_import_diagnostic.encrypted_diagnostic }}"
+            per_host: false
+            aggregate: false
+          no_log: true
+
+        - name: Stop after the protected project import failure
+          ansible.builtin.fail:
+            msg: Project import failed; inspect this job's encrypted diagnostic before retrying. No workload was launched.
+
       always:
         - name: Remove the private checkout without revoking the supplied API credential
           ansible.builtin.include_tasks: tasks/private-config-cleanup.yml

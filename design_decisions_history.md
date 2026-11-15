@@ -5852,3 +5852,19 @@ An encrypted Windows candidate derived from the final accepted predecessor
 passed native Core 2.20.10 schema and management checks. It remains unpublished
 until actual AAP base/access, receiving EE and network readiness are verified.
 This checkpoint changes documentation and task recovery records only.
+
+## 2026-11-15 — Accept the configured receiver before Windows import
+
+The native installer retry completed with return code zero, followed by strict
+local-CA and public Controller checks. Base configuration, independent default-EE
+build/pull/runtime verification and final guest-access checks passed. The normal
+localhost Demo Job successfully used the exact immutable own-Hub default image.
+The first pre-installer dependency integrity failure remains recorded; this
+functional receiver acceptance does not establish failure-free acceptance.
+
+The encrypted Windows profile was published separately after current pinned
+network/route checks and native Core 2.20 rendering of its thirty-five templates
+and twenty-nine-node workflow. Only Windows was selected for normal prerequisite
+preparation and CaC import. Prerequisites passed; the import stopped during
+job-template creation before workload execution. Actual guest deployment and both AIOps demo outcomes
+remain separate. This checkpoint changes documentation and task records only.

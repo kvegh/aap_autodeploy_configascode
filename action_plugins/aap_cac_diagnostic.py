@@ -1,6 +1,7 @@
 """Seal bounded configuration failures with their existing labelled CaC key."""
 
 import json
+import re
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -77,7 +78,8 @@ class ActionModule(ActionBase):
             if set(self._task.args) - {'stage'}:
                 raise ValueError()
             stage = self._task.args.get('stage', 'initial_base_organizations')
-            if stage not in ('initial_base_organizations', 'selected_configuration_job'):
+            if stage not in ('initial_base_organizations', 'selected_configuration_job',
+                             'project_configuration_import'):
                 raise ValueError()
             context = task_vars or {}
             # Select only the existing explicitly labelled CaC credential. Never
@@ -86,7 +88,19 @@ class ActionModule(ActionBase):
             if len(secrets) != 1:
                 raise ValueError()
             vault = VaultLib([('cac', secrets[0])])
-            capture = Path(context['cac_workspace']['path']) / 'repository/cac/base_CaC_vault.yml'
+            repository = Path(context['cac_workspace']['path']) / 'repository'
+            relative = 'cac/base_CaC_vault.yml'
+            if stage == 'project_configuration_import':
+                contract = context.get('cac_project_contract', {})
+                project = contract.get('project_id') if isinstance(contract, Mapping) else None
+                if not isinstance(project, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,127}', project):
+                    raise ValueError()
+                relative = 'vaults/cac/' + project + '-cac-vault.yml'
+                if contract.get('configuration_file') != relative:
+                    raise ValueError()
+            capture = repository / relative
+            if capture.is_symlink() or not capture.resolve().is_relative_to(repository.resolve()):
+                raise ValueError()
             _, label, secret = vault.decrypt_and_get_vault_id(capture.read_bytes())
             if label != 'cac':
                 raise ValueError()

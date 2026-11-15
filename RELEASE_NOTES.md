@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.63.83
+
+- Preserve protected generic project-import failures in the existing encrypted
+  native diagnostic artifact instead of losing their original module error.
+- Retain labelled CaC-key validation, bounded results and invocation redaction;
+  normal logs remain protected and no workload or automatic retry is added.
+- Verify original/cleanup failures and secret canaries on actual Core 2.20.10;
+  retain the existing selector observer behavior.
+- Document functional AAP acceptance and the Windows import failure separately
+  from guest deployment and the unachieved failure-free goal.
+
 ## 0.63.82
 
 - Document successful infrastructure, certificate and TLS proxy configuration.
