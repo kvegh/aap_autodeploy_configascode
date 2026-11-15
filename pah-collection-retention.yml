@@ -36,7 +36,7 @@
             requirements_audit: "{{ pah_collection_requirements_audit | default({}) }}"
             expected_plan: "{{ pah_retention_approved_plan | default({}) }}"
           register: pah_retention_result
-          no_log: true
+          no_log: false
 
         - name: Require a local temporary path when saving a preview for review
           ansible.builtin.assert:
@@ -57,7 +57,7 @@
           when:
             - pah_retention_operation == 'plan'
             - pah_retention_plan_file is defined
-          no_log: true
+          no_log: false
           diff: false
 
         - name: Report the result without exposing collection source details

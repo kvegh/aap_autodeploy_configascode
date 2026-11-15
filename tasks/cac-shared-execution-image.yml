@@ -10,7 +10,7 @@
       - aap_token | length > 0
       - aap_validate_certs | default(true) | bool
     fail_msg: Resolve the shared EE only through the selected receiver's authenticated TLS API.
-  no_log: true
+  no_log: false
 
 - name: Resolve the exact receiver-owned shared native execution environment without changing it
   ansible.controller.execution_environment:
@@ -20,7 +20,7 @@
     controller_oauthtoken: "{{ aap_token }}"
     validate_certs: true
   register: cac_shared_native_ee
-  no_log: true
+  no_log: false
 
 - name: Read back the resolved native EE from this receiver
   ansible.builtin.uri:
@@ -31,7 +31,7 @@
     follow_redirects: none
     status_code: 200
   register: cac_shared_native_ee_definition
-  no_log: true
+  no_log: false
 
 - name: Require an immutable local-Hub image and an existing native credential relationship
   ansible.builtin.assert:
@@ -44,7 +44,7 @@
       - cac_shared_native_ee_definition.json.credential is integer
       - cac_shared_native_ee_definition.json.credential > 0
     fail_msg: Prepare this receiver's native shared EE with its own immutable Hub image before importing reviewed projects.
-  no_log: true
+  no_log: false
 
 - name: Read only the shared EE registry credential's native public binding
   ansible.builtin.uri:
@@ -55,7 +55,7 @@
     follow_redirects: none
     status_code: 200
   register: cac_shared_native_registry
-  no_log: true
+  no_log: false
 
 - name: Require the dedicated receiver-local registry credential with TLS verification
   ansible.builtin.assert:
@@ -65,7 +65,7 @@
       - cac_shared_native_registry.json.inputs.host in [aap_hostname, aap_hostname | urlsplit('netloc')]
       - cac_shared_native_registry.json.inputs.verify_ssl is sameas true
     fail_msg: The shared EE must use the dedicated native registry credential for this receiver's own Hub with TLS verification.
-  no_log: true
+  no_log: false
 
 - name: Require the Orchestrator native EE to agree with its independently verified build
   ansible.builtin.assert:
@@ -74,9 +74,9 @@
       - aap_ee_build_result.image == cac_shared_native_ee_definition.json.image
     fail_msg: The receiver's native shared EE differs from the verified Orchestrator build; complete its normal base EE configuration first.
   when: (cac_project_contract | default({})).project_id | default('') == 'automation-orchestrator'
-  no_log: true
+  no_log: false
 
 - name: Bind only explicit reviewed image templates to this receiver's native immutable image
   ansible.builtin.set_fact:
     aap_shared_execution_image: "{{ cac_shared_native_ee_definition.json.image }}"
-  no_log: true
+  no_log: false

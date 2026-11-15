@@ -3,7 +3,7 @@
   ansible.builtin.slurp:
     src: "{{ aap_installer_ca_path }}"
   register: aap_installed_upstream_ca
-  no_log: true
+  no_log: false
 
 - name: Publish the installed authority on this instance's own hypervisor
   delegate_to: "{{ aap_instance_route.hypervisor.address }}"
@@ -27,7 +27,7 @@
       register: aap_proxy_hypervisor_identity
       changed_when: false
       failed_when: aap_proxy_hypervisor_identity.stdout | trim != aap_instance_route.hypervisor.machine_id
-      no_log: "{{ not (aap_proxy_identity_diagnostics | default(false) | bool) }}"
+      no_log: false
 
     - name: Create a directory for instance-specific public upstream authorities
       ansible.builtin.file:
@@ -44,7 +44,7 @@
         owner: root
         group: root
         mode: '0644'
-      no_log: true
+      no_log: false
       diff: false
 
     - name: Verify upstream TLS and hostname using only the installed authority
@@ -59,7 +59,7 @@
       register: aap_upstream_tls_check
       changed_when: false
       failed_when: false
-      no_log: true
+      no_log: false
 
     - name: Refuse proxy publication when the upstream certificate is not trusted
       ansible.builtin.assert:
@@ -82,7 +82,7 @@
             aap_upstream_ready: true
             aap_upstream_hostname: "{{ aap_hostname | ansible.builtin.urlsplit('hostname') }}"
           register: aap_verified_proxy
-          no_log: true
+          no_log: false
           diff: false
 
         - name: Validate the complete nginx configuration before reload
@@ -107,7 +107,7 @@
             group: root
             mode: '0644'
           when: aap_verified_proxy.backup_file is defined
-          no_log: true
+          no_log: false
           diff: false
 
         - name: Check the restored configuration without ignoring failures

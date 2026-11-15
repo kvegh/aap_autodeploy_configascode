@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.62.4
+
+Backport the owner's temporary visible deployment logging policy to the
+accepted Linux guest release dependency. All nonlogging YAML values, native
+credential-argument redaction and existing identity/ownership/security checks
+are preserved. Raw logs remain private; no live operation is performed.
+The existing failure-output fixture now expects the requested visible diagnostic
+while retaining its native state, rollback and cleanup assertions.
+
 ## 0.62.3
 
 Document native lock-wait implementation `2c3f568`, its observed parallel Windows

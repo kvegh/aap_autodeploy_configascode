@@ -6,7 +6,7 @@
       - aap_hypervisor_pin | aap_hypervisor_pin is mapping
       - ansible_host == aap_hypervisor_pin.address
     fail_msg: Use a single-host rebuild inventory with independently verified hypervisor pins.
-  no_log: true
+  no_log: false
 
 - name: Allocate the job-local hypervisor trust file
   ansible.builtin.tempfile:
@@ -28,7 +28,7 @@
     mode: '0600'
   delegate_to: localhost
   become: false
-  no_log: true
+  no_log: false
   check_mode: false
 
 - name: Enforce the pinned managed connection before any remote action
@@ -42,7 +42,7 @@
     ansible_ssh_common_args: >-
       -o StrictHostKeyChecking=yes -o UserKnownHostsFile={{ aap_hypervisor_trust.path | quote }}
       {{ ansible_ssh_common_args | default('') }}
-  no_log: true
+  no_log: false
 
 - name: Verify the actual hypervisor identity before any reservation or disk write
   ansible.builtin.command:
@@ -51,4 +51,4 @@
   changed_when: false
   check_mode: false
   failed_when: aap_live_hypervisor_identity.stdout | trim != aap_hypervisor_pin.machine_id
-  no_log: true
+  no_log: false

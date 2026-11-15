@@ -2,7 +2,7 @@
 - name: Require an explicit decommission permission phase
   ansible.builtin.assert:
     that: aap_decommission_guest_access_phase in ['preflight', 'apply']
-  no_log: true
+  no_log: false
 
 - name: Inspect and plan selected guest permission retirement
   when: aap_decommission_guest_access_phase == 'preflight'
@@ -11,7 +11,7 @@
       ansible.builtin.set_fact:
         aap_isolation_hypervisor: '{{ aap_hypervisor_pin }}'
         aap_isolation_trust_file: '{{ aap_hypervisor_trust.path }}'
-      no_log: true
+      no_log: false
 
     - name: Prepare the pinned native source and lock for ownership inspection
       ansible.builtin.include_tasks: aap-isolation-prepare.yml
@@ -26,14 +26,14 @@
       ansible.builtin.set_fact:
         aap_retirement: >-
           {{ aap_instance_route | aap_decommission_resources(vault_domain, vm_dir, aap_instance_resources) }}
-      no_log: true
+      no_log: false
 
     - name: Check every related guest and orphaned disk before any deletion
       ansible.builtin.include_tasks: decommission-related-check.yml
       loop: '{{ aap_retirement.domains[1:] }}'
       loop_control:
         loop_var: aap_related_guest
-      no_log: true
+      no_log: false
 
     - name: Inspect all selected domain identities without changing them
       ansible.builtin.command:
@@ -43,14 +43,14 @@
       register: aap_decommission_guest_xml_capture
       changed_when: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Initialize selected domain and network readback
       ansible.builtin.set_fact:
         aap_decommission_guest_xmls: {}
         aap_decommission_guest_network_xmls: {}
         aap_decommission_persistent_guest_xmls: {}
-      no_log: true
+      no_log: false
 
     - name: Inspect selected persistent domain identities without changing them
       ansible.builtin.command:
@@ -60,7 +60,7 @@
       register: aap_decommission_persistent_guest_capture
       changed_when: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Retain exact persistent selected domain readback
       ansible.builtin.set_fact:
@@ -68,20 +68,20 @@
           {{ aap_decommission_persistent_guest_xmls | combine({item.item.name: item.stdout}) }}
       loop: '{{ aap_decommission_persistent_guest_capture.results }}'
       when: not item.skipped | default(false)
-      no_log: true
+      no_log: false
 
     - name: Retain exact selected domain readback in protected job variables
       ansible.builtin.set_fact:
         aap_decommission_guest_xmls: '{{ aap_decommission_guest_xmls | combine({item.item.name: item.stdout}) }}'
       loop: '{{ aap_decommission_guest_xml_capture.results }}'
       when: not item.skipped | default(false)
-      no_log: true
+      no_log: false
 
     - name: Resolve only the selected guests recorded network names
       ansible.builtin.set_fact:
         aap_decommission_guest_network_names: >-
           {{ aap_decommission_guest_xmls | aap_decommission_guest_networks(aap_instance_resources) }}
-      no_log: true
+      no_log: false
 
     - name: Inspect those exact active and persistent libvirt networks
       ansible.builtin.include_tasks: decommission-network-readback.yml
@@ -99,7 +99,7 @@
                aap_decommission_guest_xmls, aap_decommission_guest_network_xmls,
                none,
                aap_related_resource_proof | default(none), aap_decommission_persistent_guest_xmls) }}
-      no_log: true
+      no_log: false
 
     - name: Plan removal of only exact saved DHCP and DNS host reservations
       ansible.builtin.set_fact:
@@ -107,7 +107,7 @@
           {{ aap_decommission_guest_network_xmls |
              aap_decommission_reservation_plan(aap_instance_route, aap_instance_resources,
                aap_decommission_guest_xmls, aap_decommission_guest_access_plan) }}
-      no_log: true
+      no_log: false
 
     - name: Expose the protected policy handoff for canonical source retirement
       ansible.builtin.set_fact:
@@ -115,7 +115,7 @@
           previous_policy: '{{ aap_decommission_guest_access_plan.previous_policy }}'
           desired_policy: '{{ aap_decommission_guest_access_plan.desired_policy }}'
           identities: '{{ aap_decommission_guest_access_plan.identities }}'
-      no_log: true
+      no_log: false
 
     - name: Verify the complete native policy against the exact CaC retirement candidates
       ansible.builtin.include_tasks: aap-isolation-observe.yml
@@ -132,7 +132,7 @@
       loop: [is-active, is-enabled]
       changed_when: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Check only the exact owned runtime rich rules before shutdown
       ansible.builtin.command:
@@ -142,7 +142,7 @@
       failed_when: aap_decommission_runtime_rule_preflight.rc not in [0, 1]
       changed_when: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Check only the exact owned permanent rich rules before shutdown
       ansible.builtin.command:
@@ -152,7 +152,7 @@
       failed_when: aap_decommission_permanent_rule_preflight.rc not in [0, 1]
       changed_when: false
       check_mode: false
-      no_log: true
+      no_log: false
 
   always:
     - name: Release only this preflight's temporary lock and checkout
@@ -168,7 +168,7 @@
           - aap_decommission_isolation_retirement is mapping
           - aap_decommission_guest_access_plan is mapping
           - aap_decommission_selected_guests_stopped | default(false) | bool
-      no_log: true
+      no_log: false
 
     - name: Prepare the pinned native source and lock for exact permission removal
       ansible.builtin.include_tasks: aap-isolation-prepare.yml
@@ -190,7 +190,7 @@
         that: >-
           aap_decommission_guest_network_xmls |
           aap_decommission_reservation_matches(aap_decommission_reservations, 'before')
-      no_log: true
+      no_log: false
 
     - name: Remove only exact saved selected DHCP and DNS host records
       ansible.builtin.command:
@@ -206,7 +206,7 @@
           - "{{ '--config' if item.scope == 'persistent' else '--live' }}"
       loop: '{{ aap_decommission_reservations.reservations }}'
       changed_when: true
-      no_log: true
+      no_log: false
 
     - name: Reinspect network definitions after exact selected record removal
       ansible.builtin.include_tasks: decommission-network-readback.yml
@@ -216,7 +216,7 @@
         that: >-
           aap_decommission_guest_network_xmls |
           aap_decommission_reservation_matches(aap_decommission_reservations)
-      no_log: true
+      no_log: false
 
     - name: Read only exact runtime rich rules immediately before retirement
       ansible.builtin.command:
@@ -225,7 +225,7 @@
       register: aap_decommission_runtime_rules
       failed_when: aap_decommission_runtime_rules.rc not in [0, 1]
       changed_when: false
-      no_log: true
+      no_log: false
 
     - name: Read only exact permanent rich rules immediately before retirement
       ansible.builtin.command:
@@ -234,7 +234,7 @@
       register: aap_decommission_permanent_rules
       failed_when: aap_decommission_permanent_rules.rc not in [0, 1]
       changed_when: false
-      no_log: true
+      no_log: false
 
     - name: Apply the exact stopped-guest native firewall reduction
       block:
@@ -242,7 +242,7 @@
           ansible.builtin.include_role:
             name: redhat.rhel_system_roles.firewall
             apply:
-              no_log: true
+              no_log: false
           vars:
             firewall:
               - zone: libvirt
@@ -259,7 +259,7 @@
           register: aap_decommission_runtime_rule_absence
           failed_when: aap_decommission_runtime_rule_absence.rc != 1
           changed_when: false
-          no_log: true
+          no_log: false
 
         - name: Verify exact selected permanent rich rules are absent before further deletion
           ansible.builtin.command:
@@ -268,7 +268,7 @@
           register: aap_decommission_permanent_rule_absence
           failed_when: aap_decommission_permanent_rule_absence.rc != 1
           changed_when: false
-          no_log: true
+          no_log: false
 
         - name: Apply the complete reduced CaC through native Hactar tasks
           ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
@@ -279,7 +279,7 @@
         - name: Initialize exact native rich-rule rollback from the protected queries
           ansible.builtin.set_fact:
             aap_decommission_native_rule_restore: []
-          no_log: true
+          no_log: false
 
         - name: Retain only each selected rule's original runtime state
           ansible.builtin.set_fact:
@@ -287,7 +287,7 @@
               {{ aap_decommission_native_rule_restore + [{'zone': 'libvirt', 'rich_rule': item.item,
                    'state': 'enabled' if item.rc == 0 else 'disabled', 'runtime': true, 'permanent': false}] }}
           loop: '{{ aap_decommission_runtime_rules.results }}'
-          no_log: true
+          no_log: false
 
         - name: Retain only each selected rule's original permanent state
           ansible.builtin.set_fact:
@@ -295,13 +295,13 @@
               {{ aap_decommission_native_rule_restore + [{'zone': 'libvirt', 'rich_rule': item.item,
                    'state': 'enabled' if item.rc == 0 else 'disabled', 'runtime': false, 'permanent': true}] }}
           loop: '{{ aap_decommission_permanent_rules.results }}'
-          no_log: true
+          no_log: false
 
         - name: Restore only these exact native rule states through the certified role
           ansible.builtin.include_role:
             name: redhat.rhel_system_roles.firewall
             apply:
-              no_log: true
+              no_log: false
           vars:
             firewall: '{{ aap_decommission_native_rule_restore }}'
             firewall_disable_conflicting_services: false

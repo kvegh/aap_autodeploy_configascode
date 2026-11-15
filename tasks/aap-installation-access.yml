@@ -10,7 +10,7 @@
   vars:
     ansible_connection: local
   register: aap_installation_access_plan
-  no_log: true
+  no_log: false
 
 - name: Configure only the preflighted installation permission using the existing native access tasks
   ansible.builtin.include_tasks: aap-hypervisor-access.yml

@@ -6,7 +6,7 @@
       - aap_password | length > 0
     fail_msg: Store a nonempty aap_password in the encrypted base configuration.
   when: aap_password is defined
-  no_log: true
+  no_log: false
 
 - name: Try the configured administrator password
   ansible.builtin.uri:
@@ -26,11 +26,11 @@
   when: aap_password is defined
   changed_when: cac_configured_gateway_token.status == 201
   register: cac_configured_gateway_token
-  no_log: true
+  no_log: false
 
 - name: Bootstrap with the installer password when the configured login is not active
   when: cac_configured_gateway_token.status | default(401) == 401
-  no_log: true
+  no_log: false
   block:
     - name: Read the current Gateway administrator password from the installer
       ansible.builtin.command:
@@ -89,4 +89,4 @@
       {{ aap_password
          if cac_configured_gateway_token.status | default(401) == 201
          else (cac_installer_admin.stdout | from_json).password }}
-  no_log: true
+  no_log: false

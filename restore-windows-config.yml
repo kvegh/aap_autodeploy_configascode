@@ -18,7 +18,7 @@
             ((aap_username | default('') | length > 0) and
              (aap_password | default('') | length > 0))
         fail_msg: Supply aap_hostname and aap_token or aap_username/aap_password through a protected variables file or AAP credential.
-      no_log: true
+      no_log: false
 
     - name: Apply Windows project, template and workflow configuration
       ansible.builtin.include_role:

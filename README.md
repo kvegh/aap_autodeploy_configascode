@@ -2,7 +2,20 @@
 
 Initial organization failures retain a Vault-encrypted diagnostic in the native
 AAP job artifacts, using the existing CaC Vault credential. The base job stops
-at that failure; credentials remain protected in its normal logs.
+at that failure.
+
+## Temporary deployment diagnostic logging
+
+The owner explicitly requested `no_log: false` until a clean deployment is
+verified. This branch backports only that logging policy to the exact accepted
+Linux guest release dependency; it does not adopt later deployment behavior.
+Existing native credential-argument redaction, authentication, TLS, identity,
+ownership, isolation and rollback checks remain unchanged. Raw job logs are
+private and must be redacted before sharing or committing evidence.
+
+An independent YAML comparison verifies that every nonlogging runtime value is
+identical to the accepted dependency. This publication starts no deployment,
+release or retirement job and does not establish clean live acceptance.
 
 Base configuration and project imports keep CoP asynchronous results in an
 absolute, private directory inside that job's temporary workspace. Launch,

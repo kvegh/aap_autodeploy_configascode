@@ -13,7 +13,7 @@
            aap_hypervisor_isolation_host_clients | default([]),
            aap_hypervisor_isolation_released_clients | default([]),
            aap_hypervisor_isolation_http_clients | default([])) }}
-  no_log: true
+  no_log: false
 
 - name: Require the complete native isolation policy to match CaC
   block:
@@ -37,4 +37,4 @@
   loop: [is-active, is-enabled]
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false

@@ -158,7 +158,7 @@ class RuntimeReleaseTests(unittest.TestCase):
         for durable in (False, True):
             self.native_role_failure(durable)
 
-    def test_native_policy_transaction_keeps_failed_empty_resource_result_protected(self):
+    def test_native_policy_transaction_reports_requested_visible_empty_resource_failure(self):
         self.native_role_failure(False, resource_failure=True)
 
     def test_native_mkdir_contention_is_bounded_and_never_breaks_another_lock(self):
@@ -273,7 +273,10 @@ class RuntimeReleaseTests(unittest.TestCase):
                 cwd=ROOT,env=env,text=True,capture_output=True,timeout=45)
             if thread:thread.join(timeout=max(5, release_delay + 2))
             self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
-            self.assertNotIn('secret-resource-canary',result.stdout+result.stderr)
+            if resource_failure:
+                self.assertIn('secret-resource-canary',result.stdout+result.stderr)
+            else:
+                self.assertNotIn('secret-resource-canary',result.stdout+result.stderr)
             if invalid_retries:
                 self.assertFalse(trace.exists(), result.stdout + result.stderr)
                 self.assertFalse(lock.exists(), result.stdout + result.stderr)

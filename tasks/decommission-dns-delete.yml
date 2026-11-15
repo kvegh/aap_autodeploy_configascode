@@ -11,14 +11,14 @@
   delegate_to: localhost
   become: false
   register: aap_dns_retire_current
-  no_log: true
+  no_log: false
 
 - name: Refuse a record changed since the ownership review
   ansible.builtin.assert:
     that: >-
       aap_dns_retire_current.status == 404 or aap_dns_retire_current.json == [] or
       (aap_dns_retire_current.json == aap_dns_retire_record.records)
-  no_log: true
+  no_log: false
 
 - name: Remove the exact unchanged version-owned DNS record set
   ansible.builtin.uri:
@@ -32,7 +32,7 @@
   when: aap_dns_retire_current.status == 200 and aap_dns_retire_current.json | length > 0
   delegate_to: localhost
   become: false
-  no_log: true
+  no_log: false
 
 - name: Verify provider absence after deletion
   ansible.builtin.uri:
@@ -46,9 +46,9 @@
   delegate_to: localhost
   become: false
   register: aap_dns_retire_readback
-  no_log: true
+  no_log: false
 
 - name: Require verified DNS retirement
   ansible.builtin.assert:
     that: aap_dns_retire_readback.status == 404 or aap_dns_retire_readback.json == []
-  no_log: true
+  no_log: false

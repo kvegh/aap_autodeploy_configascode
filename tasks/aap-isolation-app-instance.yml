@@ -16,7 +16,7 @@
       - aap_isolation_app_owner.guest.bridge in aap_isolation_hypervisor.isolation_bridges
       - aap_isolation_app_owner.guest.mac is match('^(?:[0-9a-f]{2}:){5}[0-9a-f]{2}$')
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Read the selected domain's actual UUID
   ansible.builtin.command:
@@ -24,7 +24,7 @@
   register: aap_isolation_app_uuid
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Read current and persistent disks of that exact domain
   ansible.builtin.command:
@@ -35,7 +35,7 @@
   register: aap_isolation_app_disks
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Read current and persistent interfaces of that exact domain
   ansible.builtin.command:
@@ -46,7 +46,7 @@
   register: aap_isolation_app_interfaces
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Read the actual bridge assigned to the saved guest network
   ansible.builtin.command:
@@ -56,7 +56,7 @@
   register: aap_isolation_app_network
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Read the native static guest reservation even when its domain is stopped
   ansible.builtin.command:
@@ -66,7 +66,7 @@
   register: aap_isolation_app_addresses
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 # The producer records native DHCP lease addresses, not static reservations.
 # Keep stopped-static support; conflicting static ownership never uses DHCP proof.
@@ -90,7 +90,7 @@
       (?x)<host(?=\s)
       (?=[^>]*\smac=['"]{{ aap_isolation_app_owner.guest.mac | regex_escape }}['"])
       (?=[^>]*\sip=['"]{{ aap_isolation_app_owner.guest.address | regex_escape }}['"])[^>]*>
-  no_log: true
+  no_log: false
 
 - name: Verify the existing native DHCP assignment without static ownership
   when:
@@ -106,7 +106,7 @@
       register: aap_isolation_app_leases
       changed_when: false
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Require the native lease table before interpreting its rows
       ansible.builtin.assert:
@@ -115,12 +115,12 @@
           - aap_isolation_app_leases.stdout_lines[0] is match('^\s*Expiry Time\s+MAC address\s+Protocol\s+IP address\s+')
           - aap_isolation_app_leases.stdout_lines[1] is match('^\s*-+\s*$')
         quiet: true
-      no_log: true
+      no_log: false
 
     - name: Read the native table columns without logging lease data
       ansible.builtin.set_fact:
         aap_isolation_app_lease_rows: '{{ aap_isolation_app_leases.stdout_lines[2:] | map("trim") | reject("equalto", "") | map("split") | list }}'
-      no_log: true
+      no_log: false
 
     - name: Require complete native lease rows before matching ownership
       ansible.builtin.assert:
@@ -132,7 +132,7 @@
           - item[3] in ['ipv4', 'ipv6']
         quiet: true
       loop: '{{ aap_isolation_app_lease_rows }}'
-      no_log: true
+      no_log: false
 
     - name: Require one unique unexpired native IPv4 lease for the saved MAC and address
       ansible.builtin.set_fact:
@@ -148,7 +148,7 @@
         __aap_app_ip_leases: >-
           {{ aap_isolation_app_lease_rows | selectattr('3', 'equalto', 'ipv4') |
              selectattr('4', 'match', (aap_isolation_app_owner.guest.address | regex_escape) ~ '/(?:[0-9]|[12][0-9]|3[0-2])$') | list }}
-      no_log: true
+      no_log: false
 
 # Report only these booleans; native readback and recorded identities stay hidden.
 - name: Require the actual UUID, bridge and recorded guest address
@@ -181,7 +181,7 @@
   vars:
     __aap_app_disks: '{{ item.stdout_lines | select("match", "^\s*\S+\s+disk\s+") | list }}'
   loop: '{{ aap_isolation_app_disks.results }}'
-  no_log: true
+  no_log: false
 
 - name: Require only the recorded MAC and network in both configurations
   ansible.builtin.assert:
@@ -194,7 +194,7 @@
   vars:
     __aap_app_interfaces: '{{ item.stdout_lines[2:] | map("trim") | reject("equalto", "") | list }}'
   loop: '{{ aap_isolation_app_interfaces.results }}'
-  no_log: true
+  no_log: false
 
 - name: Require every grant to identify only its verified recorded guest
   ansible.builtin.assert:
@@ -205,9 +205,9 @@
       - item.mac == aap_isolation_app_owner.guest.mac
     quiet: true
   loop: '{{ aap_isolation_app_owner.clients }}'
-  no_log: true
+  no_log: false
 
 - name: Retain only these verified application tuples in this job's effective policy
   ansible.builtin.set_fact:
     aap_isolation_app_clients: '{{ aap_isolation_app_clients + aap_isolation_app_owner.clients }}'
-  no_log: true
+  no_log: false

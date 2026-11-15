@@ -16,7 +16,7 @@
     __recovery_retire_runtime: {}
     __recovery_retire_native: {}
     __recovery_retire_published: {}
-  no_log: true
+  no_log: false
 
 - name: Preflight canonical and source ownership before any physical deletion
   aap_publish_instance_keys:
@@ -29,7 +29,7 @@
   become: false
   register: __recovery_retire_source_plan
   when: recovery_retire_phase == 'plan'
-  no_log: true
+  no_log: false
 
 - name: Retain the source-preflighted retirement transition
   ansible.builtin.set_fact:
@@ -39,4 +39,4 @@
           'transition': __recovery_retire_source_plan.transition,
           'records_absent': __recovery_retire_source_plan.records_absent} }}
   when: recovery_retire_phase == 'plan'
-  no_log: true
+  no_log: false

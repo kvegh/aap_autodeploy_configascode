@@ -19,7 +19,7 @@
       - hactar_source_public_ip is defined
       - hactar_source_public_ip is string
     fail_msg: Supply the reviewed Hactar revision, encrypted source reader, protected source identity and existing pinned route.
-  no_log: true
+  no_log: false
 
 - name: Require a bounded native policy lock retry budget
   ansible.builtin.assert:
@@ -29,14 +29,14 @@
       - aap_isolation_lock_retries | default(5) <= 1800
     quiet: true
     fail_msg: Supply an integer native policy lock retry budget between zero and 1800.
-  no_log: true
+  no_log: false
 
 - name: Initialize only this invocation's temporary lock ownership
   ansible.builtin.set_fact:
     aap_isolation_lock_acquired: false
     aap_isolation_lock_attempt: {}
     aap_isolation_source_workspace: {}
-  no_log: true
+  no_log: false
 
 - name: Allocate this job's protected source checkout
   ansible.builtin.tempfile:
@@ -74,19 +74,19 @@
     ansible_connection: local
   check_mode: false
   register: aap_isolation_source_checkout
-  no_log: true
+  no_log: false
 
 - name: Bind template lookups to this exact job-local source tree
   ansible.builtin.set_fact:
     hactar_firewall_source_root: '{{ aap_isolation_source_workspace.path }}/repository'
     aap_isolation_autodeploy_root: "{{ role_path ~ '/../..' if role_path is defined else playbook_dir }}"
-  no_log: true
+  no_log: false
 
 - name: Require the exact requested source revision
   ansible.builtin.assert:
     that: aap_isolation_source_checkout.after == aap_hactar_source_revision
     quiet: true
-  no_log: true
+  no_log: false
 
 - name: Acquire the approved temporary native policy transaction lock
   # Unlike throttle, atomic mkdir serializes different AAP jobs/controllers.
@@ -99,19 +99,19 @@
   delay: 1
   changed_when: false
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Retain this invocation's successful lock acquisition
   ansible.builtin.set_fact:
     aap_isolation_lock_acquired: true
-  no_log: true
+  no_log: false
 
 - name: Gather only native IPv4 addresses for the Hactar destination guard
   ansible.builtin.setup:
     gather_subset: ['!all', '!min', network]
     filter: ansible_all_ipv4_addresses
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Verify the actual hypervisor before any policy observation or change
   ansible.builtin.command:
@@ -120,7 +120,7 @@
   changed_when: false
   failed_when: aap_isolation_machine_id.stdout | trim != aap_isolation_hypervisor.machine_id
   check_mode: false
-  no_log: true
+  no_log: false
 
 - name: Load and verify application grants from their own authoritative CaC
   ansible.builtin.include_tasks: '{{ aap_isolation_autodeploy_root }}/tasks/aap-isolation-app-permissions.yml'

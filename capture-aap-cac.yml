@@ -29,7 +29,7 @@
         working_copy: "{{ aap_cac_capture_working_copy | default(omit) }}"
       register: aap_capture_result
       failed_when: false
-      no_log: true
+      no_log: false
 
     - name: Retain encrypted credential-free connection diagnostics on TLS failure
       ansible.builtin.set_stats:

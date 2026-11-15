@@ -8,7 +8,7 @@
     aap_isolation_trust_file: '{{ __recovery_release_trust }}'
     __recovery_release_runtime: {}
     __recovery_release_policy_attempted: false
-  no_log: true
+  no_log: false
 
 - name: Verify, apply and publish the same exact guest transition
   delegate_to: '{{ __recovery_release_pin.address }}'
@@ -39,7 +39,7 @@
         prefix: aap-guest-release-
       check_mode: false
       register: __recovery_release_runtime
-      no_log: true
+      no_log: false
 
     - name: Stage only the existing native resource validators
       ansible.builtin.copy:
@@ -50,7 +50,7 @@
         mode: '0600'
       loop: [aap_hypervisor_access.py, aap_guest_release.py]
       check_mode: false
-      no_log: true
+      no_log: false
 
     - name: Verify actual VM identity and the exact CaC transition without changing the firewall
       # Existing libvirt provenance validation remains until the scoped helper cleanup.
@@ -64,7 +64,7 @@
       check_mode: false
       register: __recovery_release_apply
       changed_when: false
-      no_log: true
+      no_log: false
 
     - name: Require the native policy to match only the exact complete CaC candidates
       ansible.builtin.include_tasks: '{{ role_path }}/../../tasks/aap-isolation-observe.yml'
@@ -76,7 +76,7 @@
       ansible.builtin.set_fact:
         __recovery_release_rollback_policy: '{{ aap_isolation_rollback_policy }}'
         __recovery_release_policy_attempted: true
-      no_log: true
+      no_log: false
 
     - name: Apply the complete desired CaC through native Hactar Ansible tasks
       ansible.builtin.include_tasks: '{{ hactar_firewall_source_root }}/playbooks/tasks/replacement-isolation-apply.yml'
@@ -96,7 +96,7 @@
         ansible_connection: local
       register: __recovery_release_publish
       when: not ansible_check_mode
-      no_log: true
+      no_log: false
 
   rescue:
     - name: Restore only this invocation's unpublished native policy transition
@@ -122,7 +122,7 @@
         state: absent
       check_mode: false
       when: __recovery_release_runtime.path | default('') is match('^/tmp/aap-guest-release-[A-Za-z0-9_]+$')
-      no_log: true
+      no_log: false
 
     - name: Release this invocation's temporary lock and public checkout
       ansible.builtin.include_tasks: '{{ role_path }}/../../tasks/aap-isolation-finish.yml'

@@ -10,7 +10,7 @@
     instance_name: "{{ aap_instance_key | aap_inventory_instance_name(hostvars[aap_instance_key]) }}"
     fqdn: "{{ hostvars[aap_instance_key].ansible_fqdn }}"
   register: cac_selected_instance_access
-  no_log: true
+  no_log: false
 
 - name: Explain a safe instance-token selection failure without revealing stored data
   ansible.builtin.assert:
@@ -27,7 +27,7 @@
     aap_password: ''
     aap_request_timeout: 10.0
     aap_validate_certs: true
-  no_log: true
+  no_log: false
 
 - name: Authenticate the supplied bearer before fetching private configuration
   ansible.builtin.uri:
@@ -37,4 +37,4 @@
     validate_certs: true
     follow_redirects: none
     status_code: 200
-  no_log: true
+  no_log: false
