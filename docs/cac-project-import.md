@@ -30,7 +30,8 @@ network operations. No repository owner or authentication value is hardcoded.
 The separate platform bootstrap file remains `cac/base_CaC_vault.yml`.
 
 The reviewed `RHEL-sniperpatching` ID preserves its exact repository and capture
-casing; its display name retains **RHEL**. Other mixed-case IDs remain invalid.
+casing; its display name retains **RHEL**. The standalone Elastic ID below is
+also an explicit mixed-case exception; arbitrary mixed-case IDs remain invalid.
 RHEL uses the same importer and resource schema. Its capture declares the project,
 seven Job Templates and reviewed inventory, host, execution-environment and
 Satellite credential definitions. The Machine credential is an explicit existing
@@ -50,6 +51,30 @@ separately; warnings do not establish usable workers. No shared default password
 or first-login access-choice feature is required. CaC import creates definitions
 without starting the app or completing those prerequisites. Live import and
 deployment acceptance remain separate from offline capture validation.
+
+## Elastic standalone registration
+
+The standalone `deploy-cac-project.yml` entrypoint additionally accepts exactly
+`aap_cac_project_id: Ansible-Elastic-integrated-demo`. It derives
+`Ansible-Elastic-integrated-demo-secrets.git` beneath the same protected HTTPS
+owner namespace and reads only
+`vaults/cac/Ansible-Elastic-integrated-demo-cac-vault.yml`. Lowercase variants,
+unknown IDs, traversal and repository/file overrides remain rejected.
+
+This registration reuses the existing importer, readiness/resource schema,
+authentication and receiver-owned execution-environment checks. It creates no
+Controller resources by itself. No Elastic saved import Job Template, protected
+capture or credential pair is supplied here; no catalog/selector entry, optional
+bootstrap credential mapping or umbrella module is added. Those must be prepared
+and reviewed separately before their corresponding operator path is usable.
+The seven saved import Job Templates listed above retain their existing scope.
+
+The focused importer regression covers the exact new paths and metadata, rejected
+ID variants and existing guards on actual cached Core 2.20. The optional protected
+migration fixture continues to cover its seven existing captures; it is not an
+Elastic capture, import or restoration test. Actual Elastic import, receiving
+resource readback, repeat application and workload functional tests remain
+unverified. Source support alone does not establish deployment readiness.
 
 ## Operator procedure
 

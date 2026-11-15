@@ -12,7 +12,7 @@ from ansible.errors import AnsibleFilterError
 PROJECT_IDS = frozenset((
     "aiops-selfhealing-demo", "disconnected-windows-patching",
     "automation-orchestrator", "assistant-team", "aap_autodeploy_configascode",
-    "RHEL-sniperpatching", "command-center-ng",
+    "RHEL-sniperpatching", "command-center-ng", "Ansible-Elastic-integrated-demo",
 ))
 RESOURCE_VARIABLES = frozenset((
     "aap_organizations", "aap_applications", "aap_teams", "aap_user_accounts",

@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-251 tasks: 33 outstanding; 218 closed.
+253 tasks: 35 outstanding; 218 closed.
 
 ## Outstanding tasks
 
@@ -27,6 +27,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.7.5 | Deploy and verify AIOps on v22 | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.4 |
 | bead-wd-3ix.2.7.6 | Pass the v22 AIOps website demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.7 | Pass the v22 AIOps agent repair demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.6 |
+| bead-wd-3ix.2.7.8 | Enable temporary visible deployment logging until clean acceptance | in_progress | P1 | task | bead-wd-3ix.2.7 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
@@ -47,6 +48,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | open | P2 | task | bead-wd-mcr |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
+| bead-wd-t76a | Add the exact Elastic project ID to the existing CaC importer | in_progress | P2 | task | — |
 | bead-wd-72f.31.6.5.1 | Evaluate prebuilt container images and a separate build host | deferred | P3 | task | bead-wd-72f.31.6.5 |
 | bead-wd-9ezo | Add External CloudCLI as an independent CaC project | deferred | P3 | task | — |
 | bead-wd-x9a | Consider automating AAP updates | open | P3 | task | — |

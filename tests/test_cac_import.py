@@ -24,6 +24,15 @@ vault_yaml = importlib.util.module_from_spec(VAULT_SPEC)
 VAULT_SPEC.loader.exec_module(vault_yaml)
 
 
+# Protected migration fixtures are a fixed reviewed set, independent of new
+# standalone importer IDs. New IDs need their own capture qualification.
+MIGRATION_CAPTURE_PROJECT_IDS = (
+    'aiops-selfhealing-demo', 'disconnected-windows-patching',
+    'automation-orchestrator', 'assistant-team', 'aap_autodeploy_configascode',
+    'RHEL-sniperpatching', 'command-center-ng',
+)
+
+
 def metadata(project='assistant-team'):
     return {'schema_version': 1, 'project_id': project, 'required_template_label': 'synthetic',
             'resource_variables': {'controller_templates': 'captured.templates'},
@@ -90,6 +99,23 @@ class ImportContractTests(unittest.TestCase):
         for project in ('rhel-sniperpatching', 'Rhel-sniperpatching', 'RHEL-sniperpatching/other'):
             with self.subTest(project=project), self.assertRaises(AnsibleFilterError):
                 filters.project_contract(project, 'https://git.example.invalid/example-owner')
+
+    def test_elastic_contract_accepts_only_the_exact_reviewed_project_id(self):
+        project = 'Ansible-Elastic-integrated-demo'
+        self.assertEqual(filters.project_contract(project, 'https://git.example.invalid/example-owner'), {
+            'project_id': project,
+            'repository': 'https://git.example.invalid/example-owner/Ansible-Elastic-integrated-demo-secrets.git',
+            'configuration_file': 'vaults/cac/Ansible-Elastic-integrated-demo-cac-vault.yml',
+        })
+        configuration = metadata(project)
+        self.assertEqual(filters.import_metadata(configuration, project), configuration)
+        for invalid in (project.lower(), 'Ansible-elastic-integrated-demo',
+                        '../' + project, project + '/other', project + '%2Fother',
+                        project + '-secrets', 'Ansible-Elastic-unreviewed-demo'):
+            with self.subTest(project=invalid), self.assertRaises(AnsibleFilterError):
+                filters.project_contract(invalid, 'https://git.example.invalid/example-owner')
+            with self.subTest(metadata_project=invalid), self.assertRaises(AnsibleFilterError):
+                filters.import_metadata(metadata(invalid), invalid)
 
     def test_unknown_ids_traversal_and_repository_override_shapes_fail(self):
         for project in ('', '../assistant-team', 'assistant-team/other', 'unknown', 123):
@@ -260,7 +286,7 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
 
     @unittest.skipUnless(Path('/tmp/aap-cac-project-migration/candidate-plaintext').is_dir(),
                          'requires protected migration candidates; no production API is used')
-    def test_all_reviewed_real_captures_render_and_validate_in_both_native_modes(self):
+    def test_reviewed_migration_captures_render_and_validate_in_both_native_modes(self):
         password_file = os.environ.get('AAP_CAC_TEST_VAULT_PASSWORD_FILE')
         if not password_file:
             self.skipTest('Set AAP_CAC_TEST_VAULT_PASSWORD_FILE explicitly for protected candidate rendering.')
@@ -274,7 +300,8 @@ class AnsibleCaptureRenderingTests(unittest.TestCase):
                                ANSIBLE_NOCOLOR='1', ANSIBLE_LOCAL_TEMP=str(directory / 'local'),
                                ANSIBLE_REMOTE_TEMP=str(directory / 'remote'))
             for native in ('false', 'true'):
-                for project in sorted(filters.PROJECT_IDS):
+                self.assertTrue(set(MIGRATION_CAPTURE_PROJECT_IDS).issubset(filters.PROJECT_IDS))
+                for project in MIGRATION_CAPTURE_PROJECT_IDS:
                     capture = candidate_root / project / (project + '-cac-vault.yml')
                     variables = {'aap_hostname': 'https://test-aap.example.invalid',
                                  'aap_instance_key': wrap_var('synthetic-aap'),

@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.64.0
+
+- Accept the exact `Ansible-Elastic-integrated-demo` standalone CaC project ID,
+  deriving its same-case private repository and canonical encrypted capture.
+- Preserve existing importer authentication, resource and path guards; add a
+  focused exact-ID/metadata regression and retain all seven migration fixtures.
+- Document that saved Controller definitions, protected capture/credentials,
+  catalog/selector/bootstrap/module wiring and live Elastic qualification remain
+  separate work. No workload deployment or active runtime pin changes.
+- Validation: twelve importer tests passed on cached Core 2.20.10; the
+  optional protected-capture test was skipped. Whitespace checks passed.
+
 ## 0.63.87
 
 - Document protected source Git diagnostic implementation `cf1dcbf857bc`

@@ -5912,3 +5912,35 @@ fails, a fixed notice allows the existing outer rollback and cleanup to run.
 Eight diagnostic, seven affected permission and fourteen native rollback cases passed on Core 2.20.10. The original live
 Git cause remains unresolved. The caller receives the minimal backport on its
 existing lifecycle baseline while investigation continues.
+
+## 2026-11-15 15:08 UTC — Register the exact Elastic standalone CaC ID
+
+The owner requested a public Elastic demo project, its private secrets companion
+and CaC-to-AAP deployment. Reuse the existing generic importer by adding only the
+exact `Ansible-Elastic-integrated-demo` ID. Its derived repository and capture
+retain the requested casing; arbitrary IDs, paths and repository overrides keep
+their existing guards. No alternate importer, framework or new credential store
+is introduced. The alternative of full catalog/bootstrap/module integration is
+left for separately prepared work because it requires the protected capture,
+credential bindings and umbrella registration.
+
+This increment changes no saved Controller definitions, catalog selector,
+optional bootstrap credential mapping, runtime pins or Elastic deployment
+architecture. Synthetic tests qualify the new contract independently of the
+seven maintained protected migration fixtures. Live Elastic import, repeat
+application, restoration and workload functional tests remain unperformed.
+Twelve importer tests passed in the cached Core 2.20.10 image with networking
+disabled; the optional protected-capture fixture was not mounted and was skipped.
+The initial test mount lacked the normal SELinux container label and failed
+before collection; the standard private mount label resolved access without
+disabling SELinux or changing its policy. Whitespace checks passed.
+The implementation commit ID is pending integration; document it in the required
+subsequent versioned documentation commit. Integration must also refresh and check
+the scoped protected task recovery export before Git publication.
+
+Integration checkpoint on current main: preserved all source documentation
+through 0.63.87. The affected importer suite on the integrated Core 2.20 branch
+passed twelve tests with one optional protected fixture skipped (9.876 seconds).
+The established scoped public task export and paired whole-file encrypted
+recovery snapshot passed their exact consistency checks. No active deployment
+pin, native Controller configuration or full-import acceptance is implied.

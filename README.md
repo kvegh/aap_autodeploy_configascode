@@ -870,6 +870,12 @@ The [consolidation analysis](docs/deployment-consolidation-analysis.md) remains
 historical reasoning; its former credential and importer design questions are
 superseded by this implementation. Live import/function tests remain separate.
 
+The standalone importer also accepts the exact ID
+`Ansible-Elastic-integrated-demo`, preserving its mixed-case private repository
+and encrypted capture path. This adds no saved Job Template or selector entry.
+Its protected capture, credentials, catalog/bootstrap wiring and live import
+qualification remain separate work; see the [Elastic registration boundary](docs/cac-project-import.md#elastic-standalone-registration).
+
 The repository contains the deployment stages and separate use-case imports:
 
 | Stage | Playbook | Purpose |
