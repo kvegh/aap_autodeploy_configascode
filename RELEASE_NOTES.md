@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.79
+
+- Record successful completion of all ten native host Rebuild jobs, with zero
+  failed events and no manual repairs; image staging is the next active phase.
+- Track the v22 attempt separately from closed v21 work and use the agreed
+  Rebuild terminology. AAP creation/reuse and both demo tests remain outstanding.
+
 ## 0.63.78
 
 - Record actual native shared v22 reservation and exact host/AAP binding,

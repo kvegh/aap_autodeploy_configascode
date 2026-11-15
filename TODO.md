@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-241 tasks: 28 outstanding; 213 closed.
+249 tasks: 35 outstanding; 214 closed.
 
 ## Outstanding tasks
 
@@ -22,6 +22,13 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.2 | Achieve one clean &#91;HOST&#93; installation with tested Windows and AIOps | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-5zfc, bead-wd-72f.31.2.7 |
 | bead-wd-3ix.2.6 | Use one generation counter for physical host and AAP | in_progress | P1 | task | bead-wd-3ix.2 |
+| bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | in_progress | P1 | epic | bead-wd-3ix.2 |
+| bead-wd-3ix.2.7.2 | Stage and verify the seven v22 Rebuild images | in_progress | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.1 |
+| bead-wd-3ix.2.7.3 | Deploy and configure AAP v22 | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.2 |
+| bead-wd-3ix.2.7.4 | Deploy and functionally verify Windows on v22 | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.3 |
+| bead-wd-3ix.2.7.5 | Deploy and verify AIOps on v22 | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.4 |
+| bead-wd-3ix.2.7.6 | Pass the v22 AIOps website demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.5 |
+| bead-wd-3ix.2.7.7 | Pass the v22 AIOps agent repair demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.6 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
@@ -104,6 +111,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.4.3.2 | Keep recovery policy records consistent after Windows release | closed | P1 | bug | bead-wd-3ix.2.4.3 |
 | bead-wd-3ix.2.4.3.3 | Preserve existing AAP network ownership during configuration refresh | closed | P1 | bug | bead-wd-3ix.2.4.3 |
 | bead-wd-3ix.2.5 | Retire accepted v21 active configuration and owned references | closed | P1 | task | bead-wd-3ix.2, bead-wd-g3mu |
+| bead-wd-3ix.2.7.1 | Complete the v22 host Rebuild | closed | P1 | task | bead-wd-3ix.2.7 |
 | bead-wd-3wpp | Document the verified dedicated Google Drive rclone setup | closed | P1 | task | — |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |

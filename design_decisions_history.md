@@ -5799,3 +5799,18 @@ Normal connection, host DNS and RHEL conversion stages passed. This does not
 yet establish actual AAP creation/reservation reuse or full workload/demo
 acceptance; the existing workflow and subsequent deployment stages continue.
 The post-wipe absence proposal remains withdrawn under the owner decision.
+
+## 2026-11-15 — Complete the host Rebuild before platform creation
+
+The existing host workflow completed all ten native jobs successfully, with
+zero failed events and no manual repair. Native conversion, updates, setup,
+managed reboot, both verifications and previous-host DNS retirement are retained
+in the protected task evidence. The operator-authorized post-wipe proof
+withdrawal remains separate from these normal deployment/functional stages.
+
+The existing seven-image staging job is active. Actual AAP creation must reuse
+the accepted shared v22 reservation; Windows, AIOps and both AIOps demo tests
+follow actual readiness. The new v22 attempt has separate Beads child records;
+closed v21 acceptance is not reopened or relabeled as current acceptance.
+The user reiterated Rebuild naming; runtime code and internal contracts are
+unchanged by this documentation checkpoint.

@@ -1,16 +1,18 @@
 # Restart here
 
-## Current generation execution — 2026-11-15
+## v22 Rebuild checkpoint — 2026-11-15
 
-The normal connection, shared generation assignment, host DNS and RHEL
-conversion stages have completed successfully. The physical host and AAP
-reservation are both generation v22 and share the exact same reservation ID;
-both next-number values are 23. All six genuine earlier host-history entries
-remain unchanged. The AAP creation stage must reuse this reservation.
+The host Rebuild completed successfully: all ten native workflow jobs passed
+with zero failed events and no manual repairs. This includes conversion, RHEL
+updates, host setup, managed reboot, both host verifications and old host-DNS
+retirement. Superseded active CaC, DNS and AAP metadata has been removed.
 
-The existing host workflow continues. Current-generation AAP, Windows, AIOps
-and both functional demonstrations still require their own successful outcomes.
-Old active generation cleanup is complete; no post-wipe absence proof is required.
+The physical host and AAP reservation share generation v22 and the exact same
+reservation ID; both next-number values are 23. The seven selected base images
+are now being staged. Require their actual checksum/publication success, then
+create AAP using the existing reservation and verify that no second increment
+occurs. Current-generation AAP, Windows, AIOps and both AIOps demo tests remain
+outstanding. The owner's post-wipe absence-check withdrawal remains in force.
 
 ## Current owner direction — 2026-11-15
 
