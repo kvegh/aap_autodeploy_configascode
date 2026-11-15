@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.82
+
+- Document successful infrastructure, certificate and TLS proxy configuration.
+- Preserve the installer submission blocked by a dependency-download hash
+  mismatch, successful fresh artifact verification and one unchanged retry.
+- Keep failure-free acceptance unachieved and Windows publication dependent on
+  actual platform and network readiness; refresh protected task records.
+- No runtime behavior or integrity checks change.
+
 ## 0.63.81
 
 - Document successful AAP VM setup and actual reuse of the host generation

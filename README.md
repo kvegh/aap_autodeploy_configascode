@@ -14,10 +14,18 @@ checks, and normal managed safeguards passed. AAP VM setup completed successfull
 with zero failed events; its route and primary guest identity match the published
 registry. The remaining platform-stage selectors now target that verified guest.
 
-Infrastructure configuration is being followed through its native outcome.
-AAP installation, base configuration, final access verification, Windows, AIOps
-and both AIOps demo tests remain outstanding. The owner's post-wipe absence-check
-withdrawal remains in force.
+Infrastructure configuration completed successfully, including DNS propagation,
+certificate issuance and the TLS proxy. The first installer submission stopped
+before playbook execution because a collection download failed its integrity
+check during project synchronization. A fresh read of the configured artifact
+matches its advertised size and SHA-256. One normal installer retry keeps the
+same parameters and integrity checks. The original failure remains recorded;
+a failure-free end-to-end run has not been achieved.
+
+Base configuration, final access verification, Windows, AIOps and both AIOps
+demo tests remain outstanding. An encrypted Windows candidate passed native
+runtime schema checks but is unpublished pending actual AAP and network
+readiness. The owner's post-wipe absence-check withdrawal remains in force.
 
 ## Current owner direction — 2026-11-15
 

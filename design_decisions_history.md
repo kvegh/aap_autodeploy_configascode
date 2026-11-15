@@ -5835,3 +5835,20 @@ platform selectors were bound to that verified guest through the established
 encrypted capture and native Controller metadata, preserving credentials and all
 other fields. Platform installation and full workload/demo acceptance remain
 separate outcomes; this documentation checkpoint changes no runtime behavior.
+
+## 2026-11-15 — Preserve dependency failure and verify before retrying
+
+The normal infrastructure stage passed with zero failed events. The first
+installer submission then stopped before playbook execution: its project-sync
+dependency rejected a collection artifact whose downloaded hash did not match
+metadata. A fresh read from the same configured Hub matched the advertised size
+and SHA-256. One normal installer relaunch preserves the original parameters,
+pins, credentials and integrity checks. No target installation had started in
+the failed submission, and no host or guest-creation stage was replayed. The
+original failure remains part of this attempt; successful continuation cannot
+establish a failure-free run retroactively.
+
+An encrypted Windows candidate derived from the final accepted predecessor
+passed native Core 2.20.10 schema and management checks. It remains unpublished
+until actual AAP base/access, receiving EE and network readiness are verified.
+This checkpoint changes documentation and task recovery records only.
