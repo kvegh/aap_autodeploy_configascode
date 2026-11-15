@@ -5898,3 +5898,17 @@ graph and saved inputs before the normal workflow started. Keep this order for
 fresh deployments, preserve the original failures, and distinguish a functional
 configuration fix from failure-free end-to-end acceptance. No additional
 prerequisite mechanism or automatic retry was introduced.
+
+
+### Retain protected source Git failures before native rollback
+
+Implementation `cf1dcbf857bcd458423601bb61b9ef74ef32237b` preserves the original central Git-read failure
+through the existing encrypted diagnostic action. The failed checkout may not
+contain its encrypted bootstrap, so this stage uses the attached labelled CaC
+key and the existing source-workspace identity. Other diagnostic stages retain
+their capture validation. Invocation arguments remain excluded. If encryption
+fails, a fixed notice allows the existing outer rollback and cleanup to run.
+
+Eight diagnostic, seven affected permission and fourteen native rollback cases passed on Core 2.20.10. The original live
+Git cause remains unresolved. The caller receives the minimal backport on its
+existing lifecycle baseline while investigation continues.

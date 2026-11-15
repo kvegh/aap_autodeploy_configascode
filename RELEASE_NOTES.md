@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.87
+
+- Document protected source Git diagnostic implementation `cf1dcbf857bc`
+  and its Core 2.20.10 validation; retain the unresolved live failure separately.
+
 ## 0.63.86
 
 - Preserve native guest-lifecycle central Git failures in the existing encrypted
