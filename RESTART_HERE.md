@@ -8,11 +8,13 @@ updates, host setup, managed reboot, both host verifications and old host-DNS
 retirement. Superseded active CaC, DNS and AAP metadata has been removed.
 
 The physical host and AAP reservation share generation v22 and the exact same
-reservation ID; both next-number values are 23. The seven selected base images
-are now being staged. Require their actual checksum/publication success, then
-create AAP using the existing reservation and verify that no second increment
-occurs. Current-generation AAP, Windows, AIOps and both AIOps demo tests remain
-outstanding. The owner's post-wipe absence-check withdrawal remains in force.
+reservation ID; both next-number values are 23. All seven selected base images
+passed their actual checksum and publication checks. The normal managed
+safeguard stage also passed. AAP VM setup has been submitted once and is being
+followed through its native result. Verify that it reuses the existing reservation
+without a second increment before configuring the remaining AAP stages.
+Current-generation AAP completion, Windows, AIOps and both AIOps demo tests
+remain outstanding. The owner's post-wipe absence-check withdrawal remains in force.
 
 ## Current owner direction — 2026-11-15
 

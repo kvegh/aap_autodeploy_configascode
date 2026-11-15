@@ -5814,3 +5814,13 @@ follow actual readiness. The new v22 attempt has separate Beads child records;
 closed v21 acceptance is not reopened or relabeled as current acceptance.
 The user reiterated Rebuild naming; runtime code and internal contracts are
 unchanged by this documentation checkpoint.
+
+## 2026-11-15 — Continue from verified images into AAP setup
+
+The seven-image staging job completed successfully, including actual SHA-256,
+size and publication checks and native worker completion. The existing managed
+safeguard stage then passed with zero failed events. AAP VM setup was submitted
+once using its normal template and the host generation reservation. Actual
+reservation reuse and completed platform/workload/demo acceptance remain
+unverified; a submission is not a successful deployment. This checkpoint updates
+documentation and protected task recovery records without runtime changes.

@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.63.80
+
+- Document verified checksum and publication results for all seven base images
+  and successful normal managed safeguards.
+- Follow the submitted AAP VM setup through its actual result; generation reuse,
+  platform completion and both workload/demo paths remain outstanding.
+- Refresh the scoped Beads overview and encrypted recovery export. No runtime
+  behavior or deployment settings change in this checkpoint.
+
 ## 0.63.79
 
 - Record successful completion of all ten native host Rebuild jobs, with zero
