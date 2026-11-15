@@ -1,5 +1,25 @@
 # Design decisions history
 
+## Use one existing generation counter for host and AAP — 2026-11-15
+
+The owner explicitly approved consistent numbering from v22 and required the
+physical host to originate from the same counter as the platform generation.
+Implementation `804fc0f88788b4199a02dab4b59350a686ebf1fe` extends the existing
+encrypted AAP allocation registry rather than introducing another store.
+A verified installation consumes one reservation; Stage 01 reuses its UUID,
+prefix and machine identity. Retries do not consume another number, while a
+subsequent installation retains failed consumption and advances the same counter.
+The host installation log is an audit mirror, preserving its actual history
+without inventing installations for the gap between earlier numbering schemes.
+
+Eight new real-Vault/process-concurrency tests and twenty-seven existing
+allocation/provisioning regressions passed under cached native Core 2.20.10.
+Obsolete test fixtures now load trusted repository data and execute the actual
+current DNS assertion through Ansible. This is allocator qualification, not
+live host-adapter or end-to-end v22 acceptance. The existing per-guest deletion
+proposal was withdrawn; guarded whole-host cleanup qualification continues
+while current ownership and running VMs remain preserved.
+
 ## Retain ownership while retirement order is unresolved — 2026-11-15
 
 Read-only current-candidate plans passed the existing typed ownership and

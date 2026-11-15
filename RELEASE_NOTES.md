@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.63.72
+
+- Document the approved shared-generation decision, its implementation commit
+  and native allocator qualification. Keep host-adapter and full-run acceptance
+  distinct from this source change.
+
 ## 0.63.71
 
 - Reserve one generation in the existing encrypted allocation registry for a
