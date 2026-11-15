@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.64.7
+
+Document the actual shared-VM acceptance checkpoint implementation and preserve
+the distinction between published candidate branches and live adoption.
+
 ## 0.64.6
 
 Document independent shared-creator 0.0.3 acceptance and completed cleanup of

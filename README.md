@@ -2,7 +2,7 @@
 
 ## Five-step source candidate
 
-Working version **0.64.6** prepares the owner-requested shared VM deployment
+Working version **0.64.7** prepares the owner-requested shared VM deployment
 refactor on a separate integration branch. It has passed focused Core 2.20
 checks and bounded independent source review. It has not been merged into the
 active deployment source or applied to a running workflow. Preserve the current

@@ -5447,3 +5447,24 @@ from active main and deployment jobs. Populated five-step bindings, coordinated
 adoption, live existing-owner acceptance and complete formal review/APME remain
 unfinished. Existing Assistant consumers are retained until their replacement
 qualifies; Zabbix and the OLD environment are unchanged.
+
+
+## 2026-11-15 — Document the accepted shared-VM checkpoint
+
+Recorded 2026-11-15T12:36:46.466344+00:00. Implementation
+`f16c1654b4bbc79812641d6f40303ec835309fb0` (0.64.6) updates the candidate
+handoff and generated task overview. Shared creator 0.0.3 passed independent
+disposable-VM acceptance; its VM, disk and temporary credential were removed
+after separate owner approvals. Unrelated resources were preserved.
+
+Published shared source 0.0.4 and portable caller rendering passed their
+separate Core 2.20.10 qualification, including identity guards and late runtime
+overrides. The private source-pin candidate remains branch-only. Preserve the
+active deployment feature freeze: no live caller, workflow or Project pin was
+changed. Isolated-caller and full five-step acceptance remain unfinished.
+
+The existing native task exporters refreshed the public overview and encrypted
+full-record recovery checkpoint, and both exporters passed their check modes.
+The paired recovery checkpoint is committed separately as
+`9066a2f6dea38d42aeb150ad4911611bcbd0176e`; it is a point-in-time recovery copy,
+while Beads remains authoritative. No new architecture or target was selected.
