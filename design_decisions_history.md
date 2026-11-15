@@ -5499,3 +5499,17 @@ content-arrow implementation and documentation. Focused checks confirm the
 first-step link, local image path, display width, original PNG byte equality
 and whitespace. Version 0.63.35 documents this implementation identifier;
 publication and deployed verification remain separate.
+
+
+### Retain protected source Git failures before native rollback
+
+Implementation `307beb2c7b1a10f840c8dca9958af10da9db3627` preserves the original central Git-read failure
+through the existing encrypted diagnostic action. The failed checkout may not
+contain its encrypted bootstrap, so this stage uses the attached labelled CaC
+key and the existing source-workspace identity. Other diagnostic stages retain
+their capture validation. Invocation arguments remain excluded. If encryption
+fails, a fixed notice allows the existing outer rollback and cleanup to run.
+
+Six diagnostic cases passed on Core 2.20.10 against the existing pinned baseline. The original live
+Git cause remains unresolved. The caller receives the minimal backport on its
+existing lifecycle baseline while investigation continues.

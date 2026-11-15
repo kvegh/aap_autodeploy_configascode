@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.63.59
+
+- Document protected source Git diagnostic implementation `307beb2c7b1a`
+  and its Core 2.20.10 validation; retain the unresolved live failure separately.
+
 ## 0.63.58
 
 - Backport encrypted native source Git failure capture to the existing pinned
