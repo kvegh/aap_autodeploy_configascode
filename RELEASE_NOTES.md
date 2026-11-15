@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.75
+
+- Document the maintenance pause, subsequent explicit resume and exact post-reset
+  verification boundary in the existing restart guides and task recovery records.
+- Keep previous candidate acceptance historical; do not imply its VMs remain
+  running after the later reset. Runtime code is unchanged.
+
 ## 0.63.74
 
 - Document the guarded reset-retirement implementation and verified lifecycle

@@ -1,5 +1,43 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Maintenance completed; execution resumed — 2026-11-15
+
+The owner explicitly resumed the existing deployment goal after maintenance.
+Continue from the already completed provider reinstall/reset. Revalidate current
+provider and new-host identity, then follow the guarded trust/proof/retirement
+sequence. Do not repeat the reset to observe progress. Beads contains the latest
+native outcomes and active task state; the maintenance checkpoint below is
+historical context.
+
+## Saved maintenance checkpoint — 2026-11-15
+
+The owner halted operations for a maintenance break at this saved checkpoint;
+execution and Beads work were paused then. The later explicit resume above
+revokes that hold within the existing scope. Task pings alone never resume a
+user pause.
+
+The authorized provider reinstall/reset job completed successfully. Its template
+was restored to safe discovery defaults immediately after launch. The last
+read-only provider check also completed, but readiness was false: the provider
+had three host-key fingerprints while the network scan returned no SSH keys.
+No authenticated fresh-OS check, trust publication, native absence proof,
+metadata/DNS retirement, conversion or next-generation allocation has occurred.
+All Controller jobs and delegated work were inactive at the saved checkpoint.
+
+Old ownership, selected allocation, DNS and the old rebuild-inventory pin remain
+intact intentionally. They describe the previous candidate, not a verified
+current installation. The next shared number remains unconsumed; the new
+platform and workload deployments have not run. The qualified runtime changes
+and exact execution records are preserved in Beads and the existing encrypted
+`docs/project-task-records.vault.yml` recovery export.
+
+On an explicit resume, inspect the saved native job outcomes and current provider
+state first. Do not repeat the completed reset. Require provider-verified fresh
+SSH keys before authenticated inspection. Follow the documented Hactar-only
+trust transition, actual post-reset proof and metadata-only retirement before
+conversion or new guests. Preserve old immutable ownership until that succeeds;
+never replay historical whole-trust mutators or the saved destructive profile.
+
 ## Feature freeze for clean deployment
 
 Complete and test the current candidate even when it needs fixes. Then retire
@@ -112,9 +150,10 @@ original four-phase investigation and its saved AAP repair; the retained ordered
 findings, native causal links, fresh metrics and original-trigger recovery were
 independently reviewed. Actual worker registration and advancing application
 heartbeats proved readiness despite error-level logging; no restart or logging
-change was needed. Both test activations are now disabled and their actual
-instances stopped. The website and agent remain healthy, Controller is idle,
-and all nine VMs, source images and complete isolation policy are preserved.
+change was needed. At that acceptance checkpoint, both test activations were
+disabled and their actual instances stopped. The website and agent were healthy,
+Controller was idle, and all nine VMs, source images and isolation were preserved.
+The later reinstall and maintenance pause above supersede that runtime snapshot.
 
 The existing encrypted private verification history retains these outcomes and
 diagnostic limitations. Its append passed native cached Core 2.20.10 inverse,

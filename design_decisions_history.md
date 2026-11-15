@@ -1,5 +1,20 @@
 # Design decisions history
 
+## Preserve the owner-requested maintenance checkpoint — 2026-11-15
+
+The owner halted operations for a maintenance break after the authorized provider
+reset and two read-only status observations. Deployment execution and current
+Beads work were paused, then explicitly resumed after maintenance. The last status observation did not establish
+provider/SSH readiness. No authenticated new-host inspection or old-metadata
+retirement is claimed, and the next shared generation remains unconsumed.
+
+Qualified Source runtime `a76a5708bb565ac84ef661a7f9792efb5bc9b34f` and paired
+Hactar runtime `d8d7f58dd6fb01a05124e062de5c0f1821412bbd` remain unchanged.
+The old ownership and pins are retained for the guarded post-reset transition.
+Existing restart/handover guides and the encrypted Beads recovery export preserve
+the exact boundary and resume prerequisites. This checkpoint adds no deployment
+operation and must not be interpreted as permission to continue automatically.
+
 ## Retire metadata from actual replacement proof — 2026-11-15
 
 Implementation `a76a5708bb565ac84ef661a7f9792efb5bc9b34f` adds an early

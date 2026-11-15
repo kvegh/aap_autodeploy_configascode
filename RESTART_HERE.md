@@ -1,5 +1,43 @@
 # Restart here
 
+## Maintenance completed; execution resumed — 2026-11-15
+
+The owner explicitly resumed the existing deployment goal after maintenance.
+Continue from the already completed provider reinstall/reset. Revalidate current
+provider and new-host identity, then follow the guarded trust/proof/retirement
+sequence. Do not repeat the reset to observe progress. Beads contains the latest
+native outcomes and active task state; the maintenance checkpoint below is
+historical context.
+
+## Saved maintenance checkpoint — 2026-11-15
+
+The owner halted operations for a maintenance break at this saved checkpoint;
+execution and Beads work were paused then. The later explicit resume above
+revokes that hold within the existing scope. Task pings alone never resume a
+user pause.
+
+The authorized provider reinstall/reset job completed successfully. Its template
+was restored to safe discovery defaults immediately after launch. The last
+read-only provider check also completed, but readiness was false: the provider
+had three host-key fingerprints while the network scan returned no SSH keys.
+No authenticated fresh-OS check, trust publication, native absence proof,
+metadata/DNS retirement, conversion or next-generation allocation has occurred.
+All Controller jobs and delegated work were inactive at the saved checkpoint.
+
+Old ownership, selected allocation, DNS and the old rebuild-inventory pin remain
+intact intentionally. They describe the previous candidate, not a verified
+current installation. The next shared number remains unconsumed; the new
+platform and workload deployments have not run. The qualified runtime changes
+and exact execution records are preserved in Beads and the existing encrypted
+`docs/project-task-records.vault.yml` recovery export.
+
+On an explicit resume, inspect the saved native job outcomes and current provider
+state first. Do not repeat the completed reset. Require provider-verified fresh
+SSH keys before authenticated inspection. Follow the documented Hactar-only
+trust transition, actual post-reset proof and metadata-only retirement before
+conversion or new guests. Preserve old immutable ownership until that succeeds;
+never replay historical whole-trust mutators or the saved destructive profile.
+
 Continue the AAP AutoDeploy and Configuration as Code project in this repository.
 Read the applicable `AGENTS.md`, [README.md](README.md), the
 [agreed targets](docs/recovery-and-use-case-targets.md), [TODO.md](TODO.md) and
