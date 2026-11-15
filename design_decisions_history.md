@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Accept appliance deployment before application and demonstration gates — 2026-11-15
+
+The normal monitoring deployment and its native automatic configuration callback
+completed successfully on the reviewed frozen application source. Independent
+readbacks matched API health, private and Controller ownership, strict frontend
+HTTPS, quarantined inherited integrations, and the complete persistent/live
+firewall. The effective policy retains the base and only the declared host-only
+HTTPS grant; the appliance receives no Internet release. Guarded preboot and
+subsequent native readbacks establish that boundary without claiming continuous
+packet capture. No appliance SSH, tunnel, guest execution or Python bootstrap
+was used. Earlier VM identities, allocations, disk paths and running states and
+source images remain preserved.
+
+Delivery, selected-agent monitoring and both EDA activations stay disabled while
+the normal combined Claude/MCP installer runs. Its existing template preserves
+the current TRA binding and omits deferred CloudCLI settings. Agent installation,
+readiness and both actual demonstration flows remain separate unfinished gates;
+no model or fault was launched by these checks. This documentation/task checkpoint
+changes no runtime implementation or architecture. Qualified AutoDeploy runtime
+`f9aa841` and application source `3f5a2c2` remain unchanged; original failed stages
+still prevent calling this candidate an uninterrupted clean run.
+
 ## Preserve verified ownership while refreshing workload configuration — 2026-11-15
 
 Both Linux creation jobs passed their existing native deployment and publication

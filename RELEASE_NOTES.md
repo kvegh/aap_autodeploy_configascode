@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.67
+
+- Record independently accepted monitoring deployment, automatic configuration
+  callback, appliance isolation and preserved VM identities.
+- Refresh protected task records with the existing Claude/MCP installation
+  underway and Agent/both functional demonstrations still pending.
+- Preserve runtime source, disabled delivery/EDA state and feature freeze.
+
 ## 0.63.66
 
 Document both Linux guests' verified deployment, exact policy publication and

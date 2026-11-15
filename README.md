@@ -91,8 +91,14 @@ ownership, credential bindings, saved runtime ciphertexts, webhook and disabled
 EDA state while updating the copied policy. The normal AIOps configuration import
 also passed exact guest, policy and runtime readback. Both guest records are
 enabled with verified identities; secrets, literal values and EDA-off state are
-preserved. Zabbix, Claude/MCP, Agent and both AIOps demonstrations remain
-unfinished.
+preserved. Zabbix deployment and its automatic configuration callback now pass
+independent API, private ownership, strict HTTPS and native preservation checks.
+The complete live and persistent firewall matches the base policy plus its one
+declared host-only HTTPS grant; the appliance has no Internet release. Original
+VM identities, allocations, disk paths and running states are preserved.
+Delivery, testserver monitoring and both EDA activations remain disabled. The
+normal combined Claude/MCP installer is underway; Agent installation and both
+actual AIOps demonstrations remain unfinished. Installation checks invoke no model.
 
 The external WSUS readiness check now has protected optional worker/log metadata
 using its existing template and credentials (Windows implementation `8cb20fb`,
