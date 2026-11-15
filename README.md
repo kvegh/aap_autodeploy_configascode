@@ -73,9 +73,13 @@ artifacts. Its export did not start because an own-Hub collection download in
 project synchronization returned HTTP 502. A contemporaneous Controller
 health-check timeout and proxy HTTP 503 are confirmed; the underlying cause is
 not established. Access recovered without restart or resource changes. A
-subsequent read-only WSUS inspection passed, and a focused export retry preserves
-the exact upstream package artifacts. WSUS synchronization is still processing
-metadata; downstream replication, patching and application tests are outstanding.
+subsequent read-only WSUS inspection passed. The focused Chocolatey export and
+internal import passed with the exact upstream package artifacts. WSUS
+synchronization, export and internal import also passed: all 21 content files,
+about 13.2 GB, passed checksum verification before metadata import and native
+revision/readiness checks completed. Both repository branches are now verified
+through replication. The original selected patch ceiling is the next stage;
+endnode patching and application tests remain outstanding.
 The original failures and diagnostic retry remain recorded. AIOps and both AIOps
 demo tests remain outstanding. The owner's post-wipe absence-check withdrawal
 remains in force.

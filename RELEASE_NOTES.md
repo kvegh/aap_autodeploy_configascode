@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.64.3
+
+- Record successful WSUS synchronization, export and verified internal import,
+  plus successful Chocolatey export/import; retain original failed-run history.
+- Refresh protected Beads records and the current-generation task description.
+  Patching, application tests and AIOps acceptance remain outstanding.
+
 ## 0.64.2
 
 - Record successful AD access verification and repository setup, confirmed
