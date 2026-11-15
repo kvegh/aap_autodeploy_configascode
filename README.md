@@ -120,12 +120,12 @@ The existing encrypted private verification history retains these outcomes and
 diagnostic limitations. Its append passed native cached Core 2.20.10 inverse,
 roundtrip and previous-history checks without changing CaC or runtime
 ciphertext. Current application and demonstration tasks are closed. Exact
-candidate-only retirement has a reviewed read-only plan, but execution is
-blocked: the existing cleanup requires stopped guests and its normal job then
-deletes the selected AAP/AIOps VMs. Current ownership and DNS are retained until
-the owner resolves that conflict with preserving all running VMs. The next full
-reinstall also requires the outstanding host/platform counter and DNS-naming
-decision. Original failed stages remain recorded, so
+candidate-only retirement has a reviewed read-only plan. Ownership and DNS are
+retained while a guarded cleanup path is qualified for the whole-host reset;
+individual guest deletion is not a prerequisite. The owner approved one shared
+host/platform generation, starting at v22. The existing encrypted AAP allocation
+registry is its authority; host installation history records that allocation
+without inventing intervening installations. Original failed stages remain recorded, so
 this candidate does not satisfy uninterrupted clean acceptance.
 
 The external WSUS readiness check now has protected optional worker/log metadata
@@ -856,7 +856,13 @@ flowchart LR
     Install --> Base[04 Shared base]
 ```
 
-Stage 01 consumes the shared encrypted counter and publishes `vm_name`, `vm_ip`,
+For a full host rebuild, the verified installation reserves one shared host/AAP
+generation first. Stage 01 reuses that installation-bound reservation without
+advancing another counter. Independent legacy VM provisioning continues to use
+the same encrypted allocator. Retries retain their generation; a fresh full
+installation consumes a new one, including after a failed VM deployment.
+
+Stage 01 publishes `vm_name`, `vm_ip`,
 `aap_hostname` and the public-key-only `aap_instance_route` through `set_stats`
 workflow artifacts. The API URL uses this reserved VM's unique public hostname.
 Stages 02–04 reread the completed registry entry, reject conflicting inputs and

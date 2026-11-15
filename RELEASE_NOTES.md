@@ -1,5 +1,17 @@
 # Release notes
 
+## 0.63.71
+
+- Reserve one generation in the existing encrypted allocation registry for a
+  verified physical-host installation; Stage 01 reuses the same reservation.
+- Preserve actual histories, Vault headers and literal values. Retain consumed
+  numbers after failures and reject changed installation bindings.
+- Validate eight new real-Vault/process-concurrency tests and twenty-seven
+  allocation/provisioning regressions under cached native Core 2.20.10. Refresh
+  obsolete regression fixtures to execute the current native DNS assertion.
+- Document the approved v22 numbering decision. Host adapter and full rebuild
+  qualification remain separate; no live allocation or deployment is claimed.
+
 ## 0.63.68
 
 - Record independent Claude/MCP, selected-agent and monitoring readiness.

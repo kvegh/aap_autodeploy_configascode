@@ -7,6 +7,41 @@ hypervisors. Old `/opt/vms/vmcounter` files are read only as migration evidence
 and remain untouched. The initial shared floor exceeds all observed existing
 test names and respects the highest observed old next-counter value.
 
+## One generation for a full host rebuild
+
+The physical host and its AAP deployment use this same authoritative counter.
+After authenticating the fresh Rocky installation and matching its provider
+keys and hardware pins, Hactar's existing deployment-counter job calls
+`src/aap_name_allocation.py reserve-host` from a reviewed, pinned Source revision.
+The CLI changes only the existing encrypted allocation file. Native Hactar
+tasks own Git transport, blob-SHA compare-and-swap and fresh remote readback.
+No new registry, job, service or host-local counter is introduced.
+
+One reservation binds the verified provider installation hash, actual new host
+machine ID, VM prefix and consumed number. Its UUID is deterministic for that
+installation. The existing Stage 01 action finds and reuses this exact record;
+an alternative UUID, prefix or changed host identity fails. The host's existing
+encrypted installation history records the same generation only after the
+authoritative reservation is verified. It preserves genuinely observed older
+installations; migration does not fabricate installations for skipped numbers.
+
+The agreed next full attempt starts at v22. Reserving it advances the shared
+next number to 23 once. A repeated host-counter job or Stage 01 invocation
+reuses the reservation, including after a lost response. Failed provisioning
+does not release its number. A subsequent fresh installation consumes the next
+shared number. Competing writers must reread accepted state, and may never
+force a Git update or increment a second counter to repair a conflict.
+
+The CLI retains the original Vault header, literal values and unrelated data,
+uses a stable local file lock and atomic ciphertext replacement, and emits only
+the assigned number, request UUID and change/reuse flags. It is an allocation
+adapter, not proof that an installation is authentic or that AAP has deployed.
+Those gates remain with the native callers. Focused tests exercise real Vault
+encryption, concurrent processes, lost-response retries, migration preservation,
+and a host-bound Stage 01 writer competing with another ordinary VM writer.
+
+## Ordinary VM reservation
+
 The controller-side action uses the active attached `cac` Vault secret and an
 authorized Git writer. Each attempt reads current `main`, encrypts one updated
 state file, commits it and performs a normal non-force push. A competing update

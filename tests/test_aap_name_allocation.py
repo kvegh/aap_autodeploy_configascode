@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import tempfile
 import subprocess
+import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
@@ -25,12 +26,14 @@ ROOT = Path(__file__).resolve().parents[1]
 def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
 
 
 allocation = load("allocation", ROOT / "src/aap_name_allocation.py")
 routing = load("routing", ROOT / "filter_plugins/aap_instance_route.py")
+vault_yaml = load('allocation_test_yaml', ROOT / 'src/cac_yaml.py')
 
 
 def writer_project(directory, vault):
@@ -127,7 +130,7 @@ class AllocationTests(unittest.TestCase):
     def test_stage_one_publishes_only_actual_xml_resource_after_pinned_guest_probe(self):
         from ansible.parsing.dataloader import DataLoader
         from ansible.template import Templar
-        source = yaml.safe_load((ROOT / "01-linux-vm-setup.yml").read_text())[0]["tasks"]
+        source = vault_yaml.load_repository_yaml((ROOT / "01-linux-vm-setup.yml").read_text())[0]["tasks"]
         publication = next(task for task in source if "aap_reserve_vm_name" in task)
         probe = next(index for index, task in enumerate(source) if task["name"] ==
                      "Verify the fresh guest through its exact pinned hypervisor route")
@@ -299,6 +302,12 @@ class AllocationTests(unittest.TestCase):
             allocation.publish_route(result, request, route)
 
     def test_real_git_competing_writers_publish_unique_vaulted_reservations(self):
+        self.competing_writers()
+
+    def test_real_git_writer_reuses_host_generation_while_another_host_allocates(self):
+        self.competing_writers(managed_host=True)
+
+    def competing_writers(self, managed_host=False):
         secret = VaultSecret(b"fixture-vault-password")
         vault = VaultLib([("cac", secret)])
         real_run = subprocess.run
@@ -323,10 +332,14 @@ class AllocationTests(unittest.TestCase):
             )
             git(seed, "init", "--initial-branch=main")
             (seed / "state").mkdir()
+            state = self.state()
+            if managed_host:
+                state, host_request, _ = allocation.reserve_host_generation(
+                    state, 'aap27-test', 'a' * 64, '1' * 32)
             (seed / "state/aap_vm_allocations_vault.yml").write_bytes(
                 vault.encrypt(
                     yaml.safe_dump(
-                        {"aap_vm_allocation": self.state(), "unchanged": "fixture"}
+                        {"aap_vm_allocation": state, "unchanged": "fixture"}
                     ).encode(),
                     secret=secret,
                     vault_id="cac",
@@ -384,6 +397,9 @@ class AllocationTests(unittest.TestCase):
                 with ThreadPoolExecutor(max_workers=2) as pool:
                     results = list(pool.map(reserve_one, ["1" * 32, "2" * 32]))
             self.assertEqual({x["number"] for x in results}, {15, 16})
+            if managed_host:
+                self.assertEqual(results[0]['request_id'], host_request)
+                self.assertFalse(results[0]['changed'])
             accepted = git(
                 remote, "show", "main:state/aap_vm_allocations_vault.yml"
             ).stdout.encode()
@@ -545,36 +561,33 @@ class AllocationTests(unittest.TestCase):
 
 class RoutingTests(unittest.TestCase):
     def test_native_verify_ssl_strings_preserve_the_exact_dns_and_tls_guard(self):
-        from ansible.errors import AnsibleError
-        from ansible.parsing.dataloader import DataLoader
-        from ansible.playbook.conditional import Conditional
-        from ansible.template import Templar
-
-        task = yaml.safe_load((ROOT / 'tasks/aap-instance-api.yml').read_text())[1]
+        task = next(row for row in yaml.safe_load(
+            (ROOT / 'tasks/aap-instance-api.yml').read_text())
+            if row['name'] == 'Require public DNS to identify only the pinned hypervisor')
         route = self.route()
-        for flag, address, accepted in (
-            (True, route['hypervisor']['public_ip'], True),
-            ('True', route['hypervisor']['public_ip'], True),
-            ('true', route['hypervisor']['public_ip'], True),
-            (False, route['hypervisor']['public_ip'], False),
-            ('False', route['hypervisor']['public_ip'], False),
-            ('True', '198.51.100.254', False),
-        ):
-            with self.subTest(flag=flag, address=address):
-                variables = {'aap_instance_route': route, 'aap_hostname': route['aap_hostname'],
-                             'aap_validate_certs': flag}
-                loader = DataLoader()
-                templar = Templar(loader=loader, variables=variables)
-                templar.environment.globals['query'] = lambda *args, **kwargs: (
-                    [address] if kwargs.get('qtype') == 'A' else [])
-                templar.environment.filters['aap_instance_api_dns'] = routing.instance_api_dns
-                condition = Conditional(loader=loader)
-                condition.when = [task['ansible.builtin.assert']['that']]
-                if accepted:
-                    self.assertTrue(condition.evaluate_conditional(templar, variables))
-                else:
-                    with self.assertRaises(AnsibleError):
-                        condition.evaluate_conditional(templar, variables)
+        with tempfile.TemporaryDirectory(prefix='native-api-dns-') as temporary:
+            directory = Path(temporary)
+            for flag, address, accepted in (
+                (True, route['hypervisor']['public_ip'], True),
+                ('True', route['hypervisor']['public_ip'], True),
+                ('true', route['hypervisor']['public_ip'], True),
+                (False, route['hypervisor']['public_ip'], False),
+                ('False', route['hypervisor']['public_ip'], False),
+                ('True', '198.51.100.254', False),
+            ):
+                with self.subTest(flag=flag, address=address):
+                    variables = {'aap_instance_route': route, 'aap_hostname': route['aap_hostname'],
+                        'aap_validate_certs': flag,
+                        'aap_instance_dns': {'ansible_facts': {'getent_hosts': {address: []}}}}
+                    play = [{'hosts': 'localhost', 'gather_facts': False, 'connection': 'local',
+                             'vars': variables, 'tasks': [task]}]
+                    path = directory / 'play.yml'
+                    path.write_text(yaml.safe_dump(play, sort_keys=False))
+                    result = subprocess.run([sys.executable, '-m', 'ansible.cli.playbook',
+                        '-i', 'localhost,', str(path)], capture_output=True, text=True, timeout=45,
+                        env=dict(os.environ, ANSIBLE_FILTER_PLUGINS=str(ROOT / 'filter_plugins'),
+                                 ANSIBLE_LOCAL_TEMP=str(directory / 'ansible')))
+                    self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
 
     def test_optional_https_policy_is_independently_declared_and_preserves_pins(self):
         pin = self.route()["hypervisor"]

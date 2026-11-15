@@ -56,7 +56,10 @@ class ActionModule(ActionBase):
             raise AnsibleActionFail(
                 "Load the encrypted AutoDeploy repository configuration with its environment Vault credential."
             ) from None
-        request_id = args.get("request_id") or str(uuid.uuid4())
+        # Keep this UUID stable during competing Git retries. A managed host's
+        # already-consumed generation takes precedence over a new random UUID.
+        caller_request_id = args.get("request_id")
+        request_id = caller_request_id or str(uuid.uuid4())
         floor = args.get("observed_floor", 1)
         if isinstance(floor, str) and floor.isdecimal():
             floor = int(floor)
@@ -113,6 +116,11 @@ class ActionModule(ActionBase):
                 )
                 configuration = AnsibleLoader(plaintext).get_single_data()
                 state = configuration.get("aap_vm_allocation")
+                host_request = allocator.host_generation_request(state, args["prefix"], args["hypervisor_id"])
+                if host_request is not None:
+                    if caller_request_id is not None and caller_request_id != host_request:
+                        raise AnsibleActionFail('The requested UUID conflicts with the verified host generation.')
+                    request_id = host_request
                 updated, record = allocator.reserve(
                     state, args["prefix"], request_id, args["hypervisor_id"], floor
                 )
