@@ -18,7 +18,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | Task | Title | Status | Priority | Type | Parent / dependency IDs |
 |---|---|---|---|---|---|
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
-| bead-wd-3ix.1 | Complete Core 2.20 migration and rebuild bare metal for v20 | in_progress | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
+| bead-wd-3ix.1 | Complete Core 2.20 migration and rebuild bare metal for v20 | deferred | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.2 | Achieve one clean &#91;HOST&#93; installation with tested Windows and AIOps | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-5zfc, bead-wd-72f.31.2.7 |
 | bead-wd-3ix.2.6 | Use one generation counter for physical host and AAP | in_progress | P1 | task | bead-wd-3ix.2 |

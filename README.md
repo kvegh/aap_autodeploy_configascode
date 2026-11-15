@@ -1,5 +1,17 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Current generation execution — 2026-11-15
+
+The normal connection, shared generation assignment, host DNS and RHEL
+conversion stages have completed successfully. The physical host and AAP
+reservation are both generation v22 and share the exact same reservation ID;
+both next-number values are 23. All six genuine earlier host-history entries
+remain unchanged. The AAP creation stage must reuse this reservation.
+
+The existing host workflow continues. Current-generation AAP, Windows, AIOps
+and both functional demonstrations still require their own successful outcomes.
+Old active generation cleanup is complete; no post-wipe absence proof is required.
+
 ## Current owner direction — 2026-11-15
 
 The completed full reinstall is authoritative: no post-wipe disk/native absence

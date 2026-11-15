@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.78
+
+- Record actual native shared v22 reservation and exact host/AAP binding,
+  preserved real history and successful RHEL conversion.
+- Keep actual AAP reservation reuse and full workload acceptance outstanding;
+  refresh scoped task state without changing runtime behavior.
+
 ## 0.63.77
 
 - Record the owner's explicit full-reinstall cleanup decision: retire old active

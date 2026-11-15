@@ -5784,3 +5784,18 @@ encrypted metadata plan offline; this performed no server or storage checks.
 The linked manual dedicated Drive OAuth application/grant guide remains
 published in the host project. Current host trust reconciliation and the full
 platform/workload deployment remain subsequent stages.
+
+## 2026-11-15 — Verify the actual shared host/platform generation
+
+The published shared allocator implementation `804fc0f` and guarded lifecycle
+follow-up `a76a570` now have actual native host-assignment acceptance. The
+existing authoritative allocation state reserved v22 once; the host history
+records the exact same reservation and provider-installation identity. Both
+next-number values are 23, and all six earlier genuine host entries are unchanged.
+No intervening installations were fabricated. Native host registry publication
+`a586b613a9a4f4b58fef69c4db665079641b243b` retains that result.
+
+Normal connection, host DNS and RHEL conversion stages passed. This does not
+yet establish actual AAP creation/reservation reuse or full workload/demo
+acceptance; the existing workflow and subsequent deployment stages continue.
+The post-wipe absence proposal remains withdrawn under the owner decision.
