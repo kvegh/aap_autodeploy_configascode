@@ -7,14 +7,17 @@ with zero failed events and no manual repairs. This includes conversion, RHEL
 updates, host setup, managed reboot, both host verifications and old host-DNS
 retirement. Superseded active CaC, DNS and AAP metadata has been removed.
 
-The physical host and AAP reservation share generation v22 and the exact same
-reservation ID; both next-number values are 23. All seven selected base images
-passed their actual checksum and publication checks. The normal managed
-safeguard stage also passed. AAP VM setup has been submitted once and is being
-followed through its native result. Verify that it reuses the existing reservation
-without a second increment before configuring the remaining AAP stages.
-Current-generation AAP completion, Windows, AIOps and both AIOps demo tests
-remain outstanding. The owner's post-wipe absence-check withdrawal remains in force.
+The physical host and AAP guest reused the exact same generation v22 reservation.
+Both next-number values remain 23, and earlier allocation and host history are
+preserved. All seven selected base images passed actual checksum and publication
+checks, and normal managed safeguards passed. AAP VM setup completed successfully
+with zero failed events; its route and primary guest identity match the published
+registry. The remaining platform-stage selectors now target that verified guest.
+
+Infrastructure configuration is being followed through its native outcome.
+AAP installation, base configuration, final access verification, Windows, AIOps
+and both AIOps demo tests remain outstanding. The owner's post-wipe absence-check
+withdrawal remains in force.
 
 ## Current owner direction — 2026-11-15
 

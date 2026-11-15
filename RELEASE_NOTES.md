@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.63.81
+
+- Document successful AAP VM setup and actual reuse of the host generation
+  reservation, with the next counter unchanged and prior history preserved.
+- Track the existing infrastructure stage and remaining installation, base,
+  workload and demo acceptance without claiming full deployment completion.
+- Refresh task recovery records; no runtime behavior changes.
+
 ## 0.63.80
 
 - Document verified checksum and publication results for all seven base images

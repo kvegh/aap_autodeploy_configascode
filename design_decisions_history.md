@@ -5824,3 +5824,14 @@ once using its normal template and the host generation reservation. Actual
 reservation reuse and completed platform/workload/demo acceptance remain
 unverified; a submission is not a successful deployment. This checkpoint updates
 documentation and protected task recovery records without runtime changes.
+
+## 2026-11-15 — Verify actual host and guest generation reuse
+
+Native AAP VM setup completed successfully with zero failed events. Its exact
+reservation ID matches the physical host's consumed generation, the next number
+stayed unchanged, and prior registry and host history were preserved. The actual
+guest route and primary ownership match the published registry. Four existing
+platform selectors were bound to that verified guest through the established
+encrypted capture and native Controller metadata, preserving credentials and all
+other fields. Platform installation and full workload/demo acceptance remain
+separate outcomes; this documentation checkpoint changes no runtime behavior.
