@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.62.7
+
+Document implementation `f7d6f9b`, the minimal existing dependency boundary,
+eight passing native Core 2.20 tests and remaining live/caller acceptance.
+
 ## 0.62.6
 
 Repair only proved missing canonical Windows release identities in the

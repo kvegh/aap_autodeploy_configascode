@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Backport only proved Windows Source policy omissions — 2026-11-15
+
+Implementation `f7d6f9bff3fe458bb893bf0ba69e8a4ceddfb278` backports the
+narrow Source policy repair from main implementation
+`d31358762439c1ebcbf73bdae11914f988fe25d6` onto the accepted Linux creator
+dependency. It retains the original strict release guard, native verification,
+production exclusions and post-native publication path. Missing permissions
+must be canonical, uniquely owned Windows interface tuples from the same
+generation and hypervisor; unrelated grants and unknown ownership still refuse.
+
+The backport copies only the qualified release/transport functions, two guarded
+PATCH constructors and the existing inventory identity lazy loader. The loader
+uses filter functions already present on this baseline. Other source inventory
+logic and deployment behavior remain unchanged. Exact variable preimages and
+readback guard reconciled PATCHes without claiming atomic compare-and-swap.
+
+Eight focused tests passed under cached native Core 2.20.10, including encrypted
+publication interruption/retry, API race and permission refusals, native rollback
+and application-grant preservation. The public test copy ran in the container's
+normal filesystem with networking disabled; host access settings were unchanged.
+This immutable dependency publication does not establish caller adoption or
+live automatic-repair acceptance.
+
 ## Allow a bounded wait for longer shared native transactions — 2026-11-13
 
 Implementation `2c3f56800aeceab9ea9a4bf05aa44b934b90dc0c` (source 0.62.2)
