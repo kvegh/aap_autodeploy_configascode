@@ -4820,3 +4820,24 @@ fields and seven refusal cases. Both complete playbooks passed syntax checks.
 Source route IDs are not copied into new receivers. The firewall decision for
 new receivers reaching the protected Source Hub remains separate. Version
 0.59.4 records this implementation and its verification limits.
+
+## 2026-11-15 — Backport visible logging to the accepted Linux release source
+
+Implementation `afffa8ea3624551efae80310f0344294c7e9d728` applies the owner's
+explicit temporary `no_log: false` request to the exact accepted Linux guest
+release dependency. The separate branch retains the accepted runtime and does
+not adopt later allocator, credential or deployment behavior.
+
+The YAML comparison proves all nonlogging values identical across 61 changed
+production files and 455 logging values. Python modules, native argument
+redaction, filters, action plugins and security/identity/rollback logic remain
+unchanged. The existing synthetic failure-output fixture now expects visible
+task diagnostics while retaining native state, rollback and cleanup checks.
+
+Actual cached Core 2.20.10 validation passed 20 unchanged native release and
+retirement tests. The remaining fixture initially failed its superseded hidden
+output assertion; after updating that expectation, its focused retest and the
+separate native CLI sanitization test passed. Four version-policy tests passed.
+The container used no network or host mounts and retained a read-only root.
+No AAP job, guest operation, live configuration or formal release was performed.
+Raw deployment output remains private and must be redacted before sharing.

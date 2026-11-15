@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.62.5
+
+Document implementation `afffa8ea3624551efae80310f0344294c7e9d728`, its
+logging-only preservation proof and native Core 2.20 validation. This branch is
+an immutable dependency candidate, not a published release or live acceptance.
+
 ## 0.62.4
 
 Backport the owner's temporary visible deployment logging policy to the
