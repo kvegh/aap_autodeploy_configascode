@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.90
+
+- Document successful Windows basics, evaluation activation and the original AD
+  update while retaining failed-run history and the unresolved original Git cause.
+- Refresh the protected Beads task export, including the requested future AAP
+  snapshot playbooks and completed Linux-creator logging qualification.
+
 ## 0.63.89
 
 - Document implementation `a34dddbbb683` of the owner's temporary visible

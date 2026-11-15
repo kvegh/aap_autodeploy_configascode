@@ -45,23 +45,31 @@ The focused Windows configuration retry passed. Independent readback verified
 all 35 templates, 29 workflow nodes and 29 links, exact runtime/credential/image
 bindings and eight collection pins. Launch metadata has no missing templates,
 rejected node prompts or required inputs. One normal Windows workflow is now
-running; guest deployment is not yet accepted. The original failures and
-diagnostic retry remain recorded. AIOps and both AIOps demo tests remain
-outstanding. The owner's post-wipe absence-check withdrawal remains in force.
+running; guest deployment is not yet accepted. Both failed VM-creation stages
+passed focused retries, so all five Windows VMs now exist. Server basics and
+evaluation activation passed with zero failed events. The original AD update
+also passed without retry, and its workflow continued automatically to directory
+configuration. Repository preparation also passed; the next existing branches
+configure WSUS and Chocolatey.
+The original failures and diagnostic retry remain recorded. AIOps and both AIOps
+demo tests remain outstanding. The owner's post-wipe absence-check withdrawal
+remains in force.
 
 ## Protected native source Git failures
 
 The Windows workflow reached native guest creation, where two branches failed
 while reading the existing central bootstrap repository. Their underlying Git
-errors were hidden by protected logging; the cause remains unresolved. Successful
-branches and the continuing AD update are retained.
+errors were hidden by protected logging; the cause remains unresolved. Both
+focused creation retries subsequently succeeded, and the original AD update
+completed successfully. Their original failed executions remain recorded.
 
 The same existing encrypted diagnostic action now preserves that exact Git
 failure as `aap_guest_source_git_failure_vault`, using only the existing labelled
 CaC key. Missing diagnostics never prevent normal native rollback or cleanup.
-Normal Git parameters, certificate checks and protected logs remain unchanged;
-no automatic retry is introduced. Qualify the minimal change on the existing
-pinned dependency before retrying only the failed normal stage.
+Normal Git parameters and certificate checks remain unchanged; no automatic retry
+is introduced. The minimal change was qualified on the existing pinned dependency.
+The owner's later visible-logging instruction applies to subsequent deployment
+runs; retain the encrypted copy and keep raw output private.
 
 ## Protected project import failures
 
