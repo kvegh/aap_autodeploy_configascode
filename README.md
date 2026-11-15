@@ -39,8 +39,9 @@ and an incomplete private Git transfer. Focused stage recoveries created all fiv
 guests, and server basics passed on all four regular guests. AD preparation then
 completed its measured update and reboot passes. The qualified caller update is
 published and a normal activation stage adopted it and completed the protected
-private Git read. The twenty-six-stage checkpoint includes both repository
-synchronization/export/import chains and complete AD functional verification.
+private Git read. All twenty-nine Windows stages have now passed, including both
+repository synchronization/export/import chains and complete AD functional
+verification.
 Four Chocolatey packages have matching destination SHA-256 readbacks. AD
 preparation installed nine applicable Server updates, with none remaining and
 no reboot required. Domain deployment, LDAPS, gateway trust and regional setup
@@ -50,9 +51,13 @@ WSUS synchronization downloaded every selected payload, and native internal
 metadata import completed successfully. The April 2026 update policy passed with
 four updates offered, 133 blocked, no automatic approval rules and no missing
 content. Managed Server 2022 passed its exact baseline, required KB and final
-zero-update/no-reboot checks. Server 2025 patching continues; application tests
-follow the existing graph. Full Windows and AIOps demonstration acceptance remains
-unfinished.
+zero-update/no-reboot checks. Server 2025 also passed its exact baseline and
+required KB with no remaining updates or reboot. Application baseline and actual
+upgrades passed on both managed servers. Native live functional checks and all
+six regression suites passed. Independent comparison with the original
+pre-creation baseline preserved the AAP VM and both golden images; all five
+Windows guests remain running. Windows acceptance is complete. AIOps application
+deployment and both AIOps demonstration flows remain unfinished.
 Original failures remain recorded.
 
 The existing AIOps website setup passed independently alongside Windows
@@ -64,10 +69,17 @@ seconds. Normal CaC import preserved all other bindings, runtime ciphertext and
 the webhook before the successful retry. The original failure remains recorded;
 Agent and Claude runtime guards are unchanged. This path manages only its
 version's DNS, website files, dedicated nginx configuration and certificate.
-Monitoring, fail2ban management and button arming stay off. AIOps VM creation waits
-for Windows functional and preservation checks: adding guests earlier would
-change the exact domain set required by the immutable pre-creation baseline.
-The later creators must reread current isolation policy and available resources.
+Monitoring, fail2ban management and button arming stay off. Root review of the
+completed Windows functional and original-baseline preservation checks releases
+the sequencing dependency. Every later creator must still reread current policy,
+identity, conflicts and available resources. The first AIOps preflight found
+stale policy records on the original controller while canonical configuration
+and the complete native firewall agree. A bounded variables-only update
+reconciled those existing records; fresh before/after comparison preserved every
+unrelated value and the unchanged safety guards passed. Automatic synchronization
+across controllers remains deferred. No firewall permission changed. The first
+Linux guest job is now in progress through its existing template; guest acceptance
+and the remaining demonstrations still require verified results.
 
 The external WSUS readiness check now has protected optional worker/log metadata
 using its existing template and credentials (Windows implementation `8cb20fb`,

@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.63.65
+
+Document complete recovered Windows acceptance: twenty-nine stage successes,
+exact managed-server patch baselines, actual application upgrades, live checks,
+regressions and independent preservation of the original AAP VM and golden
+images. Keep original failures and distinguish this result from an uninterrupted
+clean iteration. Document the stale controller policy records found before the
+first AIOps VM launch and their verified metadata-only correction, preserving
+the deferred automatic-synchronization work. Refresh normal task mirrors and
+encrypted recovery records; runtime code is unchanged.
+
 ## 0.63.64
 
 Document the verified AIOps website recovery after its overall deadline stopped

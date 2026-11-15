@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Accept Windows only after functional and original-baseline proof — 2026-11-15
+
+Root review accepted all twenty-nine actual stage results, both exact managed
+patch baselines, real application upgrades, native live checks and regressions.
+The original pre-creation artifact still matches its native job. Independent
+preservation checks retain the original AAP VM and both golden images and verify
+the exact five owned Windows guests, all running. No shutdown or cleanup follows
+from acceptance. This closes only Windows verification and releases its sequencing
+dependency for later AIOps creation after fresh resource and policy checks.
+
+The first AIOps preflight found stale policy records on the original controller;
+canonical configuration and the complete live and persistent native firewall
+agree. A reviewed variables-only Controller update reconciled the two stale
+records, with complete unrelated-value preservation and passing unchanged
+guards. The full normal importer was unsuitable because its original-controller
+identity lacks an unrelated placement value; no value was invented. Broader
+automatic synchronization remains deferred. The correction changes Controller
+variables only. The first Linux VM job is now in progress through its existing
+template; guest acceptance and both demonstrations remain separate. Earlier
+failed jobs remain evidence that this candidate does not meet uninterrupted
+clean-run acceptance. Existing executable
+source remains at the behavior qualified by `f9aa841`.
+
 ## Verify the focused website budget repair through normal automation — 2026-11-15
 
 Public AIOps implementation `9adfd92` (documented by `3f5a2c2`, deployment
