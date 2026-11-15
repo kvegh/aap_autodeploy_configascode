@@ -9,6 +9,12 @@ captures private, redact reports, and never copy raw logs or secrets into Git.
 Native credential-field redaction, authentication, TLS checks and rollback
 remain in force. Active jobs retain the settings with which they started.
 
+The AIOps preparation plugin accepts either explicit Boolean logging choice.
+Subscription and source-reader inputs remain restricted to pre-import
+preparation, and private workspace, credential, encrypted publication and
+no-force-push checks remain unchanged. An absent or malformed logging choice
+is rejected before API or Git work. Raw diagnostics remain private.
+
 
 ## v22 Rebuild checkpoint — 2026-11-15
 

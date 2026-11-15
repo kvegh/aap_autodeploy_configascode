@@ -743,10 +743,26 @@ class EncryptedPublicationTests(unittest.TestCase):
         self.assertNotIn(changed["activation_keys"][0], str(raised.exception))
         self.assertEqual(self.git("--git-dir", str(self.bare), "rev-parse", "main"), accepted)
 
-    def test_subscription_requires_protected_logging_before_any_api_or_git_work(self):
+    def test_explicit_visible_logging_preserves_encrypted_publication_and_idempotence(self):
+        before_capture, before_runtime, _, _ = self.remote_pair()
+        result = self.action(no_log=False)
+        self.assertTrue(result['prepared'])
+        capture, runtime, cipher, runtime_cipher = self.remote_pair()
+        self.assertEqual(capture['aiops_runtime_settings_vault'], runtime_cipher.decode())
+        self.assertEqual(capture['unrelated'], before_capture['unrelated'])
+        self.assertEqual(runtime['instances']['aap27-test-6'], before_runtime['instances']['aap27-test-6'])
+        self.assertNotIn(self.subscription['activation_keys'][0].encode(), cipher + runtime_cipher)
+        self.assertNotIn(self.source_git_token.encode(), cipher + runtime_cipher)
+        accepted = self.git('--git-dir', str(self.bare), 'rev-parse', 'main')
+        self.assertFalse(self.action(no_log=False)['changed'])
+        self.assertEqual(self.git('--git-dir', str(self.bare), 'rev-parse', 'main'), accepted)
+        self.assertTrue(all(method == 'GET' for method, _ in self.client.calls))
+
+    def test_preparation_requires_an_explicit_boolean_logging_choice_before_any_api_or_git_work(self):
         accepted = self.git("--git-dir", str(self.bare), "rev-parse", "main")
-        with self.assertRaisesRegex(AnsibleActionFail, "no-log pre-import"):
-            self.action(no_log=False)
+        for logging in (None, 'false', 0, 1):
+            with self.subTest(logging=logging), self.assertRaisesRegex(AnsibleActionFail, 'explicit logging choice'):
+                self.action(no_log=logging)
         self.assertFalse(self.client.calls)
         self.assertEqual(self.git("--git-dir", str(self.bare), "rev-parse", "main"), accepted)
 

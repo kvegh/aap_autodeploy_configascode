@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.91
+
+- Honor the owner's explicit visible-logging choice in AIOps pre-import
+  preparation, preserving private credential, workspace and publication checks.
+- Reject absent or malformed logging choices before API/Git access; verify
+  visible preparation still publishes only paired Vault ciphertext idempotently.
+
 ## 0.63.90
 
 - Document successful Windows basics, evaluation activation and the original AD

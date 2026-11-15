@@ -44,9 +44,9 @@ class ActionModule(ActionBase):
             require(not self._task.check_mode, "Encrypted AIOps preparation needs a normal import, not check mode.")
             operation = self._task.args["operation"]
             require((operation == "pre" and {"subscription", "source_git_token"} <= set(self._task.args)
-                     and self._task.no_log is True)
+                     and (self._task.no_log is True or self._task.no_log is False))
                     or (operation == "post" and not ({"subscription", "source_git_token"} & set(self._task.args))),
-                    "Pass protected subscription and source-reader inputs only during no-log pre-import preparation.")
+                    "Pass subscription and source-reader inputs only during pre-import preparation with an explicit logging choice.")
             contract = self._templar.template(variables["cac_project_contract"])
             require(contract["project_id"] == "aiops-selfhealing-demo"
                     and contract["configuration_file"] == CAPTURE,
