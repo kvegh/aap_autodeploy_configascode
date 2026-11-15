@@ -96,9 +96,16 @@ independent API, private ownership, strict HTTPS and native preservation checks.
 The complete live and persistent firewall matches the base policy plus its one
 declared host-only HTTPS grant; the appliance has no Internet release. Original
 VM identities, allocations, disk paths and running states are preserved.
-Delivery, testserver monitoring and both EDA activations remain disabled. The
-normal combined Claude/MCP installer is underway; Agent installation and both
-actual AIOps demonstrations remain unfinished. Installation checks invoke no model.
+The normal combined Claude/MCP and selected-agent installations also pass
+independent binary, authentication, private MCP, package and service checks.
+After agent readiness, only the existing encrypted monitoring opt-in changed;
+the normal importer preserved all other settings. The existing monitoring job
+then verified fresh agent, uptime, ICMP and website data, with only the exact
+website and selected-agent delivery actions enabled. It reused the same running
+appliance and preserved all VMs, source images and isolation. Readiness checks
+invoked no model and kept EDA disabled. Both actual recovery demonstrations
+remain separate gates; activate only their selected worker and stop it after
+verified recovery. Original failed stages remain part of this candidate's history.
 
 The external WSUS readiness check now has protected optional worker/log metadata
 using its existing template and credentials (Windows implementation `8cb20fb`,

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.63.68
+
+- Record independent Claude/MCP, selected-agent and monitoring readiness.
+- Preserve the exact existing monitoring opt-in, normal import and isolated
+  delivery verification before the two controlled functional demonstrations.
+- Refresh protected task records without changing runtime code or feature freeze.
+
 ## 0.63.67
 
 - Record independently accepted monitoring deployment, automatic configuration

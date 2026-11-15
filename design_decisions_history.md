@@ -1,5 +1,31 @@
 # Design decisions history
 
+## Require complete monitoring readiness before either controlled incident — 2026-11-15
+
+The existing combined Claude/MCP installer passed actual pinned-binary, provider,
+workspace and authenticated private MCP checks without a model invocation.
+Independent reads verified its installed files and bindings. The normal selected
+agent job then passed package, server configuration, enabled/active service and
+listener checks on the exact guest.
+
+Only afterward, private implementation `ca6fd7d` enabled the existing monitoring
+opt-in. Native inverse and Vault roundtrip checks preserved unrelated data,
+literal paths and runtime ciphertext. Its normal CaC import changed only the
+saved monitoring boolean while preserving all credential associations and other
+resources. The normal monitoring repeat verified fresh agent, uptime, ICMP and
+website samples and the original healthy trigger, with only the exact website
+and selected-agent forwarding actions enabled. Native clone and start tasks
+were skipped; VM identities, resources, images and complete isolation remained
+unchanged. Both EDA workers remained off during readiness.
+
+The next gates are one website outage with automatic restore/rearm and the
+original complete agent investigation with automatic saved-job repair. Initial
+website arming uses its existing template because initial setup deliberately
+left the audience disarmed. These are controlled functional tests, with no new
+architecture, service or transport. Source runtime remains qualified by
+`f9aa841` and application source by `3f5a2c2`; this documentation/task checkpoint
+changes neither. Earlier failures still prevent an uninterrupted-clean claim.
+
 ## Accept appliance deployment before application and demonstration gates — 2026-11-15
 
 The normal monitoring deployment and its native automatic configuration callback
