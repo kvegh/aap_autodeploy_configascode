@@ -31,7 +31,8 @@ runtime, own-Hub EE and TLS checks. The fixed selector also completed its normal
 preparation/import path and retained both successful child IDs. Earlier missing
 AutoDeploy credentials were supplied by their existing producer; original failed
 jobs remain part of this candidate's record. Windows demonstration acceptance
-is complete; AIOps application and functional acceptance remain unfinished.
+is complete; AIOps application and both functional demonstrations are also
+accepted, as described below.
 Windows launch preflight found a protected Chocolatey survey answer missing from
 captured node data; its encrypted fix is
 published, applied through the normal configuration importer and verified by
@@ -58,7 +59,7 @@ upgrades passed on both managed servers. Native live functional checks and all
 six regression suites passed. Independent comparison with the original
 pre-creation baseline preserved the AAP VM and both golden images; all five
 Windows guests remain running. Windows acceptance is complete. AIOps application
-deployment and both AIOps demonstration flows remain unfinished.
+deployment and both demonstration flows are also accepted.
 Original failures remain recorded.
 
 The existing AIOps website setup passed independently alongside Windows
@@ -103,9 +104,26 @@ the normal importer preserved all other settings. The existing monitoring job
 then verified fresh agent, uptime, ICMP and website data, with only the exact
 website and selected-agent delivery actions enabled. It reused the same running
 appliance and preserved all VMs, source images and isolation. Readiness checks
-invoked no model and kept EDA disabled. Both actual recovery demonstrations
-remain separate gates; activate only their selected worker and stop it after
-verified recovery. Original failed stages remain part of this candidate's history.
+invoked no model and kept EDA disabled.
+
+Both actual recovery demonstrations subsequently passed. One website fault led
+to automatic restoration and rearming. One selected-agent stop led to the
+original four-phase investigation and its saved AAP repair; the retained ordered
+findings, native causal links, fresh metrics and original-trigger recovery were
+independently reviewed. Actual worker registration and advancing application
+heartbeats proved readiness despite error-level logging; no restart or logging
+change was needed. Both test activations are now disabled and their actual
+instances stopped. The website and agent remain healthy, Controller is idle,
+and all nine VMs, source images and complete isolation policy are preserved.
+
+The existing encrypted private verification history retains these outcomes and
+diagnostic limitations. Its append passed native cached Core 2.20.10 inverse,
+roundtrip and previous-history checks without changing CaC or runtime
+ciphertext. Current application and demonstration tasks are closed. Exact
+candidate-only retirement is being inventoried through existing ownership
+guards; the next full reinstall still requires the outstanding host/platform
+counter and DNS-naming decision. Original failed stages remain recorded, so
+this candidate does not satisfy uninterrupted clean acceptance.
 
 The external WSUS readiness check now has protected optional worker/log metadata
 using its existing template and credentials (Windows implementation `8cb20fb`,

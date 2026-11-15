@@ -1,5 +1,31 @@
 # Design decisions history
 
+## Accept both actual demonstrations before candidate retirement — 2026-11-15
+
+Private evidence implementation `c839f003659f249a1654f861b3b21ad8ad7ed24e`,
+documented by `e0c59495dd10358c4798676562069c11f9236f67`, preserves both
+accepted recovery demonstrations in the existing encrypted history. A single
+website fault led to automatic restore and rearm. A single selected-agent stop
+led to the original ordered four-phase investigation, automatic saved repair,
+fresh monitoring and recovery of the original trigger. Root reviewed the
+actual native causal joins, retained findings and independent preservation.
+Both test activations were verified disabled with their actual instances
+stopped, and Controller idle. All nine VMs, images and isolation are preserved.
+
+Missing informational worker banners were explained by error-level logging;
+actual server-side registration and advancing loaded-rule heartbeats proved
+readiness without a restart or permission change. Diagnostic limitations remain
+in the protected record. Native cached Core 2.20.10 checks preserved previous
+evidence, literal tags, the legacy Vault header and unchanged CaC/runtime
+ciphertext. Original failed stages remain, so recovered functional acceptance
+does not satisfy the uninterrupted-clean goal.
+
+This checkpoint closes current workload acceptance and starts only a read-only
+inventory for the already authorized candidate-specific retirement. The next
+full reinstall remains dependent on the unanswered allocator/DNS decision.
+Qualified AutoDeploy runtime `f9aa841` and application source `3f5a2c2` are
+unchanged; the separate shared-creator candidate is not adopted.
+
 ## Require complete monitoring readiness before either controlled incident — 2026-11-15
 
 The existing combined Claude/MCP installer passed actual pinned-binary, provider,
