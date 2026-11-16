@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-289 tasks: 44 outstanding; 245 closed.
+290 tasks: 44 outstanding; 246 closed.
 
 ## Outstanding tasks
 
@@ -20,17 +20,17 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix | Prove Hactar recovery on an isolated separate target | open | P1 | task | bead-wd-105, bead-wd-4s4, bead-wd-5fm, bead-wd-86z, bead-wd-a68, bead-wd-c5x, bead-wd-hny, bead-wd-pn3 |
 | bead-wd-3ix.1 | Complete Core 2.20 migration and rebuild bare metal for v20 | deferred | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
-| bead-wd-3ix.2 | Achieve one clean &#91;HOST&#93; installation with tested Windows and AIOps | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-5zfc, bead-wd-72f.31.2.7 |
+| bead-wd-3ix.2 | Rebuild &#91;HOST&#93; and AAP through base configuration | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-5zfc, bead-wd-72f.31.2.7 |
 | bead-wd-3ix.2.10 | Run full v23 rebuild and Windows and AIOps functional acceptance | deferred | P1 | epic | bead-wd-3ix.2, bead-wd-3ix.2.9 |
 | bead-wd-3ix.2.10.1 | Separate retained agent phase output and publish bounded successful tool diagnostics | deferred | P1 | bug | bead-wd-3ix.2.10 |
 | bead-wd-3ix.2.12 | Run full v24 installation with cold snapshots and functionality tests | deferred | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.11 |
 | bead-wd-3ix.2.12.2 | Migrate all maintained public DNS playbooks CaC and templates to v3 | deferred | P1 | task | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.12.9 | Verify v24 Windows deployment, actual demo and clean teardown | deferred | P1 | task | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.14 | Provide one AAP workflow for physical reinstall through configured Hactar host | in_progress | P1 | task | bead-wd-3ix.2 |
-| bead-wd-3ix.2.15 | Define Windows CaC import-only AAP workflow (WF3) | in_progress | P1 | task | bead-wd-3ix.2 |
-| bead-wd-3ix.2.16 | Define AIOps CaC import-only AAP workflow (WF4) | in_progress | P1 | task | bead-wd-3ix.2 |
+| bead-wd-3ix.2.14.1 | Remove accumulated execution history from controller runtime recovery configuration | in_progress | P1 | task | bead-wd-3ix.2.14 |
+| bead-wd-3ix.2.15 | Define Windows CaC import-only AAP workflow (WF3) | deferred | P1 | task | bead-wd-3ix.2 |
+| bead-wd-3ix.2.16 | Define AIOps CaC import-only AAP workflow (WF4) | deferred | P1 | task | bead-wd-3ix.2 |
 | bead-wd-3ix.2.17 | Retire v24 and rebuild v25 through AAP base only | in_progress | P1 | epic | bead-wd-3ix.2 |
-| bead-wd-3ix.2.17.1 | Retire only v24 DNS and active configuration before v25 rebuild | in_progress | P1 | task | bead-wd-3ix.2.17 |
 | bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | deferred | P1 | epic | bead-wd-3ix.2 |
 | bead-wd-3ix.2.7.5.2 | Reconcile AAP supplemental interface metadata in source inventory | deferred | P1 | bug | bead-wd-3ix.2.10 |
 | bead-wd-3ix.2.7.5.4 | Reconcile canonical Windows network policy into original Source aliases before AIOps release | deferred | P1 | bug | bead-wd-3ix.2.10 |
@@ -108,6 +108,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.12.7 | Ensure receiving AutoDeploy source credentials before Windows import | closed | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.12.8 | Correct AutoDeploy resource normalization failure on the receiving AAP | closed | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.13 | Reconcile the AAP deployment workflow to stop after base configuration | closed | P1 | task | bead-wd-3ix.2 |
+| bead-wd-3ix.2.17.1 | Retire only v24 DNS and active configuration before v25 rebuild | closed | P1 | task | bead-wd-3ix.2.17 |
 | bead-wd-3ix.2.2 | Reinstall only the verified &#91;HOST&#93; replacement server for v21 | closed | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.1 |
 | bead-wd-3ix.2.2.1 | Diagnose Hub artifact checksum failure and complete pending host checks | closed | P1 | task | bead-wd-3ix.2.2 |
 | bead-wd-3ix.2.2.2 | Remove all numbered DNS names below v21 | closed | P1 | task | bead-wd-3ix.2.2 |

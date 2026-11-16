@@ -1127,6 +1127,11 @@ their history remains in Beads and the encrypted recovery export. Their owning
 chats track subsequent implementation.
 
 The generated overview and protected export reflect the current Beads records.
+The current execution scope ends at platform base configuration and its three
+cold checkpoints, and begins only after the separate maintained physical-host
+workflow succeeds. Workload imports and runs are outside this attempt. Earlier
+checkpoint notes below are historical; Beads records the actual current outcome.
+
 The replacement host is reinstalled, converted and configured; managed reboot
 and post-reboot checks passed. The first host workflow stopped when a prerequisite
 collection download failed checksum verification, before host verification ran.
