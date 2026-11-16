@@ -6108,3 +6108,61 @@ checks do not prove a real snapshot or restore: first enabled next-installation
 acceptance remains outstanding. Full base-playbook syntax checking in that
 minimal cached image stops at its pre-existing missing `ansible.controller`
 collection; no dependency was installed for this feature.
+## Use GoDaddy v3 and observe authoritative publication — 2026-11-16
+
+The user requested the maintained v3 DNS API before the next deployment, with
+temporary-record qualification before publication. The Source infrastructure
+and retirement paths therefore use the provider's returned `recordId` rather
+than replacing or deleting a name-wide legacy record set. Creation is not
+automatically retried because an uncertain response may already have created
+the record. Existing address ownership, alias/IPv6 refusal, exact readback and
+strict transport controls remain necessary independently of API version.
+
+Full-zone retirement must prove complete, consistent pagination before deriving
+any deletion plan. Actual Ansible qualification exposed that a condition on a
+looped `include_tasks` is evaluated while includes are queued; an additional
+execution-time block guard stops reads after the final validated page. Empty
+v3 results may omit both totals, so that documented shape is accepted only
+without a next-page link; incomplete nonempty responses fail closed.
+
+API acknowledgment and record readback do not replace the existing public DNS
+answer guard. This feature does not establish the original NXDOMAIN's cause,
+rewrite prior failures or claim a clean deployment. The separate borrowed
+Hactar revision selects isolation/firewall code, while Source AutoDeploy's own
+project revision selects these DNS tasks and the cold-snapshot hooks. Refresh
+and verify that project rather than changing the unrelated nested pin. Policy
+enablement alone cannot establish actual checkpoint execution. Implementation:
+`dc685f05ca61811116f1b68b6bfc6820a2e41d0d`. Twenty-four focused tests passed in
+cached Core 2.20.10 and Core 2.21.5. Two fresh temporary-name live flows passed
+provider reconciliation, authoritative readiness, public resolution, unchanged
+repeat and exact deletion; both temporary names were absent afterward and
+unrelated zone records were unchanged. No full platform deployment or cold
+checkpoint acceptance is claimed by this qualification.
+
+The user selected bounded authoritative polling rather than an unconditional
+delay. A temporary-record prototype observed authoritative nonexistence after a
+successful v3 write and API readback; the first recursive lookup after both
+authorities became ready returned the expected address. This justifies gating
+on the actual serving condition without assigning the original failed run a
+proven cause or asserting a universal provider publication interval.
+
+Source infrastructure already requires the OS-owned `bind-utils` package. Its
+native `dig` therefore supplies the additional observation transport without a
+new dependency, service or credential. Provider/public zone-apex NS agreement,
+exact questions, literal NS endpoints, nonrecursive authoritative answers and
+complete same-round success prevent API metadata or a partial authority result
+from becoming false readiness. The existing recursive answer and TLS checks
+remain independent final gates, because a single vantage point cannot establish
+global anycast consistency. A deadline, round cap and per-command limits bound
+the observation. Check mode skips both selected-name lookup stages.
+
+
+A live v3 trial demonstrated API readback before authoritative DNS visibility.
+The owner chose bounded all-authority polling before the first recursive leaf
+query, with a fixed thirty-second delay only as an unused fallback. Source uses
+its already required native DNS tool on the pinned hypervisor, cross-checks the
+provider and public zone-apex NS sets and probes literal authority addresses
+without recursion. Every authority in one round must pass response question,
+AA, successful status, complete response and direct exact A checks. Discovery
+never queries the new hostname or its nonexistent ancestor. Final public DNS
+verification and cold-checkpoint hooks remain separate, unchanged requirements.

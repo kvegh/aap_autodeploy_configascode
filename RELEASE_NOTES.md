@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.65.1
+
+- Document implementation `dc685f05ca61811116f1b68b6bfc6820a2e41d0d`,
+  authoritative-first polling rationale and the fresh temporary-name qualification.
+- Record 24 focused Core 2.20.10 tests and successful live creation, readiness,
+  public resolution, unchanged repeat and deletion without altering runtime code.
+
 ## 0.65.0
 
 - Migrate infrastructure DNS and the existing retirement paths to GoDaddy v3
