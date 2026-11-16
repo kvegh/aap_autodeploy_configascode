@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.66.7
+
+- Document implementation `407b1fc` and native qualification of the Windows
+  source-credential prerequisite guard. Preserve the reviewed template-count fix,
+  existing resource definitions and original failure history. No runtime changes.
+
 ## 0.66.6
 
 - Check the two existing AutoDeploy-owned source credentials before importing

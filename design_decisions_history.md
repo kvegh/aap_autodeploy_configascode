@@ -1,5 +1,30 @@
 # Design decisions history
 
+## Check existing AutoDeploy credentials before Windows resource changes — 2026-11-16
+
+Implementation `407b1fc501e14d78e27f7e647e37f86f7b8673eb` (Source0.66.6) checks the
+existing **AAP CaC source reader** and **AAP CaC source CA** before importing
+Windows resources. AutoDeploy CaC owns both credentials. A fresh Windows-only
+selection previously reached Job Template creation before discovering that
+normal AutoDeploy preparation had been omitted, leaving partial definitions.
+
+The Windows importer now reads only those two credential definitions and
+requires a unique name, expected organization and matching credential type.
+Failure explains the existing normal AutoDeploy prerequisite before resource
+dispatch. It creates no credentials and does not expand the selected use cases.
+The selected bearer, strict TLS, job-local supplemental CA, redirect refusal and
+visible task logging remain in use. Other project imports skip this check.
+
+Seven tests exercise twelve native Ansible plays in Core2.20.10 and Core2.21.5,
+covering missing, duplicate and mismatched metadata, incomplete responses,
+default and supplemental trust, successful continuation and non-Windows skip.
+Refused cases perform no resource dispatch. The integrated Core2.20.10 run also
+passes with the exact qualified helper, caller and fixture bytes. The actual
+encrypted Windows render remains exactly unchanged at 35 templates, 29 nodes
+and 29 edges. These checks establish offline behavior; the original failed
+imports and subsequent normal AutoDeploy/Windows recovery remain separate live
+evidence.
+
 ## Maintain reviewed counts when appending workload helper definitions
 
 Implementation `d8effd888e5cdcdef21b277f90bf1947c271f280` keeps an existing

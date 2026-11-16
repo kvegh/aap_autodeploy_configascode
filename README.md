@@ -649,6 +649,8 @@ Start with [RESTART_HERE.md](RESTART_HERE.md) when resuming existing work.
    organization and credential type. Missing, duplicate or mismatched
    credentials stop with an instruction to complete normal AutoDeploy CaC.
    This check creates no credentials and leaves the selected use cases unchanged.
+   Its implementation and native qualification are documented in the
+   [decision history](design_decisions_history.md).
 4. Run the imported use-case jobs. Importing CaC installs definitions; it does
    not deploy the application's infrastructure or prove the demo works. Run
    memory-intensive use cases sequentially.
