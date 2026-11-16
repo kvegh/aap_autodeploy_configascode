@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.66.2
+
+- Document the exact access-token custody and frozen-owner implementation commit,
+  CAS/reread race qualification, fresh-capture adoption contract and separate live
+  cleanup/redeploy acceptance gates. No executable lifecycle behavior changes.
+
+
 ## 0.66.1
 
 - Retain exact standalone EDA token custody in the existing owner before deleting

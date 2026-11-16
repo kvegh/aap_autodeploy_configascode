@@ -1,5 +1,38 @@
 # Design decisions history
 
+## Retain exact access-token custody and freeze the cleanup owner — 2026-11-16
+
+Implementation `8d0ab8bc8e9370a561c613d1e5602c4d2d650894` (Source0.66.1) consumes the separately qualified
+first-creation EDA token receipt. Before deleting its credential it retains the
+exact token custody in the existing selected teardown owner. A retry can then
+verify or revoke that same ID even if the credential is already gone. The
+operation rechecks native metadata and foreign references, preserves base and
+unrelated tokens, proves absence and keeps owner/runtime records until complete.
+Legacy or possible orphan descriptions never grant deletion ownership.
+
+The selected owner is deep-copied into the native plan and bound to the Source
+job and revision. Every fresh CAS compares all non-teardown fields to that
+frozen preimage, allowing only validated cleanup additions. Native apply reloads
+application facts, so comparing to that mutable later capture would accept
+ownership changes made after planning. Both receipt publication and final
+namespace retirement now use the frozen value; normal pre/post imports refuse
+retained teardown owners. An actual action regression mutates both the capture
+and fresh private owner after planning and proves refusal with zero pushes.
+
+The same helper prepares one fixed Source or target job template from a fresh
+encrypted capture, proves typed inverse/header/literal preservation and retains
+exact ciphertext on an unchanged append. Source/target owner and runtime data
+are preserved, including native publications newer than an earlier candidate.
+This adds no separate state service, credential, permission or transport.
+
+The final 101-test focused suite passes under cached Core2.20 and local Core2.21.
+Actual protected selected CaC renders 32 native API objects plus one exact token
+in a read-only plan. The public target helper independently passes its complete
+Ansible CLI fixture flows. Live owned cleanup/redeploy and original functionality
+acceptance remain pending adoption and a current deployed workload. The broader
+isolation baseline failures and original deployment failures remain preserved.
+
+
 ## Keep the AAP VM while resetting the selected AIOps workload — 2026-11-16
 
 Implementation `dc191c64f032da0ee03854ea31b12aa23fdccfc7` (Source0.66.0)
