@@ -1,5 +1,33 @@
 # Design decisions history
 
+## Keep the checkpoint privilege context independent of its installer caller
+
+Implementation `80b44c33fb09ac770e0f5ebadbadd61795190b77` explicitly selects
+root for the shared cold-checkpoint transaction. The installer play deliberately
+uses an unprivileged installation account. Its delegated checkpoint tasks
+already enabled privilege escalation but inherited that account, so Ansible
+refused temporary-module permission preparation before the hypervisor snapshot
+module ran. The installer itself had completed successfully; the failed parent
+does not imply that installation should be repeated.
+
+The complete executable YAML inverse proves that the sole runtime change is
+the transaction block's `become_user: root`. Root was already required by its
+native ownership and snapshot preflight. The SSH identities, native snapshot
+implementation, controller-order correction, installer and standalone creation
+and restore playbooks are unchanged. Controller-side API and temporary-trust
+operations retain `become: false`. No package, ACL workaround, file permission
+change, new transport or new privilege is added.
+
+A native Ansible regression reads the actual installer's become settings and
+reproduces the inherited-account refusal before the fix. After the fix it
+requires root for guest and hypervisor operations while local registry, trust,
+API and EDA operations remain unprivileged. All 33 snapshot, selected-state and
+native Ansible-flow tests pass in cached Core 2.20.10 and local Core 2.21.5.
+Source qualification neither captures a missing checkpoint nor changes the
+original failed parent result. A separately verified normal creation-only
+checkpoint recovery must complete before base configuration; it must not replay
+the completed installer or roll back AAP.
+
 ## Refuse a possible unreceipted prior EDA token POST — 2026-11-16
 
 Implementation `32ccaef2d6f7945b5c2948164d328d9baa0b32cb` (Source0.65.11) adds one bounded read-only collision

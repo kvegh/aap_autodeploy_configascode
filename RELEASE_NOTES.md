@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.65.15
+
+- Document implementation `80b44c33fb09ac770e0f5ebadbadd61795190b77`, the
+  inherited installer account and its one-leaf checkpoint context correction.
+- Document reproduced refusal and 33 passing snapshot/state/Ansible-flow tests
+  in Core 2.20 and 2.21. Actual checkpoint-only recovery still requires
+  independent verification and must preserve the successful installer and failed
+  parent job.
+- Documentation only; preserve the qualified executable snapshot behavior.
+
 ## 0.65.14
 
 - Select the existing required root context for privileged cold-checkpoint
