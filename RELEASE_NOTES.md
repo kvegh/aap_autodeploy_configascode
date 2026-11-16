@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.65.19
+
+- Document the completed installer checkpoint recovery and the later base
+  checkpoint refusal caused by filtered Controller count metadata.
+- Refresh the public task overview and protected recovery records while retaining
+  every failed original job and the pending checkpoint-only acceptance gate.
+- Publish the qualified complete-history guard without changing the approved
+  installer bundle, snapshot ownership or workload deployment scope.
+
 ## 0.65.18
 
 - Document implementation `9d02d63c228a9a6e9ae719d25db2c2b9c408f096`,
