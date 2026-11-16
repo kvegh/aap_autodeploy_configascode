@@ -4,7 +4,7 @@ from copy import deepcopy
 import importlib.util
 from pathlib import Path
 import unittest
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 
 SPEC = importlib.util.spec_from_file_location('cac_api_lifecycle', Path(__file__).resolve().parents[1]
                                             / 'src/cac_api_lifecycle.py')
@@ -49,7 +49,9 @@ class FakeClient:
         if endpoint.endswith('/credentials/'):
             return deepcopy(self.credentials)
         if endpoint.endswith('/tokens/'):
-            return deepcopy(self.tokens)
+            rows=deepcopy(self.tokens)
+            selected=parse_qs(urlsplit(path).query).get('id')
+            return [row for row in rows if str(row['id'])==selected[0]] if selected else rows
         raise AssertionError('Unexpected endpoint ' + endpoint)
 
     def request(self, method, path, body=None, basic=None, token=None):
@@ -183,3 +185,78 @@ class APILifecycleTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class EDATokenReceiptTests(unittest.TestCase):
+    def fixture(self):
+        client=FakeClient()
+        capability={'credential_name':'EDA access','organization':'Example'}
+        expected={'name':'EDA access','description':'Owned native EDA access','organization':'Example',
+                  'credential_type':'Red Hat Ansible Automation Platform',
+                  'inputs':{'host':client.hostname+'/api/controller','oauth_token':'','verify_ssl':True}}
+        return client,capability,expected
+
+    def test_first_creation_atomically_saves_exact_nonsecret_token_receipt_and_reuses(self):
+        client,capability,expected=self.fixture()
+        first=lifecycle.eda_access(client,capability,[expected])
+        self.assertEqual(first['owned_token_receipt']['token_id'],41)
+        self.assertNotIn('synthetic-private-token',client.eda_credentials[0]['description'])
+        self.assertEqual(lifecycle.eda_access(client,capability,[expected])['owned_token_receipt'],first['owned_token_receipt'])
+        self.assertEqual(client.issued,1)
+
+    def test_legacy_credential_is_preserved_without_inferred_token_ownership(self):
+        client,capability,expected=self.fixture()
+        lifecycle.eda_access(client,capability,[expected])
+        client.eda_credentials[0]['description']=expected['description']
+        self.assertIsNone(lifecycle.eda_access(client,capability,[expected])['owned_token_receipt'])
+        self.assertEqual(client.issued,1)
+        self.assertEqual(client.revoked,[])
+
+    def test_foreign_token_user_scope_application_host_or_marker_is_refused(self):
+        for field,value in [('user',12),('scope','read'),('application',99),('description','Another tool'),('expires','later')]:
+            client,capability,expected=self.fixture();lifecycle.eda_access(client,capability,[expected]);client.tokens[0][field]=value
+            with self.subTest(field=field),self.assertRaises(lifecycle.LifecycleError):lifecycle.eda_access(client,capability,[expected])
+            self.assertEqual(client.revoked,[])
+        client,capability,expected=self.fixture();lifecycle.eda_access(client,capability,[expected])
+        for hostname in ('https://other.example.invalid',):
+            with self.assertRaises(lifecycle.LifecycleError):lifecycle.eda_token_receipt(client.eda_credentials[0]['description'],expected,hostname)
+
+    def test_real_native_future_expiry_is_preserved_and_expired_ownership_still_allows_cleanup(self):
+        client,capability,expected=self.fixture();receipt=lifecycle.eda_access(client,capability,[expected])['owned_token_receipt']
+        client.tokens[0]['expires']='2099-01-01T00:00:00Z'
+        self.assertFalse(lifecycle.eda_access(client,capability,[expected])['changed'])
+        client.tokens[0]['expires']='2000-01-01T00:00:00Z'
+        with self.assertRaises(lifecycle.LifecycleError):lifecycle.eda_access(client,capability,[expected])
+        self.assertTrue(lifecycle.eda_revoke_owned_token(client,client.eda_credentials[0]['description'],expected,receipt)['absent'])
+
+    def test_owned_absence_can_be_proved_for_cleanup_but_not_silently_reimported(self):
+        client,capability,expected=self.fixture();lifecycle.eda_access(client,capability,[expected]);client.tokens=[]
+        owned=lifecycle.eda_owned_token(client,client.eda_credentials[0]['description'],expected,allow_absent=True)
+        self.assertIsNone(owned['token'])
+        with self.assertRaises(lifecycle.LifecycleError):lifecycle.eda_access(client,capability,[expected])
+
+
+class EDATokenRevocationTests(unittest.TestCase):
+    fixture = EDATokenReceiptTests.fixture
+
+    def test_only_exact_receipted_token_is_revoked_and_repeat_proves_absence(self):
+        client,capability,expected=self.fixture()
+        receipt=lifecycle.eda_access(client,capability,[expected])['owned_token_receipt']
+        description=client.eda_credentials[0]['description']
+        other=dict(client.tokens[0],id=99,description='Other tool token')
+        client.tokens.append(other)
+        self.assertTrue(lifecycle.eda_revoke_owned_token(client,description,expected,receipt,protected_ids=[99])['absent'])
+        self.assertEqual(client.revoked,[41])
+        self.assertEqual(client.tokens,[other])
+        self.assertFalse(lifecycle.eda_revoke_owned_token(client,description,expected,receipt)['changed'])
+        self.assertEqual(client.revoked,[41])
+
+    def test_changed_receipt_metadata_or_base_access_id_is_never_revoked(self):
+        for change in ('receipt','metadata','base'):
+            client,capability,expected=self.fixture()
+            receipt=lifecycle.eda_access(client,capability,[expected])['owned_token_receipt'];description=client.eda_credentials[0]['description']
+            if change=='receipt':receipt=dict(receipt,token_id=99)
+            if change=='metadata':client.tokens[0]['user']=99
+            with self.subTest(change=change),self.assertRaises(lifecycle.LifecycleError):
+                lifecycle.eda_revoke_owned_token(client,description,expected,receipt,protected_ids=[41]if change=='base'else[])
+            self.assertEqual(client.revoked,[])

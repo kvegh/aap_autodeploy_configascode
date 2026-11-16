@@ -1,5 +1,19 @@
 # Release notes
 
+## 0.65.9
+
+- Save exact standalone EDA Controller token ownership atomically in the existing
+  native credential description at first creation. Preserve its write-only token
+  input, native expiry, target binding and ordinary masked-secret exclusions.
+- Verify owned metadata on reuse; preserve legacy unreceipted credentials without
+  inferring ownership or rotating their token. Refuse foreign bindings and
+  provide exact-ID revocation/readback for the separate workload lifecycle.
+- Qualification covers creation/reuse, legacy preservation, foreign user/scope/
+  application/target/description, native expiry, protected base-token refusal,
+  exact revocation, already-absent retry and other-token preservation. No live
+  API operation or snapshot implementation change was performed.
+
+
 ## 0.65.8
 
 - Document the current task checkpoint and refresh the public overview and

@@ -5,6 +5,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
 import json
+import re
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import HTTPSHandler, HTTPRedirectHandler, Request, build_opener
@@ -211,6 +212,70 @@ def binding_description(contract, binding, token_id):
     return contract['token_description'] + ' [CaC API binding ' + digest + ']'
 
 
+def eda_token_binding(expected, hostname, token_id, user_id):
+    require(all(isinstance(value, int) and not isinstance(value, bool) and value > 0 for value in (token_id, user_id)),
+            'Use exact native persistent EDA token and user IDs.')
+    return {'schema_version': 1, 'credential_name': expected['name'], 'organization': expected['organization'],
+            'credential_type': expected['credential_type'], 'host': hostname + '/api/controller',
+            'token_id': token_id, 'user_id': user_id}
+
+
+def eda_token_description(expected, hostname, token_id, user_id):
+    binding = eda_token_binding(expected, hostname, token_id, user_id)
+    digest = hashlib.sha256(json.dumps(binding, sort_keys=True).encode()).hexdigest()
+    base = expected.get('description', '')
+    return base + ('\n' if base else '') + '[CaC EDA Controller token v1 id=%d user=%d binding=%s]' % (token_id, user_id, digest)
+
+
+def eda_token_receipt(description, expected, hostname):
+    """Read only the trusted first-creation receipt, never a matching token name."""
+    base = expected.get('description', '')
+    if description == base or ('description' not in expected and isinstance(description, str)
+                               and '[CaC EDA Controller token ' not in description):
+        return None  # Legacy access remains usable; ownership is not fabricated.
+    require(isinstance(description, str), 'Read the native EDA credential ownership receipt.')
+    match = re.search(r'\[CaC EDA Controller token v1 id=([1-9][0-9]*) user=([1-9][0-9]*) binding=([0-9a-f]{64})\]$', description)
+    require(match is not None, 'The EDA credential ownership description changed; preserve it for review.')
+    token_id, user_id = int(match[1]), int(match[2])
+    require(description == eda_token_description(expected, hostname, token_id, user_id),
+            'The EDA token receipt belongs to another credential, organization or target.')
+    return dict(eda_token_binding(expected, hostname, token_id, user_id), description=description, base_description=base)
+
+
+def eda_token_metadata(token, receipt):
+    user = token.get('user')
+    user = user.get('id') if isinstance(user, dict) else user
+    require({'id', 'user', 'scope', 'application', 'expires', 'description'} <= set(token)
+            and token.get('id') == receipt['token_id'] and user == receipt['user_id']
+            and isinstance(user, int) and not isinstance(user, bool)
+            and token.get('scope') == 'write' and token.get('application') is None
+            and token.get('description') == 'CaC EDA Controller access: ' + receipt['credential_name'],
+            'Persistent EDA token metadata differs from its exact native receipt; preserve it for review.')
+    if token['expires'] is not None:
+        try:
+            require(isinstance(token['expires'], str)
+                    and datetime.fromisoformat(token['expires'].replace('Z', '+00:00')).tzinfo is not None,
+                    'Read the native token expiry without inventing a perpetual lifetime.')
+        except (TypeError, ValueError):
+            raise LifecycleError('The native token expiry is malformed; preserve ownership for review.') from None
+    return {field: deepcopy(token[field]) for field in ('id', 'user', 'scope', 'application', 'expires', 'description')}
+
+
+def eda_owned_token(client, description, expected, allow_absent=False):
+    receipt = eda_token_receipt(description, expected, client.hostname)
+    if receipt is None:
+        return None
+    rows = client.rows('/api/gateway/v1/tokens/' + query(id=receipt['token_id'], page_size=200))
+    require(len(rows) <= 1, 'Persistent EDA token identity is ambiguous.')
+    if not rows:
+        require(allow_absent, 'The owned persistent EDA token disappeared; review native access before import.')
+        return {'receipt': receipt, 'token': None}
+    metadata = eda_token_metadata(rows[0], receipt)
+    if not allow_absent:
+        valid_token(dict(metadata, user=receipt['user_id']), receipt['user_id'], metadata['description'])
+    return {'receipt': receipt, 'token': metadata}
+
+
 def eda_access(client, capability, definitions):
     definition = one([row for row in definitions if row.get('name') == capability['credential_name']],
                      'persistent EDA Controller credential definition')
@@ -229,10 +294,10 @@ def eda_access(client, capability, definitions):
                 and old.get('inputs', {}).get('oauth_token')
                 and old['inputs'].get('host', '').rstrip('/') == client.hostname + '/api/controller'
                 and {key: value for key, value in old['inputs'].items() if key not in ('oauth_token', 'host')}
-                == {key: value for key, value in expected['inputs'].items() if key not in ('oauth_token', 'host')}
-                and ('description' not in expected or old.get('description') == expected['description']),
+                == {key: value for key, value in expected['inputs'].items() if key not in ('oauth_token', 'host')},
                 'The stored EDA credential differs; its write-only token was preserved.')
-        return {'changed': False}
+        owned = eda_owned_token(client, old.get('description', ''), expected)
+        return {'changed': False, 'owned_token_receipt': owned['receipt'] if owned else None}
     organization = one(client.rows('/api/eda/v1/organizations/' + query(name=capability['organization'])), 'EDA organization')
     credential_type = one(client.rows('/api/eda/v1/credential-types/' + query(name=expected['credential_type'])), 'EDA credential type')
     created = None
@@ -242,12 +307,19 @@ def eda_access(client, capability, definitions):
                                   'scope': 'write', 'application': None})
         require(type(created.get('id')) is int and isinstance(created.get('token'), str) and created['token'],
                 'The target did not return a persistent EDA token.')
+        user = created.get('user')
+        user = user.get('id') if isinstance(user, dict) else user
+        description = eda_token_description(expected, client.hostname, created['id'], user)
+        receipt = eda_token_receipt(description, expected, client.hostname)
+        eda_token_metadata(created, receipt)
+        valid_token(dict(created, user=user), user, created['description'])
         inputs = dict(expected['inputs'], oauth_token=created['token'])
         client.request('POST', '/api/eda/v1/eda-credentials/',
-                       {'name': expected['name'], 'description': expected.get('description', ''),
+                       {'name': expected['name'], 'description': description,
                         'organization_id': organization['id'], 'credential_type_id': credential_type['id'], 'inputs': inputs})
-        require(len(client.rows(endpoint)) == 1, 'The target did not confirm saved EDA access.')
-        return {'changed': True}
+        confirmed = one(client.rows(endpoint), 'saved persistent EDA access')
+        require(confirmed.get('description') == description, 'The target did not retain the exact token ownership receipt.')
+        return {'changed': True, 'owned_token_receipt': receipt}
     except Exception:
         if created is not None and type(created.get('id')) is int:
             try:
@@ -257,3 +329,18 @@ def eda_access(client, capability, definitions):
             if missing:
                 client.request('DELETE', '/api/gateway/v1/tokens/%s/' % created['id'])
         raise
+
+
+def eda_revoke_owned_token(client, description, expected, receipt, protected_ids=()):
+    """Revoke one exact receipted standalone token, preserving every other token."""
+    owned = eda_owned_token(client, description, expected, allow_absent=True)
+    require(owned is not None and owned['receipt'] == receipt,
+            'Retire only the freshly rechecked exact native EDA token receipt.')
+    identity = receipt['token_id']
+    require(identity not in protected_ids, 'The selected token is shared by base API access; preserve it for review.')
+    if owned['token'] is None:
+        return {'changed': False, 'absent': True, 'receipt': receipt}
+    client.request('DELETE', '/api/gateway/v1/tokens/%d/' % identity)
+    require(not client.rows('/api/gateway/v1/tokens/' + query(id=identity, page_size=200)),
+            'Native EDA token revocation is not verified; retain workload ownership.')
+    return {'changed': True, 'absent': True, 'receipt': receipt}

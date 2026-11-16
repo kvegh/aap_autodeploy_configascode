@@ -1,5 +1,22 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Persistent EDA token ownership
+
+The existing API-only EDA Controller credential creator now saves a nonsecret
+exact token-ID and target/credential/user binding receipt atomically in that
+credential's description. The token stays in its existing native write-only
+credential input. Reuse verifies the receipt and current native token metadata
+without rotation. Existing credentials without this receipt keep their legacy
+behavior; a matching token description never grants cleanup ownership.
+
+The guarded lifecycle helper can revoke only a freshly rechecked receipted token,
+verify its absence and preserve base API access and every other token. A native
+expiry is preserved; the helper does not assume tokens live forever. Actual
+workload teardown, owner retention and matching job-template adoption remain
+separate from this producer fix. No new credentials, permissions or transport
+are introduced, and no live token was created or revoked during qualification.
+
+
 ## Validate native monitoring ownership
 
 Implementation `16c3561a5bf8057e81a3fb04e56ed765a7e7e55f` and its focused
