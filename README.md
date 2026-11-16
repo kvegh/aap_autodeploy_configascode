@@ -27,6 +27,46 @@ no-force-push checks remain unchanged. An absent or malformed logging choice
 is rejected before API or Git work. Raw diagnostics remain private.
 
 
+## Website demonstration accepted; agent demonstration still pending — 2026-11-16
+
+A separate, newly admitted website outage passed the complete automatic chain:
+the original monitoring problem produced event delivery, the website rule
+launched its saved restore, recovery launched the saved rearm, trusted HTTPS
+returned healthy content and the replacement arm nonce was verified. Native
+audit records and monitoring events establish that both jobs were automatic.
+The website activation was then disabled and its actual worker confirmed stopped.
+The agent activation remains off; no selected-agent fault or model run has
+been performed for this generation.
+
+The first website episode remains failed: a collection checksum rejection in
+project synchronization prevented its automatic restore from starting. A focused
+operator retry restored that incident and automatic rearm followed, but that
+operator-assisted result was not counted as automatic acceptance. The later,
+separate successful episode does not erase the failed episode or make this
+Rebuild failure-free. The rejected client archive and digest were not retained;
+server logs showing the expected response length and later matching downloads
+do not establish the original checksum failure's cause.
+
+Encrypted AIOps CaC now selects a five-minute project synchronization cache only
+for the current physical AAP instance's existing Self-Healing project. Other,
+fresh and legacy instances default to zero; the separate remediation project,
+Source project, update-on-launch setting, repository default branch, runtime
+ciphertext and integrity checks remain unchanged. Normal configuration import,
+exact native readback and an explicit project synchronization passed before the
+new test. This reduces redundant dependency downloads; it is an availability
+mitigation, not a checksum repair. After publishing code, force a normal project
+synchronization and verify its expected revision before immediate use.
+
+Windows functionality is accepted and its five guests remain gracefully off.
+Next, refresh native ownership, complete-policy and monitoring admission, then
+run the original four-phase agent demonstration with its existing permissions
+and runtime bound. Only after that actual automatic repair passes may owned
+metadata retirement and the next whole-host Rebuild proceed. The next generation
+uses the same monotonic host/AAP counter and must actually consume all three
+agreed cold AAP checkpoints before repeating Windows and both AIOps tests.
+Keep the feature freeze, visible deployment logging, production exclusions and
+other holds; the withdrawn post-wipe disk-absence gate remains withdrawn.
+
 ## v22 Rebuild checkpoint — 2026-11-15
 
 The host Rebuild completed successfully: all ten native workflow jobs passed
@@ -101,8 +141,8 @@ Zabbix and the initial website deployment passed independent native, API,
 firewall and trusted-HTTPS checks. Claude, both private MCP integrations and the
 selected agent then passed normal installation and independent verification.
 Fresh agent/website monitoring and exact scoped event-delivery configuration
-also passed independent checks; both actual self-healing tests remain separate
-gates. An unused guest
+also passed independent checks. The website demonstration is now accepted as
+described above; the agent demonstration remains a separate gate. An unused guest
 created with an incorrect role name is gracefully stopped, with its ownership
 retained for the conditional whole-host cleanup.
 The owner's post-wipe absence-check withdrawal

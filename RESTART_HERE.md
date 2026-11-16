@@ -1,47 +1,44 @@
 # Restart here
 
-## v22 Rebuild checkpoint — 2026-11-15
+## Website demonstration accepted; agent demonstration still pending — 2026-11-16
 
-The host Rebuild completed successfully: all ten native workflow jobs passed
-with zero failed events and no manual repairs. This includes conversion, RHEL
-updates, host setup, managed reboot, both host verifications and old host-DNS
-retirement. Superseded active CaC, DNS and AAP metadata has been removed.
+A separate, newly admitted website outage passed the complete automatic chain:
+the original monitoring problem produced event delivery, the website rule
+launched its saved restore, recovery launched the saved rearm, trusted HTTPS
+returned healthy content and the replacement arm nonce was verified. Native
+audit records and monitoring events establish that both jobs were automatic.
+The website activation was then disabled and its actual worker confirmed stopped.
+The agent activation remains off; no selected-agent fault or model run has
+been performed for this generation.
 
-The physical host and AAP guest reused the exact same generation v22 reservation.
-Both next-number values remain 23, and earlier allocation and host history are
-preserved. All seven selected base images passed actual checksum and publication
-checks, and normal managed safeguards passed. AAP VM setup completed successfully
-with zero failed events; its route and primary guest identity match the published
-registry. The remaining platform-stage selectors now target that verified guest.
+The first website episode remains failed: a collection checksum rejection in
+project synchronization prevented its automatic restore from starting. A focused
+operator retry restored that incident and automatic rearm followed, but that
+operator-assisted result was not counted as automatic acceptance. The later,
+separate successful episode does not erase the failed episode or make this
+Rebuild failure-free. The rejected client archive and digest were not retained;
+server logs showing the expected response length and later matching downloads
+do not establish the original checksum failure's cause.
 
-Infrastructure and AAP installation completed successfully, including strict
-local-CA and public Gateway checks. Base configuration, the receiver's immutable
-own-Hub execution environment and final guest-access verification passed. A
-normal localhost Demo Job then ran successfully using that exact default image.
+Encrypted AIOps CaC now selects a five-minute project synchronization cache only
+for the current physical AAP instance's existing Self-Healing project. Other,
+fresh and legacy instances default to zero; the separate remediation project,
+Source project, update-on-launch setting, repository default branch, runtime
+ciphertext and integrity checks remain unchanged. Normal configuration import,
+exact native readback and an explicit project synchronization passed before the
+new test. This reduces redundant dependency downloads; it is an availability
+mitigation, not a checksum repair. After publishing code, force a normal project
+synchronization and verify its expected revision before immediate use.
 
-The first installer submission remains recorded as a project-sync collection
-integrity failure before playbook execution. One unchanged retry completed;
-a failure-free end-to-end run has not been achieved.
-
-The encrypted Windows profile is published after actual receiver/runtime, pinned
-network/route and native Core 2.20 rendering checks. Normal Windows-only
-prerequisite preparation passed, but CaC import failed during job-template
-creation before any workload launch. The protected diagnostic confirmed that
-execution skipped the documented AutoDeploy CaC prerequisite: seven Windows
-templates require its source-reader and source-CA credentials. The normal
-AutoDeploy-only prerequisite import passed, and both credential definitions were
-verified on the receiver with the default execution environment unchanged.
-The focused Windows configuration retry passed. Independent readback verified
-all 35 templates, 29 workflow nodes and 29 links, exact runtime/credential/image
-bindings and eight collection pins. Launch metadata has no missing templates,
-rejected node prompts or required inputs. One normal Windows workflow is now
-running; guest deployment is not yet accepted. Two native creation branches
-failed while reading central Git configuration. Their original errors were
-protected and not retained; the existing encrypted diagnostic is being extended
-at that exact boundary. Preserve the healthy AD branch, qualify the minimal
-change against the current pinned dependency, then recover only failed stages. The original failures and
-diagnostic retry remain recorded. AIOps and both AIOps demo tests remain
-outstanding. The owner's post-wipe absence-check withdrawal remains in force.
+Windows functionality is accepted and its five guests remain gracefully off.
+Next, refresh native ownership, complete-policy and monitoring admission, then
+run the original four-phase agent demonstration with its existing permissions
+and runtime bound. Only after that actual automatic repair passes may owned
+metadata retirement and the next whole-host Rebuild proceed. The next generation
+uses the same monotonic host/AAP counter and must actually consume all three
+agreed cold AAP checkpoints before repeating Windows and both AIOps tests.
+Keep the feature freeze, visible deployment logging, production exclusions and
+other holds; the withdrawn post-wipe disk-absence gate remains withdrawn.
 
 ## Current owner direction — 2026-11-15
 

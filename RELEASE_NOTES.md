@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.64.9
+
+- Document the new fully automatic website restore/rearm acceptance and stopped
+  worker, retaining the failed first episode and operator-assisted retry.
+- Document selected-instance project-cache mitigation and forced-sync freshness
+  requirement; keep the checksum cause unknown and the current Rebuild unclean.
+- Refresh current handover and protected task records. The actual agent
+  demonstration still gates metadata retirement and the next full Rebuild with
+  three cold AAP checkpoints. No executable behavior changes.
+
 ## 0.64.8
 
 - Document accepted AIOps service, MCP, agent and fresh monitoring integration;

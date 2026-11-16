@@ -1,5 +1,34 @@
 # Design decisions history
 
+## Preserve automatic website acceptance and bounded cache scope — 2026-11-16
+
+The first website episode failed before restore playbook execution because its
+project dependency rejected a collection checksum. An operator's focused retry
+restored service, followed by automatic rearm; this was deliberately not counted
+as a successful automatic episode. A newly admitted episode subsequently passed
+problem/event delivery, automatic restore, original-trigger recovery, automatic
+rearm and fresh nonce verification. Its activation and actual worker were then
+stopped. The agent episode still gates retirement and the next full Rebuild.
+Original failures remain recorded, so this generation is not a clean run.
+
+AIOps private implementation `bdb8d53` sets a five-minute cache only on the
+selected physical instance's existing Self-Healing project through its encrypted
+per-instance setting. Other, future and legacy profiles default to zero. The
+separate remediation project and original Source project are untouched, as are
+update-on-launch, the repository default branch and integrity verification.
+Full Source and receiver import renders, schema checks and preparation preserved
+all other resources and runtime ciphertext under local Core 2.21.5. Normal
+import, exact native readback and forced project synchronization passed before
+the new episode. Immediate use after code publication still requires forced
+normal synchronization and revision verification.
+
+This is an availability mitigation, not a proven checksum repair. Rejected
+client bytes and expected/actual digests are unavailable; contemporaneous full
+server response lengths and later matching reads cannot identify the original
+cause. Exact execution evidence and current task states remain in Beads and the
+existing encrypted export. This AutoDeploy checkpoint changes documentation and
+task mirrors only; it adds no executable behavior or new deployment authority.
+
 ## Preserve monitoring handoff evidence and original failures — 2026-11-16
 
 AIOps implementation `abe7de5` reconciles only proved missing selected Linux
