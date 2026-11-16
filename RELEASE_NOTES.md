@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.66.18
+
+- Publish stage 01's guest trust evidence as `aap_instance_trust_evidence`.
+  Under the old name, a workflow passed it to later stages as an extra var,
+  which overrode their temporary known-hosts file registered as
+  `aap_instance_trust`, so stage 02 failed in its first full workflow run.
+
 ## 0.66.15
 
 - Document successful saved base-workflow reconciliation and independent graph,

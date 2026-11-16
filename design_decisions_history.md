@@ -1,5 +1,26 @@
 # Design decisions history
 
+## Give stage 01's trust artifact its own name — 2026-11-16
+
+Implementation commit: recorded in a follow-up documentation commit.
+
+The first run of the base workflow as a workflow (workflow job 4859) passed
+stage 01 and failed in stage 02 at "Install hypervisor and fresh guest public
+keys in the private trust file": `aap_instance_trust` had no `path`. Stage 01
+publishes its guest trust evidence with `set_stats` as `aap_instance_trust`.
+AAP passes workflow artifacts to later nodes as extra vars, the highest Ansible
+precedence, so the later stages' `register: aap_instance_trust` for their
+temporary known-hosts file was silently overridden. Earlier deployments ran the
+stages one by one, where artifacts are not passed, so this never surfaced.
+
+The temporary-file meaning is used in about eighteen places and the artifact in
+one, with no consumer reading it, so the artifact was renamed to
+`aap_instance_trust_evidence` instead. The same failure mode affected the Hactar
+WF1 trust stage the same day. Validation: the failing job's extra vars contain
+the artifact under the old name; no new test was added, per the user's
+direction to avoid tests that do not catch real failures. Proof is the next
+workflow run.
+
 ## Verify the saved base-only workflow and retain the execution boundary — 2026-11-16
 
 The workflow correction implemented in

@@ -211,7 +211,10 @@
     - name: Retain public trust evidence before the guest can start
       ansible.builtin.set_stats:
         data:
-          aap_instance_trust:
+          # Own name on purpose: later stages register their temporary
+          # known-hosts file as aap_instance_trust, and a workflow passes this
+          # artifact on as an extra var, which would override that register.
+          aap_instance_trust_evidence:
             vm_name: "{{ vm_name }}"
             allocation_request_id: "{{ aap_vm_reservation.request_id }}"
             hypervisor: "{{ aap_hypervisor_pin }}"
