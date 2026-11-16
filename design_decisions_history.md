@@ -1,5 +1,16 @@
 # Design decisions history
 
+## Preserve AAP during workload redeployment tests — 2026-11-16
+
+The owner requires deploying Windows or AIOps, removing all resources owned by
+that workload, and deploying it again on the same hypervisor and AAP installation.
+An AAP VM snapshot rollback does not satisfy this requirement or reset external
+DNS, registrations and ownership records. Existing Windows removal needs its
+baseline guards retained; a complete AIOps-only removal path and its CaC/job
+templates are still implementation work. The full-instance destroy path is not
+a substitute because it removes AAP. Shared base resources and unrelated
+deployments must survive. This entry records the requirement, not live acceptance.
+
 ## Retain the native DNS guard while allowing negative-cache expiry — 2026-11-16
 
 Implementation `771074e48b72916e1ec377a055e919751dc65d48` (version 0.64.10) changes only the

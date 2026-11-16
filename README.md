@@ -1,5 +1,12 @@
 # AAP AutoDeploy and Configuration as Code
 
+Workload redeployment tests must preserve the running AAP VM and hypervisor.
+The workload's owned resources and external registrations must be removed and
+their absence verified before deploying it again. Cold AAP checkpoints remain
+separate recovery facilities. Complete AIOps-only teardown and its CaC/job-template
+wiring are being implemented; the full-instance destroy playbook is unsuitable
+for this test because it also removes AAP.
+
 ## GoDaddy v3 DNS reconciliation and retirement
 
 Version 0.65.0 replaces the Source project's legacy DNS record endpoints

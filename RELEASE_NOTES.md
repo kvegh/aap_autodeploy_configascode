@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.65.2
+
+- Document the workload-only redeployment requirement while preserving AAP and
+  the hypervisor; distinguish the pending AIOps teardown from full-instance removal.
+- Refresh task recovery records after verified DNS qualification, publication,
+  controller consumption and scoped prior-generation retirement. Track remaining
+  AIOps DNS consumers and teardown implementation separately from the rebuild.
+- Documentation and task records only; no executable deployment behavior changes.
+
 ## 0.65.1
 
 - Document implementation `dc685f05ca61811116f1b68b6bfc6820a2e41d0d`,
