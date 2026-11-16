@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.65.8
+
+- Document the current task checkpoint and refresh the public overview and
+  protected recovery export after the first cold snapshot verification failure.
+- Preserve the qualified controller-order fix and the original failed job;
+  successful live recovery and the remaining installation stages are separate.
+
 ## 0.65.7
 
 - Document implementation `2e970dd981917753bf60b6fea23d8fc6523b84f5`, the
