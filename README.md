@@ -16,7 +16,7 @@ verify its absence and preserve base API access and every other token. A native
 expiry is preserved; the helper does not assume tokens live forever. Actual
 workload teardown, owner retention and matching job-template adoption remain
 separate from this producer fix. No new credentials, permissions or transport
-are introduced. Fifteen focused lifecycle tests passed under cached Core2.20
+are introduced. Sixteen focused lifecycle tests passed under cached Core2.20
 and local Core2.21; no live token was created or revoked during qualification.
 
 

@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.65.12
+
+- Document the no-replay collision decision, implementation commit and 16-test
+  Core2.20/Core2.21 qualification. No live token adoption or revocation is claimed.
+
+
 ## 0.65.11
 
 - Refuse another EDA token POST when a possible unreceipted token already exists

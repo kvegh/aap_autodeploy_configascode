@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Refuse a possible unreceipted prior EDA token POST — 2026-11-16
+
+Implementation `32ccaef2d6f7945b5c2948164d328d9baa0b32cb` (Source0.65.11) adds one bounded read-only collision
+check before first token creation when no EDA credential exists. An earlier
+uncertain POST may already have created a token without returning its ID or
+finishing the credential receipt. A possible matching token therefore stops
+creation for the original native evidence. Its description grants no ownership,
+adoption or deletion authority. The importer performs no POST replay, token
+rotation or unrelated cleanup. Existing receipted/legacy reuse is unchanged.
+Sixteen focused lifecycle tests passed in cached Core2.20 and local Core2.21,
+including refusal before another POST and preservation of the possible token.
+No live API operation was performed.
+
+
 ## Retain exact native standalone EDA token ownership — 2026-11-16
 
 Implementation `0f5459af45aeaa29584964798ddc7901bfdc4b7f` (Source0.65.9) extends the existing API-only persistent
