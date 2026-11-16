@@ -31,6 +31,7 @@
         ansible_connection: local
 
 - name: Snapshot or restore only the selected registered AAP VM
+  become_user: root
   block:
     - name: Read the authenticated guest identity before shutdown
       ansible.builtin.command:

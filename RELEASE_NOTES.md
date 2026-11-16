@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.65.14
+
+- Select the existing required root context for privileged cold-checkpoint
+  operations instead of inheriting an installer's unprivileged become account.
+- Preserve delegated connection identities, native ownership checks and
+  controller-side `become: false` operations; add no ACL or permission workaround.
+- Reproduce the inherited installer account in the native Ansible flow fixture
+  and require root on guest/hypervisor tasks while local API operations stay
+  unprivileged. Actual installed-checkpoint recovery remains a separate gate.
+
 ## 0.65.13
 
 - Document the accepted infrastructure cold checkpoint and current installer

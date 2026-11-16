@@ -128,6 +128,12 @@ next infrastructure execution remains independently verified.
 
 ## Cold AAP installation checkpoints
 
+The shared checkpoint transaction explicitly selects root for its existing
+privileged guest and hypervisor operations. This prevents the installer play's
+unprivileged installation account from being inherited by delegated snapshot
+tasks. Controller-side API and temporary-trust operations keep `become: false`;
+no ACL package, file-permission workaround or new privilege is introduced.
+
 The requested snapshot and explicit restore playbooks are implemented with
 success-only infrastructure, installer and base hooks. Encrypted CaC owns the
 three exact checkpoint names and enables them only for eligible allocations;

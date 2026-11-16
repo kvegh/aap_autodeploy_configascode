@@ -18,7 +18,10 @@ class SnapshotFlowTests(unittest.TestCase):
         for behavior in ('success', 'controller_busy', 'eda_busy', 'foreign_page', 'native_failure', 'guest_changed'):
             with self.subTest(behavior=behavior): self.run_flow(behavior)
 
-    def run_flow(self, behavior):
+    def test_installer_privilege_context_cannot_change_snapshot_ownership(self):
+        self.run_flow('success', installer_context=True)
+
+    def run_flow(self, behavior, installer_context=False):
         route, primary, _, policy, external = fixture()
         route.update(aap_hostname='https://aap.example.invalid', guest_host_keys=['ssh-ed25519 AAAA'])
         route['hypervisor'].update(address='192.0.2.20', public_ip='192.0.2.20', user='fixture', port=2222)
@@ -32,7 +35,12 @@ TRACE=Path(TRACEPATH); TRUST=Path(TRUSTPATH)
 class ActionModule(ActionBase):
  def run(self,tmp=None,task_vars=None):
   stage=self._task.args['stage']; behavior=task_vars['fixture_behavior']
-  with TRACE.open('a')as f:f.write(json.dumps({'stage':stage})+'\\n')
+  with TRACE.open('a')as f:f.write(json.dumps({'stage':stage,'become':self._play_context.become,'become_user':self._play_context.become_user})+'\\n')
+  if task_vars['fixture_installer_context'] and stage in ['before','after','wait','native']:
+   assert self._play_context.become is True
+   assert self._play_context.become_user=='root', 'Snapshot operations must not inherit the installer account.'
+  if stage in ['registry','trust','controller_idle','eda_page','ping']:
+   assert self._play_context.become is False, 'Controller-side work must keep privilege escalation disabled.'
   if stage=='registry':return dict(changed=False,instance_resources={'aap':task_vars['fixture_primary']},snapshot_external_state=task_vars['fixture_external'],snapshot_api_access={'token':'synthetic-token'})
   if stage=='trust':
    TRUST.write_text('synthetic trust')
@@ -48,7 +56,7 @@ class ActionModule(ActionBase):
    assert self._play_context.remote_addr==task_vars['aap_instance_route']['hypervisor']['address']
    assert self._play_context.remote_user=='fixture'
    if behavior=='native_failure':return dict(changed=True,failed=True,msg='Synthetic native failure')
-   return dict(changed=True,snapshot_name='aap-base-deployed-snapshot')
+   return dict(changed=True,snapshot_name=task_vars['aap_snapshot_policy']['names'][task_vars['aap_snapshot_checkpoint']])
   if stage=='ping':return dict(changed=False,status=200,json={'version':'synthetic'})
   raise AssertionError(stage)
 '''.replace('TRACEPATH',repr(str(trace))).replace('TRUSTPATH',repr(str(trust)))
@@ -58,6 +66,7 @@ class ActionModule(ActionBase):
             (folder/'page.yml').write_text(yaml.safe_dump(page,sort_keys=False))
             tasks = deepcopy(yaml.safe_load((ROOT/'tasks/aap-cold-snapshot.yml').read_text()))
             tasks[0].pop('aap_read_instance'); tasks[0]['snapshot_io']={'stage':'registry'}
+            tasks[2].update(tasks[2]['ansible.builtin.include_tasks']['apply'])
             tasks[2].pop('ansible.builtin.include_tasks'); tasks[2]['snapshot_io']={'stage':'trust'}
             tasks[-1]['always'][0]['when'] = True  # Only fixture-owned file; no real trust path is touched.
             for task in tasks[-1]['block']:
@@ -75,13 +84,19 @@ class ActionModule(ActionBase):
                 task['retries']=0 if 'until' in task else task.get('retries',None)
                 if task.get('retries') is None:task.pop('retries',None)
             variables={'aap_instance_route':route,'fixture_primary':primary,'fixture_external':external,
-                       'aap_snapshot_policy':policy,'aap_snapshot_checkpoint':'base','fixture_behavior':behavior,
+                       'aap_snapshot_policy':policy,'aap_snapshot_checkpoint':'installed' if installer_context else 'base','fixture_behavior':behavior,
+                       'fixture_installer_context':installer_context,'vault_aap_install_user':'fixture-installer',
                        'vault_ansible_user':'fixture','vault_ansible_password':'synthetic-fixture',
                        'aap_instance_ssh_args':'-o StrictHostKeyChecking=yes',
                        'hactar_source_public_ip':'192.0.2.99'}
-            play=folder/'fixture.yml';play.write_text(yaml.safe_dump([{'hosts':'localhost','connection':'local','gather_facts':False,'vars':variables,
+            definition={'hosts':'localhost','connection':'local','gather_facts':False,'vars':variables,
                 'tasks':[{'name':'Publish fixture host-scoped routing as the actual registry action does','ansible.builtin.set_fact':{
-                    'aap_instance_route':route,'aap_instance_ssh_args':'-o StrictHostKeyChecking=yes'}}, *tasks]}],sort_keys=False))
+                    'aap_instance_route':route,'aap_instance_ssh_args':'-o StrictHostKeyChecking=yes'}}, *tasks]}
+            if installer_context:
+                caller=yaml.safe_load((ROOT/'03-aap-install.yml').read_text())[-1]
+                self.assertEqual(caller['name'], 'Configure and install AAP')
+                definition.update({key:caller[key] for key in ('become','become_user')})
+            play=folder/'fixture.yml';play.write_text(yaml.safe_dump([definition],sort_keys=False))
             environment=dict(os.environ,ANSIBLE_LOCAL_TEMP=str(folder/'local'),ANSIBLE_REMOTE_TEMP=str(folder/'remote'),
                              ANSIBLE_ACTION_PLUGINS=str(actions),ANSIBLE_FILTER_PLUGINS=str(ROOT/'filter_plugins'),ANSIBLE_NOCOLOR='1')
             result=subprocess.run([sys.executable,'-m','ansible.cli.playbook','-i','localhost,',str(play)],cwd=ROOT,

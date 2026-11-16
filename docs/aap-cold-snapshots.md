@@ -62,6 +62,14 @@ available capacity and atomic snapshot support. Normal image inspection runs
 only after a clean shutdown; no forced shared image read is used. A native
 per-VM lock rejects competing snapshot operations.
 
+The shared transaction explicitly selects root for its existing privileged
+guest and hypervisor operations, including when called from the installer's
+unprivileged installation play. Delegation retains its original SSH identity,
+pinning and native ownership checks. Controller-side API reads and temporary
+trust cleanup keep privilege escalation disabled. A temporary-file permission
+failure caused by an inherited installer account must be fixed at this caller
+context; it does not justify installing ACL tools or weakening file permissions.
+
 The configured reserve is 64 GiB, and the check also requires at least one
 virtual disk's capacity to remain free. This is a lower bound at each operation,
 not a guarantee against later growth. Three retained snapshots plus test
@@ -125,6 +133,14 @@ original failure remains reported. A restart failure is reported alongside it.
 An uncertain failed restore deliberately leaves the VM off for native-state
 review rather than starting a potentially partial rollback. SSH, machine-ID and
 installed API verification must pass before the stage reports completion.
+
+If installation itself succeeded but its checkpoint hook failed, preserve that
+component result and the failed parent job. Inspect the actual VM, existing
+snapshots and installed API before using the normal CaC template for
+`snapshot-aap-vm.yml` to capture only the missing declared checkpoint. Do not
+rerun a completed installer merely to reach its checkpoint hook, and do not
+substitute a restore. Base configuration still waits for verified completion
+of the installed checkpoint.
 
 Offline regression tests exercise native identity and metadata rejection,
 idempotence, bounded power transitions, failure/restart handling, scoped state
