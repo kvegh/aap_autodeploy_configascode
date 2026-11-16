@@ -1,5 +1,9 @@
 # Release notes
 
+## 0.66.19
+
+- Document the stage 01 trust artifact rename commit `6eb46c1`.
+
 ## 0.66.18
 
 - Publish stage 01's guest trust evidence as `aap_instance_trust_evidence`.

@@ -2,7 +2,7 @@
 
 ## Give stage 01's trust artifact its own name — 2026-11-16
 
-Implementation commit: recorded in a follow-up documentation commit.
+Implementation commit: `6eb46c1`.
 
 The first run of the base workflow as a workflow (workflow job 4859) passed
 stage 01 and failed in stage 02 at "Install hypervisor and fresh guest public
