@@ -12,6 +12,13 @@ checks must pass before selected owner/runtime namespaces can
 be retired. Offline qualification does not establish live teardown or redeploy
 acceptance.
 
+The protected Source and target template append helper also maintains an
+existing reviewed `controller_templates` count. It requires that count to match
+the original mapped list, advances it with the one appended definition, and
+verifies an inverse of both changes. Matching existing definitions keep their
+count unchanged. Captures without a declared count retain that schema; stale,
+boolean or conflicting counts refuse an append before changing resources.
+
 ## Persistent EDA token ownership
 
 The existing API-only EDA Controller credential creator now saves a nonsecret

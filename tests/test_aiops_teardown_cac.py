@@ -74,3 +74,66 @@ class TargetHelperCaCTests(unittest.TestCase):
         with self.assertRaises(ValueError):helper.target_candidate(before)
         before=self.fixture();after=helper.target_candidate(before);after['controller_templates_aiops_demo'][-1]['timeout']=7200
         with self.assertRaises(ValueError):helper.target_candidate(after)
+
+
+class ReviewedTemplateCountTests(unittest.TestCase):
+    def cases(self):
+        return [(TeardownCaCTests().fixture(), helper.candidate, 'autodeploy_configuration.job_templates'),
+                (TargetHelperCaCTests().fixture(), helper.target_candidate, 'controller_templates_aiops_demo')]
+
+    def reviewed(self, capture, path, count=1):
+        capture['cac_import_metadata'] = {'resource_variables': {'controller_templates': path},
+            'checks': {'resource_counts': {'controller_templates': count, 'controller_credentials': 6}},
+            'other_metadata': {'preserve': True}}
+        return capture
+
+    def test_declared_count_advances_only_with_the_new_row_and_then_stays_unchanged(self):
+        for original, transform, path in self.cases():
+            before = self.reviewed(original, path)
+            with self.subTest(scope=path):
+                after = transform(before)
+                self.assertEqual(after['cac_import_metadata']['checks']['resource_counts']['controller_templates'], 2)
+                self.assertTrue(helper._typed_equal(transform(after), after))
+                inverse = deepcopy(after)
+                rows = inverse
+                for field in path.split('.'): rows = rows[field]
+                rows.pop()
+                inverse['cac_import_metadata']['checks']['resource_counts']['controller_templates'] = 1
+                self.assertTrue(helper._typed_equal(inverse, before))
+
+    def test_stale_boolean_text_float_and_wrong_list_counts_refuse_before_any_append(self):
+        for original, transform, path in self.cases():
+            for bad in (True, False, 0, 2, -1, '1', 1.0):
+                before = self.reviewed(deepcopy(original), path, bad); retained = deepcopy(before)
+                with self.subTest(scope=path, count=bad), self.assertRaises(ValueError): transform(before)
+                self.assertTrue(helper._typed_equal(before, retained))
+            before = self.reviewed(deepcopy(original), 'wrong.resource.list')
+            with self.assertRaises(ValueError): transform(before)
+            after = transform(self.reviewed(deepcopy(original), path))
+            after['cac_import_metadata']['checks']['resource_counts']['controller_templates'] = 1
+            with self.assertRaises(ValueError): transform(after)
+
+    def test_absent_declaration_is_not_introduced(self):
+        for original, transform, path in self.cases():
+            original['cac_import_metadata'] = {'checks': {'resource_counts': {}}}
+            with self.subTest(scope=path):
+                result = transform(original)
+                self.assertEqual(result['cac_import_metadata'], original['cac_import_metadata'])
+
+    def test_actual_codec_loaded_integer_count_and_literal_tags_survive_the_append(self):
+        import yaml
+        for original, transform, path in self.cases():
+            before = self.reviewed(original, path)
+            before['literal_input'] = '{{ fixture_canary_must_remain_literal }}'
+            loaded = helper.codec.load_repository_yaml(yaml.dump(before, Dumper=helper.codec.VaultDumper, sort_keys=False))
+            count = loaded['cac_import_metadata']['checks']['resource_counts']['controller_templates']
+            self.assertIsInstance(count, int); self.assertNotIsInstance(count, bool)
+            with self.subTest(scope=path):
+                after = transform(loaded)
+                restored = helper.codec.load_repository_yaml(yaml.dump(after, Dumper=helper.codec.VaultDumper, sort_keys=False))
+                self.assertTrue(helper._typed_equal(restored, transform(restored)))
+                inverse = deepcopy(restored); rows = inverse
+                for field in path.split('.'): rows = rows[field]
+                rows.pop(); inverse['cac_import_metadata']['checks']['resource_counts']['controller_templates'] = count
+                self.assertTrue(helper._typed_equal(inverse, loaded))
+                self.assertEqual(helper.codec.literal_paths(inverse), helper.codec.literal_paths(loaded))

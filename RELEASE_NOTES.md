@@ -1,5 +1,16 @@
 # Release notes
 
+## 0.66.4
+
+- Keep an existing reviewed template count synchronized with the Source or
+  target workload-helper append, validating the exact mapped list first.
+- Preserve matching idempotent definitions and captures without declared counts;
+  refuse stale, boolean, noninteger or conflicting bookkeeping before appending.
+- Verify the typed inverse of the one new row and existing count, including
+  native codec-loaded integer wrappers and preserved literal-template fields.
+- Qualify the actual complete AutoDeploy capture and unchanged Windows capture
+  offline. Runtime import and workload acceptance remain separate gates.
+
 ## 0.66.3
 
 - Document three verified cold checkpoints, successful final guest-access checks
