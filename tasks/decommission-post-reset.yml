@@ -53,13 +53,14 @@
         aap_retirement: '{{ aap_post_reset_inspection.retirement }}'
         aap_dns_zone_records: []
         aap_dns_zone_complete: false
+        aap_dns_zone_state: {}
       no_log: false
 
     - name: Read the complete DNS zone using the unchanged ownership guard
       ansible.builtin.include_tasks: decommission-dns-page.yml
-      loop: '{{ range(0, 10000, 500) | list }}'
+      loop: '{{ range(1, 101) | list }}'
       loop_control:
-        loop_var: aap_dns_page_offset
+        loop_var: aap_dns_page_number
       when: not (aap_dns_zone_complete | bool)
       no_log: false
 

@@ -1,0 +1,90 @@
+---
+- name: Wait for authoritative publication before any recursive selected-name query
+  when: not ansible_check_mode
+  block:
+    - name: Require the actual exact provider readback before selected-name DNS queries
+      ansible.builtin.assert:
+        that:
+          - aap_instance_dns_readback is defined
+          - aap_instance_dns_readback.status == 200
+          - aap_instance_dns_readback.json | godaddy_v3_records(aap_test_subdomain, 'A') | map(attribute='data') | list == [aap_instance_route.hypervisor.public_ip]
+          - aap_instance_dns_readback.json | godaddy_v3_records(aap_test_subdomain, 'A') | map(attribute='ttl') | list == [600]
+        quiet: true
+
+    - name: Require finite authoritative observation budgets
+      ansible.builtin.assert:
+        that:
+          - aap_dns_authority_timeout | default(900) is integer
+          - aap_dns_authority_timeout | default(900) >= 1
+          - aap_dns_authority_timeout | default(900) <= 1800
+          - aap_dns_authority_max_rounds | default(180) is integer
+          - aap_dns_authority_max_rounds | default(180) >= 1
+          - aap_dns_authority_max_rounds | default(180) <= 180
+          - aap_dns_authority_poll_delay | default(5) is integer
+          - aap_dns_authority_poll_delay | default(5) >= 0
+          - aap_dns_authority_poll_delay | default(5) <= 10
+        quiet: true
+
+    - name: Read only provider-hosted zone apex nameservers through strict v3 HTTPS
+      ansible.builtin.uri:
+        url: "https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records?type=NS&name=%40&page=1&pageSize=100&totalRequired=true"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_godaddy_api_token }}"
+        status_code: 200
+        validate_certs: true
+        follow_redirects: none
+        timeout: 30
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      register: aap_dns_provider_nameservers
+      no_log: false
+
+    - name: Discover public nameservers for the existing zone apex only
+      ansible.builtin.command:
+        argv: [dig, -r, -4, '@8.8.8.8', '{{ vault_domain }}.', NS, +time=3, +tries=1, +noall, +comments, +question, +answer, +stats]
+      become: false
+      changed_when: false
+      timeout: 8
+      register: aap_dns_public_nameservers
+      no_log: false
+
+    - name: Require the provider and public zone-apex nameserver sets to agree
+      ansible.builtin.set_fact:
+        aap_dns_authority_nameservers: >-
+          {{ aap_dns_provider_nameservers.json | godaddy_v3_records('@', 'NS') |
+             godaddy_v3_dns_nameservers(aap_dns_public_nameservers, vault_domain) }}
+      no_log: false
+
+    - name: Resolve only approved nameserver hostnames to IPv4 endpoints
+      ansible.builtin.command:
+        argv: [dig, -r, -4, '@8.8.8.8', '{{ item }}.', A, +time=3, +tries=1, +noall, +comments, +question, +answer, +stats]
+      loop: '{{ aap_dns_authority_nameservers }}'
+      become: false
+      changed_when: false
+      timeout: 8
+      register: aap_dns_nameserver_addresses
+      no_log: false
+
+    - name: Retain every approved IPv4 endpoint and initialize this finite observation
+      ansible.builtin.set_fact:
+        aap_dns_authority_endpoints: '{{ aap_dns_nameserver_addresses.results | godaddy_v3_dns_endpoints(aap_dns_authority_nameservers) }}'
+        aap_dns_authority_ready: false
+        aap_dns_authority_observation: {}
+        aap_dns_authority_deadline: '{{ now(utc=true).timestamp() + (aap_dns_authority_timeout | default(900)) }}'
+      no_log: false
+
+    - name: Observe bounded rounds until every selected authority returns the exact A binding
+      ansible.builtin.include_tasks: aap-instance-dns-ready-round.yml
+      loop: '{{ range(1, (aap_dns_authority_max_rounds | default(180)) + 1) | list }}'
+      loop_control:
+        loop_var: aap_dns_authority_round_number
+      no_log: false
+
+    - name: Require authoritative publication before the existing recursive DNS gate
+      ansible.builtin.assert:
+        that: aap_dns_authority_ready | bool
+        fail_msg: Authoritative DNS did not publish the exact selected binding within the finite observation budget; no recursive selected-name query was made.
+        quiet: true
+      no_log: false

@@ -1,0 +1,42 @@
+---
+# The execution-time guard matters: looped includes are queued before facts change.
+- name: Observe this authoritative round only while publication is unfinished
+  when:
+    - not (aap_dns_authority_ready | bool)
+    - now(utc=true).timestamp() < aap_dns_authority_deadline
+  block:
+    - name: Query every literal authoritative IPv4 without recursion
+      ansible.builtin.command:
+        argv: [dig, -r, -4, '@{{ item.address }}', '{{ aap_hostname | ansible.builtin.urlsplit("hostname") }}.', A, +norecurse, +time=3, +tries=1, +noall, +comments, +question, +answer, +stats]
+      loop: '{{ aap_dns_authority_endpoints }}'
+      when: now(utc=true).timestamp() < aap_dns_authority_deadline
+      become: false
+      changed_when: false
+      failed_when: false
+      timeout: 8
+      register: aap_dns_authority_answers
+      no_log: false
+
+    - name: Evaluate all authority responses from this round together
+      ansible.builtin.set_fact:
+        aap_dns_authority_observation: >-
+          {{ aap_dns_authority_answers.results | godaddy_v3_dns_authority_round(
+             aap_dns_authority_endpoints,
+             aap_hostname | ansible.builtin.urlsplit('hostname'),
+             aap_instance_route.hypervisor.public_ip) }}
+      no_log: false
+
+    - name: Retain whether this complete round proved every authority ready
+      ansible.builtin.set_fact:
+        aap_dns_authority_ready: '{{ aap_dns_authority_observation.ready }}'
+      no_log: false
+
+    - name: Wait only between unsuccessful rounds while the budget remains
+      ansible.builtin.pause:
+        seconds: '{{ [aap_dns_authority_poll_delay | default(5), (aap_dns_authority_deadline - now(utc=true).timestamp()) | int] | min }}'
+      when:
+        - not (aap_dns_authority_ready | bool)
+        - aap_dns_authority_round_number < (aap_dns_authority_max_rounds | default(180))
+        - now(utc=true).timestamp() < aap_dns_authority_deadline
+        - aap_dns_authority_poll_delay | default(5) > 0
+      no_log: false

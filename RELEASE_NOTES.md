@@ -1,5 +1,39 @@
 # Release notes
 
+## 0.65.0
+
+- Migrate infrastructure DNS and the existing retirement paths to GoDaddy v3
+  record IDs, with one-shot creation, owned-record TTL updates and exact readback.
+- Refuse multiple A records, aliases, alternate IPv6 and conflicting ownership
+  before mutation; preserve strict TLS and refusal of redirects.
+- Validate complete filtered pages and bounded full-zone pagination, including
+  omitted totals on genuinely empty results, stable totals and unique IDs.
+- Retain all existing deployment propagation, ownership and retirement controls.
+  Native mock-HTTP qualification and live temporary-record qualification are
+  separate from publication, AAP synchronization and deployment acceptance.
+- Preserve the separate borrowed Hactar firewall pin. Adoption requires the
+  qualified Source project revision,
+  independently from snapshot policy and actual checkpoint acceptance.
+- Gate the first recursive selected-name query on bounded authoritative-first
+  observations, using existing native `dig` and no additional dependency.
+  Cross-check provider and public zone-apex NS sets, resolve only NS hostnames,
+  then require every literal authority's exact nonrecursive A response in one
+  round. Check response question, AA, NOERROR, truncation and direct ownership.
+- Preserve the final public resolver, exact-answer guard and 90-by-ten-second
+  wait. Skip selected-name queries in check mode; exhaustion fails before a
+  recursive leaf lookup. No unconditional publication delay is introduced.
+
+Local validation: fifteen v3/readiness tests (native mock HTTP, deterministic
+native DNS transport, page and response parsing), four existing DNS guard tests
+and five retirement ownership tests passed in Core 2.21.5. Tests cover authority
+negative-to-positive convergence, complete-round ordering, finite exhaustion,
+NS disagreement, malformed/aliased/truncated/referral/wrong-question answers and
+real CLI check mode. All 24 focused tests also passed in cached Core 2.20.10.
+Two fresh temporary-name live flows passed creation, authoritative readiness,
+exact public resolution, unchanged repeat and deletion. Both names were verified
+absent afterward, with unrelated zone records unchanged. These checks did not
+deploy a platform or establish cold-snapshot acceptance.
+
 ## 0.64.11
 
 - Record DNS-wait implementation `771074e48b72916e1ec377a055e919751dc65d48` and its

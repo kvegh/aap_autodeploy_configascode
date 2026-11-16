@@ -1,26 +1,30 @@
 ---
-- name: Read a bounded page from the entire DNS zone
-  ansible.builtin.uri:
-    url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records?limit=500&offset={{ aap_dns_page_offset }}"
-    method: GET
-    headers:
-      Authorization: "Bearer {{ vault_godaddy_api_token }}"
-    status_code: 200
-    validate_certs: true
-    follow_redirects: none
-  delegate_to: localhost
-  become: false
-  check_mode: false
-  register: aap_dns_zone_page
-  no_log: false
+- name: Read another DNS zone page only while the complete read is unfinished
+  when: not (aap_dns_zone_complete | default(false) | bool)
+  block:
+    - name: Read a bounded v3 page from the entire DNS zone
+      ansible.builtin.uri:
+        url: "https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records?pageSize=100&page={{ aap_dns_page_number }}&totalRequired=true"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ vault_godaddy_api_token }}"
+        status_code: 200
+        validate_certs: true
+        follow_redirects: none
+        timeout: 30
+      delegate_to: localhost
+      become: false
+      check_mode: false
+      register: aap_dns_zone_page
+      no_log: false
 
-- name: Require a complete provider record array
-  ansible.builtin.assert:
-    that: aap_dns_zone_page.json | type_debug == 'list'
-  no_log: false
+    - name: Validate v3 records and retain bounded pagination state
+      ansible.builtin.set_fact:
+        aap_dns_zone_state: "{{ aap_dns_zone_page.json | godaddy_v3_accumulate(aap_dns_page_number, aap_dns_zone_state | default({})) }}"
+      no_log: false
 
-- name: Retain the protected records and pagination state
-  ansible.builtin.set_fact:
-    aap_dns_zone_records: "{{ aap_dns_zone_records | default([]) + aap_dns_zone_page.json }}"
-    aap_dns_zone_complete: "{{ aap_dns_zone_page.json | length < 500 }}"
-  no_log: false
+    - name: Retain only validated complete-or-continuing zone pagination
+      ansible.builtin.set_fact:
+        aap_dns_zone_records: "{{ aap_dns_zone_state.records }}"
+        aap_dns_zone_complete: "{{ aap_dns_zone_state.complete }}"
+      no_log: false

@@ -84,11 +84,17 @@
         that: aap_retirement_snapshots.stdout | trim | length == 0
       when: vm_name in aap_retirement_domains.stdout_lines
       no_log: false
+    - name: Start a fresh complete DNS zone read before retirement
+      ansible.builtin.set_fact:
+        aap_dns_zone_state: {}
+        aap_dns_zone_records: []
+        aap_dns_zone_complete: false
+      no_log: false
     - name: Read the entire DNS zone to discover orphaned version records
       ansible.builtin.include_tasks: tasks/decommission-dns-page.yml
-      loop: '{{ range(0, 10000, 500) | list }}'
+      loop: '{{ range(1, 101) | list }}'
       loop_control:
-        loop_var: aap_dns_page_offset
+        loop_var: aap_dns_page_number
       when: not (aap_dns_zone_complete | default(false) | bool)
       no_log: false
     - name: Require complete zone pagination before removing any resource

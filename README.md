@@ -1,5 +1,70 @@
 # AAP AutoDeploy and Configuration as Code
 
+## GoDaddy v3 DNS reconciliation and retirement
+
+Version 0.65.0 replaces the Source project's legacy DNS record endpoints
+with GoDaddy v3. Infrastructure setup reads the exact selected name's A, AAAA
+and CNAME records, refuses aliases, IPv6, conflicting ownership and multiple A
+records, then creates one absent A record or updates the TTL of its existing
+owned record by `recordId`. An unchanged record produces no write. Creation is
+attempted once; an uncertain response stops the job for readback and review.
+
+Retirement retains the existing ownership selection and rechecks each selected
+record before deleting its reviewed ID. Full-zone reads require stable page
+totals, sequential pages, unique IDs and an exact final count before any removal.
+The API's empty `items` response may omit both totals; partial metadata and
+incomplete nonempty pages are refused. Already-absent records converge, while
+TLS verification, refusal of redirects and exact provider readback remain active.
+
+This change does not establish instantaneous authoritative or recursive DNS
+visibility. The existing exact public-answer propagation check remains separate.
+It does not change current immutable deployment pins or authorize a deployment.
+To adopt this implementation, synchronize the owning AAP project and verify
+the actual job SCM revision. Publication and synchronization are separate from
+full deployment and cold-checkpoint acceptance.
+
+Before its first recursive lookup of the selected hostname, infrastructure now
+waits for authoritative publication. It reads only the provider's zone-apex NS
+records over the fixed HTTPS API, compares them with a public lookup of the
+existing zone apex and resolves only those nameserver hostnames to IPv4. Native
+`dig` then queries each literal authoritative address without recursion. Every
+authority in one observation round must return the exact question and a direct,
+single expected A answer with AA, NOERROR and no truncation or alias. Provider
+readback must already have passed; discovery never queries the new hostname or
+its potentially nonexistent ancestor through a recursive resolver.
+
+The default observation deadline is 900 seconds with at most 180 rounds, a
+five-second pause only between failed rounds, three-second `dig` timeouts and
+eight-second native task limits. An in-flight bounded probe can finish after the
+deadline; this is not an exact wall-clock completion promise. Exhaustion stops
+before the recursive hostname query. The existing final public check retains
+its resolver, exact-answer guard and 90 retries at ten-second intervals. Both
+selected-name lookup stages skip check mode. No fixed publication sleep is used.
+The authoritative observations cover the selected network vantage point;
+anycast or existing recursive caches still require the final public gate.
+
+The separate `aap_hactar_source_revision` setting pins the borrowed Hactar
+isolation/firewall implementation; it does not select this project's DNS or
+cold-snapshot code. Adoption requires synchronizing the Source AutoDeploy
+project to the qualified implementation and checking each actual stage's SCM
+revision. Preserve the nested Hactar pin unless its independently used code
+requires a change. A policy enabling snapshots does not prove that the running
+project contains or executes its checkpoint hooks: verify the infrastructure,
+installer and base hooks and all three actual native checkpoint outcomes.
+
+Local qualification passed fifteen v3/readiness tests using actual Ansible URI
+calls against a mock HTTP server and native command execution with a deterministic
+DNS fixture. Parser tests reject malformed, negative, truncated, aliased,
+nonauthoritative, mismatched-question and wrong-address answers; native tests
+prove all-authority ordering, finite exhaustion and check-mode suppression.
+Four existing DNS guard tests and five retirement ownership tests also passed
+in Core 2.21.5 and the cached Core 2.20.10 runtime. Live qualification used two
+fresh temporary names: creation, authoritative readiness, exact public resolution,
+unchanged repeats and deletion all passed. One path ran on the controller and
+the other used the pinned hypervisor's existing native DNS tool. Provider readback
+verified both temporary names absent afterward and all unrelated zone records
+unchanged. These checks do not establish full platform deployment acceptance.
+
 ## Allow bounded negative-cache expiry during infrastructure DNS setup
 
 Version **0.64.11** documents implementation `771074e48b72916e1ec377a055e919751dc65d48`, which extends only the existing infrastructure propagation wait

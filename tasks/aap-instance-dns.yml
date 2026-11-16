@@ -1,0 +1,89 @@
+---
+- name: Read the exact reserved name and all conflicting DNS types using v3
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records?type={{ item }}&name={{ aap_test_subdomain | urlencode }}&page=1&pageSize=100&totalRequired=true"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vault_godaddy_api_token }}"
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+    timeout: 30
+  loop: [A, AAAA, CNAME]
+  delegate_to: localhost
+  become: false
+  check_mode: false
+  changed_when: false
+  register: aap_instance_dns_pages
+  no_log: false
+
+- name: Validate complete exact-name pages and retain provider record IDs
+  ansible.builtin.set_fact:
+    aap_existing_instance_dns_records: "{{ aap_instance_dns_pages.results[0].json | godaddy_v3_records(aap_test_subdomain, 'A') }}"
+    aap_existing_instance_ipv6_records: "{{ aap_instance_dns_pages.results[1].json | godaddy_v3_records(aap_test_subdomain, 'AAAA') }}"
+    aap_existing_instance_alias_records: "{{ aap_instance_dns_pages.results[2].json | godaddy_v3_records(aap_test_subdomain, 'CNAME') }}"
+  no_log: false
+
+- name: Refuse conflicting addresses and aliases before changing the reserved hostname
+  ansible.builtin.assert:
+    that:
+      - aap_existing_instance_dns_records | length <= 1
+      - aap_existing_instance_dns_records | aap_safe_instance_dns(aap_test_subdomain, aap_instance_route.hypervisor.public_ip)
+      - aap_existing_instance_ipv6_records | length == 0
+      - aap_existing_instance_alias_records | length == 0
+    fail_msg: The reserved hostname has a conflicting DNS record; inspect it before continuing.
+    quiet: true
+  no_log: false
+
+- name: Create or update the selected v3 A record exactly once when necessary
+  ansible.builtin.uri:
+    url: >-
+      https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records{{ '/' ~ (aap_existing_instance_dns_records[0].recordId | urlencode | replace('/', '%2F')) if aap_existing_instance_dns_records | length == 1 else '' }}
+    method: "{{ 'PUT' if aap_existing_instance_dns_records | length == 1 else 'POST' }}"
+    headers:
+      Authorization: "Bearer {{ vault_godaddy_api_token }}"
+    body_format: json
+    body:
+      name: "{{ aap_test_subdomain }}"
+      type: A
+      data: "{{ aap_instance_route.hypervisor.public_ip }}"
+      ttl: 600
+    status_code: "{{ 200 if aap_existing_instance_dns_records | length == 1 else 201 }}"
+    follow_redirects: none
+    validate_certs: true
+    timeout: 30
+  when:
+    - not ansible_check_mode
+    - >-
+      aap_existing_instance_dns_records | length == 0 or
+      aap_existing_instance_dns_records[0].ttl != 600
+  delegate_to: localhost
+  become: false
+  changed_when: true
+  no_log: false
+
+- name: Read back the exact v3 A record after successful reconciliation
+  ansible.builtin.uri:
+    url: "https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records?type=A&name={{ aap_test_subdomain | urlencode }}&page=1&pageSize=100&totalRequired=true"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ vault_godaddy_api_token }}"
+    status_code: 200
+    follow_redirects: none
+    validate_certs: true
+    timeout: 30
+  when: not ansible_check_mode
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  register: aap_instance_dns_readback
+  no_log: false
+
+- name: Require exact v3 provider name, address and TTL readback
+  ansible.builtin.assert:
+    that:
+      - aap_instance_dns_readback.json | godaddy_v3_records(aap_test_subdomain, 'A') | map(attribute='data') | list == [aap_instance_route.hypervisor.public_ip]
+      - aap_instance_dns_readback.json | godaddy_v3_records(aap_test_subdomain, 'A') | map(attribute='ttl') | list == [600]
+    quiet: true
+  when: not ansible_check_mode
+  no_log: false

@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-268 tasks: 39 outstanding; 229 closed.
+272 tasks: 41 outstanding; 231 closed.
 
 ## Outstanding tasks
 
@@ -21,18 +21,20 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1 | Complete Core 2.20 migration and rebuild bare metal for v20 | deferred | P1 | task | bead-wd-3ix, bead-wd-72f.31.6, bead-wd-72f.40 |
 | bead-wd-3ix.1.6 | Assess Vault password printed by diagnostic parsing | deferred | P1 | bug | bead-wd-3ix.1 |
 | bead-wd-3ix.2 | Achieve one clean &#91;HOST&#93; installation with tested Windows and AIOps | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-5zfc, bead-wd-72f.31.2.7 |
-| bead-wd-3ix.2.10 | Run full v23 rebuild and Windows and AIOps functional acceptance | open | P1 | epic | bead-wd-3ix.2, bead-wd-3ix.2.9 |
-| bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | in_progress | P1 | epic | bead-wd-3ix.2 |
+| bead-wd-3ix.2.10 | Run full v23 rebuild and Windows and AIOps functional acceptance | deferred | P1 | epic | bead-wd-3ix.2, bead-wd-3ix.2.9 |
+| bead-wd-3ix.2.10.1 | Separate retained agent phase output and publish bounded successful tool diagnostics | deferred | P1 | bug | bead-wd-3ix.2.10 |
+| bead-wd-3ix.2.10.2 | Migrate GoDaddy DNS lifecycle to v3 and qualify two temporary hostnames | in_progress | P1 | bug | bead-wd-3ix.2.10 |
+| bead-wd-3ix.2.11 | Retire v23 owned DNS and configuration after v3 acceptance | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.10.2 |
+| bead-wd-3ix.2.12 | Run full v24 installation with cold snapshots and functionality tests | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.11 |
+| bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | deferred | P1 | epic | bead-wd-3ix.2 |
 | bead-wd-3ix.2.7.10 | Diagnose repeated collection artifact hash mismatches before v23 | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | blocked | P1 | bug | bead-wd-3ix.2.7 |
-| bead-wd-3ix.2.7.5.2 | Reconcile AAP supplemental interface metadata in source inventory | in_progress | P1 | bug | bead-wd-3ix.2.10 |
-| bead-wd-3ix.2.7.5.4 | Reconcile canonical Windows network policy into original Source aliases before AIOps release | in_progress | P1 | bug | bead-wd-3ix.2.10 |
-| bead-wd-3ix.2.7.5.6 | Diagnose v22 Zabbix pending HTTPS grant native-policy mismatch | in_progress | P1 | bug | bead-wd-3ix.2.10 |
-| bead-wd-3ix.2.7.7 | Pass the v22 AIOps agent repair demo test | in_progress | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.6 |
-| bead-wd-3ix.2.7.8 | Enable temporary visible deployment logging until clean acceptance | in_progress | P1 | task | bead-wd-3ix.2.7 |
+| bead-wd-3ix.2.7.5.2 | Reconcile AAP supplemental interface metadata in source inventory | deferred | P1 | bug | bead-wd-3ix.2.10 |
+| bead-wd-3ix.2.7.5.4 | Reconcile canonical Windows network policy into original Source aliases before AIOps release | deferred | P1 | bug | bead-wd-3ix.2.10 |
+| bead-wd-3ix.2.7.5.6 | Diagnose v22 Zabbix pending HTTPS grant native-policy mismatch | deferred | P1 | bug | bead-wd-3ix.2.10 |
+| bead-wd-3ix.2.7.8 | Enable temporary visible deployment logging until clean acceptance | deferred | P1 | task | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.9 | Diagnose v22 receiving AAP API 503 and timeout incident | blocked | P1 | bug | bead-wd-3ix.2.7 |
-| bead-wd-3ix.2.8 | Add cold AAP snapshots at infrastructure, installer and base checkpoints | in_progress | P1 | feature | bead-wd-3ix.2 |
-| bead-wd-3ix.2.9 | Retire v22 owned metadata after successful AIOps tests | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.7.6, bead-wd-3ix.2.7.7 |
+| bead-wd-3ix.2.8 | Add cold AAP snapshots at infrastructure, installer and base checkpoints | deferred | P1 | feature | bead-wd-3ix.2 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
 | bead-wd-72f.31 | Verify destination-specific runtime configuration for every use case | open | P1 | feature | bead-wd-72f |
@@ -128,8 +130,10 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.7.5.5 | Correct current AIOps testserver role name without weakening ownership guards | closed | P1 | bug | bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.6 | Pass the v22 AIOps website demo test | closed | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.6.1 | Reuse verified source during selected AIOps recovery sequence | closed | P1 | bug | bead-wd-3ix.2.7.6 |
+| bead-wd-3ix.2.7.7 | Pass the v22 AIOps agent repair demo test | closed | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.6 |
 | bead-wd-3ix.2.7.8.1 | Enable visible logging for existing v22 Linux creator | closed | P1 | task | bead-wd-3ix.2.7.8 |
 | bead-wd-3ix.2.7.8.2 | Honor explicit visible logging in AIOps preparation guard | closed | P1 | bug | bead-wd-3ix.2.7.8 |
+| bead-wd-3ix.2.9 | Retire v22 owned metadata after successful AIOps tests | closed | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.7.6, bead-wd-3ix.2.7.7 |
 | bead-wd-3wpp | Document the verified dedicated Google Drive rclone setup | closed | P1 | task | — |
 | bead-wd-4lh | Diagnose failed AIOps setup and startup delay on the new test platform | closed | P1 | bug | — |
 | bead-wd-63i | Declare approved optional HTTPS isolation in AutoDeploy guards | closed | P1 | task | — |

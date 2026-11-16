@@ -1,54 +1,61 @@
 ---
-- name: Recheck this exact DNS record set immediately before deletion
+- name: Recheck this exact v3 DNS record set immediately before deletion
   ansible.builtin.uri:
-    url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/{{ aap_dns_retire_record.type }}/{{ aap_dns_retire_record.name | urlencode }}"
+    url: "https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records?type={{ aap_dns_retire_record.type | urlencode }}&name={{ aap_dns_retire_record.name | urlencode }}&page=1&pageSize=100&totalRequired=true"
     method: GET
     headers:
       Authorization: "Bearer {{ vault_godaddy_api_token }}"
-    status_code: [200, 404]
+    status_code: 200
     validate_certs: true
     follow_redirects: none
+    timeout: 30
   delegate_to: localhost
   become: false
+  changed_when: false
   register: aap_dns_retire_current
+  no_log: false
+
+- name: Validate the exact selected v3 records and stable IDs
+  ansible.builtin.set_fact:
+    aap_dns_retire_current_records: "{{ aap_dns_retire_current.json | godaddy_v3_records(aap_dns_retire_record.name, aap_dns_retire_record.type) }}"
   no_log: false
 
 - name: Refuse a record changed since the ownership review
   ansible.builtin.assert:
     that: >-
-      aap_dns_retire_current.status == 404 or aap_dns_retire_current.json == [] or
-      (aap_dns_retire_current.json == aap_dns_retire_record.records)
+      aap_dns_retire_current_records == [] or
+      (aap_dns_retire_current_records | sort(attribute='recordId') == aap_dns_retire_record.records | sort(attribute='recordId'))
+    quiet: true
   no_log: false
 
-- name: Remove the exact unchanged version-owned DNS record set
-  ansible.builtin.uri:
-    url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/{{ aap_dns_retire_record.type }}/{{ aap_dns_retire_record.name | urlencode }}"
-    method: DELETE
-    headers:
-      Authorization: "Bearer {{ vault_godaddy_api_token }}"
-    status_code: [200, 204, 404]
-    validate_certs: true
-    follow_redirects: none
-  when: aap_dns_retire_current.status == 200 and aap_dns_retire_current.json | length > 0
-  delegate_to: localhost
-  become: false
+- name: Remove only individually reviewed unchanged provider record IDs
+  ansible.builtin.include_tasks: decommission-dns-delete-record.yml
+  loop: "{{ aap_dns_retire_current_records }}"
+  loop_control:
+    loop_var: aap_dns_retire_individual
+  when: not ansible_check_mode
   no_log: false
 
 - name: Verify provider absence after deletion
   ansible.builtin.uri:
-    url: "https://api.godaddy.com/v1/domains/{{ vault_domain }}/records/{{ aap_dns_retire_record.type }}/{{ aap_dns_retire_record.name | urlencode }}"
+    url: "https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records?type={{ aap_dns_retire_record.type | urlencode }}&name={{ aap_dns_retire_record.name | urlencode }}&page=1&pageSize=100&totalRequired=true"
     method: GET
     headers:
       Authorization: "Bearer {{ vault_godaddy_api_token }}"
-    status_code: [200, 404]
+    status_code: 200
     validate_certs: true
     follow_redirects: none
+    timeout: 30
   delegate_to: localhost
   become: false
   register: aap_dns_retire_readback
+  when: not ansible_check_mode
+  changed_when: false
   no_log: false
 
 - name: Require verified DNS retirement
   ansible.builtin.assert:
-    that: aap_dns_retire_readback.status == 404 or aap_dns_retire_readback.json == []
+    that: aap_dns_retire_readback.json | godaddy_v3_records(aap_dns_retire_record.name, aap_dns_retire_record.type) == []
+    quiet: true
+  when: not ansible_check_mode
   no_log: false
