@@ -19,6 +19,13 @@ verifies an inverse of both changes. Matching existing definitions keep their
 count unchanged. Captures without a declared count retain that schema; stale,
 boolean or conflicting counts refuse an append before changing resources.
 
+The normal receiving AutoDeploy import has now passed after correcting the
+capture's stale reviewed count. Independent API readback verified all nineteen
+declared job templates and surveys, both source-credential schemas and injectors,
+their declared organization and public inputs, and masked secret presence.
+The original failed import remains part of the deployment history. Windows
+import and application functionality retain their own acceptance gates.
+
 ## Persistent EDA token ownership
 
 The existing API-only EDA Controller credential creator now saves a nonsecret
@@ -57,7 +64,8 @@ Workload redeployment tests must preserve the running AAP VM and hypervisor.
 The workload's owned resources and external registrations must be removed and
 their absence verified before deploying it again. Cold AAP checkpoints remain
 separate recovery facilities. Complete AIOps-only teardown and its CaC/job-template
-wiring are being implemented; the full-instance destroy playbook is unsuitable
+wiring are implemented; live teardown and same-instance redeployment remain
+unverified. The full-instance destroy playbook is unsuitable
 for this test because it also removes AAP.
 
 ## GoDaddy v3 DNS reconciliation and retirement

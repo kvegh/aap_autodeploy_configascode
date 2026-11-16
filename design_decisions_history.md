@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Verify the complete receiving import after reviewed-count repair — 2026-11-16
+
+Implementation `d8effd888e5cdcdef21b277f90bf1947c271f280` maintains existing
+reviewed template counts; its separately qualified encrypted capture correction
+was applied through the normal AutoDeploy configuration import. The retry passed
+with zero failed or unreachable events. Independent receiving API checks verified
+all nineteen declared templates and surveys, both source credential types and
+injectors, declared ownership and public inputs, and masked secret presence.
+The CA retains its existing public trust-bundle role, separately from the private
+MCP peer CA. Verification compares the actual qualified capture, including its
+field labels and inherited execution environments. It introduces no new inputs
+or permission changes. The original failed import remains recorded; successful
+configuration import does not establish application or workload-reset acceptance.
+
 ## Preserve concurrent walkthrough publication during import recovery — 2026-11-16
 
 Integration `7aee8b518f89f3c3156debed089615369f0104c1` combines the qualified

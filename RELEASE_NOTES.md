@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.66.11
+
+- Document successful normal receiving AutoDeploy import and independent
+  nineteen-template, survey and source-credential readback after count repair.
+- Preserve the original failed import and separate Windows/AIOps application
+  acceptance. Refresh the task overview and encrypted recovery export.
+- Clarify that workload teardown wiring is implemented while live cleanup and
+  same-instance redeployment remain unverified.
+
 ## 0.66.10
 
 - Preserve the latest independently published walkthrough documentation while
