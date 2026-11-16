@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.65.4
+
+- Document implementation `16c3561a5bf8057e81a3fb04e56ed765a7e7e55f` and its
+  actual-producer/negative-case native Core2.20/2.21 qualification.
+- Preserve qualified executable behavior; live deployment remains a separate gate.
+
 ## 0.65.3
 
 - Correct the native application-owner guard to the maintained schema-2 appliance

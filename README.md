@@ -2,6 +2,9 @@
 
 ## Validate native monitoring ownership
 
+Implementation `16c3561a5bf8057e81a3fb04e56ed765a7e7e55f` and its focused
+Core2.20/2.21 qualification are documented in the decision history.
+
 The application-permission guard now requires the existing schema-2 monitoring
 appliance record emitted by the maintained producer. It checks the recorded API
 version, exact private API address and saved-image hash, and rejects guest SSH

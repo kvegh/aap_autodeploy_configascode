@@ -1,5 +1,21 @@
 # Design decisions history
 
+## Require current appliance provenance in native permission checks
+
+Implementation `16c3561a5bf8057e81a3fb04e56ed765a7e7e55f` corrects the application
+permission guard from the obsolete schema1 to the maintained schema2 appliance
+record. The producer and encrypted ownership readers already require schema2;
+the previous guard therefore rejected their genuine output. It now additionally
+requires the exact approved saved-image SHA256, API7.4 endpoint and absence of
+all guest SSH identity fields. Existing native UUID, disk, network and address
+checks remain unchanged. This adds no appliance connection or permission.
+
+A native Ansible regression reproduces the old rejection, then accepts the
+actual producer fixture and rejects nine legacy, incomplete, changed-image,
+API-drift and SSH-shaped variants. It passed in local Core2.21.5 and cached
+Core2.20.10 without network or host mounts. Source qualification does not prove
+fresh live deployment, and no workload teardown or AAP job was launched.
+
 ## Preserve AAP during workload redeployment tests — 2026-11-16
 
 The owner requires deploying Windows or AIOps, removing all resources owned by
