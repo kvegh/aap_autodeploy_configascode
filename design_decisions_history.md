@@ -13,7 +13,11 @@ new animation dependencies were unnecessary. Later direct links skip the cue.
 This is a presentation-only correction, not AAP automation or a formal project
 review. Existing DOM tests cover state and dismissal; finite-cycle and motion
 rules are checked in CSS. Rendered browser timing remains unverified. The
-implementation commit reference and publication evidence follow after commit.
+implementation is `3ab5f010d0f207eb93a78f84c0643c07209e2905` (0.66.4).
+GitHub Pages run 43850503163 succeeded on 2026-11-16 at 10:37:52 UTC.
+The existing live runner then verified exact parity of all six published assets
+and all 24 interaction checks passed by 10:40:44 UTC. This does not verify
+rendered browser animation timing or establish AAP runtime acceptance.
 
 The existing source-mapping test exposed older firewall excerpt drift: the
 presentation still said no_log true, while the cited implementation now uses

@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.66.5
+
+- Document the four-pulse implementation commit and successful Pages publication.
+  All six live assets match; all 24 deployed interaction checks pass. Rendered
+  browser animation timing remains unverified.
+- Refresh the required task overview and protected recovery records.
+
 ## 0.66.4
 
 - Give Next four subtle blue halo pulses when the visualization opens at the
