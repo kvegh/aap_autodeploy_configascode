@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.65.5
+
+- Document qualified appliance-provenance guard adoption and refresh task records
+  after all ten native host Rebuild stages passed without failed or unreachable
+  tasks. Platform, snapshot and workload acceptance remain separate.
+- Preserve the independent AIOps-only teardown work and its pending qualification;
+  its implementation is not a prerequisite for publishing the deployment fix.
+- Task records and version only; executable behavior remains the qualified guard
+  implementation documented in versions 0.65.3 and 0.65.4.
+
 ## 0.65.4
 
 - Document implementation `16c3561a5bf8057e81a3fb04e56ed765a7e7e55f` and its
