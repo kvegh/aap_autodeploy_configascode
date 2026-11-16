@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.64.10
+
+- Extend only Stage 02's existing public DNS wait from 30 to 90 retries at
+  ten-second intervals, retaining its bounded `dig` requests and exact A guard.
+- Allow negative-cache expiry and bounded propagation margin without changing
+  transports, provider records, trust, pins, job timeouts or deployment logging.
+- Preserve original failed-run evidence and distinguish source qualification
+  from the actual next successful infrastructure deployment.
+
+Validation: four native DNS tests passed in cached Core 2.20.10; complete YAML
+inverse preserves all executable fields except the retry count. No live job ran.
+
+
 ## 0.64.9
 
 - Document the new fully automatic website restore/rearm acceptance and stopped

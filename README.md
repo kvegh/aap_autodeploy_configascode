@@ -1,5 +1,25 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Allow bounded negative-cache expiry during infrastructure DNS setup
+
+Version **0.64.10** extends only the existing infrastructure propagation wait
+from 30 to 90 retries at its unchanged ten-second delay. Each existing public
+`dig` request remains limited to one three-second attempt from the selected
+hypervisor. This provides fifteen minutes of nominal retry delay plus bounded
+lookup overhead, allowing the observed ten-minute negative-cache window and
+propagation margin. It is not an unconditional propagation guarantee.
+
+The exact direct A-answer guard, absolute hostname, existing resolver/transport,
+provider ownership, certificate/TLS checks, logging and all other infrastructure
+tasks remain unchanged. No borrowed Hactar source pin, credential, counter or
+private data changes. Publishing this source neither changes DNS records nor
+retries a running deployment; original failed attempts remain failed evidence.
+The separate Hactar host-DNS helper retains its own strict bounded HTTPS check.
+All four focused native DNS tests passed in cached Core 2.20.10. A complete YAML
+inverse proves that only this retry count changes in executable content; actual
+next infrastructure execution remains independently verified.
+
+
 ## Future cold AAP installation checkpoints
 
 The requested snapshot and explicit restore playbooks are implemented with

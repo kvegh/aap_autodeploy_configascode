@@ -104,7 +104,7 @@ class NativeDnsTests(unittest.TestCase):
     def test_propagation_rejects_wrong_or_incomplete_external_answers(self):
         task = next(t for t in self.infra_tasks["tasks"] if t["name"] == "Wait for DNS propagation")
         self.assertEqual(task["ansible.builtin.command"]["argv"][:2], ["dig", "@8.8.8.8"])
-        self.assertEqual((task["retries"], task["delay"]), (30, 10))
+        self.assertEqual((task["retries"], task["delay"]), (90, 10))
         for rc, lines, fails in [(0, ["192.0.2.200"], False), (0, [], True),
                                   (0, ["192.0.2.201"], True),
                                   (0, ["192.0.2.200", "192.0.2.201"], True),

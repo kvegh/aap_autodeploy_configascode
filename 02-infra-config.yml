@@ -163,7 +163,7 @@
         dns_check.rc != 0 or
         dns_check.stdout_lines | unique | list != [aap_instance_route.hypervisor.public_ip]
       until: dns_check is not failed
-      retries: 30
+      retries: 90
       delay: 10
 
     - name: Obtain Let's Encrypt certificate
