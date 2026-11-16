@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-279 tasks: 41 outstanding; 238 closed.
+282 tasks: 44 outstanding; 238 closed.
 
 ## Outstanding tasks
 
@@ -25,6 +25,8 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.10.1 | Separate retained agent phase output and publish bounded successful tool diagnostics | deferred | P1 | bug | bead-wd-3ix.2.10 |
 | bead-wd-3ix.2.12 | Run full v24 installation with cold snapshots and functionality tests | in_progress | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.11 |
 | bead-wd-3ix.2.12.2 | Migrate all maintained public DNS playbooks CaC and templates to v3 | in_progress | P1 | task | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.12.7 | Ensure receiving AutoDeploy source credentials before Windows import | in_progress | P1 | bug | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.12.8 | Correct AutoDeploy resource normalization failure on the receiving AAP | in_progress | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | deferred | P1 | epic | bead-wd-3ix.2 |
 | bead-wd-3ix.2.7.10 | Diagnose repeated collection artifact hash mismatches before v23 | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | blocked | P1 | bug | bead-wd-3ix.2.7 |
@@ -54,6 +56,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | open | P2 | task | bead-wd-mcr |
+| bead-wd-ril3 | Pulse config-as-code Next button four times initially | in_progress | P2 | task | — |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
 | bead-wd-72f.31.6.5.1 | Evaluate prebuilt container images and a separate build host | deferred | P3 | task | bead-wd-72f.31.6.5 |
 | bead-wd-9ezo | Add External CloudCLI as an independent CaC project | deferred | P3 | task | — |

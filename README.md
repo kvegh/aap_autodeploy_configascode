@@ -938,6 +938,10 @@ do not establish live migration or complete end-to-end acceptance.
 
 ## AAP Configuration as Code visualization
 
+Opening at the first step gives Next four subtle blue halo pulses, then stops.
+Navigation dismisses the cue early; returning or restarting does not replay it.
+Reduced-motion preferences suppress the animation.
+
 Both repository windows keep one complete, scrollable presentation file. The
 private file includes readable configuration labels, quoted Jinja variables for
 VM inputs and synthetic encrypted secret examples; the public file combines

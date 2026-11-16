@@ -1,5 +1,27 @@
 # Design decisions history
 
+## Draw initial attention to Next with four finite halos — 2026-11-16
+
+The user requested four initial pulses in the config-as-code visualization,
+using the self-healing demo button as a visual reference. A subtle blue expanding
+halo follows that reference without moving the navigation controls. CSS limits
+it to four 1.3-second cycles; the existing reduced-motion override disables it.
+The presenter attaches the cue only on an initial first-stage opening, removes
+it on navigation and never reattaches it on back or restart. A repeating cue and
+new animation dependencies were unnecessary. Later direct links skip the cue.
+
+This is a presentation-only correction, not AAP automation or a formal project
+review. Existing DOM tests cover state and dismissal; finite-cycle and motion
+rules are checked in CSS. Rendered browser timing remains unverified. The
+implementation commit reference and publication evidence follow after commit.
+
+The existing source-mapping test exposed older firewall excerpt drift: the
+presentation still said no_log true, while the cited implementation now uses
+false under a separate established logging decision. Both displayed lines and
+their assertion now match the source. The source citation advances to the
+published baseline 09471daf07efbd248e105aa6496f25a5caa0f0a9; no automation task
+or logging behavior changes here.
+
 ## Retain exact access-token custody and freeze the cleanup owner — 2026-11-16
 
 Implementation `8d0ab8bc8e9370a561c613d1e5602c4d2d650894` (Source0.66.1) consumes the separately qualified

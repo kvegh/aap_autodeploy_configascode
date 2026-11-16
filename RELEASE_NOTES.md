@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.66.4
+
+- Give Next four subtle blue halo pulses when the visualization opens at the
+  first step. Stop early on navigation; returning or restarting does not replay
+  the cue. Preserve reduced-motion preferences and stable button dimensions.
+- Extend the existing interaction checks to cover the cue lifecycle and finite
+  CSS duration. No dependencies or AAP runtime behavior change.
+- Refresh the displayed firewall logging excerpt and source citation to the
+  existing implementation; preserve exact-source validation.
+
 ## 0.66.3
 
 - Document three verified cold checkpoints, successful final guest-access checks

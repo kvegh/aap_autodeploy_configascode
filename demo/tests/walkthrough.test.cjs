@@ -161,7 +161,7 @@ test('the seven chapters cover deployment, capture and replay with existing sour
   assert.match(firewall, /ansible\.builtin\.include_role:/);
   assert.match(firewall, /name: redhat\.rhel_system_roles\.firewall/);
   assert.match(firewall, /rich_rule:.*\{\{ aap_management_native_plan\.rich_rule \}\}/);
-  for (const setting of ['state: enabled', 'runtime: true', 'permanent: true', 'no_log: true']) assert.ok(firewall.includes(setting));
+  for (const setting of ['state: enabled', 'runtime: true', 'permanent: true', 'no_log: false']) assert.ok(firewall.includes(setting));
   for (const [section, reference] of [['certificate', '02-infra-config.yml'], ['firewall', 'tasks/aap-hypervisor-access.yml']]) {
     assert.ok(publicEntries.filter(line => line.section === section).every(line => line.source === reference), `${section}: the actual implementation source is cited`);
   }
@@ -1221,4 +1221,30 @@ test('each AAP keeps the complete infrastructure group inside its RHEL foundatio
     assert.match(foundation, new RegExp(`\\bid="${prefix}-infrastructure"`), 'Infrastructure belongs within RHEL, not the AAP object catalogue');
     assert.equal((html.match(new RegExp(`\\bid="${prefix}-infrastructure"`, 'g')) || []).length, 1, 'The group is moved rather than duplicated');
   }
+});
+
+
+test('Next gets four initial halos and navigation dismisses the cue without replay', () => {
+  for (const navigate of [
+    ui => ui.nodes.next.click(),
+    ui => ui.key('ArrowRight'),
+    ui => ui.chapter('deployment'),
+    ui => ui.hash('#vm'),
+  ]) {
+    const ui = browser();
+    assert.ok(ui.nodes.next.classList.contains('next-intro-cue'));
+    navigate(ui);
+    assert.ok(!ui.nodes.next.classList.contains('next-intro-cue'));
+    ui.nodes.restart.click();
+    assert.ok(!ui.nodes.next.classList.contains('next-intro-cue'), 'Restart does not replay the cue');
+  }
+  const linked = browser('#vm');
+  assert.ok(!linked.nodes.next.classList.contains('next-intro-cue'), 'Later direct links skip the cue');
+  linked.nodes.previous.click();
+  assert.ok(!linked.nodes.next.classList.contains('next-intro-cue'), 'Returning to the first step does not replay it');
+  const styles = source('src/styles.css');
+  const cue = styles.match(/\.button-next\.next-intro-cue::after\s*\{([^}]+)}/)[1];
+  assert.match(cue, /animation:\s*next-intro-pulse\s+1\.3s\s+ease-out\s+4\s*;/, 'Four finite cycles, not an infinite attention loop');
+  assert.match(cue, /pointer-events:\s*none;/, 'The decorative halo cannot intercept navigation');
+  assert.match(styles, /@media\s*\(prefers-reduced-motion:reduce\)\s*\{\s*\*,\*::before,\*::after\s*\{[^}]*animation:none\s*!important;/, 'Reduced motion also disables the halo');
 });

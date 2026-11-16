@@ -59,7 +59,13 @@ button:focus-visible,a:focus-visible,summary:focus-visible,[tabindex]:focus-visi
 .button-previous { width:100%; padding:0; }
 .button-step:hover:not(:disabled) { border-color:#8eafea; background:#f7faff; }
 .button-step:disabled { color:#bdc8d9; border-color:#e8eef6; }
-.button-next { min-width:0; width:100%; white-space:nowrap; color:#fff; border-color:#2868df; background:#2868df; }
+.button-next { position:relative; min-width:0; width:100%; white-space:nowrap; color:#fff; border-color:#2868df; background:#2868df; }
+/* Four decorative halos draw initial attention without moving the controls. */
+.button-next.next-intro-cue::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; animation:next-intro-pulse 1.3s ease-out 4; }
+@keyframes next-intro-pulse {
+  from { box-shadow:0 0 0 0 rgba(40,104,223,.5); }
+  to { box-shadow:0 0 0 10px rgba(40,104,223,0); }
+}
 .button-next:hover:not(:disabled) { color:#fff; border-color:#1d58c5; background:#1d58c5; }
 .button-next:disabled { color:#fff; border-color:#83a4db; background:#83a4db; }
 .button-restart { display:flex; align-items:center; justify-content:center; width:100%; height:2.3125rem; padding:0; border:0; color:#8a9cb6; background:transparent; }
