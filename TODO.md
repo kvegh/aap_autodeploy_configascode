@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-282 tasks: 43 outstanding; 239 closed.
+282 tasks: 44 outstanding; 238 closed.
 
 ## Outstanding tasks
 
@@ -56,6 +56,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-b3j | Rebuild Assistant CLI containers on UBI 10 | deferred | P2 | task | — |
 | bead-wd-mcr | Rebuild VMs and services from CaC instead of saved system disks | open | P2 | feature | — |
 | bead-wd-mcr.1 | Lift recovery isolation gradually for CaC-rebuilt VMs | open | P2 | task | bead-wd-mcr |
+| bead-wd-ril3 | Pulse config-as-code Next button four times initially | in_progress | P2 | task | — |
 | bead-wd-sc8 | Replace the temporary instance registry with a real CMDB | open | P2 | feature | — |
 | bead-wd-72f.31.6.5.1 | Evaluate prebuilt container images and a separate build host | deferred | P3 | task | bead-wd-72f.31.6.5 |
 | bead-wd-9ezo | Add External CloudCLI as an independent CaC project | deferred | P3 | task | — |
@@ -293,7 +294,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-q6ta | Keep receiving AAP settings anchored during object growth | closed | P2 | task | — |
 | bead-wd-qtbr | Import regional objects with project definitions | closed | P2 | task | — |
 | bead-wd-rhrk | Outline the new code-grounded AAP CaC visualization | closed | P2 | task | — |
-| bead-wd-ril3 | Pulse config-as-code Next button four times initially | closed | P2 | task | — |
 | bead-wd-t76a | Add the exact Elastic project ID to the existing CaC importer | closed | P2 | task | — |
 | bead-wd-tmbt | Remove rejected light preview and restore original-only publication | closed | P2 | task | — |
 | bead-wd-v5c8 | Align the AAP cards and replay full Git configuration to another AAP | closed | P2 | feature | — |

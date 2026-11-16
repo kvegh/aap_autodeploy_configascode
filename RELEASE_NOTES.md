@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.66.6
+
+- Make the initial Next cue more visible with a brighter expanding ring,
+  stronger glow, slight breathing motion and darker blue midpoint. Retain four
+  cycles, navigation dismissal, no replay and the reduced-motion override.
+
 ## 0.66.5
 
 - Document the four-pulse implementation commit and successful Pages publication.

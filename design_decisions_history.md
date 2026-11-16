@@ -1,5 +1,19 @@
 # Design decisions history
 
+## Strengthen the initial Next cue after visual feedback — 2026-11-16
+
+The user saw the published pulses but found them too subtle and requested more
+visibility. A brighter blue expanding ring, stronger glow, slight scale change
+and darker button midpoint make the existing cue easier to notice. Both CSS
+animations keep the same four 1.3-second cycles. Navigation dismissal, no replay
+and reduced-motion handling remain unchanged. A colour-only adjustment offered
+less visual emphasis; a repeating cue was outside the requested four-pulse limit.
+The scale increase is limited to two percent so wider narrow-layout buttons
+stay clear of adjacent controls. No script, dependency or runtime automation
+changes are needed. Implementation
+reference and publication evidence follow after commit. Browser appearance will
+need the user's visual confirmation with the existing no-install test scope.
+
 ## Draw initial attention to Next with four finite halos — 2026-11-16
 
 The user requested four initial pulses in the config-as-code visualization,

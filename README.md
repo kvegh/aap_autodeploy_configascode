@@ -938,7 +938,8 @@ do not establish live migration or complete end-to-end acceptance.
 
 ## AAP Configuration as Code visualization
 
-Opening at the first step gives Next four subtle blue halo pulses, then stops.
+Opening at the first step gives Next four prominent blue halo pulses with a
+slight breathing motion and darker colour, then stops.
 Navigation dismisses the cue early; returning or restarting does not replay it.
 Reduced-motion preferences suppress the animation.
 

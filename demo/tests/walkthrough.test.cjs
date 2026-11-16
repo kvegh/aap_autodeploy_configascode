@@ -1245,6 +1245,7 @@ test('Next gets four initial halos and navigation dismisses the cue without repl
   const styles = source('src/styles.css');
   const cue = styles.match(/\.button-next\.next-intro-cue::after\s*\{([^}]+)}/)[1];
   assert.match(cue, /animation:\s*next-intro-pulse\s+1\.3s\s+ease-out\s+4\s*;/, 'Four finite cycles, not an infinite attention loop');
+  assert.match(styles, /\.button-next\.next-intro-cue\s*\{\s*animation:next-intro-emphasis\s+1\.3s\s+ease-in-out\s+4\s*;/, 'The button emphasis also stops after four cycles');
   assert.match(cue, /pointer-events:\s*none;/, 'The decorative halo cannot intercept navigation');
   assert.match(styles, /@media\s*\(prefers-reduced-motion:reduce\)\s*\{\s*\*,\*::before,\*::after\s*\{[^}]*animation:none\s*!important;/, 'Reduced motion also disables the halo');
 });

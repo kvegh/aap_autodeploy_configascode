@@ -63,7 +63,9 @@ labels, a persistent current-step heading and distinct completed/current chapter
 chapter changes keep the active navigation item in view. The navigation footer
 is separate from changing step content and uses stable control tracks. Its Next
 button retains the same frame for Next and Complete. When opened at the first
-step, four subtle blue expanding halos draw attention to Next over 5.2 seconds.
+step, four prominent blue expanding rings and a stronger glow draw attention to
+Next over 5.2 seconds. The button grows slightly and darkens during each pulse,
+without changing the control layout.
 Navigation dismisses the cue early; back, restart and direct links to later steps
 do not replay it. Reduced-motion preferences suppress the animation. The bottom object/profile
 status summary and its presenter/styles are deleted. There is no marketing hero
