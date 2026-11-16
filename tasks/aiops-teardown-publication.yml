@@ -1,0 +1,38 @@
+- name: Revalidate current publication ownership before preview or native locked deletion
+  ansible.builtin.include_tasks: aiops-teardown-publication-preflight.yml
+  no_log: false
+- name: Remove only the previously inspected application paths
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: absent
+  loop: '{{ aap_retirement.nginx + aap_retirement.website_paths }}'
+  when: aap_aiops_teardown_publication_phase == 'apply'
+  no_log: false
+- name: Validate remaining nginx before reload
+  ansible.builtin.command:
+    argv:
+    - /usr/sbin/nginx
+    - -t
+  changed_when: false
+  when: aap_aiops_teardown_publication_phase == 'apply'
+  no_log: false
+- name: Reload preserved nginx after application publication removal
+  ansible.builtin.systemd:
+    name: nginx
+    state: reloaded
+  when: aap_aiops_teardown_publication_phase == 'apply'
+  no_log: false
+- name: Remove only exact previously inspected single-name certificate lineages
+  ansible.builtin.command:
+    argv:
+    - certbot
+    - delete
+    - --cert-name
+    - '{{ item.item }}'
+    - --non-interactive
+  loop: '{{ aap_aiops_teardown_certificate_files.results | default([]) }}'
+  when:
+  - aap_aiops_teardown_publication_phase == 'apply'
+  - item.stat.exists
+  changed_when: true
+  no_log: false

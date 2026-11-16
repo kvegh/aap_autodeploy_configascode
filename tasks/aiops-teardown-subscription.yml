@@ -1,0 +1,112 @@
+- name: Require retained RHSM absence proof when a recorded TRA is already gone
+  ansible.builtin.assert:
+    that: aap_instance_resources.tra | default(none) is none or ('tra-' ~ aap_retirement.version) in aap_retirement_domains.stdout_lines
+      or aap_aiops_teardown_plan.subscription_absence_verified | default(false)
+    quiet: true
+    fail_msg: A recorded TRA is missing without verified subscription retirement. Retain its ownership and recover
+      original native evidence; disk absence does not prove remote cleanup.
+  no_log: false
+- name: Use the ordinary target-local TRA job before removing its own definitions
+  when:
+  - aap_instance_resources.tra | default(none) is not none
+  - not (aap_aiops_teardown_plan.subscription_absence_verified | default(false))
+  block:
+  - name: Select the one preflighted native subscription retirement template
+    ansible.builtin.set_fact:
+      aap_aiops_teardown_subscription_templates: "{{ aap_aiops_teardown_plan.operations | selectattr('kind', 'equalto',\
+        \ 'controller_templates') |\n     selectattr('identity.name', 'equalto', 'Retire AIOps TRA Subscription')\
+        \ | list }}"
+    no_log: false
+  - name: Require its exact expected normal playbook inventory and TRA limit
+    ansible.builtin.assert:
+      that:
+      - aap_aiops_teardown_subscription_templates | length == 1
+      - aap_aiops_teardown_subscription_templates[0].identity.playbook == 'playbooks/retire_tra_subscription.yml'
+      quiet: true
+    no_log: false
+  - name: Read the exact selected TRA native power state on the hypervisor
+    ansible.builtin.command:
+      argv:
+      - virsh
+      - -c
+      - qemu:///system
+      - domstate
+      - '{{ aap_instance_resources.tra.uuid }}'
+    register: aap_aiops_teardown_tra_state
+    changed_when: false
+    no_log: false
+  - name: Refuse unexpected suspended or transitional TRA state
+    ansible.builtin.assert:
+      that: aap_aiops_teardown_tra_state.stdout | trim in ['running', 'shut off']
+      quiet: true
+    no_log: false
+  - name: Start only the verified selected TRA if needed for its native unregister job
+    ansible.builtin.command:
+      argv:
+      - virsh
+      - -c
+      - qemu:///system
+      - start
+      - '{{ aap_instance_resources.tra.uuid }}'
+    when: aap_aiops_teardown_tra_state.stdout | trim == 'shut off'
+    changed_when: true
+    no_log: false
+  - name: Launch the saved target-local retirement job exactly once
+    ansible.controller.job_launch:
+      job_template: '{{ aap_aiops_teardown_subscription_templates[0].identity.id | string }}'
+      extra_vars:
+        demo_subscription_teardown_confirmation: '{{ aap_instance_route.vm_name }}'
+      wait: false
+      controller_host: '{{ aap_aiops_teardown_target.authentication.hostname }}'
+      controller_oauthtoken: '{{ aap_aiops_teardown_target.authentication.token }}'
+      validate_certs: true
+    delegate_to: localhost
+    become: false
+    register: aap_aiops_teardown_subscription_job
+    no_log: false
+  - name: Retain the actual nested job ID for supported status recovery
+    ansible.builtin.set_stats:
+      data:
+        aap_aiops_teardown_subscription_job:
+          id: '{{ aap_aiops_teardown_subscription_job.id }}'
+          name: Retire AIOps TRA Subscription
+          target: '{{ aap_instance_route.vm_name }}'
+      per_host: false
+    no_log: false
+  - name: Follow the same native target job through its actual terminal outcome
+    ansible.controller.job_wait:
+      job_id: '{{ aap_aiops_teardown_subscription_job.id }}'
+      job_type: jobs
+      interval: 5
+      timeout: 900
+      controller_host: '{{ aap_aiops_teardown_target.authentication.hostname }}'
+      controller_oauthtoken: '{{ aap_aiops_teardown_target.authentication.token }}'
+      validate_certs: true
+    delegate_to: localhost
+    become: false
+    no_log: false
+  - name: Verify the actual native job identity revision and subscription absence artifact
+    aap_aiops_teardown:
+      operation: subscription_result
+      instance_name: '{{ aap_instance_route.vm_name }}'
+      route: '{{ aap_instance_route }}'
+      plan: '{{ aap_aiops_teardown_plan }}'
+      job_id: '{{ aap_aiops_teardown_subscription_job.id | int }}'
+    delegate_to: localhost
+    become: false
+    register: aap_aiops_teardown_subscription_result
+    no_log: false
+  - name: Retain the exact verified native proof for owner publication
+    ansible.builtin.set_fact:
+      aap_aiops_teardown_subscription_proof: '{{ aap_aiops_teardown_subscription_result.proof }}'
+    no_log: false
+  - name: Persist subscription absence with the existing approved private owner writer
+    aap_aiops_teardown:
+      operation: record_subscription_absence
+      instance_name: '{{ aap_instance_route.vm_name }}'
+      route: '{{ aap_instance_route }}'
+      plan: '{{ aap_aiops_teardown_plan }}'
+    delegate_to: localhost
+    become: false
+    no_log: false
+  no_log: false

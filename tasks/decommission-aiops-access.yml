@@ -25,6 +25,9 @@
         regex_findall('<uuid>\s*([0-9a-f-]+)\s*</uuid>') == [item.guest.uuid]
     quiet: true
   loop: '{{ aap_decommission_current_app_owners }}'
+  when: >-
+    item.guest.vm_name in aap_decommission_guest_xmls or
+    aap_decommission_scope | default('instance') != 'aiops'
   no_log: false
 
 - name: Retain only exact tuples from this selected CaC owner

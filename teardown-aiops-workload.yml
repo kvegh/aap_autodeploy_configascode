@@ -1,0 +1,274 @@
+- name: Preview or retire only one selected AIOps workload
+  hosts: hypervisor
+  become: true
+  gather_facts: false
+  vars_files:
+  - myvars
+  - vars/main.yml
+  pre_tasks:
+  - name: Require an explicit bounded workload teardown mode
+    ansible.builtin.assert:
+      that:
+      - aap_instance_key is match('^aap27-test-[1-9][0-9]*$')
+      - aap_aiops_teardown_mode | default('preview') in ['preview', 'apply']
+      - aap_aiops_teardown_confirmation | default('') == aap_instance_key
+      fail_msg: Select preview or apply and confirm the exact existing AAP instance; its VM will be preserved.
+      quiet: true
+    no_log: false
+  - name: Bind the fixed workload-only scope before any native inspection
+    ansible.builtin.set_fact:
+      aap_decommission_scope: aiops
+      aap_aiops_teardown_apply: '{{ aap_aiops_teardown_mode | default("preview") == "apply" and not ansible_check_mode
+        }}'
+      aap_aiops_teardown_selected_instance: '{{ aap_instance_key }}'
+      aap_aiops_teardown_native_absence_verified: false
+    no_log: false
+  - name: Read the active AAP reservation without changing its history or counter
+    ansible.builtin.include_tasks: tasks/aap-instance-select.yml
+    vars:
+      aap_read_related_resources: false
+    no_log: false
+  - name: Verify the pinned owning hypervisor before any workload operation
+    ansible.builtin.include_tasks: tasks/aap-hypervisor-identity.yml
+    no_log: false
+  tasks:
+  - name: Retire the selected workload while preserving its shared platform
+    block:
+    - name: Read all native domain names without changing any power state
+      ansible.builtin.command:
+        argv:
+        - virsh
+        - -c
+        - qemu:///system
+        - list
+        - --all
+        - --name
+      register: aap_retirement_domains
+      changed_when: false
+      check_mode: false
+      no_log: false
+    - name: Inspect complete ownership and project only the AIOps identities
+      ansible.builtin.include_tasks: tasks/decommission-guest-access.yml
+      vars:
+        aap_decommission_guest_access_phase: preflight
+      no_log: false
+    - name: Preflight exact existing Source publication without retiring the AAP allocation
+      aap_publish_instance_keys:
+        operation: retire_aiops_workload
+        phase: plan
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        hypervisor: '{{ aap_hypervisor_pin }}'
+      delegate_to: localhost
+      become: false
+      register: aap_aiops_teardown_source_plan
+      no_log: false
+    - name: Resolve the canonical existing AAP inventory owner for ordinary CaC rendering
+      aap_read_instance:
+        instance_key: '{{ aap_instance_route.vm_name }}'
+        expected_route: '{{ aap_instance_route }}'
+        read_inventory_metadata: true
+      delegate_to: localhost
+      become: false
+      register: aap_aiops_teardown_inventory_readback
+      no_log: false
+    - name: Retain the proved native AAP inventory variables without another connection
+      ansible.builtin.set_fact:
+        aap_aiops_teardown_inventory_owner: '{{ aap_aiops_teardown_inventory_readback.inventory_configuration.host_inventory_configuration.hosts[0]
+          | aap_aiops_teardown_inventory_variables }}'
+      no_log: false
+    - name: Bind only the already verified AAP owner for the normal resource renderer
+      ansible.builtin.add_host:
+        name: '{{ aap_instance_key }}'
+        aap_instance_number: '{{ aap_aiops_teardown_inventory_owner.aap_instance_number }}'
+        ansible_fqdn: '{{ aap_aiops_teardown_inventory_owner.ansible_fqdn }}'
+        ansible_host: '{{ aap_aiops_teardown_inventory_owner.ansible_host }}'
+        vm_uuid: '{{ aap_aiops_teardown_inventory_owner.vm_uuid }}'
+        hypervisor_host: '{{ aap_aiops_teardown_inventory_owner.hypervisor_host }}'
+        vm_resource: '{{ aap_aiops_teardown_inventory_owner.vm_resource }}'
+      changed_when: false
+      no_log: false
+    - name: Authenticate only the existing selected target without creating a credential
+      aap_aiops_teardown:
+        operation: authentication
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        route: '{{ aap_instance_route }}'
+      delegate_to: localhost
+      become: false
+      register: aap_aiops_teardown_auth
+      no_log: false
+    - name: Bind existing selected bearer for the unchanged native shared-image resolver
+      ansible.builtin.set_fact:
+        aap_token: '{{ aap_aiops_teardown_auth.authentication.token }}'
+        aap_validate_certs: true
+      no_log: false
+    - name: Resolve the same receiver-owned shared image as normal CaC import
+      ansible.builtin.include_tasks:
+        file: tasks/cac-shared-execution-image.yml
+        apply:
+          delegate_to: localhost
+          become: false
+          vars:
+            ansible_connection: local
+          no_log: false
+      when: aap_instance_route.vm_name in aiops_instances
+      no_log: false
+    - name: Keep the existing EDA token placeholder literal during reviewed definition rendering
+      ansible.builtin.set_fact:
+        aiops_controller_access_token: ''
+      no_log: false
+    - name: Render the maintained AIOps definitions without importing or recreating resources
+      aap_cac_prepare_resources: null
+      when: aap_instance_route.vm_name in aiops_instances
+      no_log: false
+    - name: Resolve exact native target IDs and refuse shared or conflicting resources
+      aap_aiops_teardown:
+        operation: '{{ "plan" if aap_instance_route.vm_name in aiops_instances else "plan_absent" }}'
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        route: '{{ aap_instance_route }}'
+        resources: '{{ cac_import_resources | default(omit) }}'
+      delegate_to: localhost
+      become: false
+      register: aap_aiops_teardown_target
+      no_log: false
+    - name: Resolve the selected protected runtime credentials before DNS inspection
+      aap_aiops_teardown:
+        operation: runtime_dns
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        route: '{{ aap_instance_route }}'
+      delegate_to: localhost
+      become: false
+      register: aap_aiops_teardown_dns_runtime
+      no_log: false
+    - name: Retain the actual native target plan
+      ansible.builtin.set_fact:
+        aap_aiops_teardown_plan: '{{ aap_aiops_teardown_target.plan }}'
+        aap_aiops_teardown_dns_targets:
+        - name: redhat.{{ aap_retirement.version }}
+          token: '{{ aap_aiops_teardown_dns_runtime.tokens.demo_website_dns_api_token }}'
+        - name: zabbix.{{ aap_retirement.version }}
+          token: '{{ aap_aiops_teardown_dns_runtime.tokens.demo_zabbix_dns_api_token }}'
+      no_log: false
+    - name: Validate both exact application DNS preimages without changing them
+      ansible.builtin.include_tasks: tasks/aiops-teardown-dns.yml
+      loop: '{{ aap_aiops_teardown_dns_targets }}'
+      loop_control:
+        loop_var: aap_aiops_teardown_dns_target
+      vars:
+        aap_aiops_teardown_dns_phase: plan
+      no_log: false
+    - name: Capture remaining-domain and AAP-snapshot preservation evidence
+      ansible.builtin.include_tasks: tasks/aiops-teardown-preserve.yml
+      vars:
+        aap_aiops_teardown_preservation_phase: before
+      no_log: false
+    - name: Validate exact publication ownership and single-name certificates
+      ansible.builtin.include_tasks: tasks/aiops-teardown-publication.yml
+      vars:
+        aap_aiops_teardown_publication_phase: preflight
+      no_log: false
+    - name: Validate complete native clone storage exclusivity before any apply mutation
+      ansible.builtin.include_tasks: tasks/aiops-teardown-disk-proof.yml
+      no_log: false
+    - name: Show the bounded preview without any secret or API material
+      ansible.builtin.debug:
+        msg:
+          instance: '{{ aap_instance_route.vm_name }}'
+          mode: '{{ aap_aiops_teardown_mode | default("preview") }}'
+          workload_guests: '{{ aap_retirement.domains | map(attribute="name") | list }}'
+          target_object_count: '{{ aap_aiops_teardown_plan.operations | length }}'
+          preserve_aap_vm_and_allocation: true
+          preserve_other_domains_networks_snapshots_and_shared_credentials: true
+      no_log: false
+    - name: End a preview before any event VM DNS or namespace mutation
+      ansible.builtin.meta: end_play
+      when: not aap_aiops_teardown_apply
+      no_log: false
+    - name: Disable only selected event delivery and wait for existing jobs to finish
+      aap_aiops_teardown:
+        operation: quiesce
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        route: '{{ aap_instance_route }}'
+        plan: '{{ aap_aiops_teardown_plan }}'
+      delegate_to: localhost
+      become: false
+      register: aap_aiops_teardown_idle
+      until: aap_aiops_teardown_idle.quiescent | default(false)
+      retries: 60
+      delay: 5
+      no_log: false
+    - name: Stop selected monitoring delivery through its exact native VM before removing receivers
+      ansible.builtin.include_tasks: tasks/aiops-teardown-native.yml
+      vars:
+        aap_aiops_teardown_native_phase: stop_monitoring
+      no_log: false
+    - name: Unregister the exact TRA before its disk can be removed
+      ansible.builtin.include_tasks: tasks/aiops-teardown-subscription.yml
+      no_log: false
+    - name: Remove only preflighted target AIOps definitions so new jobs cannot start
+      aap_aiops_teardown:
+        operation: remove_target
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        route: '{{ aap_instance_route }}'
+        plan: '{{ aap_aiops_teardown_plan }}'
+      delegate_to: localhost
+      become: false
+      no_log: false
+    - name: Stop and remove only exact inspected AIOps native resources
+      ansible.builtin.include_tasks: tasks/aiops-teardown-native.yml
+      vars:
+        aap_aiops_teardown_native_phase: remove
+      no_log: false
+    - name: Remove only the two selected public A records and verify authoritative absence
+      ansible.builtin.include_tasks: tasks/aiops-teardown-dns.yml
+      loop: '{{ aap_aiops_teardown_dns_targets }}'
+      loop_control:
+        loop_var: aap_aiops_teardown_dns_target
+      vars:
+        aap_aiops_teardown_dns_phase: apply
+      no_log: false
+    - name: Verify every selected native resource absent and the shared platform preserved
+      ansible.builtin.include_tasks: tasks/aiops-teardown-preserve.yml
+      vars:
+        aap_aiops_teardown_preservation_phase: after
+      no_log: false
+    - name: Mark only this job's completed native absence checks
+      ansible.builtin.set_fact:
+        aap_aiops_teardown_native_absence_verified: true
+      no_log: false
+    - name: Publish only removed application guest rows and policy aliases
+      aap_publish_instance_keys:
+        operation: retire_aiops_workload
+        phase: publish
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        hypervisor: '{{ aap_hypervisor_pin }}'
+        transition: '{{ aap_aiops_teardown_source_plan.transition }}'
+      delegate_to: localhost
+      become: false
+      register: aap_aiops_teardown_source_published
+      no_log: false
+    - name: Remove paired owner and runtime namespaces only after all cleanup is verified
+      aap_aiops_teardown:
+        operation: retire_profile
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        route: '{{ aap_instance_route }}'
+        plan: '{{ aap_aiops_teardown_plan }}'
+      delegate_to: localhost
+      become: false
+      no_log: false
+    - name: Report completed AIOps-only retirement
+      ansible.builtin.debug:
+        msg: Selected AIOps resources were retired. The same AAP VM and its snapshots, hypervisor, shared foundation
+          and allocation remain available for a normal fresh AIOps import and deployment.
+      no_log: false
+    always:
+    - name: Remove only this job's temporary hypervisor trust
+      ansible.builtin.file:
+        path: '{{ aap_hypervisor_trust.path }}'
+        state: absent
+      delegate_to: localhost
+      become: false
+      when: aap_hypervisor_trust.path is defined
+      check_mode: false
+      no_log: false
+    no_log: false
+  no_log: false

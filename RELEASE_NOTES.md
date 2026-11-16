@@ -1,5 +1,31 @@
 # Release notes
 
+## 0.66.0
+
+- Add a Source-owned preview/apply AIOps workload reset that preserves the AAP
+  VM, active allocation, snapshots, hypervisor and shared platform. Reuse existing
+  native owner retirement, APIs, scoped private writer and transaction locks.
+- Quiesce selected event delivery/jobs, require exact native subscription-job
+  evidence, remove owned target definitions, selected clone/native/publication
+  resources and exact v3 DNS IDs, and prove authoritative absence. Retire paired
+  selected namespaces last. Preserve unproved/shared resources for review.
+- Check native domain/snapshot/unattached-image/backing-chain exclusivity before
+  mutation and immediately before unlink. Recheck foreign API consumers and
+  publication ownership at removal. Refuse import while teardown state remains.
+- Add a fresh-capture one-template CaC append helper; preserve all other native
+  publisher state, original Vault headers and literal values. Existing explicit
+  visible-logging direction applies to all owned tasks; vendor masking remains.
+- Qualification: 77 focused cached Core2.20 tests pass, including existing
+  selected-settings regressions; 14 existing generic retirement tests pass
+  locally. Actual protected selected CaC renders and yields 32 read-only native
+  planned operations. Native syntax checks pass. The broader isolation suite's
+  17 preexisting baseline failures remain documented; it is not a passing suite.
+- Publication, matching target helper/template adoption, live owned teardown,
+  same-AAP redeploy and original demo functionality acceptance remain separate
+  gates. No live cleanup or deployment was launched to qualify this feature.
+
+
+
 ## 0.65.19
 
 - Document the completed installer checkpoint recovery and the later base

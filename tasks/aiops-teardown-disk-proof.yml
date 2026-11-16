@@ -1,0 +1,10 @@
+- name: Prove selected clone storage has no foreign native or backing-image consumers
+  ansible.builtin.command:
+    argv:
+    - python3
+    - -c
+    - '{{ lookup("ansible.builtin.file", playbook_dir ~ "/src/aap_aiops_disk_ownership.py") }}'
+    stdin: '{{ aap_retirement | to_json }}'
+  changed_when: false
+  check_mode: false
+  no_log: false

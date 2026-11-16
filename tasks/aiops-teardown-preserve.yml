@@ -1,0 +1,104 @@
+- name: Read current native domains without altering definitions or power
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - list
+    - --all
+    - --name
+  register: aap_aiops_teardown_current_domains
+  changed_when: false
+  check_mode: false
+  no_log: false
+- name: Bind every preserved domain from the original complete list
+  ansible.builtin.set_fact:
+    aap_aiops_teardown_preserved_names: "{{ aap_aiops_teardown_current_domains.stdout_lines | reject('equalto',\
+      \ '') |\n     difference(aap_retirement.domains | map(attribute='name') | list) | sort }}"
+  when: aap_aiops_teardown_preservation_phase == 'before'
+  no_log: false
+- name: Require the same preserved domains and no selected workload domain after cleanup
+  ansible.builtin.assert:
+    that:
+    - aap_aiops_teardown_current_domains.stdout_lines | reject('equalto', '') | sort == aap_aiops_teardown_preserved_names
+    - aap_instance_route.vm_name in aap_aiops_teardown_preserved_names
+    quiet: true
+  when: aap_aiops_teardown_preservation_phase == 'after'
+  no_log: false
+- name: Read exact persistent XML for every preserved domain
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - dumpxml
+    - '{{ item }}'
+    - --inactive
+  loop: '{{ aap_aiops_teardown_preserved_names }}'
+  register: aap_aiops_teardown_preserved_xml_now
+  changed_when: false
+  check_mode: false
+  no_log: false
+- name: Read exact power state for every preserved domain
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - domstate
+    - '{{ item }}'
+  loop: '{{ aap_aiops_teardown_preserved_names }}'
+  register: aap_aiops_teardown_preserved_power_now
+  changed_when: false
+  check_mode: false
+  no_log: false
+- name: Read only the preserved AAP snapshot names
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - snapshot-list
+    - '{{ aap_instance_route.vm_name }}'
+    - --name
+  register: aap_aiops_teardown_aap_snapshots_now
+  changed_when: false
+  check_mode: false
+  no_log: false
+- name: Retain the original preserved XML power and snapshot observations
+  ansible.builtin.set_fact:
+    aap_aiops_teardown_preserved_xml: '{{ aap_aiops_teardown_preserved_xml_now.results | map(attribute="stdout")
+      | list }}'
+    aap_aiops_teardown_preserved_power: '{{ aap_aiops_teardown_preserved_power_now.results | map(attribute="stdout")
+      | list }}'
+    aap_aiops_teardown_aap_snapshots: '{{ aap_aiops_teardown_aap_snapshots_now.stdout_lines | reject("equalto",
+      "") | sort }}'
+  when: aap_aiops_teardown_preservation_phase == 'before'
+  no_log: false
+- name: Verify all remaining definitions power states and AAP snapshots were preserved
+  ansible.builtin.assert:
+    that:
+    - aap_aiops_teardown_preserved_xml_now.results | map(attribute='stdout') | list == aap_aiops_teardown_preserved_xml
+    - aap_aiops_teardown_preserved_power_now.results | map(attribute='stdout') | list == aap_aiops_teardown_preserved_power
+    - aap_aiops_teardown_aap_snapshots_now.stdout_lines | reject('equalto', '') | sort == aap_aiops_teardown_aap_snapshots
+    quiet: true
+  when: aap_aiops_teardown_preservation_phase == 'after'
+  no_log: false
+- name: Inspect exact application files disks and certificate renewal paths after cleanup
+  ansible.builtin.stat:
+    path: '{{ item }}'
+    follow: false
+    get_checksum: false
+  loop: "{{ (aap_retirement.domains | map(attribute='disk') | list) + aap_retirement.nginx +\n     aap_retirement.website_paths\
+    \ + (aap_retirement.certificates | map('regex_replace', '^(.*)$', '/etc/letsencrypt/renewal/\\1.conf') | list)\
+    \ }}"
+  register: aap_aiops_teardown_absent_paths
+  when: aap_aiops_teardown_preservation_phase == 'after'
+  no_log: false
+- name: Require absence of every exact application file disk and renewal record
+  ansible.builtin.assert:
+    that: not item.stat.exists
+    quiet: true
+  loop: '{{ aap_aiops_teardown_absent_paths.results | default([]) }}'
+  when: aap_aiops_teardown_preservation_phase == 'after'
+  no_log: false

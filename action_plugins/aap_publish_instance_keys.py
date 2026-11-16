@@ -56,7 +56,7 @@ class ActionModule(ActionBase):
             except Exception:
                 raise AnsibleActionFail('Selected Source inventory metadata could not be verified; deployment selection remains blocked.') from None
         try:
-            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "guest_bootstrap_http", "installation_access", "retire_guest", "aap_supplemental_interface"):
+            if self._task.args.get("operation") in ("release_guest", "guest_bootstrap_https", "guest_bootstrap_http", "installation_access", "retire_guest", "aap_supplemental_interface", "retire_aiops_workload"):
                 return self.release_guest(result, task_vars or {})
             if self._task.check_mode and self._task.args.get('operation') != 'post_reset_inspect':
                 result.update(changed=False, published=False)
@@ -616,10 +616,12 @@ class ActionModule(ActionBase):
             args = self._task.args
             installation = args.get("operation") == "installation_access"
             retirement = args.get("operation") == "retire_guest"
+            workload = args.get("operation") == "retire_aiops_workload"
             supplemental = args.get('operation') == 'aap_supplemental_interface'
             aap_release = (args.get("operation") == "release_guest" and isinstance(args.get("guest"), dict)
                            and args["guest"].get("kind") == "aap")
-            required = ({"operation", "route", "primary"} if installation else
+            required = ({"operation", "instance_name", "hypervisor"} if workload else
+                        {"operation", "route", "primary"} if installation else
                         {"operation", "guest_name", "hypervisor"} if retirement else
                         {"operation", "guest", "hypervisor"})
             keys.require(set(args) >= required
@@ -670,7 +672,7 @@ class ActionModule(ActionBase):
                         keys.require(path.is_file() and not path.is_symlink(), "Use the existing fixed encrypted policy captures.")
                         raw, label, secret = self._loader._vault.decrypt_and_get_vault_id(path.read_bytes())
                         documents[kind] = vault_yaml.load_repository_yaml(raw)
-                        seals[kind] = (label, secret)
+                        seals[kind] = (label, secret, path.read_bytes().splitlines()[0])
                     if supplemental:
                         context = keys.supplemental_interface_context(documents['autodeploy'], documents['shared'],
                             documents['allocation'], args['guest'], args['hypervisor'],
@@ -692,6 +694,18 @@ class ActionModule(ActionBase):
                                 args["route"], args["primary"], args.get("transition") if phase == "publish" else None)
                             capture = keys.installation_inventory_capture
                             source_operations = keys.source_installation_operations
+                    elif workload:
+                        workload_helpers = load('publish_aiops_workload', ROOT / 'src/aap_aiops_teardown.py')
+                        allocation_path = checkout / 'state/aap_vm_allocations_vault.yml'
+                        keys.require(allocation_path.is_file() and not allocation_path.is_symlink(),
+                                     'Keep the active AAP allocation during workload-only retirement.')
+                        allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(allocation_path.read_bytes()))
+                        context = workload_helpers.publication_context(documents['autodeploy'], documents['shared'],
+                            allocation, source, args['instance_name'], args['hypervisor'],
+                            variables.get('aap_isolation_app_capture', {}).get('ansible_facts'),
+                            args.get('transition') if phase == 'publish' else None)
+                        capture = keys.retire_inventory_capture
+                        source_operations = keys.source_retirement_operations
                     elif retirement:
                         context = keys.generic_retirement_context(documents["autodeploy"], documents["shared"], source,
                             args["guest_name"], args["hypervisor"], args.get("transition") if phase == "publish" else None,
@@ -709,6 +723,8 @@ class ActionModule(ActionBase):
                     operations = source_operations(source, desired["shared"], desired["autodeploy"],
                         desired["hactar"], context)
                     transition = {key: context[key] for key in ("previous_policy", "desired_policy")}
+                    if workload:
+                        transition = workload_helpers.publication_transition(context)
                     if supplemental:
                         transition.update({key: context[key] for key in ('previous_resource', 'desired_resource')})
                     if retirement:
@@ -722,7 +738,14 @@ class ActionModule(ActionBase):
                                           durable_ownership_published=context['primary'] == context['desired_resource'])
                         if retirement:
                             result.update(guest=context["guest"], records_absent=context["records_absent"])
+                        if workload:
+                            result.update(workload_resources=context['related_resources'], route=context['route'])
                         return result
+                    if workload:
+                        keys.require(variables.get('aap_aiops_teardown_native_absence_verified') is True
+                            and variables.get('aap_aiops_teardown_apply') is True
+                            and variables.get('aap_aiops_teardown_confirmation') == args['instance_name'],
+                            'Publish AIOps retirement only after this confirmed job verified native absence.')
                     # Recheck the running source job before any durable or API mutation.
                     keys.verify_source_job(source, None, variables)
                     if aap_release or supplemental:
@@ -737,11 +760,15 @@ class ActionModule(ActionBase):
                     for kind, value in desired.items():
                         if value is None or value == documents[kind]:
                             continue
-                        label, secret = seals[kind]
+                        label, secret, original_header = seals[kind]
+                        if workload:
+                            original_fields = original_header.decode().split(';')
+                            label = original_fields[3] if len(original_fields) == 4 else None
                         sealed = self._loader._vault.encrypt(yaml.dump(value, Dumper=vault_yaml.VaultDumper,
                             sort_keys=False, width=110), secret=secret, vault_id=label)
                         restored = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(sealed))
-                        keys.require(restored == value and vault_yaml.literal_paths(restored) == vault_yaml.literal_paths(value),
+                        keys.require(restored == value and vault_yaml.literal_paths(restored) == vault_yaml.literal_paths(value)
+                            and (not workload or sealed.splitlines()[0] == original_header),
                             "Guest release must preserve literals, keys and unrelated configuration.")
                         (checkout / names[kind]).write_bytes(sealed)
                         changed.append(names[kind])
@@ -755,7 +782,7 @@ class ActionModule(ActionBase):
                         durable = True
                     else:
                         durable = True
-                    if installation or aap_release or supplemental:
+                    if installation or aap_release or supplemental or workload:
                         git("fetch", "--quiet", "--depth=1", "origin", "main")
                         latest_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
@@ -786,7 +813,7 @@ class ActionModule(ActionBase):
                     if observed != desired:
                         # Restart from fresh state; exact transition checks reject unrelated changes.
                         continue
-                    if installation or aap_release or supplemental:
+                    if installation or aap_release or supplemental or workload:
                         latest_allocation = vault_yaml.load_repository_yaml(self._loader._vault.decrypt(
                             git("show", "FETCH_HEAD:state/aap_vm_allocations_vault.yml").stdout.encode()))
                         observed_records = [row for row in latest_allocation["aap_vm_allocation"]["reservations"].values()

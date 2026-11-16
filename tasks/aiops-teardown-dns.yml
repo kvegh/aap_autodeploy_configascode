@@ -1,0 +1,35 @@
+- name: Inspect all exact selected record types before any DNS mutation
+  ansible.builtin.include_tasks: aiops-teardown-dns-read.yml
+  no_log: false
+- name: Remove only the freshly rechecked individual v3 record ID
+  ansible.builtin.include_tasks:
+    file: decommission-dns-delete.yml
+    apply:
+      no_log: false
+  vars:
+    vault_godaddy_api_token: '{{ aap_aiops_teardown_dns_target.token }}'
+    aap_dns_retire_record:
+      name: '{{ aap_aiops_teardown_dns_target.name }}'
+      type: A
+      records: '{{ aap_aiops_teardown_dns_a }}'
+  when:
+  - aap_aiops_teardown_dns_phase == 'apply'
+  - aap_aiops_teardown_dns_a | length == 1
+  - not ansible_check_mode
+  no_log: false
+- name: Recheck complete exact-name provider absence after deletion
+  ansible.builtin.include_tasks: aiops-teardown-dns-read.yml
+  when: aap_aiops_teardown_dns_phase == 'apply'
+  no_log: false
+- name: Require exact A record absence before authoritative absence polling
+  ansible.builtin.assert:
+    that: aap_aiops_teardown_dns_a == []
+    quiet: true
+  when: aap_aiops_teardown_dns_phase in ['apply', 'verify']
+  no_log: false
+- name: Verify every authoritative endpoint after exact provider absence
+  ansible.builtin.include_tasks: aiops-teardown-dns-absent.yml
+  when:
+  - aap_aiops_teardown_dns_phase in ['apply', 'verify']
+  - not ansible_check_mode
+  no_log: false

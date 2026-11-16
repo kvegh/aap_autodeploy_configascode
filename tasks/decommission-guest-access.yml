@@ -109,6 +109,24 @@
                aap_decommission_guest_xmls, aap_decommission_guest_access_plan) }}
       no_log: false
 
+    - name: Narrow the completed native inspection to the explicit AIOps workload
+      no_log: false
+      when: aap_decommission_scope | default('instance') == 'aiops'
+      block:
+        - name: Preserve the full inspection while projecting only application NICs
+          ansible.builtin.set_fact:
+            aap_decommission_guest_access_plan: >-
+              {{ aap_decommission_guest_access_plan | aap_aiops_teardown_access(aap_instance_route, aap_instance_resources, aap_isolation_app_capture.ansible_facts) }}
+          no_log: false
+
+        - name: Exclude base AAP domains reservations publication and certificate paths
+          ansible.builtin.set_fact:
+            aap_retirement: '{{ aap_instance_route | aap_aiops_teardown_resources(vault_domain, aap_instance_resources) }}'
+            aap_decommission_reservations: >-
+              {{ aap_decommission_reservations | aap_aiops_teardown_reservations(aap_instance_route,
+                   aap_decommission_guest_access_plan.identities) }}
+          no_log: false
+
     - name: Expose the protected policy handoff for canonical source retirement
       ansible.builtin.set_fact:
         aap_decommission_isolation_retirement:
@@ -319,3 +337,4 @@
   always:
     - name: Release only this removal's temporary native lock and public checkout
       ansible.builtin.include_tasks: aap-isolation-finish.yml
+      when: not (aap_aiops_teardown_hold_native_lock | default(false) | bool)

@@ -148,6 +148,14 @@ class InstancePreparationTests(unittest.TestCase):
             "Base guest Machine", source_hosts, password_factory=lambda: "new-synthetic-password-" + "x" * 48,
             source_bindings=source_bindings)
 
+    def test_retained_teardown_owner_cannot_be_reimported_before_cleanup_finishes(self):
+        context, capture, runtime, _, _ = fixture()
+        prepared, protected = self.prepare(capture, runtime)
+        for retained in ({'subscription_absence': {'retained': True}}, {}):
+            prepared['aiops_instances'][context['instance_name']]['teardown'] = retained
+            with self.subTest(retained=retained), self.assertRaises(settings.lifecycle.LifecycleError):
+                self.prepare(prepared, protected)
+
     def test_fresh_vm_configuration_is_nested_and_uses_the_existing_native_importer(self):
         context, capture, runtime, _, _ = fixture()
         native = ReadOnlyTarget(context)

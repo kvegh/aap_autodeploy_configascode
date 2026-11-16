@@ -1,5 +1,16 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Same-instance AIOps workload cleanup
+
+The Source-owned [AIOps workload teardown](docs/aiops-workload-teardown.md)
+previews or removes only the selected workload while retaining its AAP VM,
+hypervisor, snapshots, shared foundation and active allocation. It reuses normal
+Controller/EDA APIs and the existing guarded native guest owner lifecycle.
+Exact resource ownership, external subscription provenance, complete DNS absence
+and preservation checks must pass before selected owner/runtime namespaces can
+be retired. Offline qualification does not establish live teardown or redeploy
+acceptance.
+
 ## Persistent EDA token ownership
 
 The existing API-only EDA Controller credential creator now saves a nonsecret

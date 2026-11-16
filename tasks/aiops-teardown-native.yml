@@ -1,0 +1,162 @@
+- name: Require only the inspected AIOps-only domain set
+  ansible.builtin.assert:
+    that:
+    - aap_retirement.scope == 'aiops'
+    - aap_retirement.domains | selectattr('primary') | list | length == 0
+    - aap_instance_route.vm_name not in (aap_retirement.domains | map(attribute='name') | list)
+    - aap_aiops_teardown_native_phase in ['stop_monitoring', 'remove']
+    quiet: true
+  no_log: false
+- name: Refresh the actual domain set before touching a frozen guest UUID
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - list
+    - --all
+    - --name
+  changed_when: false
+  register: aap_aiops_teardown_stop_domains
+  no_log: false
+- name: Recheck exact native UUID disk and snapshot ownership immediately before shutdown
+  ansible.builtin.include_tasks: decommission-related-check.yml
+  loop: '{{ aap_retirement.domains }}'
+  loop_control:
+    loop_var: aap_related_guest
+  vars:
+    aap_retirement_domains: '{{ aap_aiops_teardown_stop_domains }}'
+  no_log: false
+- name: Recheck complete native disk exclusivity immediately before shutdown
+  ansible.builtin.include_tasks: aiops-teardown-disk-proof.yml
+  no_log: false
+- name: Select only the monitoring guest for early delivery shutdown or the complete workload
+  ansible.builtin.set_fact:
+    aap_aiops_teardown_stop_selection: "{{ aap_retirement.domains | selectattr('name', 'equalto', 'zabbix-' ~ aap_retirement.version)\
+      \ | list\n   if aap_aiops_teardown_native_phase == 'stop_monitoring' else aap_retirement.domains }}"
+  no_log: false
+- name: Request graceful shutdown using only the frozen selected UUID
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - shutdown
+    - '{{ item.uuid }}'
+  loop: '{{ aap_aiops_teardown_stop_selection }}'
+  when: item.name in aap_aiops_teardown_stop_domains.stdout_lines
+  register: aap_aiops_teardown_shutdown
+  changed_when: aap_aiops_teardown_shutdown.rc == 0
+  failed_when: false
+  no_log: false
+- name: Wait a bounded time for each exact selected UUID to stop
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - domstate
+    - '{{ item.uuid }}'
+  loop: '{{ aap_aiops_teardown_stop_selection }}'
+  when: item.name in aap_aiops_teardown_stop_domains.stdout_lines
+  register: aap_aiops_teardown_shutdown_state
+  until: aap_aiops_teardown_shutdown_state.stdout | trim == 'shut off'
+  retries: 12
+  delay: 5
+  failed_when: false
+  changed_when: false
+  no_log: false
+- name: Stop only an exact selected UUID that did not finish graceful shutdown
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - destroy
+    - '{{ item.item.uuid }}'
+  loop: '{{ aap_aiops_teardown_shutdown_state.results }}'
+  when:
+  - not item.skipped | default(false)
+  - item.stdout | trim != 'shut off'
+  changed_when: true
+  no_log: false
+- name: Verify each selected existing UUID is now stopped
+  ansible.builtin.command:
+    argv:
+    - virsh
+    - -c
+    - qemu:///system
+    - domstate
+    - '{{ item.uuid }}'
+  loop: '{{ aap_aiops_teardown_stop_selection }}'
+  when: item.name in aap_aiops_teardown_stop_domains.stdout_lines
+  register: aap_aiops_teardown_stopped
+  failed_when: aap_aiops_teardown_stopped.stdout | trim != 'shut off'
+  changed_when: false
+  no_log: false
+- name: Remove only inspected stopped application guests and publication
+  when: aap_aiops_teardown_native_phase == 'remove'
+  block:
+  - name: Retain this job's real stopped-state proof
+    ansible.builtin.set_fact:
+      aap_decommission_selected_guests_stopped: true
+      aap_aiops_teardown_hold_native_lock: true
+    no_log: false
+  - name: Remove only the preflighted application reservations and complete policy reduction
+    ansible.builtin.include_tasks: decommission-guest-access.yml
+    vars:
+      aap_decommission_guest_access_phase: apply
+    no_log: false
+  - name: Undefine only the inspected stopped application UUIDs
+    ansible.builtin.command:
+      argv:
+      - virsh
+      - -c
+      - qemu:///system
+      - undefine
+      - '{{ item.uuid }}'
+    loop: '{{ aap_retirement.domains }}'
+    when: item.name in aap_aiops_teardown_stop_domains.stdout_lines
+    changed_when: true
+    no_log: false
+  - name: Verify no selected domain remains before removing exact clone disks
+    ansible.builtin.command:
+      argv:
+      - virsh
+      - -c
+      - qemu:///system
+      - list
+      - --all
+      - --name
+    register: aap_aiops_teardown_domains_after_undefine
+    changed_when: false
+    no_log: false
+  - name: Require every selected application name absent
+    ansible.builtin.assert:
+      that: aap_aiops_teardown_domains_after_undefine.stdout_lines | intersect(aap_retirement.domains | map(attribute='name')
+        | list) | length == 0
+      quiet: true
+    no_log: false
+  - name: Recheck complete native disk exclusivity under the native unlink lock
+    ansible.builtin.include_tasks: aiops-teardown-disk-proof.yml
+    no_log: false
+  - name: Remove only recorded application clone disks
+    ansible.builtin.file:
+      path: '{{ item.disk }}'
+      state: absent
+    loop: '{{ aap_retirement.domains }}'
+    no_log: false
+  - name: Remove exact owned application publication and certificates
+    ansible.builtin.include_tasks: aiops-teardown-publication.yml
+    vars:
+      aap_aiops_teardown_publication_phase: apply
+    no_log: false
+  always:
+  - name: Release only this native teardown transaction lock and temporary source
+    ansible.builtin.include_tasks: aap-isolation-finish.yml
+    no_log: false
+  - name: End the explicit native-lock handoff
+    ansible.builtin.set_fact:
+      aap_aiops_teardown_hold_native_lock: false
+    no_log: false
+  no_log: false

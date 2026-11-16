@@ -68,4 +68,10 @@
   loop: '{{ aap_isolation_app_owners }}'
   loop_control:
     loop_var: aap_isolation_app_owner
+  # The workload-only caller performs the stronger complete current/persistent
+  # domain and disk inspection immediately after this read, including absence
+  # recovery. All other owners retain this normal native check.
+  when: >-
+    aap_isolation_app_owner.guest.instance_name !=
+    (aap_aiops_teardown_selected_instance | default(''))
   no_log: false

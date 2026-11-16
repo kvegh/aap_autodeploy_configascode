@@ -1,0 +1,50 @@
+- name: Observe authoritative deletion only while this finite budget remains
+  when:
+  - not (aap_dns_authority_ready | bool)
+  - now(utc=true).timestamp() < aap_dns_authority_deadline
+  block:
+  - name: Query the exact selected A without recursion including its negative SOA proof
+    ansible.builtin.command:
+      argv:
+      - dig
+      - -r
+      - -4
+      - '@{{ item.address }}'
+      - '{{ aap_aiops_teardown_dns_target.name }}.{{ vault_domain }}.'
+      - A
+      - +norecurse
+      - +time=3
+      - +tries=1
+      - +noall
+      - +comments
+      - +question
+      - +answer
+      - +authority
+      - +stats
+    loop: '{{ aap_dns_authority_endpoints }}'
+    when: now(utc=true).timestamp() < aap_dns_authority_deadline
+    become: false
+    changed_when: false
+    failed_when: false
+    timeout: 8
+    register: aap_dns_authority_answers
+    no_log: false
+  - name: Require strict authoritative NXDOMAIN or NODATA from every approved endpoint
+    ansible.builtin.set_fact:
+      aap_dns_authority_observation: "{{ aap_dns_authority_answers.results | aap_aiops_teardown_authority_absent_round(\n\
+        \     aap_dns_authority_endpoints, aap_aiops_teardown_dns_target.name ~ '.' ~ vault_domain, vault_domain)\
+        \ }}"
+    no_log: false
+  - name: Retain whether this complete round proved every authority absent
+    ansible.builtin.set_fact:
+      aap_dns_authority_ready: '{{ aap_dns_authority_observation.ready }}'
+    no_log: false
+  - name: Pause only between incomplete rounds within the deadline
+    ansible.builtin.pause:
+      seconds: '{{ [5, (aap_dns_authority_deadline - now(utc=true).timestamp()) | int] | min }}'
+    when:
+    - not (aap_dns_authority_ready | bool)
+    - aap_dns_authority_round_number < 180
+    - now(utc=true).timestamp() < aap_dns_authority_deadline
+    no_log: false
+  no_log: false

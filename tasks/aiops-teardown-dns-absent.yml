@@ -1,0 +1,84 @@
+- name: Read only provider-hosted zone apex nameservers through strict v3 HTTPS
+  ansible.builtin.uri:
+    url: https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records?type=NS&name=%40&page=1&pageSize=100&totalRequired=true
+    method: GET
+    headers:
+      Authorization: Bearer {{ aap_aiops_teardown_dns_target.token }}
+    status_code: 200
+    validate_certs: true
+    follow_redirects: none
+    timeout: 30
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  register: aap_dns_provider_nameservers
+  no_log: false
+- name: Discover public nameservers for the existing zone apex only
+  ansible.builtin.command:
+    argv:
+    - dig
+    - -r
+    - -4
+    - '@8.8.8.8'
+    - '{{ vault_domain }}.'
+    - NS
+    - +time=3
+    - +tries=1
+    - +noall
+    - +comments
+    - +question
+    - +answer
+    - +stats
+  become: false
+  changed_when: false
+  timeout: 8
+  register: aap_dns_public_nameservers
+  no_log: false
+- name: Require the provider and public zone-apex nameserver sets to agree
+  ansible.builtin.set_fact:
+    aap_dns_authority_nameservers: "{{ aap_dns_provider_nameservers.json | godaddy_v3_records('@', 'NS') |\n   godaddy_v3_dns_nameservers(aap_dns_public_nameservers,\
+      \ vault_domain) }}"
+  no_log: false
+- name: Resolve only approved nameserver hostnames to IPv4 endpoints
+  ansible.builtin.command:
+    argv:
+    - dig
+    - -r
+    - -4
+    - '@8.8.8.8'
+    - '{{ item }}.'
+    - A
+    - +time=3
+    - +tries=1
+    - +noall
+    - +comments
+    - +question
+    - +answer
+    - +stats
+  loop: '{{ aap_dns_authority_nameservers }}'
+  become: false
+  changed_when: false
+  timeout: 8
+  register: aap_dns_nameserver_addresses
+  no_log: false
+- name: Retain every approved IPv4 endpoint and initialize this finite observation
+  ansible.builtin.set_fact:
+    aap_dns_authority_endpoints: '{{ aap_dns_nameserver_addresses.results | godaddy_v3_dns_endpoints(aap_dns_authority_nameservers)
+      }}'
+    aap_dns_authority_ready: false
+    aap_dns_authority_observation: {}
+    aap_dns_authority_deadline: '{{ now(utc=true).timestamp() + 900 }}'
+  no_log: false
+- name: Require all authorities to prove exact selected A absence in one bounded round
+  ansible.builtin.include_tasks: aiops-teardown-dns-absent-round.yml
+  loop: '{{ range(1, 181) | list }}'
+  loop_control:
+    loop_var: aap_dns_authority_round_number
+  no_log: false
+- name: Retain owner state if authoritative deletion has not converged
+  ansible.builtin.assert:
+    that: aap_dns_authority_ready | bool
+    quiet: true
+    fail_msg: Provider absence was verified but authoritative A absence did not converge within900seconds. Owner
+      state is retained; recursive caches may expire separately.
+  no_log: false

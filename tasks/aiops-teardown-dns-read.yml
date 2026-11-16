@@ -1,0 +1,53 @@
+- name: Require the exact selected application DNS phase and zone
+  ansible.builtin.assert:
+    that:
+    - aap_aiops_teardown_dns_phase in ['plan', 'apply', 'verify']
+    - aap_aiops_teardown_dns_target.name in ['redhat.' ~ aap_retirement.version, 'zabbix.' ~ aap_retirement.version]
+    - aap_aiops_teardown_dns_target.token is string
+    - aap_aiops_teardown_dns_target.token | length > 0
+    - aiops_website_dns_zone == vault_domain
+    quiet: true
+  no_log: false
+- name: Read all conflicting types for this exact application name through v3
+  ansible.builtin.uri:
+    url: https://api.godaddy.com/v3/domains/zones/{{ vault_domain | urlencode }}/dns-records?type={{ item }}&name={{
+      aap_aiops_teardown_dns_target.name | urlencode }}&page=1&pageSize=100&totalRequired=true
+    method: GET
+    headers:
+      Authorization: Bearer {{ aap_aiops_teardown_dns_target.token }}
+    status_code: 200
+    validate_certs: true
+    follow_redirects: none
+    timeout: 30
+  loop:
+  - A
+  - AAAA
+  - CNAME
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  check_mode: false
+  register: aap_aiops_teardown_dns_pages
+  no_log: false
+- name: Require one exactly owned A record and no alias or alternate address family
+  ansible.builtin.set_fact:
+    aap_aiops_teardown_dns_a: '{{ aap_aiops_teardown_dns_pages.results[0].json | godaddy_v3_records(aap_aiops_teardown_dns_target.name,
+      "A") }}'
+    aap_aiops_teardown_dns_aaaa: '{{ aap_aiops_teardown_dns_pages.results[1].json | godaddy_v3_records(aap_aiops_teardown_dns_target.name,
+      "AAAA") }}'
+    aap_aiops_teardown_dns_alias: '{{ aap_aiops_teardown_dns_pages.results[2].json | godaddy_v3_records(aap_aiops_teardown_dns_target.name,
+      "CNAME") }}'
+  no_log: false
+- name: Refuse foreign duplicate alternate or aliased application DNS
+  ansible.builtin.assert:
+    that:
+    - aap_aiops_teardown_dns_a | length <= 1
+    - not aap_aiops_teardown_plan.profile_absent | default(false) or aap_aiops_teardown_dns_a == []
+    - aap_aiops_teardown_dns_a | map(attribute='data') | difference([aap_hypervisor_pin.public_ip]) | length ==
+      0
+    - aap_aiops_teardown_dns_a | map(attribute='ttl') | difference([600]) | length == 0
+    - aap_aiops_teardown_dns_aaaa == []
+    - aap_aiops_teardown_dns_alias == []
+    - aap_aiops_teardown_dns_phase != 'verify' or aap_aiops_teardown_dns_a == []
+    quiet: true
+  no_log: false

@@ -361,6 +361,8 @@ def prepare_documents(capture, runtime, context, credential_name, source_hosts=N
     if name not in instances:
         instances[name] = {"guest_machine_credential_name": credential_name, "testserver_monitoring_enabled": False}
     selected = instances[name]
+    require(isinstance(selected, dict) and 'teardown' not in selected,
+            "Finish the selected workload's retained teardown before importing or redeploying it.")
     require(selected.get("guest_machine_credential_name") == credential_name,
             "The selected instance uses a different base Machine credential; preserve it for review.")
     if "event_stream_password" not in selected:
