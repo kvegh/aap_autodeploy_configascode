@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Recover only the failed Windows import after prerequisite verification — 2026-11-16
+
+The Windows guard implementation `407b1fc501e14d78e27f7e647e37f86f7b8673eb`
+passed in the normal configuration retry after AutoDeploy supplied its existing
+source credentials. The successful prerequisite collection preparation was not
+repeated. Independent receiving checks verified all 35 templates, 29 workflow
+nodes and 29 links, runtime and credential bindings, saved surveys and prompts,
+eight collection pins and preservation of the two base templates. The existing
+default execution environment and Windows' separate execution environment use
+the same receiving Hub digest with registry TLS verification enabled.
+
+The exact certified Controller module declares the two project timeout fields
+as integers. Native integer zeros therefore match their declared zero strings;
+this API representation difference requires no configuration or policy change.
+Both original import failures remain recorded. The original core/image/AD
+teardown baseline must be captured before VM provisioning; application and
+same-instance cleanup/redeployment acceptance remain separate.
+
 ## Verify the complete receiving import after reviewed-count repair — 2026-11-16
 
 Implementation `d8effd888e5cdcdef21b277f90bf1947c271f280` maintains existing

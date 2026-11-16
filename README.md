@@ -23,8 +23,11 @@ The normal receiving AutoDeploy import has now passed after correcting the
 capture's stale reviewed count. Independent API readback verified all nineteen
 declared job templates and surveys, both source-credential schemas and injectors,
 their declared organization and public inputs, and masked secret presence.
-The original failed import remains part of the deployment history. Windows
-import and application functionality retain their own acceptance gates.
+The original failed import remains part of the deployment history. The focused
+normal Windows import also passed; independent receiving checks verified its
+35 templates, 29 workflow nodes, 29 links, saved prompts, eight collection pins
+and existing baseline templates. Windows and AIOps application functionality and
+same-instance workload reset retain their own acceptance gates.
 
 ## Persistent EDA token ownership
 

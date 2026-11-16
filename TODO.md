@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-282 tasks: 42 outstanding; 240 closed.
+282 tasks: 41 outstanding; 241 closed.
 
 ## Outstanding tasks
 
@@ -25,7 +25,6 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.10.1 | Separate retained agent phase output and publish bounded successful tool diagnostics | deferred | P1 | bug | bead-wd-3ix.2.10 |
 | bead-wd-3ix.2.12 | Run full v24 installation with cold snapshots and functionality tests | in_progress | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.11 |
 | bead-wd-3ix.2.12.2 | Migrate all maintained public DNS playbooks CaC and templates to v3 | in_progress | P1 | task | bead-wd-3ix.2.12 |
-| bead-wd-3ix.2.12.7 | Ensure receiving AutoDeploy source credentials before Windows import | in_progress | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | deferred | P1 | epic | bead-wd-3ix.2 |
 | bead-wd-3ix.2.7.10 | Diagnose repeated collection artifact hash mismatches before v23 | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | blocked | P1 | bug | bead-wd-3ix.2.7 |
@@ -103,6 +102,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.12.4 | Normalize native snapshot controller declaration order without weakening device guards | closed | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.12.5 | Pin cold snapshot privilege context when called by the installer | closed | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.12.6 | Verify complete controller job results before cold snapshot shutdown | closed | P1 | bug | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.12.7 | Ensure receiving AutoDeploy source credentials before Windows import | closed | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.12.8 | Correct AutoDeploy resource normalization failure on the receiving AAP | closed | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.2 | Reinstall only the verified &#91;HOST&#93; replacement server for v21 | closed | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.1 |
 | bead-wd-3ix.2.2.1 | Diagnose Hub artifact checksum failure and complete pending host checks | closed | P1 | task | bead-wd-3ix.2.2 |

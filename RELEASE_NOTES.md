@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.66.12
+
+- Document the successful focused Windows configuration retry and receiving
+  35-template, 29-node, 29-link verification, preserving both original failures.
+- Retain explicit application-deployment and workload-reset acceptance gates;
+  configuration import alone does not establish those outcomes.
+- Refresh durable task state and the existing encrypted recovery export.
+
 ## 0.66.11
 
 - Document successful normal receiving AutoDeploy import and independent
