@@ -432,6 +432,7 @@
     - name: Pass only the verified new instance handoff to downstream jobs
       ansible.builtin.set_stats:
         data:
+          aap_instance_key: "{{ aap_instance_route.vm_name }}"
           vm_name: "{{ vm_name }}"
           vm_ip: "{{ new_vm_ip }}"
           aap_hostname: "{{ aap_instance_route.aap_hostname }}"

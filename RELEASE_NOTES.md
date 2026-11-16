@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.66.13
+
+- Reconcile the base workflow to the four maintained deployment templates and
+  explicitly replace its old node graph, stopping after base configuration.
+- Publish the registered instance selector through the existing safe VM artifact
+  so downstream stages do not retain an older saved instance selection.
+- Accept only the matching single captured workflow in the workflow-only entry
+  point; retain separate selected use-case preparation and imports.
+- Validate all five focused tests on Core 2.21.5 and cached offline Core 2.20.10,
+  including old-graph pruning and a fresh-instance handoff. The complete encrypted
+  receiving capture renders with its nineteen templates and one workflow.
+- No deployment, Controller mutation or publication occurs during qualification.
+
 ## 0.66.12
 
 - Document the successful focused Windows configuration retry and receiving

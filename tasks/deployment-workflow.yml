@@ -1,30 +1,38 @@
 ---
-- name: Require the base deployment repository mapping
+- name: Require exactly one captured base workflow when no direct workflow configuration was supplied
+  ansible.builtin.assert:
+    that:
+      - controller_workflows_autodeploy is defined
+      - controller_workflows_autodeploy is sequence
+      - controller_workflows_autodeploy is not string
+      - controller_workflows_autodeploy is not mapping
+      - controller_workflows_autodeploy | length == 1
+      - controller_workflows_autodeploy[0].name == 'Deploy Complete AAP'
+    fail_msg: Supply the reviewed base workflow or its single encrypted AutoDeploy workflow definition.
+  when: cac_workflow is not defined
+  no_log: false
+
+- name: Select only the captured workflow without applying the other AutoDeploy resources
+  ansible.builtin.set_fact:
+    cac_workflow: '{{ controller_workflows_autodeploy[0] }}'
+  when: cac_workflow is not defined
+  no_log: false
+
+- name: Require the base deployment workflow organization
   ansible.builtin.assert:
     that:
       - cac_workflow is defined
       - cac_workflow is mapping
       - cac_workflow.organization is string
       - cac_workflow.organization | length > 0
-      - cac_workflow.repositories is mapping
-      - "'base' in cac_workflow.repositories"
-    fail_msg: Supply the workflow organization and shared base configuration repository URL.
+    fail_msg: Supply the workflow organization; the four reviewed job templates retain their saved configuration inputs.
   no_log: false
 
-- name: Reject repository URLs containing credentials or redirects through query parameters
+- name: Refuse a captured graph that differs from the four reviewed deployment stages
   ansible.builtin.assert:
     that:
-      - item is string
-      - (item | ansible.builtin.urlsplit('scheme')) == 'https'
-      - (item | ansible.builtin.urlsplit('hostname') | default('', true) | length) > 0
-      - (item | ansible.builtin.urlsplit('username')) is none
-      - (item | ansible.builtin.urlsplit('password')) is none
-      - (item | ansible.builtin.urlsplit('path')) not in ['', '/']
-      - (item | ansible.builtin.urlsplit('query')) == ''
-      - (item | ansible.builtin.urlsplit('fragment')) == ''
-      - item is not search('\\s')
-    fail_msg: Every workflow configuration repository must be an HTTPS Git URL without embedded credentials.
-  loop: "{{ [cac_workflow.repositories.base] }}"
+      - cac_workflow.workflow_nodes is not defined or cac_workflow.workflow_nodes == (lookup('ansible.builtin.template', 'templates/deployment-workflow-nodes.yml.j2') | from_yaml)
+    fail_msg: The captured base workflow must contain only Create VM, Infrastructure, Install AAP and Base Configuration.
   no_log: false
 
 - name: Create the success-only base AAP deployment graph
@@ -58,6 +66,7 @@
           min: 0
           max: 1024
     workflow_nodes: "{{ lookup('ansible.builtin.template', 'templates/deployment-workflow-nodes.yml.j2') | from_yaml }}"
+    destroy_current_nodes: true
     controller_host: "{{ aap_hostname | default(omit) }}"
     controller_oauthtoken: "{{ aap_token | default(omit) }}"
     validate_certs: "{{ aap_validate_certs | default(true) }}"

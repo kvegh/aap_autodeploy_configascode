@@ -1,7 +1,7 @@
 ---
 - identifier: create_vm
   unified_job_template:
-    name: Deploy Test AAP - 01 Linux VM Setup
+    name: Deploy AAP on Rebuild Hypervisor - 01 VM Setup
     type: job_template
     organization:
       name: {{ cac_workflow.organization | to_json }}
@@ -13,7 +13,7 @@
 
 - identifier: configure_infrastructure
   unified_job_template:
-    name: Deploy Test AAP - 02 Infra Config
+    name: Deploy AAP on Rebuild Hypervisor - 02 Infrastructure
     type: job_template
     organization:
       name: {{ cac_workflow.organization | to_json }}
@@ -25,7 +25,7 @@
 
 - identifier: install_aap
   unified_job_template:
-    name: Deploy Test AAP - 03 AAP Install
+    name: Deploy AAP on Rebuild Hypervisor - 03 Install AAP
     type: job_template
     organization:
       name: {{ cac_workflow.organization | to_json }}
@@ -37,12 +37,10 @@
 
 - identifier: configure_base
   unified_job_template:
-    name: Deploy Test AAP - 04 AAP Config
+    name: Deploy AAP on Rebuild Hypervisor - 04 Base Configuration
     type: job_template
     organization:
       name: {{ cac_workflow.organization | to_json }}
-  extra_data:
-    aap_config_repo_url: {{ cac_workflow.repositories.base | to_json }}
   related:
     success_nodes: []
     failure_nodes: []

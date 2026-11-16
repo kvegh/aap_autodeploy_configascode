@@ -68,5 +68,5 @@
   vars:
     controller_templates: "{{ autodeploy_configuration.job_templates }}"
 
-- name: Restore the complete workflow on the replacement so it can deploy another instance
+- name: Restore the four-stage base-only workflow on the replacement
   ansible.builtin.include_tasks: deployment-workflow.yml

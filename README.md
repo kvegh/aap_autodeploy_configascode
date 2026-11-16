@@ -1307,7 +1307,11 @@ and reset acceptance.
 ### Base deployment and explicitly selected use cases
 
 The `Deploy Complete AAP` workflow runs stages 01–04 on success only and stops
-after shared base configuration. It creates no use-case projects or imports.
+after shared base configuration. Its four nodes reference the maintained rebuild
+hypervisor Job Templates for VM setup, infrastructure, AAP installation and base
+configuration. The three cold checkpoints remain inside their existing stages;
+there is no fifth verification, preparation or import node. It creates no use-case
+projects or imports.
 The separate [use-case selector](docs/selected-use-cases.md) installs only the
 operator's selected umbrella submodules and their reviewed saved CaC. Application,
 deployment and demo jobs are not launched by configuration selection.
@@ -1346,9 +1350,11 @@ advancing another counter. Independent legacy VM provisioning continues to use
 the same encrypted allocator. Retries retain their generation; a fresh full
 installation consumes a new one, including after a failed VM deployment.
 
-Stage 01 publishes `vm_name`, `vm_ip`,
-`aap_hostname` and the public-key-only `aap_instance_route` through `set_stats`
+Stage 01 publishes `vm_name`, `vm_ip`, `aap_hostname`, the public-key-only
+`aap_instance_route` and `aap_instance_key` through `set_stats`
 workflow artifacts. The API URL uses this reserved VM's unique public hostname.
+The selector artifact uses the registered VM key, not the inventory display alias,
+and replaces a downstream template's saved selection for an older instance.
 Stages 02–04 reread the completed registry entry, reject conflicting inputs and
 route private guest SSH through its exact hypervisor with both host keys checked.
 Attach the existing AutoDeploy secrets repository read token and CaC Vault to those
@@ -1361,8 +1367,9 @@ certificate for this hostname or a separately approved ACME registration; it
 never accepts new certificate terms. No credentials, passwords or tokens are put
 in workflow artifacts.
 The workflow's only survey question is `debug_logging`; saved repository URLs
-are supplied on each appropriate node, and each existing Job Template keeps its
-own credentials. Concurrent runs of this workflow are disabled.
+remain on the existing stage Job Templates, which keep their own credentials.
+The workflow adds no node-level repository overrides or new prompts. Concurrent
+runs of this workflow are disabled.
 Failure stops downstream success nodes. Stages 02–04 can be rerun with the same
 registered instance input. If Stage 01 has already created its guest, preserve
 that guest and consumed reservation: rerunning Stage 01 allocates another name.
@@ -1432,7 +1439,17 @@ itself continues to configure empty PAH sources without synchronization.
 `configure-deployment-workflow.yml` can create or reconcile the seed's workflow
 without launching it. Supply `cac_workflow_vars_file` as a fully Vault-encrypted
 configuration file and provide normal Controller authentication separately.
-The AutoDeploy importer uses that same workflow task on replacement instances.
+The file may contain the reviewed AutoDeploy capture: this entry point selects
+only its one workflow and never dispatches its other resources onto the seed.
+Reconciliation explicitly replaces the selected workflow's old node graph with
+these four nodes. Its workflow identity and history and the referenced legacy
+Job Templates remain; node IDs are recreated. This operation does not launch it.
+
+The ordinary AutoDeploy importer restores the same captured four-node definition
+after importing its stage Job Templates. The final AutoDeploy workflow task
+checks that the captured graph matches the maintained template. Its reviewed
+resource count must include this one workflow; use-case preparation and imports
+remain separate selected operations.
 Existing external hypervisor, image, network, DNS and certificate services remain
 environment prerequisites. Complete production coverage, runtime collection and
 Python compatibility, and a fresh recursive deployment remain separate live
