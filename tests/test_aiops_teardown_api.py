@@ -92,7 +92,7 @@ class Target:
         if parsed.path.endswith('/schedules/'):
             return copy.deepcopy(self.schedules)
         rows = copy.deepcopy(self.kinds.get(parsed.path, []))
-        for field in ('name', 'inventory', 'project', 'execution_environment', 'credential'):
+        for field in ('id', 'name', 'inventory', 'project', 'execution_environment', 'credential'):
             if field in query:
                 rows = [row for row in rows if str(row.get(field)) == query[field][0]]
         for field, mapping in [('credentials', self.creds), ('labels', self.labels)]:
@@ -209,3 +209,75 @@ class ForeignWorkflowTests(unittest.TestCase):
         with self.assertRaises(lifecycle.keys.StoreError):
             lifecycle.selected_target_plan(target, target.definitions, 'aiops_selfhealing')
         self.assertTrue(target.kinds['/api/gateway/v1/applications/'])
+
+
+class TargetAccessTokenTests(unittest.TestCase):
+    def fixture(self, receipted=True):
+        target=Target();target.hostname='https://target.example.invalid'
+        expected={'name':'Owned EDA Controller access','organization':'Default','description':'Owned native controller access',
+                  'credential_type':'Red Hat Ansible Automation Platform',
+                  'inputs':{'host':target.hostname+'/api/controller','oauth_token':'','verify_ssl':True}}
+        target.definitions['eda_credentials'].append(expected)
+        description=lifecycle.api_tokens.eda_token_description(expected,target.hostname,41,11)if receipted else expected['description']
+        row=dict(expected,id=16,description=description,organization={'id':1,'name':'Default'},
+                 credential_type={'id':22,'name':expected['credential_type']},inputs=dict(expected['inputs'],oauth_token='$encrypted$'))
+        target.kinds['/api/eda/v1/eda-credentials/'].append(row)
+        token={'id':41,'user':11,'scope':'write','application':None,'expires':None,'description':'CaC EDA Controller access: '+expected['name']}
+        target.kinds['/api/gateway/v1/tokens/']=[token,dict(token,id=99,description='Other base API token')]
+        return target,expected
+
+    def test_receipt_is_retained_before_owner_delete_and_only_its_native_token_is_revoked(self):
+        target,expected=self.fixture();plan=lifecycle.selected_target_plan(target,target.definitions,'aiops_selfhealing')
+        self.assertEqual(len(plan['access_tokens']),1)
+        capture={'aiops_instances':{'selected':{'unrelated':'preserved'}},'other':'preserved'}
+        retained=lifecycle.record_target_access(capture,'selected',plan)
+        self.assertEqual(capture['aiops_instances']['selected'],{'unrelated':'preserved'})
+        receipts=retained['aiops_instances']['selected']['teardown']['target_access_tokens']
+        lifecycle.quiesce_target(target,plan,apply=True)
+        self.assertTrue(lifecycle.revoke_target_access(target,plan,[99]))
+        self.assertTrue(lifecycle.access_tokens_absent(target,plan))
+        self.assertEqual([row['id']for row in target.kinds['/api/gateway/v1/tokens/']],[99])
+        self.assertTrue(lifecycle.remove_target(target,plan))
+        repeated=lifecycle.selected_target_plan(target,target.definitions,'aiops_selfhealing',receipts)
+        self.assertFalse(lifecycle.revoke_target_access(target,repeated,[99]))
+
+    def test_native_owner_deleted_after_receipt_still_recovers_exact_token_custody(self):
+        target,expected=self.fixture();plan=lifecycle.selected_target_plan(target,target.definitions,'aiops_selfhealing')
+        receipts=[row['receipt']for row in plan['access_tokens']]
+        target.kinds['/api/eda/v1/eda-credentials/']=[row for row in target.kinds['/api/eda/v1/eda-credentials/']if row['id']!=16]
+        recovered=lifecycle.selected_target_plan(target,target.definitions,'aiops_selfhealing',receipts)
+        self.assertTrue(lifecycle.revoke_target_access(target,recovered,[99]))
+        self.assertEqual([row['id']for row in target.kinds['/api/gateway/v1/tokens/']],[99])
+
+    def test_legacy_or_orphan_description_never_grants_deletion_ownership(self):
+        target,expected=self.fixture(receipted=False)
+        with self.assertRaises(lifecycle.keys.StoreError):lifecycle.selected_target_plan(target,target.definitions,'aiops_selfhealing')
+        target.kinds['/api/eda/v1/eda-credentials/']=[row for row in target.kinds['/api/eda/v1/eda-credentials/']if row['id']!=16]
+        with self.assertRaises(lifecycle.keys.StoreError):lifecycle.selected_target_plan(target,target.definitions,'aiops_selfhealing')
+        self.assertFalse(any(method in('POST','DELETE')for method,path in target.calls))
+
+    def test_base_access_foreign_token_or_changed_owner_is_never_revoked(self):
+        for change in ('base','token','credential'):
+            target,expected=self.fixture();plan=lifecycle.selected_target_plan(target,target.definitions,'aiops_selfhealing')
+            if change=='token':target.kinds['/api/gateway/v1/tokens/'][0]['user']=99
+            if change=='credential':target.kinds['/api/eda/v1/eda-credentials/'][1]['inputs']['host']='https://other.example.invalid/api/controller'
+            with self.subTest(change=change),self.assertRaises((lifecycle.keys.StoreError,lifecycle.api_tokens.LifecycleError)):
+                lifecycle.revoke_target_access(target,plan,[41]if change=='base'else[])
+            self.assertFalse(any(method=='DELETE'for method,path in target.calls))
+
+
+class OwnerReceiptCASPreimageTests(unittest.TestCase):
+    def test_current_owner_must_match_preflight_before_any_receipt_publication(self):
+        expected={'tra':{'vm_name':'tra-v07','uuid':'11111111-2222-4333-8444-555555555555','machine_id':'b'*32},
+                  'event_stream_password':'synthetic'}
+        plan={'access_tokens':[]}
+        valid=copy.deepcopy(expected);valid['teardown']={'target_access_tokens':[]}
+        self.assertTrue(lifecycle.owner_preimage_matches(valid,expected,'aap27-test-7',plan))
+        cases=[]
+        changed=copy.deepcopy(valid);changed['tra']['uuid']='99999999-2222-4333-8444-555555555555';cases.append(changed)
+        changed=copy.deepcopy(valid);changed['event_stream_password']='another';cases.append(changed)
+        changed=copy.deepcopy(valid);changed['teardown']['foreign_work']={};cases.append(changed)
+        changed=copy.deepcopy(valid);changed['teardown']['subscription_absence']={};cases.append(changed)
+        for changed in cases:
+            with self.assertRaises(lifecycle.keys.StoreError):lifecycle.owner_preimage_matches(changed,expected,'aap27-test-7',plan)
+        with self.assertRaises(lifecycle.keys.StoreError):lifecycle.owner_preimage_matches(expected,valid,'aap27-test-7',plan)

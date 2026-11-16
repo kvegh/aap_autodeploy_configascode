@@ -1,5 +1,24 @@
 # Release notes
 
+## 0.66.1
+
+- Retain exact standalone EDA token custody in the existing owner before deleting
+  its credential; recover interrupted cleanup from that receipt, revoke only its
+  rechecked ID and verify absence while protecting base and unrelated tokens.
+- Freeze the original selected owner in the plan with Source job/revision binding.
+  Check that preimage on every receipt/final CAS, preserving only validated cleanup
+  additions. Refuse owner drift even after native apply reloads application facts.
+  Block both normal pre/post import publication while teardown ownership remains.
+- Support fresh typed CaC appends for both Source and target helper templates,
+  preserving header, literal fields, current owner/runtime state and unchanged
+  ciphertext. Do not replace a newer native capture with an old candidate.
+- Qualification: 101 focused native/settings/API tests pass in cached Core2.20
+  and local Core2.21, including actual action plan -> capture/remote-owner drift
+  refusal with zero pushes. Actual protected selected capture renders 32 owned
+  API objects plus one exact token, read-only. Source/target append inverse and
+  byte-stable idempotence checks pass. Live owned reset/redeploy is still pending.
+
+
 ## 0.66.0
 
 - Add a Source-owned preview/apply AIOps workload reset that preserves the AAP

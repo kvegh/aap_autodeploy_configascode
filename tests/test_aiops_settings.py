@@ -155,6 +155,8 @@ class InstancePreparationTests(unittest.TestCase):
             prepared['aiops_instances'][context['instance_name']]['teardown'] = retained
             with self.subTest(retained=retained), self.assertRaises(settings.lifecycle.LifecycleError):
                 self.prepare(prepared, protected)
+            with self.assertRaisesRegex(settings.lifecycle.LifecycleError, "teardown"):
+                settings.complete_documents(prepared, protected, context, {})
 
     def test_fresh_vm_configuration_is_nested_and_uses_the_existing_native_importer(self):
         context, capture, runtime, _, _ = fixture()

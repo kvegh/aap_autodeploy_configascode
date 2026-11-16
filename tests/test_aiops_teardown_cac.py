@@ -51,3 +51,26 @@ class SourceTeardownLoggingTests(unittest.TestCase):
                     if key in row:check(row[key])
         for path in [root/'teardown-aiops-workload.yml',*sorted((root/'tasks').glob('aiops-teardown-*.yml'))]:
             with self.subTest(path=path.name):check(yaml.safe_load(path.read_text()))
+
+
+class TargetHelperCaCTests(unittest.TestCase):
+    def fixture(self):
+        return {'controller_templates_aiops_demo':[{'name':'Deploy Linux MCP Server','job_type':'run','limit':'tra',
+            'inventory':'Existing owned AIOps inventory','project':'Existing public AIOps project','credentials':['Machine','Vault'],
+            'ask_inventory_on_launch':False,'ask_limit_on_launch':False,'ask_credential_on_launch':False,
+            'ask_execution_environment_on_launch':False}], 'aiops_instances':{'newly-published':{'retained':True}},
+            'aiops_runtime_settings_vault':'unchanged encrypted runtime'}
+
+    def test_fresh_native_owner_and_runtime_survive_only_one_fixed_helper_append(self):
+        before=self.fixture();after=helper.target_candidate(before);row=after['controller_templates_aiops_demo'].pop()
+        self.assertEqual(after,before)
+        self.assertEqual(row['limit'],'tra');self.assertEqual(row['timeout'],600)
+        self.assertEqual(row['credentials'],before['controller_templates_aiops_demo'][0]['credentials'])
+        self.assertFalse(row['ask_variables_on_launch'])
+        once=helper.target_candidate(before);self.assertEqual(helper.target_candidate(once),once)
+
+    def test_changed_or_unfixed_target_access_refuses_without_overwriting(self):
+        before=self.fixture();before['controller_templates_aiops_demo'][0]['ask_limit_on_launch']=True
+        with self.assertRaises(ValueError):helper.target_candidate(before)
+        before=self.fixture();after=helper.target_candidate(before);after['controller_templates_aiops_demo'][-1]['timeout']=7200
+        with self.assertRaises(ValueError):helper.target_candidate(after)

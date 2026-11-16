@@ -32,10 +32,23 @@ records remain. Native shared disk, image backing-chain or snapshot references,
 foreign workflow/template consumers, extra inventory hosts and unproved OAuth
 application tokens stop cleanup before their dependencies are removed.
 
+The persistent EDA Controller token is a separate native Gateway resource with
+`application=None`. Its first-creation token-ID/user/target/credential binding
+receipt is saved in the existing EDA credential description. Cleanup retains
+that exact receipt in the selected existing owner namespace before deleting
+its credential, revokes only the rechecked ID and verifies native absence.
+Base API access and every other token remain. A legacy credential or possible
+orphan token without this proof is preserved for original native evidence;
+a human-readable description grants no deletion ownership.
+
 ## Proof and ordering
 
 Native checks first validate the full existing owner graph, then narrow it to
-only three workload guests. Exact UUID, disk, address, NIC and native provenance
+only three workload guests. The original selected owner is deep-copied into the
+plan and bound to the running Source job/revision. Every fresh private-repository
+CAS compares against this frozen preimage; a later native application-capture
+reload cannot replace it. Only validated teardown additions are allowed, and
+normal pre-import and post-import publication refuse retained teardown owners. Exact UUID, disk, address, NIC and native provenance
 checks precede power actions. A bounded read-only native disk scan covers current
 and persistent domain XML, snapshot XML, unattached image files in the existing
 clone directory and complete backing chains. It repeats before unlink while
@@ -83,6 +96,7 @@ Use `src/aap_aiops_teardown_cac.py` against a **fresh** encrypted Source capture
 
 ```bash
 python3 src/aap_aiops_teardown_cac.py \
+  --scope source \
   --capture /protected/latest-source-capture.vault.yml \
   --vault-password-file /protected/existing-vault-selector \
   --output /protected/reviewed-candidate.vault.yml
@@ -97,10 +111,14 @@ newer route, reservation, key or owner capture. Normal CaC import and project
 sync are separate publication gates. The matching AIOps capture adds the
 receiving AAP's **Retire AIOps TRA Subscription** template with its existing TRA
 Machine/Vault credentials, fixed `tra` limit and sole exact-instance survey.
+Use the same helper with `--scope target` against a fresh encrypted AIOps capture.
+An unchanged candidate retains exact ciphertext; another profile, runtime,
+credential or template is never rewritten by the typed append.
 
 ## Qualification and remaining acceptance
 
-Focused offline tests cover owner projection, AAP/shared preservation, native
+The final focused suite passes 101 tests in cached Core2.20 and local Core2.21.
+These tests cover owner projection, AAP/shared preservation, native
 API preimages, deletion ordering, job quiescence, foreign references and races,
 strict authoritative negative proof, selected DNS credentials, concurrent-safe
 CaC append and native disk/backing/snapshot refusal. Native selected capture

@@ -196,6 +196,17 @@
       retries: 60
       delay: 5
       no_log: false
+    - name: Persist exact target token ownership before native cleanup can remove its credential
+      aap_aiops_teardown:
+        operation: record_target_access
+        instance_name: '{{ aap_instance_route.vm_name }}'
+        route: '{{ aap_instance_route }}'
+        plan: '{{ aap_aiops_teardown_plan }}'
+      delegate_to: localhost
+      become: false
+      register: aap_aiops_teardown_access_recorded
+      when: aap_instance_route.vm_name in aiops_instances
+      no_log: false
     - name: Stop selected monitoring delivery through its exact native VM before removing receivers
       ansible.builtin.include_tasks: tasks/aiops-teardown-native.yml
       vars:

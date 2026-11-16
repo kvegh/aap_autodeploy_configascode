@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Keep the AAP VM while resetting the selected AIOps workload — 2026-11-16
+
+Implementation `dc191c64f032da0ee03854ea31b12aa23fdccfc7` (Source0.66.0)
+adds the Source-owned preview/apply workload lifecycle. The user needs deploy,
+remove-all-owned and redeploy tests on the same AAP/hypervisor; the full-instance
+destroy also removes AAP and cannot serve that purpose. This implementation
+narrows existing native retirement/publication contracts to three proved guest
+owners, reuses normal APIs/credentials/locks, quiesces selected work, verifies
+native subscription evidence and retains namespaces until required absence.
+It introduces no service, scheduler, credential type, allocation reuse or
+appliance connection. AAP publication, snapshots, network foundation, other
+owners, base credentials, golden images and shared accounts remain.
+
+Disk/backing/snapshot and foreign API/publication consumers stop removal of
+shared resources. Exact v3 provider IDs and strict bounded direct-authority
+negative proof gate DNS completion. The native target subscription helper and
+scoped private writer provide external ownership evidence before local owner
+retirement. Fresh-capture typed template appends preserve native publisher
+state. The owner's temporary visible-logging direction remains in effect.
+Offline native/API fixture qualification does not establish live cleanup or
+successful redeploy; those remain separate current-owner acceptance gates.
+
+
 ## Verify complete Controller statuses before accepting snapshot quiescence
 
 Implementation `9d02d63c228a9a6e9ae719d25db2c2b9c408f096` replaces a filtered

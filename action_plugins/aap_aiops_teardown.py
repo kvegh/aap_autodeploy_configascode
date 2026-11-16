@@ -43,7 +43,7 @@ class ActionModule(ActionBase):
             require = keys.require
             require(set(args) >= {'operation', 'instance_name', 'route'} and set(args) <= {
                 'operation', 'instance_name', 'route', 'resources', 'plan', 'job_id'}
-                and operation in ('runtime_dns', 'authentication', 'plan', 'plan_absent', 'quiesce', 'record_subscription_absence', 'subscription_result', 'remove_target', 'retire_profile'),
+                and operation in ('runtime_dns', 'authentication', 'plan', 'plan_absent', 'quiesce', 'record_subscription_absence', 'record_target_access', 'subscription_result', 'remove_target', 'retire_profile'),
                 'Select only the explicit AIOps workload lifecycle operation.')
             selected, route = args['instance_name'], keys._routing.instance_route(args['route'])
             require(selected == route['vm_name'], 'The workload selection and registered AAP route differ.')
@@ -109,31 +109,52 @@ class ActionModule(ActionBase):
                     names = contract.resources_for_import(raw['cac_import_metadata'], raw)
                     empty_plan = {'operations': [], 'selected_ids': {kind: [] for kind, _ in helpers.TARGET_KINDS},
                                   'required_label': 'aiops_selfhealing', 'profile_absent': True,
-                                  'instance_name': selected, 'origin': keys.origin(route['aap_hostname'])}
+                                  'instance_name': selected, 'origin': keys.origin(route['aap_hostname']),
+                                  'owner_preimage': None, 'source_job_id': str(variables['awx_job_id']),
+                                  'source_project_revision': variables['awx_project_revision']}
                     for kind, endpoint in helpers.TARGET_KINDS:
                         for definition in names.get(kind, []):
                             name = self._templar.template(definition['name'])
                             require(not client.rows(endpoint + '?name=' + keys.quote(name) + '&page_size=200'),
                                     'AIOps definitions survive without their owner profile; preserve them for review.')
+                    prefixes = {'CaC EDA Controller access: ' + self._templar.template(row['name'])
+                                for row in names.get('eda_credentials', [])}
+                    tokens = client.rows('/api/gateway/v1/tokens/?page_size=200')
+                    require(len(tokens) <= 200 and not any(row.get('description') in prefixes for row in tokens),
+                            'An orphaned unreceipted EDA token survives its owner; preserve it for native evidence recovery.')
                     result.update(changed=False, plan=empty_plan)
                     return result
                 if operation == 'plan':
                     resources = args.get('resources')
-                    plan = helpers.selected_target_plan(client, resources, 'aiops_selfhealing')
+                    profile = variables['aap_isolation_app_capture']['ansible_facts']['aiops_instances'].get(selected)
+                    require(isinstance(profile, dict) and isinstance(profile.get('teardown', {}), dict)
+                            and set(profile.get('teardown', {})) <= {'subscription_absence', 'target_access_tokens'},
+                            'Keep the selected native workload ownership mapping.')
+                    require('subscription_absence' not in profile.get('teardown', {}) or helpers.subscription_absence_valid(profile, selected),
+                            'Retained subscription evidence is incomplete; recover original native proof before cleanup.')
+                    retained_tokens = profile.get('teardown', {}).get('target_access_tokens', [])
+                    require(isinstance(retained_tokens, list), 'Retain exact native target token receipt records.')
+                    plan = helpers.selected_target_plan(client, resources, 'aiops_selfhealing', retained_tokens)
                     native_access = client.request('GET', '/api/gateway/v1/tokens/%d/' %
                         configuration['aap_instance_api_credentials'][selected]['token_id'])
                     protected_application = native_access.get('application')
                     protected_application = protected_application.get('id') if isinstance(protected_application, dict) else protected_application
                     require(protected_application not in plan['selected_ids']['aap_applications'],
                             'The AIOps application is shared by base AAP API access; preserve it for review.')
-                    plan.update(instance_name=selected, origin=keys.origin(route['aap_hostname']))
+                    require(all(item['receipt']['token_id'] != native_access['id'] for item in plan['access_tokens']),
+                            'The selected EDA token also provides base AAP access; preserve it for review.')
+                    plan.update(instance_name=selected, origin=keys.origin(route['aap_hostname']),
+                                owner_preimage=deepcopy(profile), source_job_id=str(variables['awx_job_id']),
+                                source_project_revision=variables['awx_project_revision'])
                     profile = variables['aap_isolation_app_capture']['ansible_facts']['aiops_instances'].get(selected)
                     plan['subscription_absence_verified'] = bool(helpers.subscription_absence_valid(profile, selected))
                     result.update(changed=False, plan=plan, authentication=authentication)
                     return result
                 plan = args.get('plan')
                 require(isinstance(plan, dict) and plan.get('instance_name') == selected
-                        and plan.get('origin') == keys.origin(route['aap_hostname']),
+                        and plan.get('origin') == keys.origin(route['aap_hostname'])
+                        and plan.get('source_job_id') == str(variables['awx_job_id'])
+                        and plan.get('source_project_revision') == variables['awx_project_revision'],
                         'Use this job\'s exact native AIOps ownership plan.')
                 if operation == 'quiesce':
                     permitted = (not self._task.check_mode and variables.get('aap_aiops_teardown_apply') is True
@@ -159,15 +180,23 @@ class ActionModule(ActionBase):
                     result.update(changed=False, verified=True, proof=normalized)
                     return result
                 if operation == 'remove_target':
-                    result.update(changed=helpers.remove_target(client, plan), target_removed=True)
+                    require(not plan.get('access_tokens') or variables.get('aap_aiops_teardown_access_recorded', {}).get('target_access_recorded') is True,
+                            'Persist exact target token ownership before native revocation.')
+                    token_changed = helpers.revoke_target_access(client, plan, [configuration['aap_instance_api_credentials'][selected]['token_id']])
+                    target_changed = helpers.remove_target(client, plan)
+                    result.update(changed=token_changed or target_changed, target_removed=True)
                     return result
                 # Profile/runtime namespaces are the final state change. Keep all
                 # ownership while native resources or target definitions remain.
                 recording_subscription = operation == 'record_subscription_absence'
-                require(recording_subscription or (variables.get('aap_aiops_teardown_native_absence_verified') is True
+                recording_access = operation == 'record_target_access'
+                recording = recording_subscription or recording_access
+                require(recording or (variables.get('aap_aiops_teardown_native_absence_verified') is True
                         and variables.get('aap_aiops_teardown_source_published', {}).get('published') is True),
                         'Retain owner namespaces until native absence and Source publication are verified.')
-                for item in ([] if recording_subscription else plan['operations']):
+                if not recording:
+                    helpers.access_tokens_absent(client, plan)
+                for item in ([] if recording else plan['operations']):
                     require(not client.rows(item['endpoint'] + '?name=' + keys.quote(item['identity']['name']) + '&page_size=200'),
                             'Selected target AIOps definitions remain; retain their runtime ownership.')
                 bootstrap = codec.load_repository_yaml(self._loader._vault.decrypt((central_path / 'cac/base_CaC_vault.yml').read_bytes()))
@@ -178,7 +207,8 @@ class ActionModule(ActionBase):
                         'Reuse only the fixed AIOps owner repository and its approved existing writer.')
                 native_vault = VaultLib([('default', VaultSecret(bootstrap['cac_bootstrap_vault_credentials']['aiops']['vault_password'].encode()))])
                 path, git = checkout('aiops', repository, credential)
-                expected = variables['aap_isolation_app_capture']['ansible_facts']['aiops_instances'].get(selected)
+                expected = deepcopy(plan.get('owner_preimage'))
+                attempted_write = False
                 for attempt in range(8):
                     git('fetch', '--quiet', '--depth=1', 'origin', 'main')
                     git('checkout', '--quiet', '--detach', 'FETCH_HEAD')
@@ -188,12 +218,20 @@ class ActionModule(ActionBase):
                     require(capture['aiops_runtime_settings_vault'].encode() == raw_runtime,
                             'Standalone and embedded AIOps runtime ciphertext must agree.')
                     runtime = codec.load_repository_yaml(runtime_vault.decrypt(raw_runtime))
-                    if recording_subscription:
+                    if recording:
+                        helpers.owner_preimage_matches(capture['aiops_instances'].get(selected), expected, selected, plan)
                         require(helpers.quiesce_target(client, plan)['quiescent'],
                                 'Stop selected delivery and wait for jobs before subscription teardown.')
-                        desired = helpers.record_subscription_absence(capture, selected,
-                            variables['aap_aiops_teardown_subscription_proof'], variables.get('awx_job_id'),
-                            variables.get('awx_project_revision'))
+                        if recording_subscription:
+                            desired = helpers.record_subscription_absence(capture, selected,
+                                variables['aap_aiops_teardown_subscription_proof'], variables.get('awx_job_id'),
+                                variables.get('awx_project_revision'))
+                        else:
+                            for item in plan.get('access_tokens', []):
+                                observed = helpers.api_tokens.eda_owned_token(client, item['receipt']['description'], item['expected'], allow_absent=True)
+                                require(observed is not None and observed['receipt'] == item['receipt'],
+                                        'Native target token ownership changed before durable publication.')
+                            desired = helpers.record_target_access(capture, selected, plan)
                         next_runtime = runtime
                     else:
                         if selected not in capture['aiops_instances']:
@@ -202,13 +240,18 @@ class ActionModule(ActionBase):
                             for item in plan['operations']:
                                 require(not client.rows(item['endpoint'] + '?name=' + keys.quote(item['identity']['name']) + '&page_size=200'),
                                         'Selected target definitions reappeared; retain remaining ownership for review.')
-                            result.update(changed=False, retired=True)
+                            helpers.access_tokens_absent(client, plan)
+                            result.update(changed=attempted_write, retired=True)
                             return result
                         require(capture['aiops_instances'].get(selected) is None or
                                 helpers.subscription_absence_valid(capture['aiops_instances'][selected], selected),
                                 'Retain the TRA owner until its external subscription absence is verified.')
                         # This job may have added only its exact subscription proof
                         # since the initial protected read. No other owner drift is accepted.
+                        helpers.owner_preimage_matches(capture['aiops_instances'].get(selected), expected, selected, plan)
+                        require(capture['aiops_instances'][selected].get('teardown', {}).get('target_access_tokens') ==
+                                [item['receipt'] for item in plan.get('access_tokens', [])],
+                                'Retained exact target token ownership changed during cleanup.')
                         candidate = deepcopy(capture['aiops_instances'].get(selected))
                         prior = deepcopy(expected)
                         if isinstance(candidate, dict) and isinstance(prior, dict):
@@ -218,7 +261,7 @@ class ActionModule(ActionBase):
                         desired, next_runtime = helpers.documents_without_instance(capture, runtime, selected,
                             capture['aiops_instances'].get(selected))
                     if desired == capture and next_runtime == runtime:
-                        result.update(changed=False, retired=not recording_subscription, subscription_absence_verified=recording_subscription)
+                        result.update(changed=attempted_write, retired=not recording, subscription_absence_verified=recording_subscription, target_access_recorded=recording_access)
                         return result
 
                     def seal(value, original, vault):
@@ -236,16 +279,18 @@ class ActionModule(ActionBase):
                     (path / CAPTURE).write_bytes(seal(desired, raw_capture, native_vault))
                     git('add', '--', CAPTURE, RUNTIME)
                     git('-c', 'user.name=AAP AutoDeploy', '-c', 'user.email=automation@example.invalid',
-                        'commit', '--quiet', '-m', 'Retire verified selected AIOps workload namespaces')
+                        'commit', '--quiet', '-m', 'Retain exact selected AIOps teardown ownership' if recording else 'Retire verified selected AIOps workload namespaces')
                     # Always reread remote state after the acknowledgement,
                     # including uncertainty. Never force or recreate namespaces.
-                    if not recording_subscription:
+                    if not recording:
+                        helpers.access_tokens_absent(client, plan)
                         for item in plan['operations']:
                             require(not client.rows(item['endpoint'] + '?name=' + keys.quote(item['identity']['name']) + '&page_size=200'),
                                     'Selected target definitions reappeared before owner publication; preserve ownership.')
+                    attempted_write = True
                     git('push', 'origin', 'HEAD:refs/heads/main', optional=True)
                 raise keys.StoreError('Concurrent AIOps owner updates prevented verified retirement; retry from preserved ownership.')
-        except (keys.StoreError, lifecycle.LifecycleError, AnsibleActionFail) as error:
+        except (keys.StoreError, lifecycle.LifecycleError, helpers.api_tokens.LifecycleError, AnsibleActionFail) as error:
             raise AnsibleActionFail(str(error)) from None
         except Exception:
             raise AnsibleActionFail('Protected AIOps workload cleanup did not complete; retain owner records and inspect its native checks.') from None

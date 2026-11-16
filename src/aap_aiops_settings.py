@@ -497,6 +497,8 @@ def complete_documents(capture, runtime, context, readbacks):
     name = context["instance_name"]
     require(name in capture["aiops_instances"] and name in settings["instances"],
             "Persist pre-import settings before accepting target-generated resources.")
+    require("teardown" not in capture["aiops_instances"][name],
+            "Finish the selected workload teardown before publishing target readbacks.")
     require(set(readbacks) == {"demo_website_fault_template_id", "demo_website_webhook_key", "demo_zabbix_event_stream"},
             "Accept only reviewed target-native resource readbacks.")
     same_material(capture["aiops_instances"][name]["event_stream_password"],

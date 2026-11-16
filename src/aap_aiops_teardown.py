@@ -22,6 +22,7 @@ def load(name, path):
 retirement = load('aiops_workload_existing_retirement', ROOT / 'filter_plugins/aap_decommission.py')
 keys = load('aiops_workload_existing_keys', ROOT / 'src/aap_instance_keys.py')
 codec = load('aiops_workload_existing_yaml', ROOT / 'src/cac_yaml.py')
+api_tokens = load('aiops_workload_existing_api_tokens', ROOT / 'src/cac_api_lifecycle.py')
 require = keys.require
 ROLES = ('zabbix', 'testserver1', 'tra')
 
@@ -262,7 +263,7 @@ def native_identity(row):
     """Stable native ownership fields; omit API secrets and changing job status."""
     fields = ('id', 'name', 'organization', 'inventory', 'project', 'playbook', 'scm_type', 'scm_url',
               'scm_branch', 'image', 'credential_type', 'decision_environment', 'rulebook_name',
-              'authorization_grant_type', 'client_type', 'url', 'user', 'credential', 'execution_environment', 'image_url', 'event_stream_type')
+              'authorization_grant_type', 'client_type', 'url', 'user', 'credential', 'execution_environment', 'image_url', 'event_stream_type', 'description')
     result = {field: deepcopy(row[field]) for field in fields if field in row}
     for field in ('organization', 'inventory', 'project', 'credential_type', 'decision_environment', 'credential', 'user'):
         if isinstance(result.get(field), dict):
@@ -321,7 +322,7 @@ def application_tokens_absent(client, application_ids):
                 'Application tokens lack selected workload ownership; preserve the application for review.')
 
 
-def selected_target_plan(client, definitions, required_label):
+def selected_target_plan(client, definitions, required_label, retained_tokens=None):
     """Resolve real IDs and refuse collisions or cross-project references first."""
     require(isinstance(definitions, dict) and required_label == 'aiops_selfhealing',
             'Use only the normally rendered reviewed AIOps resource definitions.')
@@ -421,7 +422,8 @@ def selected_target_plan(client, definitions, required_label):
                 'Another EDA decision environment uses a selected AIOps registry credential.')
     operations = [{'kind': kind, 'endpoint': endpoint, 'identity': native_identity(row)}
                   for kind, endpoint in TARGET_KINDS for row in picked[kind]]
-    return {'operations': operations, 'selected_ids': {kind: sorted(values) for kind, values in ids.items()},
+    access_tokens = selected_access_tokens(client, picked['eda_credentials'], definitions.get('eda_credentials', []), retained_tokens or [])
+    return {'operations': operations, 'access_tokens': access_tokens, 'selected_ids': {kind: sorted(values) for kind, values in ids.items()},
             'required_label': required_label}
 
 
@@ -540,11 +542,11 @@ def authority_absent_round(results, endpoints, hostname, zone):
 def subscription_absence_valid(profile, selected):
     """A removed TRA keeps its exact unregistration proof until final retirement."""
     if (not isinstance(profile, dict) or not isinstance(profile.get('teardown', {}), dict)
-            or not set(profile.get('teardown', {})) <= {'subscription_absence'}):
+            or not set(profile.get('teardown', {})) <= {'subscription_absence', 'target_access_tokens'}):
         return False
     tra = profile.get('tra')
     if not tra or set(tra) == {'configuration'}:
-        return True
+        return 'subscription_absence' not in profile.get('teardown', {})
     receipt = profile.get('teardown', {}).get('subscription_absence')
     fields = {'instance_name', 'guest_name', 'uuid', 'machine_id', 'registration_absent',
               'consumer_certificate_absent', 'consumer_uuid', 'target_job', 'source_job_id', 'source_project_revision'}
@@ -573,7 +575,7 @@ def record_subscription_absence(capture, selected, proof, job_id, revision):
             and proof.get('source_project_revision') == revision,
             'Use only this running Source job\'s fresh subscription absence proof.')
     require(isinstance(profile.get('teardown', {}), dict)
-            and set(profile.get('teardown', {})) <= {'subscription_absence'},
+            and set(profile.get('teardown', {})) <= {'subscription_absence', 'target_access_tokens'},
             'Unknown teardown owner state requires review.')
     profile.setdefault('teardown', {})['subscription_absence'] = deepcopy(proof)
     require(subscription_absence_valid(profile, selected),
@@ -707,3 +709,129 @@ def verified_subscription_artifact(job, template, project, profile, selected, id
     normalized.update(source_job_id=str(source_job_id), source_project_revision=source_revision,
                       target_job={'id': identity, 'template_id': template['id'], 'scm_revision': job['scm_revision']})
     return normalized
+
+
+def access_expected(receipt):
+    require(isinstance(receipt, dict) and set(receipt) == {'schema_version', 'credential_name', 'organization',
+            'credential_type', 'host', 'token_id', 'user_id', 'description', 'base_description'}
+            and isinstance(receipt['schema_version'], int) and not isinstance(receipt['schema_version'], bool)
+            and receipt['schema_version'] == 1,
+            'Require the exact persisted native EDA token receipt schema.')
+    return {'name': receipt['credential_name'], 'organization': receipt['organization'],
+            'credential_type': receipt['credential_type'], 'description': receipt['base_description'],
+            'inputs': {'host': receipt['host']}}
+
+
+def access_credential_matches(row, expected):
+    actual = row.get('inputs', {})
+    require(isinstance(actual, dict) and actual.get('oauth_token')
+            and actual.get('host', '').rstrip('/') == expected['inputs']['host'].rstrip('/')
+            and {key: value for key, value in actual.items() if key not in ('host', 'oauth_token')} ==
+                {key: value for key, value in expected['inputs'].items() if key not in ('host', 'oauth_token')},
+            'The native EDA access credential changed; preserve token ownership for review.')
+    return True
+
+
+def selected_access_tokens(client, native_credentials, definitions, retained):
+    """Recover only native first-creation receipts or their retained owner copy."""
+    require(isinstance(retained, list) and len(retained) <= 4, 'Keep bounded exact workload token receipts.')
+    saved = {}
+    for receipt in retained:
+        expected = access_expected(receipt)
+        require(receipt['credential_name'] not in saved
+                and api_tokens.eda_token_receipt(receipt['description'], expected, client.hostname) == receipt,
+                'Retained token ownership changed or belongs to another target.')
+        saved[receipt['credential_name']] = receipt
+    planned = []
+    names = set()
+    for expected in definitions:
+        if expected.get('credential_type') != 'Red Hat Ansible Automation Platform':
+            continue
+        names.add(expected['name'])
+        require(expected.get('inputs', {}).get('host', '').rstrip('/') == client.hostname + '/api/controller',
+                'The selected EDA access must target this exact receiving AAP.')
+        rows = [row for row in native_credentials if row.get('name') == expected['name']]
+        require(len(rows) <= 1, 'The selected EDA token credential is ambiguous.')
+        receipt = saved.get(expected['name'])
+        if rows:
+            access_credential_matches(rows[0], expected)
+            owned = api_tokens.eda_owned_token(client, rows[0].get('description', ''), expected, allow_absent=True)
+            require(owned is not None, 'Legacy EDA access has no token receipt; recover original native evidence before teardown.')
+            require(receipt is None or receipt == owned['receipt'], 'Native and retained EDA token receipts differ.')
+            receipt = owned['receipt']
+        elif receipt is not None:
+            owned = api_tokens.eda_owned_token(client, receipt['description'], expected, allow_absent=True)
+        else:
+            # Absence evidence may refuse a lost token, but never grants deletion
+            # ownership merely from its human-readable description.
+            rows = client.rows('/api/gateway/v1/tokens/?page_size=200')
+            require(len(rows) <= 200 and not any(row.get('description') == 'CaC EDA Controller access: ' + expected['name'] for row in rows),
+                    'An unreceipted EDA token remains; preserve it and recover original native evidence.')
+            continue
+        planned.append({'receipt': receipt, 'expected': deepcopy(expected), 'credential_id': rows[0]['id'] if rows else None,
+                        'token_preimage': owned['token']})
+    require(set(saved) <= names, 'Retained tokens refer to an undeclared credential; preserve ownership for review.')
+    require(len({item['receipt']['token_id'] for item in planned}) == len(planned), 'Do not share token ownership across credentials.')
+    return planned
+
+
+def access_tokens_absent(client, plan):
+    for item in plan.get('access_tokens', []):
+        owned = api_tokens.eda_owned_token(client, item['receipt']['description'], item['expected'], allow_absent=True)
+        require(owned is not None and owned['receipt'] == item['receipt'] and owned['token'] is None,
+                'The exact owned EDA token remains; retain workload ownership.')
+    return True
+
+
+def record_target_access(capture, selected, plan):
+    result = deepcopy(capture)
+    profile = result['aiops_instances'].get(selected)
+    require(isinstance(profile, dict) and isinstance(profile.get('teardown', {}), dict)
+            and set(profile.get('teardown', {})) <= {'subscription_absence', 'target_access_tokens'},
+            'Keep known native workload teardown ownership only.')
+    desired = [deepcopy(item['receipt']) for item in plan.get('access_tokens', [])]
+    for receipt in desired:
+        access_expected(receipt)
+    previous = profile.get('teardown', {}).get('target_access_tokens')
+    require(('target_access_tokens' not in profile.get('teardown', {}) or isinstance(previous, list))
+            and (previous is None or previous == desired), 'Persisted native token ownership changed; preserve it for review.')
+    profile.setdefault('teardown', {})['target_access_tokens'] = desired
+    return result
+
+
+def revoke_target_access(client, plan, protected_ids=()):
+    changed = False
+    for item in plan.get('access_tokens', []):
+        if item['credential_id'] is not None:
+            operation = next((row for row in plan['operations'] if row['kind'] == 'eda_credentials'
+                              and row['identity']['id'] == item['credential_id']), None)
+            require(operation is not None, 'Use only the preflighted native EDA credential owner.')
+            current = client.request('GET', operation['endpoint'] + str(item['credential_id']) + '/')
+            require(native_identity(current) == operation['identity'], 'The native EDA token owner changed after planning.')
+            access_credential_matches(current, item['expected'])
+            no_new_references(client, operation, plan)
+        current = api_tokens.eda_owned_token(client, item['receipt']['description'], item['expected'], allow_absent=True)
+        require(current is not None and current['receipt'] == item['receipt']
+                and current['token'] in (None, item['token_preimage']), 'The native EDA token changed after preflight.')
+        outcome = api_tokens.eda_revoke_owned_token(client, item['receipt']['description'], item['expected'], item['receipt'], protected_ids)
+        changed = changed or outcome['changed']
+    access_tokens_absent(client, plan)
+    return changed
+
+
+def owner_preimage_matches(current, expected, selected, plan):
+    """Allow validated cleanup additions, never attach an old plan to a new owner."""
+    require(isinstance(current, dict) and isinstance(expected, dict),
+            'Selected workload ownership disappeared or changed during cleanup.')
+    now, before = deepcopy(current), deepcopy(expected)
+    state, prior = now.pop('teardown', {}), before.pop('teardown', {})
+    require(now == before and isinstance(state, dict) and isinstance(prior, dict)
+            and set(state) <= {'subscription_absence', 'target_access_tokens'}
+            and set(prior) <= set(state) and all(state[key] == value for key, value in prior.items()),
+            'Selected workload ownership changed after native preflight; preserve it for review.')
+    if 'target_access_tokens' in state:
+        require(state['target_access_tokens'] == [item['receipt'] for item in plan.get('access_tokens', [])],
+                'Retained token custody differs from this exact selected native plan.')
+    if 'subscription_absence' in state:
+        require(subscription_absence_valid(current, selected), 'Retained subscription proof is not valid for this exact selected TRA.')
+    return True
