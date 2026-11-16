@@ -2,7 +2,7 @@
 
 ## Allow bounded negative-cache expiry during infrastructure DNS setup
 
-Version **0.64.10** extends only the existing infrastructure propagation wait
+Version **0.64.11** documents implementation `771074e48b72916e1ec377a055e919751dc65d48`, which extends only the existing infrastructure propagation wait
 from 30 to 90 retries at its unchanged ten-second delay. Each existing public
 `dig` request remains limited to one three-second attempt from the selected
 hypervisor. This provides fifteen minutes of nominal retry delay plus bounded

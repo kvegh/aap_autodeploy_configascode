@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.64.11
+
+- Record DNS-wait implementation `771074e48b72916e1ec377a055e919751dc65d48` and its
+  native Core 2.20 qualification, exact runtime inverse and live-acceptance limits.
+- Documentation/version only; preserve all qualified executable content.
+
+
 ## 0.64.10
 
 - Extend only Stage 02's existing public DNS wait from 30 to 90 retries at

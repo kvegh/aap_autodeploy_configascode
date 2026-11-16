@@ -1,5 +1,29 @@
 # Design decisions history
 
+## Retain the native DNS guard while allowing negative-cache expiry — 2026-11-16
+
+Implementation `771074e48b72916e1ec377a055e919751dc65d48` (version 0.64.10) changes only the
+existing Stage 02 DNS propagation retry count from 30 to 90. The ten-second delay
+and one three-second public `dig` attempt remain unchanged. This allows fifteen
+minutes of nominal retry delay plus bounded lookup overhead, accommodating the
+observed ten-minute negative-cache lifetime and propagation margin without
+asserting a universal DNS completion guarantee. The independent host-DNS
+verifier's observed failure exposed the same short allowance in this existing
+platform loop; this loop does not borrow that helper.
+
+The complete runtime YAML inverse proves no other executable field changes.
+The exact direct-address check, absolute name, resolver, selected hypervisor,
+transport, provider ownership, TLS/certificate guards, credentials, counters,
+logging, job timeouts and immutable source pins are preserved. All four focused
+native DNS tests passed in cached offline Core 2.20.10, including missing, wrong,
+additional and failed DNS answers. No dependency installation or live request,
+configuration write, deployment retry or host operation was performed.
+
+Version 0.64.11 records the actual implementation reference without another
+runtime change. Original deployment failures remain evidence; a later exact
+public answer does not reconstruct first publication or cache-population
+chronology. Actual fresh infrastructure success remains independently verified.
+
 ## Preserve automatic website acceptance and bounded cache scope — 2026-11-16
 
 The first website episode failed before restore playbook execution because its
