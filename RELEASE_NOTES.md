@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.65.13
+
+- Document the accepted infrastructure cold checkpoint and current installer
+  progress in the public task overview and encrypted recovery export.
+- Preserve the original snapshot verification failure and its qualified fix.
+- Preserve the qualified exact EDA token ownership producer for subsequent
+  configuration imports; live workload teardown acceptance remains separate.
+
 ## 0.65.12
 
 - Document the no-replay collision decision, implementation commit and 16-test
