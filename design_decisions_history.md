@@ -1,5 +1,28 @@
 # Design decisions history
 
+## Preserve monitoring handoff evidence and original failures — 2026-11-16
+
+AIOps implementation `abe7de5` reconciles only proved missing selected Linux
+release metadata on the bound Source copy before its existing importer. It
+keeps the complete checked policy, production exclusions and separate owned
+application grant. Its 25 focused Core 2.20 tests passed; a normal repeat on
+that source then passed with current metadata. The automatic missing-role path
+still needs a fresh deployment's live acceptance. Assistant implementation
+`ece619be5a6aeda24e8bb3d831e4fab8128c43a9` selects the qualified minimal
+Windows-release dependency without changing the shared creator pin.
+
+Independent reads accepted monitoring, initial website deployment, installed
+Claude/private MCP integrations and the selected agent, followed by fresh
+metrics and exact scoped delivery configuration. Both actual demonstrations
+remain separate gates before retirement and the next complete rebuild.
+
+Original censored Git failures, the pre-installer collection hash rejection and
+the recovered AAP service interruption retain explicit unresolved-cause records.
+Later healthy reads and unchanged successful retries cannot identify their
+original cause. No integrity check, authentication, timeout, shared project cache
+or security setting is changed on speculation. This documentation and protected
+task-export checkpoint changes no AutoDeploy executable behavior.
+
 ## Reconcile only proved Windows release omissions in Source aliases — 2026-11-15
 
 Implementation `d31358762439c1ebcbf73bdae11914f988fe25d6` addresses the

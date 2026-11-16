@@ -97,7 +97,12 @@ inventory-key input and reconciling the Source inventory's missing interface
 metadata. Both required Linux guests subsequently passed creation, authenticated
 verification, native network release and ownership publication. A normal AIOps
 refresh bound both logical hosts to their exact verified ownership records.
-Service deployment and both AIOps demo tests remain outstanding. An unused guest
+Zabbix and the initial website deployment passed independent native, API,
+firewall and trusted-HTTPS checks. Claude, both private MCP integrations and the
+selected agent then passed normal installation and independent verification.
+Fresh agent/website monitoring and exact scoped event-delivery configuration
+also passed independent checks; both actual self-healing tests remain separate
+gates. An unused guest
 created with an incorrect role name is gracefully stopped, with its ownership
 retained for the conditional whole-host cleanup.
 The owner's post-wipe absence-check withdrawal
@@ -141,6 +146,15 @@ then verify exact readback. No additional credential, operation, transport or
 Windows inventory record is introduced. Bounded preimage checks provide no
 atomic compare-and-swap guarantee. Missing non-Windows grants remain outside
 this repair's scope.
+
+The Linux creator now selects this qualified dependency through its existing
+Assistant caller; no shared creator or registry pin changes. The reciprocal
+stale-copy case discovered in monitoring publication is fixed in AIOps
+implementation `abe7de5`: before its existing importer, reconcile only proved
+selected Linux role omissions against the complete checked policy. It preserves
+the Source base policy and separate owned application grant. This introduces
+no additional AutoDeploy reader or native firewall authority. Both automatic
+omission-repair paths still require their fresh-installation live acceptance.
 
 ## Protected native source Git failures
 

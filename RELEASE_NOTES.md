@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.64.8
+
+- Document accepted AIOps service, MCP, agent and fresh monitoring integration;
+  retain both real demonstrations as prerequisites for the next rebuild.
+- Document the existing Assistant caller's qualified dependency adoption and
+  AIOps-owned Source policy freshness correction without changing AutoDeploy
+  executable behavior or shared pins.
+- Refresh protected task records, preserving unresolved historical causes and
+  distinguishing tested source from fresh automatic-branch live acceptance.
+
 ## 0.64.7
 
 - Document implementation `d313587`, ownership proofs, bounded API publication,

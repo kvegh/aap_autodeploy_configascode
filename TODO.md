@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-264 tasks: 39 outstanding; 225 closed.
+267 tasks: 41 outstanding; 226 closed.
 
 ## Outstanding tasks
 
@@ -23,14 +23,16 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2 | Achieve one clean &#91;HOST&#93; installation with tested Windows and AIOps | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-5zfc, bead-wd-72f.31.2.7 |
 | bead-wd-3ix.2.10 | Run full v23 rebuild and Windows and AIOps functional acceptance | open | P1 | epic | bead-wd-3ix.2, bead-wd-3ix.2.9 |
 | bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | in_progress | P1 | epic | bead-wd-3ix.2 |
-| bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | in_progress | P1 | bug | bead-wd-3ix.2.7 |
+| bead-wd-3ix.2.7.10 | Diagnose v22 installer project-sync artifact hash mismatch before v23 | blocked | P1 | bug | bead-wd-3ix.2.7 |
+| bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.5 | Deploy and verify AIOps on v22 | in_progress | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.4 |
 | bead-wd-3ix.2.7.5.2 | Reconcile AAP supplemental interface metadata in source inventory | in_progress | P1 | bug | bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.5.4 | Reconcile canonical Windows network policy into original Source aliases before AIOps release | in_progress | P1 | bug | bead-wd-3ix.2.7.5 |
+| bead-wd-3ix.2.7.5.6 | Diagnose v22 Zabbix pending HTTPS grant native-policy mismatch | in_progress | P1 | bug | bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.6 | Pass the v22 AIOps website demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.7 | Pass the v22 AIOps agent repair demo test | open | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.6 |
 | bead-wd-3ix.2.7.8 | Enable temporary visible deployment logging until clean acceptance | in_progress | P1 | task | bead-wd-3ix.2.7 |
-| bead-wd-3ix.2.7.9 | Diagnose v22 receiving AAP API 503 and timeout incident | in_progress | P1 | bug | bead-wd-3ix.2.7 |
+| bead-wd-3ix.2.7.9 | Diagnose v22 receiving AAP API 503 and timeout incident | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.8 | Add cold AAP snapshots at infrastructure, installer and base checkpoints | in_progress | P1 | feature | bead-wd-3ix.2 |
 | bead-wd-3ix.2.9 | Retire v22 owned metadata after successful AIOps tests | open | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.7.6, bead-wd-3ix.2.7.7 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
@@ -123,6 +125,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.7.4.1 | Diagnose and fix the first v22 Windows template import failure | closed | P1 | bug | bead-wd-3ix.2.7.4 |
 | bead-wd-3ix.2.7.5.1 | Correct the v22 AIOps selector inventory key | closed | P1 | bug | bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.5.3 | Preserve Linux creator production-source default | closed | P1 | bug | bead-wd-3ix.2.7.5 |
+| bead-wd-3ix.2.7.5.4.1 | Adopt qualified Source alias repair in Linux caller and operator guides | closed | P1 | task | bead-wd-3ix.2.7.5.4 |
 | bead-wd-3ix.2.7.5.5 | Correct current AIOps testserver role name without weakening ownership guards | closed | P1 | bug | bead-wd-3ix.2.7.5 |
 | bead-wd-3ix.2.7.8.1 | Enable visible logging for existing v22 Linux creator | closed | P1 | task | bead-wd-3ix.2.7.8 |
 | bead-wd-3ix.2.7.8.2 | Honor explicit visible logging in AIOps preparation guard | closed | P1 | bug | bead-wd-3ix.2.7.8 |
