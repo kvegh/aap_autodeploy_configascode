@@ -1,5 +1,18 @@
 # Release notes
 
+## 0.65.17
+
+- Determine Controller quiescence from bounded complete unfiltered job statuses
+  and a second matching idle scan, avoiding affected filtered-count metadata.
+- Validate HTTPS origin, exact query/page advancement, counts, unique ordered IDs,
+  known statuses and complete final rows. Preserve bounded waits for actual active
+  jobs and refuse incomplete, changing, oversized or unknown data before shutdown.
+- Retain EDA, guest identity, root context and native snapshot guards. No job
+  cancellation, bundle upgrade, new permission or guard bypass is introduced.
+- Reproduce the filtered count mismatch and qualify complete idle history,
+  active late pages, changing confirmations and malformed pagination separately
+  from actual checkpoint-only recovery.
+
 ## 0.65.16
 
 - Document the successful installer component and the later failed checkpoint

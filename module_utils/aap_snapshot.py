@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 import time
 import xml.etree.ElementTree as ET
-from urllib.parse import urlsplit, urljoin
+from urllib.parse import urlsplit, urljoin, parse_qs
 
 
 CHECKPOINTS = {
@@ -236,6 +236,54 @@ def eda_next_page(data, origin):
             and (next_page.startswith('https://') or next_page.startswith('/api/eda/v1/activations/?')),
             'EDA pagination must remain on the selected HTTPS activation endpoint.')
     return target.geturl()
+
+
+def controller_jobs_page(data, origin, state=None):
+    """Validate one complete, ordered page without trusting a filtered count."""
+    state = {} if state is None else state
+    require(isinstance(state, dict) and (not state or set(state) == {
+        'count', 'page', 'jobs', 'next', 'complete', 'idle'}), 'Require the current bounded job scan state.')
+    require(not state.get('complete', False), 'Do not append pages after a complete job scan.')
+    require(isinstance(data, dict) and type(data.get('count')) is int and 0 <= data['count'] <= 2000
+            and isinstance(data.get('results'), list) and len(data['results']) <= 100
+            and 'next' in data, 'Require bounded complete Controller job-list metadata.')
+    page = state.get('page', 0) + 1
+    require(page <= 20 and (not state or data['count'] == state['count']),
+            'Controller job-list count changed during pagination or exceeded its page bound.')
+    jobs = list(state.get('jobs', []))
+    for row in data['results']:
+        require(isinstance(row, dict) and type(row.get('id')) is int and row['id'] > 0
+                and isinstance(row.get('status'), str)
+                and row['status'] in {'new', 'pending', 'waiting', 'running', 'successful', 'failed', 'error', 'canceled'},
+                'Every Controller job needs a real ID and explicit known status before shutdown.')
+        require(not jobs or row['id'] > jobs[-1]['id'],
+                'Controller job IDs must be unique and strictly increasing across every page.')
+        jobs.append({'id': row['id'], 'status': row['status']})
+    require(len(jobs) <= data['count'], 'Controller job results exceed the declared complete count.')
+    next_link = data['next']
+    if next_link is None:
+        require(len(jobs) == data['count'], 'Controller job results are incomplete despite a terminal page.')
+        target = ''
+    else:
+        require(isinstance(next_link, str) and next_link and data['results'] and len(jobs) < data['count']
+                and page < 20, 'Require progress within the finite Controller pagination bound.')
+        selected = urlsplit(origin)
+        target = urlsplit(urljoin(origin.rstrip('/') + '/', next_link))
+        require(selected.scheme == 'https' and not selected.username and not selected.password
+                and not selected.query and not selected.fragment and selected.path in ('', '/')
+                and target.scheme == 'https' and target.netloc == selected.netloc
+                and not target.username and not target.password and not target.fragment
+                and target.path == '/api/controller/v2/unified_jobs/'
+                and (next_link.startswith('https://') or next_link.startswith('/api/controller/v2/unified_jobs/?')),
+                'Controller pagination must stay on the selected authenticated HTTPS endpoint.')
+        query = parse_qs(target.query, keep_blank_values=True, strict_parsing=True)
+        require(query == {'order_by': ['id'], 'page_size': ['100'], 'page': [str(page + 1)]},
+                'Controller pagination must preserve the unfiltered ordered query and advance exactly one page.')
+        target = target.geturl()
+    complete = next_link is None
+    return {'count': data['count'], 'page': page, 'jobs': jobs, 'next': target,
+            'complete': complete, 'idle': complete and all(row['status'] in {
+                'successful', 'failed', 'error', 'canceled'} for row in jobs)}
 
 
 class Manager:

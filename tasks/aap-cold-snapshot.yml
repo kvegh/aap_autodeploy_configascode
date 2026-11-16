@@ -50,35 +50,10 @@
       changed_when: false
       check_mode: false
 
-    - name: Refuse shutdown while the selected Controller still has executing jobs
-      ansible.builtin.uri:
-        url: '{{ aap_instance_route.aap_hostname }}/api/controller/v2/unified_jobs/?status__in=pending,waiting,running&page_size=1'
-        headers:
-          Authorization: 'Bearer {{ aap_snapshot_registered.snapshot_api_access.token }}'
-        validate_certs: true
-        follow_redirects: none
-        status_code: 200
-      register: aap_snapshot_active_jobs
-      failed_when: >-
-        aap_snapshot_active_jobs.status | default(0) != 200 or
-        aap_snapshot_active_jobs.json.count | default(none) is not integer or
-        aap_snapshot_active_jobs.json.count | default(-1) | int < 0
-      until: aap_snapshot_active_jobs is failed or aap_snapshot_active_jobs.json.count == 0
-      retries: 60
-      delay: 5
-      delegate_to: localhost
-      become: false
-      vars:
-        ansible_connection: local
+    - name: Require bounded complete Controller job quiescence before shutdown
+      ansible.builtin.include_tasks: aap-snapshot-controller-idle.yml
       when: aap_snapshot_registered.snapshot_api_access is mapping
-      check_mode: false
       no_log: false
-
-    - name: Require an idle selected Controller before any power operation
-      ansible.builtin.assert:
-        that: aap_snapshot_active_jobs.json.count | int == 0
-        fail_msg: Wait for actual receiving Controller jobs to finish; do not stop an active execution.
-      when: aap_snapshot_registered.snapshot_api_access is mapping
 
     - name: Initialize the selected EDA idle check
       ansible.builtin.set_fact:

@@ -1,0 +1,28 @@
+---
+- name: Observe this Controller page only while its complete scan remains unfinished
+  when:
+    - not (aap_snapshot_controller_scan.complete | default(false))
+    - now(utc=true).timestamp() < aap_snapshot_controller_deadline
+  no_log: false
+  block:
+    - name: Read one complete unfiltered page of actual Controller job statuses
+      ansible.builtin.uri:
+        url: '{{ aap_snapshot_controller_scan.next | default(aap_instance_route.aap_hostname ~ "/api/controller/v2/unified_jobs/?order_by=id&page_size=100") }}'
+        headers:
+          Authorization: 'Bearer {{ aap_snapshot_registered.snapshot_api_access.token }}'
+        validate_certs: true
+        follow_redirects: none
+        status_code: 200
+        timeout: 10
+      register: aap_snapshot_controller_page
+      delegate_to: localhost
+      become: false
+      vars:
+        ansible_connection: local
+      check_mode: false
+      no_log: false
+
+    - name: Validate ordered complete Controller rows and retain only safe pagination
+      ansible.builtin.set_fact:
+        aap_snapshot_controller_scan: '{{ aap_snapshot_controller_page.json | aap_snapshot_controller_jobs_page(aap_instance_route.aap_hostname, aap_snapshot_controller_scan) }}'
+      no_log: false

@@ -128,6 +128,13 @@ next infrastructure execution remains independently verified.
 
 ## Cold AAP installation checkpoints
 
+Controller quiescence is proved from complete unfiltered job statuses rather
+than a filtered pagination count. The guard checks bounded same-origin pages,
+then requires a second complete matching idle observation. Active jobs retain
+the existing bounded wait; incomplete, changing or unknown data refuses shutdown.
+This avoids the documented AAP-92017 filtered-count defect without upgrading
+the approved installer bundle or skipping the idle guard.
+
 The shared checkpoint transaction explicitly selects root for its existing
 privileged guest and hypervisor operations. This prevents the installer play's
 unprivileged installation account from being inherited by delegated snapshot

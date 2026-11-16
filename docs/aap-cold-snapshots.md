@@ -70,6 +70,29 @@ trust cleanup keep privilege escalation disabled. A temporary-file permission
 failure caused by an inherited installer account must be fixed at this caller
 context; it does not justify installing ACL tools or weakening file permissions.
 
+Before shutdown, Controller quiescence is determined from complete **unfiltered**
+`unified_jobs` responses ordered by increasing ID. Each scan is limited to twenty
+pages of at most one hundred rows and two thousand jobs in total. Pagination
+must stay on the selected HTTPS Controller endpoint, retain the exact unfiltered
+query and advance one page. Counts must stay constant, IDs must be unique and
+ordered, and the terminal page must account for every declared row. Unknown
+statuses, missing rows, changed counts or unsafe links stop before any power
+operation. History above the bounded limit also refuses shutdown.
+
+Every `new`, `pending`, `waiting` or `running` job on any page keeps the Controller
+active. Completed rows alone do not establish quiescence until a second complete
+scan returns the same IDs and statuses. Actual active jobs are observed within a
+five-minute deadline with five seconds between rounds; each HTTP request is
+bounded to ten seconds. Jobs are never cancelled or modified. EDA activation
+quiescence remains an independent guard.
+
+This avoids dependence on filtered `count` metadata affected by Red Hat's
+documented AAP-92017 defect, which could report the unfiltered total even when
+filtered results were empty. Red Hat lists its fix in the
+[AAP 2.7-11 release notes](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.7/whats_new-aap_27_2026_10_05).
+The approved installer bundle remains unchanged; this source change neither
+upgrades the platform nor claims that the vendor patch was deployed.
+
 The configured reserve is 64 GiB, and the check also requires at least one
 virtual disk's capacity to remain free. This is a lower bound at each operation,
 not a guarantee against later growth. Three retained snapshots plus test

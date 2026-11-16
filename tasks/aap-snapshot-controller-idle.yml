@@ -1,0 +1,22 @@
+---
+- name: Bound actual Controller status observation without cancelling jobs
+  ansible.builtin.set_fact:
+    aap_snapshot_controller_idle: false
+    aap_snapshot_controller_deadline: '{{ now(utc=true).timestamp() + 300 }}'
+  no_log: false
+
+- name: Wait bounded rounds for complete and stable terminal Controller history
+  ansible.builtin.include_tasks: aap-snapshot-controller-round.yml
+  loop: '{{ range(0, 61) | list }}'
+  loop_control:
+    loop_var: aap_snapshot_controller_round_index
+  when:
+    - not aap_snapshot_controller_idle
+    - now(utc=true).timestamp() < aap_snapshot_controller_deadline
+  no_log: false
+
+- name: Require actual Controller quiescence before any VM power operation
+  ansible.builtin.assert:
+    that: aap_snapshot_controller_idle
+    fail_msg: Actual Controller jobs did not become verifiably idle within the bounded wait; do not stop the VM.
+  no_log: false

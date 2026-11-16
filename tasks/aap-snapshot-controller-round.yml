@@ -1,0 +1,73 @@
+---
+- name: Observe this Controller round only while quiescence remains unproved
+  when:
+    - not aap_snapshot_controller_idle
+    - now(utc=true).timestamp() < aap_snapshot_controller_deadline
+  no_log: false
+  block:
+    - name: Start a fresh complete unfiltered Controller job observation
+      ansible.builtin.set_fact:
+        aap_snapshot_controller_scan: {}
+      no_log: false
+
+    - name: Read every bounded page before deciding whether Controller jobs are idle
+      ansible.builtin.include_tasks: aap-snapshot-controller-page.yml
+      loop: '{{ range(0, 20) | list }}'
+      loop_control:
+        loop_var: aap_snapshot_controller_page_index
+      when:
+        - not (aap_snapshot_controller_scan.complete | default(false))
+        - now(utc=true).timestamp() < aap_snapshot_controller_deadline
+      no_log: false
+
+    - name: Refuse a truncated or expired Controller job observation
+      ansible.builtin.assert:
+        that: aap_snapshot_controller_scan.complete | default(false)
+        fail_msg: Controller history could not be read completely within the bounded idle observation; no shutdown is permitted.
+      no_log: false
+
+    - name: Retain the first complete observation for an independent confirmation
+      ansible.builtin.set_fact:
+        aap_snapshot_controller_first_scan: '{{ aap_snapshot_controller_scan }}'
+      no_log: false
+
+    - name: Start a second complete scan only after every observed job is terminal
+      ansible.builtin.set_fact:
+        aap_snapshot_controller_scan: {}
+      when: aap_snapshot_controller_first_scan.idle
+      no_log: false
+
+    - name: Confirm every unfiltered page before accepting an idle Controller
+      ansible.builtin.include_tasks: aap-snapshot-controller-page.yml
+      loop: '{{ range(0, 20) | list }}'
+      loop_control:
+        loop_var: aap_snapshot_controller_confirmation_page_index
+      when:
+        - aap_snapshot_controller_first_scan.idle
+        - not (aap_snapshot_controller_scan.complete | default(false))
+        - now(utc=true).timestamp() < aap_snapshot_controller_deadline
+      no_log: false
+
+    - name: Refuse changing or incomplete Controller history before shutdown
+      ansible.builtin.assert:
+        that:
+          - aap_snapshot_controller_scan.complete | default(false)
+          - aap_snapshot_controller_scan.count == aap_snapshot_controller_first_scan.count
+          - aap_snapshot_controller_scan.jobs == aap_snapshot_controller_first_scan.jobs
+          - aap_snapshot_controller_scan.idle
+        fail_msg: Controller history changed during its complete confirmation scan; retain the VM for a fresh observation.
+      when: aap_snapshot_controller_first_scan.idle
+      no_log: false
+
+    - name: Retain quiescence only after two complete matching idle observations
+      ansible.builtin.set_fact:
+        aap_snapshot_controller_idle: '{{ aap_snapshot_controller_first_scan.idle and aap_snapshot_controller_scan.idle }}'
+      no_log: false
+
+    - name: Wait only while actual Controller jobs remain active and time remains
+      ansible.builtin.pause:
+        seconds: '{{ [5, (aap_snapshot_controller_deadline - now(utc=true).timestamp()) | int] | min }}'
+      when:
+        - not aap_snapshot_controller_idle
+        - now(utc=true).timestamp() < aap_snapshot_controller_deadline
+      no_log: false
