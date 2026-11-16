@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.65.7
+
+- Document implementation `2e970dd981917753bf60b6fea23d8fc6523b84f5`, the
+  equivalent native controller reorder and preservation of the retained receipt.
+- Document 32 passing snapshot/state/Ansible-flow tests in Core 2.20 and 2.21
+  and exact retained-evidence replay; live checkpoint recovery remains separate.
+- Documentation only; preserve the qualified snapshot implementation.
+
 ## 0.65.6
 
 - Normalize complete native controller declaration order only within the

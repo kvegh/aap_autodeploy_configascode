@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Compare complete controller declarations independently of XML order
+
+Implementation `2e970dd981917753bf60b6fea23d8fc6523b84f5` corrects the native
+cold-checkpoint verifier after live libvirt snapshot XML placed IDE and PCI-root
+controllers in a different declaration order from the inactive domain XML.
+The controllers' full attributes, addresses and child elements were unchanged;
+every other canonical domain element matched. The original order-sensitive
+digest rejected this equivalent snapshot after creation. Its failure remains
+recorded, and the original VM restarted through the existing recovery path.
+
+Canonical comparison now sorts only full controller elements within controller
+slots under `domain/devices`. It preserves all fields, duplicate/count checks,
+all other device order and unrelated nested metadata. For the actual retained
+checkpoint, both normalized trees reproduce the original recorded digest;
+neither snapshot metadata nor storage needs rewriting. Offline replay of those
+retained native reads verifies the immutable existing-checkpoint path without
+any power or disk command. This is a verifier correction, not a rollback or a
+new capture.
+
+All 32 snapshot, selected-state and native Ansible-flow tests passed in local
+Core 2.21.5 and cached Core 2.20.10. Regressions cover the native reorder,
+unchanged legacy receipt, controller address/model/count changes, other-device
+order and nested metadata. Initial local invocation required an explicit
+writable Ansible temporary directory; the cached runtime required the existing
+native Podman permission path. No dependency was installed. Offline evidence
+does not complete live checkpoint readiness or prove a restored guest.
+
 ## Require current appliance provenance in native permission checks
 
 Implementation `16c3561a5bf8057e81a3fb04e56ed765a7e7e55f` corrects the application
