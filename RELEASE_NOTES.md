@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.66.10
+
+- Preserve the latest independently published walkthrough documentation while
+  integrating the qualified receiving-import corrections from `7aee8b5`.
+- Automation and walkthrough runtime bytes remain identical to their respective
+  qualified implementations. Native receiving imports remain pending.
+
 ## 0.66.9
 
 - Integrate the independently published walkthrough updates with the qualified
@@ -23,6 +30,12 @@
 - Document implementation `407b1fc` and native qualification of the Windows
   source-credential prerequisite guard. Preserve the reviewed template-count fix,
   existing resource definitions and original failure history. No runtime changes.
+
+## 0.66.7 — parallel walkthrough documentation
+
+- Document the stronger Next-cue implementation and successful Pages publication.
+  All six deployed assets match and all 24 interaction checks pass; rendered
+  appearance remains outside the no-browser check. Refresh task recovery records.
 
 ## 0.66.6
 
