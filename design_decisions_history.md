@@ -11,8 +11,11 @@ less visual emphasis; a repeating cue was outside the requested four-pulse limit
 The scale increase is limited to two percent so wider narrow-layout buttons
 stay clear of adjacent controls. No script, dependency or runtime automation
 changes are needed. Implementation
-reference and publication evidence follow after commit. Browser appearance will
-need the user's visual confirmation with the existing no-install test scope.
+reference: `96390ac0b3da48c37308034d3eb0ea88ffc7e46e` (0.66.6).
+Pages run 43852385806 succeeded at 10:50:52 UTC on 2026-11-16. The existing
+live runner verified all six published assets and all 24 interaction checks by
+10:51:26 UTC. Rendered appearance remains for the user's visual confirmation
+within the existing no-install test scope.
 
 ## Draw initial attention to Next with four finite halos — 2026-11-16
 

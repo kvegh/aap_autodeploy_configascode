@@ -1,5 +1,11 @@
 # Release notes
 
+## 0.66.7
+
+- Document the stronger Next-cue implementation and successful Pages publication.
+  All six deployed assets match and all 24 interaction checks pass; rendered
+  appearance remains outside the no-browser check. Refresh task recovery records.
+
 ## 0.66.6
 
 - Make the initial Next cue more visible with a brighter expanding ring,
