@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.66.8
+
+- Document the missing receiving AutoDeploy prerequisite and the strict template
+  count refusal, retaining the original failed jobs and partial import state.
+- Refresh durable task recovery records alongside the qualified count-maintenance
+  correction and Windows external-credential guard.
+- Keep native AutoDeploy recovery, credential readback, Windows import recovery
+  and workload functionality as separate pending acceptance gates.
+
 ## 0.66.7
 
 - Document implementation `407b1fc` and native qualification of the Windows

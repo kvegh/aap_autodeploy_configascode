@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-279 tasks: 41 outstanding; 238 closed.
+282 tasks: 43 outstanding; 239 closed.
 
 ## Outstanding tasks
 
@@ -25,6 +25,8 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.10.1 | Separate retained agent phase output and publish bounded successful tool diagnostics | deferred | P1 | bug | bead-wd-3ix.2.10 |
 | bead-wd-3ix.2.12 | Run full v24 installation with cold snapshots and functionality tests | in_progress | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.11 |
 | bead-wd-3ix.2.12.2 | Migrate all maintained public DNS playbooks CaC and templates to v3 | in_progress | P1 | task | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.12.7 | Ensure receiving AutoDeploy source credentials before Windows import | in_progress | P1 | bug | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.12.8 | Correct AutoDeploy resource normalization failure on the receiving AAP | in_progress | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | deferred | P1 | epic | bead-wd-3ix.2 |
 | bead-wd-3ix.2.7.10 | Diagnose repeated collection artifact hash mismatches before v23 | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | blocked | P1 | bug | bead-wd-3ix.2.7 |
@@ -291,6 +293,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-q6ta | Keep receiving AAP settings anchored during object growth | closed | P2 | task | — |
 | bead-wd-qtbr | Import regional objects with project definitions | closed | P2 | task | — |
 | bead-wd-rhrk | Outline the new code-grounded AAP CaC visualization | closed | P2 | task | — |
+| bead-wd-ril3 | Pulse config-as-code Next button four times initially | closed | P2 | task | — |
 | bead-wd-t76a | Add the exact Elastic project ID to the existing CaC importer | closed | P2 | task | — |
 | bead-wd-tmbt | Remove rejected light preview and restore original-only publication | closed | P2 | task | — |
 | bead-wd-v5c8 | Align the AAP cards and replay full Git configuration to another AAP | closed | P2 | feature | — |
