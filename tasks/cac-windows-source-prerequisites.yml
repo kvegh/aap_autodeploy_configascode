@@ -1,0 +1,40 @@
+---
+- name: Read the existing AutoDeploy source credentials before Windows changes
+  ansible.builtin.uri:
+    url: >-
+      {{ cac_api_auth.hostname }}/api/controller/v2/credentials/?name={{ item | urlencode }}&page_size=2
+    method: GET
+    headers:
+      Authorization: "Bearer {{ cac_api_auth.token }}"
+    validate_certs: true
+    ca_path: "{{ cac_api_ca_path | default(omit, true) }}"
+    follow_redirects: none
+    status_code: 200
+    timeout: "{{ aap_request_timeout | default(10) | int }}"
+  loop:
+    - AAP CaC source reader
+    - AAP CaC source CA
+  register: cac_windows_source_credentials
+  changed_when: false
+  no_log: false
+
+- name: Require the normal AutoDeploy source credentials before importing Windows resources
+  ansible.builtin.assert:
+    that:
+      - item.json.count is integer
+      - item.json.count == 1
+      - item.json.next is none
+      - item.json.results | length == 1
+      - item.json.results[0].name == item.item
+      - item.json.results[0].summary_fields.organization.name | default('') == windows_disconnected_organization_name
+      - item.json.results[0].summary_fields.credential_type.name | default('') == item.item
+    fail_msg: >-
+      Run normal AutoDeploy CaC for this selected AAP instance first, then verify
+      its AAP CaC source reader and AAP CaC source CA credentials before retrying
+      the Windows import. Each must exist exactly once with the expected
+      organization and credential type. Windows does not create these credentials.
+    quiet: true
+  loop: "{{ cac_windows_source_credentials.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  no_log: false

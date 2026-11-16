@@ -126,6 +126,11 @@
               - cac_import_resources | aap_cac_validate_resources(cac_import_metadata)
           no_log: false
 
+        - name: Check existing AutoDeploy source credentials before Windows resource changes
+          ansible.builtin.include_tasks: tasks/cac-windows-source-prerequisites.yml
+          when: cac_project_contract.project_id == 'disconnected-windows-patching'
+          no_log: false
+
         - name: Check the dedicated service identity and permissions before changing resources
           aap_cac_lifecycle:
             operation: service_preflight

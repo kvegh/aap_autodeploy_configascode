@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.66.6
+
+- Check the two existing AutoDeploy-owned source credentials before importing
+  any Windows resources. Missing, duplicate, wrong-organization or wrong-type
+  metadata stops before dispatch and explains the normal AutoDeploy CaC prerequisite.
+- Preserve credential ownership, selected-only setup, existing TLS/CA trust and
+  visible task logging. Seven native fixture tests cover twelve Ansible plays
+  in Core 2.20.10 and 2.21.5; the actual Windows render stays exactly unchanged
+  at 35 templates, 29 workflow nodes and 29 edges. Live import acceptance remains separate.
+
 ## 0.66.5
 
 - Document implementation `d8effd888e5cdcdef21b277f90bf1947c271f280`,

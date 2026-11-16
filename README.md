@@ -644,6 +644,11 @@ Start with [RESTART_HERE.md](RESTART_HERE.md) when resuming existing work.
    template calls `deploy-cac-project.yml` with its saved `aap_cac_project_id`
    and repository-specific Git/Vault credentials. The inventory FQDN and
    instance token select the receiving HTTPS API.
+   Before changing Windows resources, the importer reads the two existing
+   AutoDeploy source credentials and requires one of each with the expected
+   organization and credential type. Missing, duplicate or mismatched
+   credentials stop with an instruction to complete normal AutoDeploy CaC.
+   This check creates no credentials and leaves the selected use cases unchanged.
 4. Run the imported use-case jobs. Importing CaC installs definitions; it does
    not deploy the application's infrastructure or prove the demo works. Run
    memory-intensive use cases sequentially.
