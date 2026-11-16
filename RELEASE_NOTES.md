@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.65.18
+
+- Document implementation `9d02d63c228a9a6e9ae719d25db2c2b9c408f096`,
+  the documented AAP-92017 filtered-count defect and complete status observation.
+- Document 42 passing snapshot/state/pagination/native-flow tests in Core 2.20
+  and 2.21 plus retained API-response replay. Actual base checkpoint recovery
+  still requires independent verification; original failed parents are preserved.
+- Documentation only; preserve the qualified runtime, approved bundle and all
+  existing snapshot ownership and quiescence controls.
+
 ## 0.65.17
 
 - Determine Controller quiescence from bounded complete unfiltered job statuses

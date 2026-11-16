@@ -1,5 +1,43 @@
 # Design decisions history
 
+## Verify complete Controller statuses before accepting snapshot quiescence
+
+Implementation `9d02d63c228a9a6e9ae719d25db2c2b9c408f096` replaces a filtered
+count-only quiescence observation with complete unfiltered Controller job reads.
+The actual filtered API response reported one row in `count` with empty results;
+independent authenticated unfiltered history contained one completed successful
+project update. The original guard refused shutdown and its failed parent
+remains recorded. Red Hat documents this filtered-count behavior as AAP-92017,
+fixed in its [AAP 2.7-11 release notes](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.7/whats_new-aap_27_2026_10_05).
+The approved installer bundle and deployed vendor version are unchanged.
+
+The existing authenticated URI transport now reads increasing job IDs without
+status filters. Complete scans are bounded to twenty pages, one hundred rows
+per page and two thousand jobs. Every row needs an explicit known status and
+unique ordered ID; counts stay consistent and the final page must contain every
+declared row. Pagination retains the same HTTPS origin, exact endpoint/query
+and sequential page. Actual nonterminal statuses on any page keep the existing
+bounded observation wait. Unknown or incomplete data, page/count drift, changed
+confirmations and exceeded history bounds refuse shutdown. A second complete
+matching idle scan is required before proceeding. The five-minute deadline and
+ten-second request bound prevent indefinite API observation; no work is cancelled.
+
+Native Ansible fixtures reproduce the original filtered metadata refusal and
+qualify complete idle history, late-page active jobs, incomplete results and
+changing confirmations before power operations. Actual retained API-response
+replay independently verifies rejection of inconsistent metadata and acceptance
+of the complete terminal row. All 42 snapshot/state/pagination/native-flow tests
+pass in cached Core 2.20.10 and local Core 2.21.5. Qualification also caught eager
+Ansible include-loop expansion; the included round and page bodies now recheck
+completion and deadline conditions before every operation.
+
+The original snapshot native implementation and controller-order correction are
+byte-identical; root context, EDA, guest identity and all other snapshot tasks
+remain unchanged. Only the Controller idle observation is replaced. No bundle
+upgrade, permission change, database write or skipped guard is involved. Actual
+checkpoint-only recovery and its original failed parent remain separate from
+source qualification.
+
 ## Keep the checkpoint privilege context independent of its installer caller
 
 Implementation `80b44c33fb09ac770e0f5ebadbadd61795190b77` explicitly selects
