@@ -1,5 +1,16 @@
 # AAP AutoDeploy and Configuration as Code
 
+## Validate native monitoring ownership
+
+The application-permission guard now requires the existing schema-2 monitoring
+appliance record emitted by the maintained producer. It checks the recorded API
+version, exact private API address and saved-image hash, and rejects guest SSH
+identity fields. The previous schema-1 guard rejected genuine current records.
+Native UUID, disks, network and address checks remain in place; no appliance
+connection or permission is added. A native regression accepts the actual
+producer fixture and rejects legacy, incomplete, copied-address and SSH-shaped
+records. This source qualification is separate from fresh live deployment.
+
 Workload redeployment tests must preserve the running AAP VM and hypervisor.
 The workload's owned resources and external registrations must be removed and
 their absence verified before deploying it again. Cold AAP checkpoints remain

@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.65.3
+
+- Correct the native application-owner guard to the maintained schema-2 appliance
+  provenance; require its API7.4 reference and saved-image hash and reject SSH fields.
+- Preserve native UUID, storage, network and address checks without guest access.
+- Native regression reproduces the old rejection and verifies actual-producer
+  acceptance plus legacy/incomplete/API-drift/SSH-field refusals.
+
 ## 0.65.2
 
 - Document the workload-only redeployment requirement while preserving AAP and

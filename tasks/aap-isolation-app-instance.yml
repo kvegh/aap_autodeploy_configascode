@@ -2,8 +2,18 @@
 - name: Require existing verified flat guest provenance before native commands
   ansible.builtin.assert:
     that:
-      - aap_isolation_app_owner.guest.schema_version == 1
+      - aap_isolation_app_owner.guest.schema_version == 2
       - aap_isolation_app_owner.guest.verified is sameas true
+      - aap_isolation_app_owner.guest.schema_version is integer
+      - aap_isolation_app_owner.guest.api_version is match('^7\.4\.[0-9]+$')
+      - aap_isolation_app_owner.guest.api_url == 'http://' ~ aap_isolation_app_owner.guest.address ~ '/api_jsonrpc.php'
+      - aap_isolation_app_owner.guest.source_sha256 is match('^[0-9a-f]{64}$')
+      - aap_isolation_app_owner.guest.source_sha256 == aiops_zabbix_source_image.sha256
+      - >-
+        ['ansible_host', 'ansible_user', 'ansible_port', 'ansible_connection',
+         'ansible_ssh_common_args', 'ansible_ssh_private_key_file', 'ansible_python_interpreter',
+         'machine_id', 'host_keys', 'guest_host_keys', 'user', 'port'] |
+        intersect(aap_isolation_app_owner.guest.keys() | list) | length == 0
       - aap_isolation_app_owner.guest.instance_number | string is match('^[1-9][0-9]{0,62}$')
       - aap_isolation_app_owner.guest.vm_name == 'zabbix-v' ~ ('%02d' | format(aap_isolation_app_owner.guest.instance_number | int))
       - aap_isolation_app_owner.guest.address is match('^(?:10\.|192\.168\.|172\.(?:1[6-9]|2[0-9]|3[01])\.)')

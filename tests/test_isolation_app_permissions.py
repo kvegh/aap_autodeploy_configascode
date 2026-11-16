@@ -16,7 +16,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def owner(number, machine='1' * 32):
-    guest = {'schema_version': 1, 'instance_name': 'fixture-%s' % number,
+    guest = {'schema_version': 2,
+             'api_version': '7.4.12', 'source_sha256': 'c' * 64,
+             'api_url': 'http://192.168.70.%s/api_jsonrpc.php' % number, 'instance_name': 'fixture-%s' % number,
              'instance_number': number, 'vm_name': 'zabbix-v%s' % number,
              'uuid': '01234567-89ab-cdef-0123-%012d' % number,
              'disk': '/opt/vms/zabbix-v%s.disk.qcow2' % number,
@@ -338,7 +340,7 @@ class ApplicationPolicyTests(unittest.TestCase):
                 next(iter(entries.values()))['zabbix']['configuration'].pop('firewall')
             inner = vault.encrypt(b'synthetic-unused-secret', VaultSecret(unrelated_key)).decode()
             plaintext = yaml.safe_dump({'cac_import_metadata': {'project_id': 'aiops-selfhealing-demo'},
-                'aiops_instances': entries}, sort_keys=False)
+                'aiops_instances': entries, 'aiops_zabbix_source_image': {'sha256': 'c' * 64}}, sort_keys=False)
             plaintext += 'aiops_eda_organization_name: fixture-organization\nunused_organization: "{{ aiops_eda_organization_name }}"\nunused_app_runtime: "{{ unavailable_app_runtime }}"\n'
             plaintext += 'unused_literal: !unsafe "{{ must_remain_literal }}"\nunused_secret: !vault |\n'
             plaintext += ''.join('  ' + line + '\n' for line in inner.splitlines())
