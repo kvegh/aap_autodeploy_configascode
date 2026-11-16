@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.65.10
+
+- Document the exact standalone-token ownership decision, implementation commit,
+  legacy boundary and 15-test Core2.20/Core2.21 qualification. Full workload
+  cleanup adoption and live acceptance remain separate gates.
+
+
 ## 0.65.9
 
 - Save exact standalone EDA Controller token ownership atomically in the existing

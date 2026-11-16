@@ -1,5 +1,31 @@
 # Design decisions history
 
+## Retain exact native standalone EDA token ownership — 2026-11-16
+
+Implementation `0f5459af45aeaa29584964798ddc7901bfdc4b7f` (Source0.65.9) extends the existing API-only persistent
+EDA Controller credential creator. Its token is created with `application=None`;
+deleting the EDA credential or an OAuth application cannot establish that this
+standalone token was revoked. A clean workload reset therefore needs its actual
+ID and custody at first creation. The same native credential creation now saves
+a nonsecret exact token-ID/user/target/credential binding receipt atomically in
+its description. The token remains only in the existing write-only input. The
+ordinary importer already excludes this credential from masked-secret updates.
+
+Reuse checks the saved receipt and native metadata without rotating tokens.
+Legacy unreceipted credentials remain usable, but matching names/descriptions
+never grant cleanup ownership. A separate guarded helper rechecks the receipt
+and native token, preserves protected base/other tokens, performs one exact-ID
+DELETE and verifies absence. Repeated absence is idempotent. Native expiry is
+retained rather than assumed perpetual; an expired owned token can still be
+cleaned up. No new credential, permissions, repository or transport is added.
+
+Fifteen focused lifecycle tests passed under cached Core2.20 and local Core2.21,
+covering create/reuse, legacy and foreign boundaries, expiry, exact revocation
+and other-token preservation. No live token was created or revoked. The full
+workload lifecycle must retain these receipts before deleting their credential
+owner and qualify live cleanup separately. Snapshot code/tests are unchanged.
+
+
 ## Compare complete controller declarations independently of XML order
 
 Implementation `2e970dd981917753bf60b6fea23d8fc6523b84f5` corrects the native
