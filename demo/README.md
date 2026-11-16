@@ -62,7 +62,12 @@ remain deferred while the owner tries this height-first revision. The sidebar us
 labels, a persistent current-step heading and distinct completed/current chapters;
 chapter changes keep the active navigation item in view. The navigation footer
 is separate from changing step content and uses stable control tracks. Its Next
-button retains the same frame for Next and Complete. The bottom object/profile
+button retains the same frame for Next and Complete. When opened at the first
+step, four prominent blue expanding rings and a stronger glow draw attention to
+Next over 5.2 seconds. The button grows slightly and darkens during each pulse,
+without changing the control layout.
+Navigation dismisses the cue early; back, restart and direct links to later steps
+do not replay it. Reduced-motion preferences suppress the animation. The bottom object/profile
 status summary and its presenter/styles are deleted. There is no marketing hero
 or explanatory scene header above the diagram. Stage 02 is labelled **Prepare OS
 for AAP installation**. Strong fills, borders and the central legend distinguish the origins. Active connectors use a bold directional line, brief travelling markers
@@ -233,7 +238,7 @@ services. No live AAP or Git operation is performed by the page.
 
 The public execution preview uses condensed excerpts from the actual playbooks
 and configuration roles. Source citations pin the inspected runtime logic at
-`f52546d3456614869aa254d220de4a786b96c31f`; that source pin is separate from the
+`09471daf07efbd248e105aa6496f25a5caa0f0a9`; that source pin is separate from the
 new visualization's own publication revision. Human-facing job labels describe
 the operation, rather than inventing new deployed Job Templates.
 
@@ -290,7 +295,9 @@ links open the real implementation. Motion honours reduced-motion preferences.
 
 The Node tests exercise the real scripts against a disposable DOM and check
 visible object outcomes, source mapping, true hidden state and reversible
-navigation. The live runner downloads only the six allowlisted assets over HTTPS, refuses
+navigation, plus the initial cue and its dismissal. CSS checks cover four finite
+cycles and the reduced-motion override; rendered timing remains outside the DOM
+fixture. The live runner downloads only the six allowlisted assets over HTTPS, refuses
 redirects, checks size/time limits and requires exact checkout byte parity before
 executing the same interaction suite against the downloaded files. It removes
 only its own temporary directory and exits nonzero for a failure. Run it from the

@@ -1,7 +1,7 @@
 /* Story and illustrative objects. Source mapping and scope: ../README.md#code-and-data. */
 (function (root) {
   'use strict';
-  const sourceRevision = 'f52546d3456614869aa254d220de4a786b96c31f';
+  const sourceRevision = '09471daf07efbd248e105aa6496f25a5caa0f0a9';
   const sourceRoot = `https://github.com/kvegh/aap_autodeploy_configascode/blob/${sourceRevision}/`;
   const baseObjects = [
     { id: 'platform', type: 'Inventories', name: 'VMWare Inventory', origin: 'base' },
@@ -223,7 +223,7 @@
       '  ansible.builtin.include_role:',
       '    name: redhat.rhel_system_roles.firewall',
       '    apply:',
-      '      no_log: true',
+      '      no_log: false',
       '  vars:',
       '    firewall:',
       '      - zone: libvirt',
@@ -232,7 +232,7 @@
       '        runtime: true',
       '        permanent: true',
       '    firewall_disable_conflicting_services: false',
-      '  no_log: true',
+      '  no_log: false',
     ] },
     { id: 'installation', source: '03-aap-install.yml', lines: [
       '', '# 03-aap-install.yml · excerpt', '- name: Run AAP installer',

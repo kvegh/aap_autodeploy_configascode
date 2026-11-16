@@ -58,6 +58,46 @@ native import, actual credential readback and live workload functionality remain
 Root-owned acceptance gates; no API mutation or deployment occurred during this
 source qualification.
 
+## Strengthen the initial Next cue after visual feedback — 2026-11-16
+
+The user saw the published pulses but found them too subtle and requested more
+visibility. A brighter blue expanding ring, stronger glow, slight scale change
+and darker button midpoint make the existing cue easier to notice. Both CSS
+animations keep the same four 1.3-second cycles. Navigation dismissal, no replay
+and reduced-motion handling remain unchanged. A colour-only adjustment offered
+less visual emphasis; a repeating cue was outside the requested four-pulse limit.
+The scale increase is limited to two percent so wider narrow-layout buttons
+stay clear of adjacent controls. No script, dependency or runtime automation
+changes are needed. Implementation
+reference and publication evidence follow after commit. Browser appearance will
+need the user's visual confirmation with the existing no-install test scope.
+
+## Draw initial attention to Next with four finite halos — 2026-11-16
+
+The user requested four initial pulses in the config-as-code visualization,
+using the self-healing demo button as a visual reference. A subtle blue expanding
+halo follows that reference without moving the navigation controls. CSS limits
+it to four 1.3-second cycles; the existing reduced-motion override disables it.
+The presenter attaches the cue only on an initial first-stage opening, removes
+it on navigation and never reattaches it on back or restart. A repeating cue and
+new animation dependencies were unnecessary. Later direct links skip the cue.
+
+This is a presentation-only correction, not AAP automation or a formal project
+review. Existing DOM tests cover state and dismissal; finite-cycle and motion
+rules are checked in CSS. Rendered browser timing remains unverified. The
+implementation is `3ab5f010d0f207eb93a78f84c0643c07209e2905` (0.66.4).
+GitHub Pages run 43850503163 succeeded on 2026-11-16 at 10:37:52 UTC.
+The existing live runner then verified exact parity of all six published assets
+and all 24 interaction checks passed by 10:40:44 UTC. This does not verify
+rendered browser animation timing or establish AAP runtime acceptance.
+
+The existing source-mapping test exposed older firewall excerpt drift: the
+presentation still said no_log true, while the cited implementation now uses
+false under a separate established logging decision. Both displayed lines and
+their assertion now match the source. The source citation advances to the
+published baseline 09471daf07efbd248e105aa6496f25a5caa0f0a9; no automation task
+or logging behavior changes here.
+
 ## Retain exact access-token custody and freeze the cleanup owner — 2026-11-16
 
 Implementation `8d0ab8bc8e9370a561c613d1e5602c4d2d650894` (Source0.66.1) consumes the separately qualified

@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.66.9
+
+- Integrate the independently published walkthrough updates with the qualified
+  reviewed-count correction and Windows prerequisite guard. Preserve both
+  implementation histories and the exact published walkthrough assets.
+- Reconcile the shared task overview and protected recovery export without
+  changing workload configuration, permissions or installer/image selections.
+- Live receiving imports and workload functionality remain acceptance gates.
+
 ## 0.66.8
 
 - Document the missing receiving AutoDeploy prerequisite and the strict template
@@ -43,6 +52,29 @@
   native codec-loaded integer wrappers and preserved literal-template fields.
 - Qualify the actual complete AutoDeploy capture and unchanged Windows capture
   offline. Runtime import and workload acceptance remain separate gates.
+
+## 0.66.6 — parallel walkthrough update
+
+- Make the initial Next cue more visible with a brighter expanding ring,
+  stronger glow, slight breathing motion and darker blue midpoint. Retain four
+  cycles, navigation dismissal, no replay and the reduced-motion override.
+
+## 0.66.5 — parallel walkthrough update
+
+- Document the four-pulse implementation commit and successful Pages publication.
+  All six live assets match; all 24 deployed interaction checks pass. Rendered
+  browser animation timing remains unverified.
+- Refresh the required task overview and protected recovery records.
+
+## 0.66.4 — parallel walkthrough update
+
+- Give Next four subtle blue halo pulses when the visualization opens at the
+  first step. Stop early on navigation; returning or restarting does not replay
+  the cue. Preserve reduced-motion preferences and stable button dimensions.
+- Extend the existing interaction checks to cover the cue lifecycle and finite
+  CSS duration. No dependencies or AAP runtime behavior change.
+- Refresh the displayed firewall logging excerpt and source citation to the
+  existing implementation; preserve exact-source validation.
 
 ## 0.66.3
 

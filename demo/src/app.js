@@ -215,6 +215,7 @@
       : '';
   }
   function navigate(nextIndex, updateHash = true) {
+    byId('next').classList.toggle('next-intro-cue', false);
     index = story.stateAt(nextIndex).index;
     if (updateHash) window.history.replaceState(null, '', `#${story.steps[index].id}`);
     render();
@@ -234,4 +235,6 @@
     navigate(nextIndex < 0 ? 0 : nextIndex, false);
   });
   render();
+  // Cue only the initial opening; navigation and restart never replay it.
+  byId('next').classList.toggle('next-intro-cue', index === 0);
 })();
