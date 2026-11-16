@@ -1,5 +1,38 @@
 # Design decisions history
 
+## Maintain reviewed counts when appending workload helper definitions
+
+Implementation `d8effd888e5cdcdef21b277f90bf1947c271f280` keeps an existing
+reviewed template count synchronized with the Source or target helper append.
+The complete receiving AutoDeploy import exposed a stale count after two
+authorized template additions. The strict resource-list validator refused the
+capture before resource dispatch. Individual native template creation had not
+qualified the complete receiving capture; the importer and its protected
+diagnostic behavior were correct and remain unchanged.
+
+The append helper now checks any existing declared `controller_templates` count
+against its exact mapped list before appending or accepting an existing row.
+It advances that count with the single new definition and verifies a typed
+inverse of both changes, restoring the original count object rather than a
+computed replacement. Matching definitions retain their count. Captures without
+that declaration retain their original schema. Stale, boolean, noninteger or
+conflicting counts refuse an append; no review guard is weakened.
+
+Nine focused regressions pass in cached Core 2.20.10 and local Core 2.21.5,
+including actual codec-loaded integer wrappers and literal-template roundtrips.
+The actual complete receiving AutoDeploy capture reproduces the old count
+failure, then fully renders nineteen definitions after the separately reviewed
+one-leaf private correction. Native codec append and idempotence checks pass on
+that actual capture. The unchanged Windows capture also fully renders in Core
+2.20 with its existing runtime, topology and identity assertions.
+
+Selected API reader, receiver EE and hypervisor/guest identity bindings match
+their retained registered inputs. The public-API trust factory remains distinct
+from the separately registered private MCP peer CA and is unchanged. Current
+native import, actual credential readback and live workload functionality remain
+Root-owned acceptance gates; no API mutation or deployment occurred during this
+source qualification.
+
 ## Retain exact access-token custody and freeze the cleanup owner — 2026-11-16
 
 Implementation `8d0ab8bc8e9370a561c613d1e5602c4d2d650894` (Source0.66.1) consumes the separately qualified

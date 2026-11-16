@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.66.5
+
+- Document implementation `d8effd888e5cdcdef21b277f90bf1947c271f280`,
+  strict count preservation and the typed one-row-plus-bookkeeping inverse.
+- Document nine passing Core 2.20/2.21 regressions and actual complete
+  AutoDeploy/unchanged Windows rendering, with live adoption kept separate.
+- Documentation only; preserve the qualified helper and importer guards.
+
 ## 0.66.4
 
 - Keep an existing reviewed template count synchronized with the Source or
