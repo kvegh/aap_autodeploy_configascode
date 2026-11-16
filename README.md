@@ -106,13 +106,18 @@ inverse proves that only this retry count changes in executable content; actual
 next infrastructure execution remains independently verified.
 
 
-## Future cold AAP installation checkpoints
+## Cold AAP installation checkpoints
 
 The requested snapshot and explicit restore playbooks are implemented with
 success-only infrastructure, installer and base hooks. Encrypted CaC owns the
-three exact checkpoint names and enables them only for future allocations;
-public defaults remain disabled. No current guest has been stopped or snapshotted
-for this feature. See [cold AAP checkpoints](docs/aap-cold-snapshots.md) for
+three exact checkpoint names and enables them only for eligible allocations;
+public defaults remain disabled. Initial live capture exposed libvirt reordering
+equivalent controller declarations in snapshot XML. The verifier now normalizes
+only those complete declarations, retaining every device/address field and all
+other device order. The original snapshot remains immutable; the original guest
+was restarted after the failed verification. Source qualification is separate
+from completing the live checkpoint and its guest readiness checks.
+See [cold AAP checkpoints](docs/aap-cold-snapshots.md) for
 supported storage, bounded power handling, tests and the guarded external-state
 requirements. Project import can itself update private state, so automatic
 project-test reconciliation is not yet established by a VM rollback alone.

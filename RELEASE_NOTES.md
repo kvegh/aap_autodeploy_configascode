@@ -1,5 +1,15 @@
 # Release notes
 
+## 0.65.6
+
+- Normalize complete native controller declaration order only within the
+  domain's device controller slots when verifying cold snapshot configuration.
+- Preserve all controller fields, addresses and occurrences, all other device
+  order, immutable snapshot metadata and existing cold/readiness guards.
+- Reproduce the native PCI-root/IDE reorder and verify exact retained checkpoint
+  compatibility plus refusal of controller and other-device changes. Live
+  checkpoint recovery remains a separate gate; the original failure is retained.
+
 ## 0.65.5
 
 - Document qualified appliance-provenance guard adoption and refresh task records

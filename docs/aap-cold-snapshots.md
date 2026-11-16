@@ -41,6 +41,14 @@ power cycle, including after later project changes. It is never relabelled as a
 new capture. Matching external state is required for restore, not for preserving
 an existing immutable checkpoint during a repeat base run.
 
+Libvirt can serialize controller declarations in a different order in the
+snapshot's saved domain XML. The configuration comparison sorts only complete
+`domain/devices/controller` elements within their existing controller slots.
+Every attribute, address, child element, duplicate and count remains significant;
+all other device declaration order remains significant. Metadata with nested
+elements of the same names is not normalized. This accepts equivalent saved
+controllers without accepting changed hardware or modifying a checkpoint.
+
 Inactive disk snapshots are clean when the preceding guest shutdown was clean.
 Internal snapshots preserve the existing disk path, avoiding an external overlay
 chain and a changed registered primary path. See the official
@@ -123,5 +131,6 @@ idempotence, bounded power transitions, failure/restart handling, scoped state
 and secret preservation, private import-generated values, actual Ansible
 delegation/ordering and paginated API guards. Native Core 2.20 qualification and
 a read-only check of the current supported host/VM shape do not establish a
-successful real snapshot or rollback. The first enabled next-installation run
-must verify all three checkpoints and one explicitly authorized restore.
+successful real snapshot or rollback. Each enabled installation must verify all
+three checkpoints. Restore acceptance remains separate and requires explicit
+authorization; workload redeployment tests preserve the running AAP VM.

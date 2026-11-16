@@ -147,11 +147,19 @@ def policy(value, checkpoint, instance):
     return value['names'][checkpoint]
 
 
-def canonical(element, root=True):
+def canonical(element, root=True, path=()):
     if element.tag == 'seclabel' and element.get('type') == 'dynamic':
         return None
+    children = [value for child in element
+                if (value := canonical(child, False, path + (element.tag,))) is not None]
+    if path == ('domain',) and element.tag == 'devices':
+        # Libvirt may serialize the same explicitly addressed controllers in a
+        # different declaration order in snapshot XML. Preserve every field and
+        # multiplicity; normalize only controller slots, never other devices.
+        controllers = iter(sorted(value for value in children if value[0] == 'controller'))
+        children = [next(controllers) if value[0] == 'controller' else value for value in children]
     return [element.tag, sorted((k, v) for k, v in element.attrib.items() if not (root and element.tag == 'domain' and k == 'id')),
-            (element.text or '').strip(), [v for child in element if (v := canonical(child, False)) is not None]]
+            (element.text or '').strip(), children]
 
 
 def domain_plan(xml, route, primary):

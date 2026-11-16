@@ -20,7 +20,13 @@ def fixture():
     xml = ('<domain type="kvm"><name>' + name + '</name><uuid>' + primary['uuid'] + '</uuid>'
            '<os><type>hvm</type></os><devices><disk type="file" device="disk">'
            '<driver name="qemu" type="qcow2"/><source file="' + primary['disk'] + '"/>'
-           '<target dev="vda"/></disk><interface type="network"><source network="isolated"/>'
+           '<target dev="vda"/></disk>'
+           '<controller type="usb" index="0" model="ich9-ehci1">'
+           '<address type="pci" domain="0x0000" bus="0x00" slot="0x03" function="0x7"/></controller>'
+           '<controller type="pci" index="0" model="pci-root"/>'
+           '<controller type="ide" index="0">'
+           '<address type="pci" domain="0x0000" bus="0x00" slot="0x01" function="0x1"/></controller>'
+           '<interface type="network"><source network="isolated"/>'
            '<mac address="' + primary['mac'] + '"/></interface></devices></domain>')
     policy = {'enabled': True, 'minimum_instance_number': 23, 'names': deepcopy(snap.CHECKPOINTS),
               'shutdown_timeout': 30, 'start_timeout': 30, 'minimum_free_bytes': 1073741824}
@@ -130,6 +136,61 @@ class SnapshotTests(unittest.TestCase):
         root = ET.fromstring(self.xml); original = snap.digest(snap.canonical(root))
         root.set('id', '22'); self.assertEqual(snap.digest(snap.canonical(root)), original)
         root.find('./devices/disk').set('id', 'disk-id'); self.assertNotEqual(snap.digest(snap.canonical(root)), original)
+
+    def test_native_reordered_controllers_validate_the_immutable_legacy_checkpoint(self):
+        def legacy(element, root=True):
+            if element.tag == 'seclabel' and element.get('type') == 'dynamic': return None
+            return [element.tag, sorted((k, v) for k, v in element.attrib.items()
+                    if not (root and element.tag == 'domain' and k == 'id')),
+                    (element.text or '').strip(),
+                    [value for child in element if (value := legacy(child, False)) is not None]]
+        # The observed native inactive order is USB, PCI root, IDE. Snapshot XML
+        # moves IDE before PCI root without changing either addressed controller.
+        self.execute(); key = self.policy['names']['base']
+        root = ET.fromstring(self.native.snapshots[key]); devices = root.find('./domain/devices')
+        controllers = devices.findall('controller'); pci, ide = controllers[-2:]
+        pci_position, ide_position = list(devices).index(pci), list(devices).index(ide)
+        devices.remove(pci); devices.remove(ide)
+        devices.insert(pci_position, ide); devices.insert(ide_position, pci)
+        record = json.loads(root.findtext('description'))
+        original_digest = snap.digest(legacy(ET.fromstring(self.xml)))
+        self.assertEqual(record['native']['configuration'], original_digest)
+        self.assertNotEqual(snap.digest(legacy(root.find('domain'))), original_digest)
+        self.assertEqual(snap.snapshot_record(ET.tostring(root, encoding='unicode'), record), record)
+        self.native.snapshots[key] = ET.tostring(root, encoding='unicode')
+        original = deepcopy(self.native.snapshots); self.native.calls.clear()
+        self.assertFalse(self.execute()['changed'])
+        self.assertEqual(self.native.snapshots, original)
+        self.assertFalse(any(call[3] in ('shutdown', 'snapshot-create', 'snapshot-revert', 'start')
+                             for call in self.native.calls))
+
+    def test_controller_normalization_retains_every_address_model_and_occurrence(self):
+        self.execute(); key = self.policy['names']['base']; original = self.native.snapshots[key]
+        for change in ('address', 'model', 'missing', 'duplicate'):
+            with self.subTest(change=change):
+                root = ET.fromstring(original); devices = root.find('./domain/devices')
+                controller = devices.findall('controller')[0]
+                if change == 'address': controller.find('address').set('slot', '0x09')
+                elif change == 'model': controller.set('model', 'another-controller')
+                elif change == 'missing': devices.remove(controller)
+                else: devices.append(deepcopy(controller))
+                self.native.snapshots[key] = ET.tostring(root, encoding='unicode'); self.native.calls.clear()
+                with self.assertRaisesRegex(ValueError, 'Stored native domain configuration'):
+                    self.execute()
+                self.assertNotIn('shutdown', [call[3] for call in self.native.calls])
+
+    def test_normalization_preserves_other_device_order_and_nested_controller_order(self):
+        root = ET.fromstring(self.xml); original = snap.digest(snap.canonical(root))
+        devices = root.find('devices'); disk, interface = devices.find('disk'), devices.find('interface')
+        disk_position, nic_position = list(devices).index(disk), list(devices).index(interface)
+        devices.remove(disk); devices.remove(interface)
+        devices.insert(disk_position, interface); devices.insert(nic_position, disk)
+        self.assertNotEqual(snap.digest(snap.canonical(root)), original)
+        first = ET.fromstring('<domain><metadata><devices><controller index="0"/>'
+                              '<controller index="1"/></devices></metadata></domain>')
+        second = ET.fromstring('<domain><metadata><devices><controller index="1"/>'
+                               '<controller index="0"/></devices></metadata></domain>')
+        self.assertNotEqual(snap.canonical(first), snap.canonical(second))
 
     def test_extra_writable_storage_and_efi_firmware_are_rejected(self):
         for addition in ('<disk device="lun"/>', '<disk device="floppy"/>', '<disk device="cdrom"/>'):
