@@ -1,5 +1,23 @@
 # Design decisions history
 
+## Verify the saved base-only workflow and retain the execution boundary — 2026-11-16
+
+The workflow correction implemented in
+`b4aa5733763b554c9f446b0a935bc3a469e90e4b` has now been applied through the
+maintained workflow-only playbook. Independent readback confirms its four
+maintained stages, three success links, terminal base stage, unchanged survey
+and retained earlier Job Templates. The source-control refresh succeeded at the
+published implementation. No deployment was launched by this configuration
+operation. An initial local temporary-directory failure made zero changes;
+using the existing writable task temporary directory allowed the focused
+configuration operation to succeed without changing filesystem permissions.
+
+The user cancelled the previous Windows continuation and requested a fresh host
+rebuild, followed only after success by AAP deployment through base configuration.
+The three existing cold checkpoints remain included. Use-case imports and
+workload jobs are outside that execution boundary. Historical incident closures
+preserve their evidence and unknown causes; they do not establish software fixes.
+
 ## Reconcile the base workflow with its maintained deployment stages — 2026-11-16
 
 Implementation `b4aa5733763b554c9f446b0a935bc3a469e90e4b` corrects the saved workflow's legacy stage references

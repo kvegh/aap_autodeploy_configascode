@@ -1445,6 +1445,15 @@ Reconciliation explicitly replaces the selected workflow's old node graph with
 these four nodes. Its workflow identity and history and the referenced legacy
 Job Templates remain; node IDs are recreated. This operation does not launch it.
 
+The saved seed workflow has been reconciled and independently read back with
+exactly four stages, three success links and base configuration as its final
+node. Its existing survey and the earlier Job Templates remain. A successful
+source-control refresh also verified the published implementation. This proves
+the saved configuration; a fresh deployment through the complete workflow is
+still a separate acceptance step. The current rebuild instruction stops after
+base configuration and its third cold checkpoint, with no use-case imports or
+workload jobs afterward.
+
 The ordinary AutoDeploy importer restores the same captured four-node definition
 after importing its stage Job Templates. The final AutoDeploy workflow task
 checks that the captured graph matches the maintained template. Its reviewed

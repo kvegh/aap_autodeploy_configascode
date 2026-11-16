@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-282 tasks: 41 outstanding; 241 closed.
+289 tasks: 44 outstanding; 245 closed.
 
 ## Outstanding tasks
 
@@ -23,16 +23,19 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2 | Achieve one clean &#91;HOST&#93; installation with tested Windows and AIOps | in_progress | P1 | epic | bead-wd-3ix, bead-wd-3ix.1.23, bead-wd-5zfc, bead-wd-72f.31.2.7 |
 | bead-wd-3ix.2.10 | Run full v23 rebuild and Windows and AIOps functional acceptance | deferred | P1 | epic | bead-wd-3ix.2, bead-wd-3ix.2.9 |
 | bead-wd-3ix.2.10.1 | Separate retained agent phase output and publish bounded successful tool diagnostics | deferred | P1 | bug | bead-wd-3ix.2.10 |
-| bead-wd-3ix.2.12 | Run full v24 installation with cold snapshots and functionality tests | in_progress | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.11 |
-| bead-wd-3ix.2.12.2 | Migrate all maintained public DNS playbooks CaC and templates to v3 | in_progress | P1 | task | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.12 | Run full v24 installation with cold snapshots and functionality tests | deferred | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.11 |
+| bead-wd-3ix.2.12.2 | Migrate all maintained public DNS playbooks CaC and templates to v3 | deferred | P1 | task | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.12.9 | Verify v24 Windows deployment, actual demo and clean teardown | deferred | P1 | task | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.14 | Provide one AAP workflow for physical reinstall through configured Hactar host | in_progress | P1 | task | bead-wd-3ix.2 |
+| bead-wd-3ix.2.15 | Define Windows CaC import-only AAP workflow (WF3) | in_progress | P1 | task | bead-wd-3ix.2 |
+| bead-wd-3ix.2.16 | Define AIOps CaC import-only AAP workflow (WF4) | in_progress | P1 | task | bead-wd-3ix.2 |
+| bead-wd-3ix.2.17 | Retire v24 and rebuild v25 through AAP base only | in_progress | P1 | epic | bead-wd-3ix.2 |
+| bead-wd-3ix.2.17.1 | Retire only v24 DNS and active configuration before v25 rebuild | in_progress | P1 | task | bead-wd-3ix.2.17 |
 | bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | deferred | P1 | epic | bead-wd-3ix.2 |
-| bead-wd-3ix.2.7.10 | Diagnose repeated collection artifact hash mismatches before v23 | blocked | P1 | bug | bead-wd-3ix.2.7 |
-| bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.5.2 | Reconcile AAP supplemental interface metadata in source inventory | deferred | P1 | bug | bead-wd-3ix.2.10 |
 | bead-wd-3ix.2.7.5.4 | Reconcile canonical Windows network policy into original Source aliases before AIOps release | deferred | P1 | bug | bead-wd-3ix.2.10 |
 | bead-wd-3ix.2.7.5.6 | Diagnose v22 Zabbix pending HTTPS grant native-policy mismatch | deferred | P1 | bug | bead-wd-3ix.2.10 |
 | bead-wd-3ix.2.7.8 | Enable temporary visible deployment logging until clean acceptance | deferred | P1 | task | bead-wd-3ix.2.7 |
-| bead-wd-3ix.2.7.9 | Diagnose v22 receiving AAP API 503 and timeout incident | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.8 | Add cold AAP snapshots at infrastructure, installer and base checkpoints | deferred | P1 | feature | bead-wd-3ix.2 |
 | bead-wd-72f | Complete portable AAP and use-case deployment | open | P1 | task | — |
 | bead-wd-72f.16 | Safely decommission and rebuild AAP on the replacement hypervisor | blocked | P1 | task | bead-wd-72f, bead-wd-72f.31.2 |
@@ -45,7 +48,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-87w5.12 | Move generic RHEL VM deployment into umbrella and expose shared AAP base job | on_hold | P1 | task | bead-wd-87w5 |
 | bead-wd-mcr.1.1 | Complete successful-deployment release and exact-guest cleanup | open | P1 | task | bead-wd-mcr.1 |
 | bead-wd-1rl.40.6 | Add separate CCNG infrastructure playbook and CaC job | deferred | P2 | task | bead-wd-1rl.40 |
-| bead-wd-3ix.2.12.3 | Implement clean AIOps workload teardown playbooks CaC and job templates | in_progress | P2 | task | bead-wd-3ix.2.12, bead-wd-3ix.2.12.2 |
+| bead-wd-3ix.2.12.3 | Implement clean AIOps workload teardown playbooks CaC and job templates | deferred | P2 | task | bead-wd-3ix.2.12, bead-wd-3ix.2.12.2 |
 | bead-wd-72f.13 | Replace temporary AAP instance token store with an external secret manager | open | P2 | feature | bead-wd-72f |
 | bead-wd-72f.2 | Route extraction credentials per repository before any CaC rekey | open | P2 | task | bead-wd-72f |
 | bead-wd-72f.24 | Review legacy project settings in shared AutoDeploy inventory | open | P2 | task | bead-wd-72f |
@@ -104,6 +107,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.12.6 | Verify complete controller job results before cold snapshot shutdown | closed | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.12.7 | Ensure receiving AutoDeploy source credentials before Windows import | closed | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.12.8 | Correct AutoDeploy resource normalization failure on the receiving AAP | closed | P1 | bug | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.13 | Reconcile the AAP deployment workflow to stop after base configuration | closed | P1 | task | bead-wd-3ix.2 |
 | bead-wd-3ix.2.2 | Reinstall only the verified &#91;HOST&#93; replacement server for v21 | closed | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.1 |
 | bead-wd-3ix.2.2.1 | Diagnose Hub artifact checksum failure and complete pending host checks | closed | P1 | task | bead-wd-3ix.2.2 |
 | bead-wd-3ix.2.2.2 | Remove all numbered DNS names below v21 | closed | P1 | task | bead-wd-3ix.2.2 |
@@ -128,6 +132,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.5 | Retire accepted v21 active configuration and owned references | closed | P1 | task | bead-wd-3ix.2, bead-wd-g3mu |
 | bead-wd-3ix.2.6 | Use one generation counter for physical host and AAP | closed | P1 | task | bead-wd-3ix.2 |
 | bead-wd-3ix.2.7.1 | Complete the v22 host Rebuild | closed | P1 | task | bead-wd-3ix.2.7 |
+| bead-wd-3ix.2.7.10 | Diagnose repeated collection artifact hash mismatches before v23 | closed | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.2 | Stage and verify the seven v22 Rebuild images | closed | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.1 |
 | bead-wd-3ix.2.7.3 | Deploy and configure AAP v22 | closed | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.2 |
 | bead-wd-3ix.2.7.4 | Deploy and functionally verify Windows on v22 | closed | P1 | task | bead-wd-3ix.2.7, bead-wd-3ix.2.7.3 |
@@ -248,6 +253,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.1.16.1 | Discuss import ordering and EDA activation handling with the owner | closed | P2 | task | bead-wd-3ix.1.16 |
 | bead-wd-3ix.1.17 | Rename deployment-facing Recovery labels to Rebuild | closed | P2 | task | bead-wd-3ix.1 |
 | bead-wd-3ix.1.24 | Use aiops_selfhealing consistently on AIOps objects and CaC | closed | P2 | task | bead-wd-3ix.1 |
+| bead-wd-3ix.2.7.9 | Historical v22 AAP API outage: cause unknown, watch for recurrence | closed | P2 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ja8 | Delete secondary text under every visualization arrow | closed | P2 | task | — |
 | bead-wd-5y5m | Align the purple content-push arrow with the original AAP top | closed | P2 | task | — |
 | bead-wd-6tzb | Generate the seated sysadmin illustration | closed | P2 | task | — |
@@ -304,3 +310,4 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-ys3k | Rework the AAP visualization composition after browser feedback | closed | P2 | bug | — |
 | bead-wd-yx4a | Rename the AAP visualization objects | closed | P2 | task | — |
 | bead-wd-zau | Review copied testserver monitoring and agent remediation readiness | closed | P2 | task | — |
+| bead-wd-3ix.2.7.4.2 | Historical v22 bootstrap Git failures: cause unknown, not a current deployment blocker | closed | P3 | bug | bead-wd-3ix.2.7 |

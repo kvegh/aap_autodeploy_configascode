@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.66.15
+
+- Document successful saved base-workflow reconciliation and independent graph,
+  survey, retained-template and published-source verification.
+- Keep the next rebuild's stop boundary at AAP base configuration and its third
+  cold checkpoint. Record cancelled workload continuation and historical issue
+  closures without claiming successful workload acceptance or a new deployment.
+- Refresh the public task overview and protected full task recovery snapshot.
+
 ## 0.66.14
 
 - Document the base-only workflow correction, immutable stage boundaries,
