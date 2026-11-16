@@ -11,7 +11,7 @@ are excluded here. Hypervisor-only tasks remain in that project's own overview.
 See [object ownership and label coverage](docs/cac-object-ownership.md) and
 [recovery and use-case targets](docs/recovery-and-use-case-targets.md) for agreed design context.
 
-277 tasks: 42 outstanding; 235 closed.
+278 tasks: 43 outstanding; 235 closed.
 
 ## Outstanding tasks
 
@@ -26,6 +26,7 @@ See [object ownership and label coverage](docs/cac-object-ownership.md) and
 | bead-wd-3ix.2.12 | Run full v24 installation with cold snapshots and functionality tests | in_progress | P1 | task | bead-wd-3ix.2, bead-wd-3ix.2.11 |
 | bead-wd-3ix.2.12.1 | Inventory Windows and AIOps infrastructure for clean same-host redeployment | in_progress | P1 | task | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.12.2 | Migrate all maintained public DNS playbooks CaC and templates to v3 | in_progress | P1 | task | bead-wd-3ix.2.12 |
+| bead-wd-3ix.2.12.5 | Pin cold snapshot privilege context when called by the installer | in_progress | P1 | bug | bead-wd-3ix.2.12 |
 | bead-wd-3ix.2.7 | Complete v22 Rebuild and both AIOps demo tests | deferred | P1 | epic | bead-wd-3ix.2 |
 | bead-wd-3ix.2.7.10 | Diagnose repeated collection artifact hash mismatches before v23 | blocked | P1 | bug | bead-wd-3ix.2.7 |
 | bead-wd-3ix.2.7.4.2 | Diagnose v22 Windows central bootstrap Git read failures | blocked | P1 | bug | bead-wd-3ix.2.7 |

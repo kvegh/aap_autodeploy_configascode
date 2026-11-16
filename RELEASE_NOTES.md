@@ -1,5 +1,12 @@
 # Release notes
 
+## 0.65.16
+
+- Document the successful installer component and the later failed checkpoint
+  privilege preparation in the current task overview and protected export.
+- Preserve both original failed jobs and the qualified root-context fix;
+  checkpoint-only recovery and base configuration remain separate live gates.
+
 ## 0.65.15
 
 - Document implementation `80b44c33fb09ac770e0f5ebadbadd61795190b77`, the
