@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.66.14
+
+- Document the base-only workflow correction, immutable stage boundaries,
+  selector handoff, focused qualification and pending native adoption.
+
 ## 0.66.13
 
 - Reconcile the base workflow to the four maintained deployment templates and

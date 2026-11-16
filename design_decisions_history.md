@@ -1,5 +1,32 @@
 # Design decisions history
 
+## Reconcile the base workflow with its maintained deployment stages — 2026-11-16
+
+Implementation `b4aa5733763b554c9f446b0a935bc3a469e90e4b` corrects the saved workflow's legacy stage references
+and explicit graph replacement. The user's boundary is VM creation,
+infrastructure, AAP installation and base configuration, with base as the final
+node. Use-case collection preparation and imports belong only to a separately
+selected use-case flow. The three existing cold checkpoints remain embedded in
+their stages; no extra verification node or AAP rollback is introduced.
+
+The vendor workflow module defaults to retaining unmentioned nodes. Reconciliation
+therefore explicitly destroys only the selected workflow's old nodes before
+creating the complete four-node success-only graph. Its workflow identity/history
+and all referenced legacy Job Templates remain. The workflow-only entry point
+can select the one encrypted AutoDeploy workflow without importing unrelated
+replacement resources onto the seed. Receiving AutoDeploy imports preserve that
+same graph after importing their existing stage templates.
+
+Stage 01 adds the registered VM key to its existing safe artifacts. It differs
+from the inventory display alias and replaces an older saved downstream selector;
+no new prompt, node-level root variable or credential is added. All five focused
+cases pass under Core 2.21.5 and cached offline Core 2.20.10, including actual
+Ansible task/template execution for ten-to-four-node reconciliation and a fresh
+instance handoff. The complete fresh encrypted capture renders and validates
+with nineteen templates and one workflow under Core 2.20.10. The unchanged
+baseline also passes. No Controller write, workflow launch, VM operation or
+publication occurred; native graph adoption remains a separate verified step.
+
 ## Recover only the failed Windows import after prerequisite verification — 2026-11-16
 
 The Windows guard implementation `407b1fc501e14d78e27f7e647e37f86f7b8673eb`
