@@ -1,5 +1,14 @@
 # Release notes
 
+## 0.66.3
+
+- Document three verified cold checkpoints, successful final guest-access checks
+  and the native baseline inventory while preserving all original failed stages.
+- Document 143 combined teardown and snapshot tests passing in Core 2.20 and
+  2.21 after integrating the qualified workload lifecycle with the idle guard.
+- Refresh task recovery records. Normal template adoption, live workload cleanup,
+  same-AAP redeployment and functional acceptance remain separate gates.
+
 ## 0.66.2
 
 - Document the exact access-token custody and frozen-owner implementation commit,

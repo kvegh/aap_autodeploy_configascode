@@ -140,6 +140,12 @@ next infrastructure execution remains independently verified.
 
 ## Cold AAP installation checkpoints
 
+All three declared checkpoints have passed native cold creation and post-startup
+checks in the current test, using separately verified recovery jobs where needed.
+Final guest login, sudo and prerequisite checks also pass. Original failed stages
+remain failures; this does not establish an uninterrupted clean deployment or
+restore acceptance. Workload cleanup and redeployment remain separate gates.
+
 Controller quiescence is proved from complete unfiltered job statuses rather
 than a filtered pagination count. The guard checks bounded same-origin pages,
 then requires a second complete matching idle observation. Active jobs retain
