@@ -229,6 +229,13 @@ class EDATokenReceiptTests(unittest.TestCase):
         with self.assertRaises(lifecycle.LifecycleError):lifecycle.eda_access(client,capability,[expected])
         self.assertTrue(lifecycle.eda_revoke_owned_token(client,client.eda_credentials[0]['description'],expected,receipt)['absent'])
 
+    def test_possible_orphan_after_unknown_post_stops_before_another_create(self):
+        client,capability,expected=self.fixture()
+        client.tokens=[{'id':77,'description':'CaC EDA Controller access: '+expected['name']}]
+        with self.assertRaises(lifecycle.LifecycleError):lifecycle.eda_access(client,capability,[expected])
+        self.assertEqual(client.issued,0)
+        self.assertEqual(client.revoked,[])
+
     def test_owned_absence_can_be_proved_for_cleanup_but_not_silently_reimported(self):
         client,capability,expected=self.fixture();lifecycle.eda_access(client,capability,[expected]);client.tokens=[]
         owned=lifecycle.eda_owned_token(client,client.eda_credentials[0]['description'],expected,allow_absent=True)

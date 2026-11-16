@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.65.11
+
+- Refuse another EDA token POST when a possible unreceipted token already exists
+  without its native credential. The bounded description lookup grants no
+  ownership and performs no adoption, revocation or automatic retry.
+- Preserve legacy access, all receipt checks and exact-ID cleanup behavior.
+
+
 ## 0.65.10
 
 - Document the exact standalone-token ownership decision, implementation commit,

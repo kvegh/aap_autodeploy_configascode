@@ -7,7 +7,9 @@ exact token-ID and target/credential/user binding receipt atomically in that
 credential's description. The token stays in its existing native write-only
 credential input. Reuse verifies the receipt and current native token metadata
 without rotation. Existing credentials without this receipt keep their legacy
-behavior; a matching token description never grants cleanup ownership.
+behavior; a matching token description never grants cleanup ownership. If a
+credential is absent but a possible prior token remains, creation stops for
+original native evidence instead of replaying an uncertain POST.
 
 The guarded lifecycle helper can revoke only a freshly rechecked receipted token,
 verify its absence and preserve base API access and every other token. A native

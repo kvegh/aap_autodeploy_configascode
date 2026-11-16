@@ -298,6 +298,10 @@ def eda_access(client, capability, definitions):
                 'The stored EDA credential differs; its write-only token was preserved.')
         owned = eda_owned_token(client, old.get('description', ''), expected)
         return {'changed': False, 'owned_token_receipt': owned['receipt'] if owned else None}
+    possible = client.rows('/api/gateway/v1/tokens/' + query(
+        description='CaC EDA Controller access: ' + expected['name'], page_size=200))
+    require(len(possible) <= 200 and not any(row.get('description') == 'CaC EDA Controller access: ' + expected['name'] for row in possible),
+            'A possible unreceipted EDA token exists; recover original native POST evidence before creating another.')
     organization = one(client.rows('/api/eda/v1/organizations/' + query(name=capability['organization'])), 'EDA organization')
     credential_type = one(client.rows('/api/eda/v1/credential-types/' + query(name=expected['credential_type'])), 'EDA credential type')
     created = None
